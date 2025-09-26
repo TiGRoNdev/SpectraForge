@@ -49,7 +49,7 @@ git clone <repository-url>
 cd 4DEngine
 mkdir build && cd build
 cmake ..
-make -j4
+cmake --build . --config Release
 ```
 
 ### Запуск демо

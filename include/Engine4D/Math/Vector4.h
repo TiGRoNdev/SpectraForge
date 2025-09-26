@@ -51,7 +51,7 @@ public:
 
     // Утилиты
     void set(float x, float y, float z, float w);
-    void zero();
+    void setZero();
     bool isZero() const;
     Vector4 lerp(const Vector4& other, float t) const; // Линейная интерполяция
 

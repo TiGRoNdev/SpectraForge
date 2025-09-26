@@ -12,14 +12,13 @@ else()
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# Поиск зависимостей
-find_package(OpenGL REQUIRED)
-find_package(glfw3 REQUIRED)
-find_package(GLEW REQUIRED)
-
 # Включение директорий
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/include)
+
+# Включение GLEW
+find_package(GLEW REQUIRED)                                                                                             
+target_link_libraries(Engine4D PRIVATE GLEW::GLEW) 
 
 # Создание библиотеки движка
 file(GLOB_RECURSE ENGINE_SOURCES 
@@ -28,13 +27,6 @@ file(GLOB_RECURSE ENGINE_SOURCES
 )
 
 add_library(Engine4D STATIC ${ENGINE_SOURCES})
-
-# Связывание библиотек
-target_link_libraries(Engine4D 
-    OpenGL::GL 
-    glfw 
-    GLEW::GLEW
-)
 
 # Создание исполняемого файла демо
 add_executable(Engine4D_Demo 

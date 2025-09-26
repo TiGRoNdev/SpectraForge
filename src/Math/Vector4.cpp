@@ -119,7 +119,7 @@ void Vector4::normalize() {
     if (mag >= std::numeric_limits<float>::epsilon()) {
         *this /= mag;
     } else {
-        zero();
+        setZero();
     }
 }
 
@@ -169,7 +169,7 @@ void Vector4::set(float x, float y, float z, float w) {
     this->w = w;
 }
 
-void Vector4::zero() {
+void Vector4::setZero() {
     x = y = z = w = 0.0f;
 }
 
