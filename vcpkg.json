@@ -1,22 +1,28 @@
 {
   "builtin-baseline": "e6e4bc74aaf5c63dfc358810594f662f7e9bc4d4",
-  "name": "engine4d",
-  "version": "0.0.3",
-  "description": "4D Game Engine - Experimental game engine for 4D space",
-  "homepage": "https://github.com/yourusername/4d-engine",
+  "name": "hyperengine",
+  "version": "1.0.0",
+  "description": "HyperEngine - Modern 3D/4D Game Engine with advanced rendering capabilities",
+  "homepage": "https://github.com/yourusername/hyperengine",
   "license": "MIT",
+  "overrides": [
+    {
+      "name": "glm",
+      "version": "1.0.1#3"
+    }
+  ],
   "dependencies": [
     {
-      "name": "glfw3",
-      "version>=": "3.3.8"
+      "name": "glfw3"
     },
     {
-      "name": "glew",
-      "version>=": "2.2.0#6"
+      "name": "vulkan"
     },
     {
-      "name": "opengl",
-      "platform": "!windows"
+      "name": "vulkan-memory-allocator"
+    },
+    {
+      "name": "glm"
     }
   ],
   "features": {

@@ -1,0 +1,225 @@
+#version 450
+
+// Compute shader для light culling в Forward+ рендеринге
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+// Структура света
+struct GPULight {
+    vec4 position;      // Позиция света (w=0 для направленного)
+    vec4 color;         // Цвет и интенсивность (w=интенсивность)
+    vec4 direction;     // Направление (для направленного/прожектора)
+    float radius;       // Радиус влияния
+    float innerCone;    // Внутренний угол конуса
+    float outerCone;    // Внешний угол конуса
+    uint type;          // Тип света: 0=точечный, 1=направленный, 2=прожектор
+};
+
+// Структура данных тайла
+struct TileData {
+    uint lightCount;
+    uint lightIndices[256]; // MAX_LIGHTS_PER_TILE
+};
+
+// Uniform buffer
+layout(set = 0, binding = 0) uniform ForwardPlusUniforms {
+    mat4 view;
+    mat4 projection;
+    mat4 viewProjection;
+    vec4 viewPosition;
+    vec4 screenDimensions;
+    uint tileCountX;
+    uint tileCountY;
+    uint totalTileCount;
+    uint lightCount;
+    float nearPlane;
+    float farPlane;
+    float crossSectionW;
+    uint useCrossSection;
+} uniforms;
+
+// Storage buffers
+layout(set = 1, binding = 0, std430) restrict readonly buffer LightBuffer {
+    GPULight lights[];
+};
+
+layout(set = 1, binding = 1, std430) restrict writeonly buffer TileDataBuffer {
+    TileData tileData[];
+};
+
+// Depth texture от depth prepass
+layout(set = 2, binding = 0) uniform sampler2D depthTexture;
+
+// Push constants
+layout(push_constant) uniform LightCullingPushConstants {
+    uint tileID;
+    uint screenWidth;
+    uint screenHeight;
+    uint padding;
+} pc;
+
+// Shared memory для оптимизации
+shared uint minDepthInt;
+shared uint maxDepthInt;
+shared uint visibleLightCount;
+shared uint visibleLightIndices[256];
+
+// Вспомогательные функции
+float linearizeDepth(float depth) {
+    float z = depth * 2.0 - 1.0; // Из [0,1] в [-1,1]
+    return (2.0 * uniforms.nearPlane * uniforms.farPlane) / 
+           (uniforms.farPlane + uniforms.nearPlane - z * (uniforms.farPlane - uniforms.nearPlane));
+}
+
+vec3 screenToView(vec2 screenCoord, float depth) {
+    // Конвертируем screen coordinates в view space
+    vec2 ndc = screenCoord * 2.0 - 1.0;
+    
+    // Обратная проекция
+    vec4 viewPos = inverse(uniforms.projection) * vec4(ndc, depth * 2.0 - 1.0, 1.0);
+    return viewPos.xyz / viewPos.w;
+}
+
+bool sphereInsideFrustum(vec3 center, float radius, vec3 corners[4], float minZ, float maxZ) {
+    // Проверяем, находится ли сфера внутри фрустума тайла
+    
+    // Проверяем глубину
+    if (center.z - radius > -minZ || center.z + radius < -maxZ) {
+        return false;
+    }
+    
+    // Создаем плоскости фрустума и тестируем сферу
+    for (int i = 0; i < 4; i++) {
+        vec3 p1 = corners[i];
+        vec3 p2 = corners[(i + 1) % 4];
+        
+        // Нормаль плоскости (направлена внутрь фрустума)
+        vec3 normal = normalize(cross(p2, p1));
+        
+        // Расстояние от центра сферы до плоскости
+        float distance = dot(normal, center);
+        
+        // Если сфера полностью за пределами плоскости
+        if (distance < -radius) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+void main() {
+    uint tileIndex = gl_WorkGroupID.y * uniforms.tileCountX + gl_WorkGroupID.x;
+    
+    // Инициализация shared переменных
+    if (gl_LocalInvocationIndex == 0) {
+        minDepthInt = 0xFFFFFFFF;
+        maxDepthInt = 0;
+        visibleLightCount = 0;
+    }
+    
+    barrier();
+    
+    // Вычисляем границы тайла в screen space
+    ivec2 tileID = ivec2(gl_WorkGroupID.xy);
+    ivec2 tileSize = ivec2(16, 16); // TILE_SIZE
+    
+    ivec2 pixelMin = tileID * tileSize;
+    ivec2 pixelMax = min((tileID + 1) * tileSize, ivec2(uniforms.screenDimensions.xy));
+    
+    // Находим min/max глубину в тайле
+    for (int y = int(gl_LocalInvocationID.y); y < (pixelMax.y - pixelMin.y); y += int(gl_WorkGroupSize.y)) {
+        for (int x = int(gl_LocalInvocationID.x); x < (pixelMax.x - pixelMin.x); x += int(gl_WorkGroupSize.x)) {
+            ivec2 pixelCoord = pixelMin + ivec2(x, y);
+            
+            if (pixelCoord.x < int(uniforms.screenDimensions.x) && 
+                pixelCoord.y < int(uniforms.screenDimensions.y)) {
+                
+                float depth = texelFetch(depthTexture, pixelCoord, 0).r;
+                uint depthInt = floatBitsToUint(depth);
+                
+                atomicMin(minDepthInt, depthInt);
+                atomicMax(maxDepthInt, depthInt);
+            }
+        }
+    }
+    
+    barrier();
+    
+    float minDepth = uintBitsToFloat(minDepthInt);
+    float maxDepth = uintBitsToFloat(maxDepthInt);
+    
+    // Если нет геометрии в тайле, пропускаем
+    if (minDepth >= maxDepth) {
+        if (gl_LocalInvocationIndex == 0) {
+            tileData[tileIndex].lightCount = 0;
+        }
+        return;
+    }
+    
+    // Преобразуем глубины в view space
+    float minZ = linearizeDepth(minDepth);
+    float maxZ = linearizeDepth(maxDepth);
+    
+    // Вычисляем углы фрустума тайла в view space
+    vec2 tileMin = vec2(pixelMin) / uniforms.screenDimensions.xy;
+    vec2 tileMax = vec2(pixelMax) / uniforms.screenDimensions.xy;
+    
+    vec3 frustumCorners[4];
+    frustumCorners[0] = screenToView(vec2(tileMin.x, tileMin.y), minDepth);
+    frustumCorners[1] = screenToView(vec2(tileMax.x, tileMin.y), minDepth);
+    frustumCorners[2] = screenToView(vec2(tileMax.x, tileMax.y), minDepth);
+    frustumCorners[3] = screenToView(vec2(tileMin.x, tileMax.y), minDepth);
+    
+    // Проверяем каждый свет
+    uint threadCount = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    uint passCount = (uniforms.lightCount + threadCount - 1) / threadCount;
+    
+    for (uint passIt = 0; passIt < passCount; ++passIt) {
+        uint lightIndex = passIt * threadCount + gl_LocalInvocationIndex;
+        
+        if (lightIndex < uniforms.lightCount) {
+            GPULight light = lights[lightIndex];
+            
+            // Преобразуем позицию света в view space
+            vec3 lightPosView = (uniforms.view * light.position).xyz;
+            
+            bool lightVisible = false;
+            
+            // Проверяем пересечение в зависимости от типа света
+            if (light.type == 0) { // Точечный свет
+                lightVisible = sphereInsideFrustum(lightPosView, light.radius, 
+                                                 frustumCorners, minZ, maxZ);
+            }
+            else if (light.type == 1) { // Направленный свет
+                // Направленный свет влияет на все тайлы
+                lightVisible = true;
+            }
+            else if (light.type == 2) { // Прожектор
+                // Упрощенная проверка как для точечного света
+                // TODO: можно добавить более точную проверку конуса
+                lightVisible = sphereInsideFrustum(lightPosView, light.radius, 
+                                                 frustumCorners, minZ, maxZ);
+            }
+            
+            // Добавляем свет в список, если он видим
+            if (lightVisible) {
+                uint index = atomicAdd(visibleLightCount, 1);
+                if (index < 256) { // MAX_LIGHTS_PER_TILE
+                    visibleLightIndices[index] = lightIndex;
+                }
+            }
+        }
+    }
+    
+    barrier();
+    
+    // Записываем результаты в глобальную память
+    if (gl_LocalInvocationIndex == 0) {
+        uint lightCount = min(visibleLightCount, 256);
+        tileData[tileIndex].lightCount = lightCount;
+        
+        for (uint i = 0; i < lightCount; ++i) {
+            tileData[tileIndex].lightIndices[i] = visibleLightIndices[i];
+        }
+    }
+}

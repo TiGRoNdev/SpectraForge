@@ -33,15 +33,16 @@ void main() {
     // Окружающее освещение
     vec4 ambient = ambientStrength * lightColor;
     
-    // Диффузное освещение
-    vec4 lightDir = normalize(lightPos - FragPos);
-    float diff = max(dot(Normal, lightDir), 0.0);
+    // Диффузное освещение (используем только xyz компоненты для 3D расчетов)
+    vec3 lightDir3D = normalize((lightPos - FragPos).xyz);
+    vec3 normal3D = normalize(Normal.xyz);
+    float diff = max(dot(normal3D, lightDir3D), 0.0);
     vec4 diffuse = diff * lightColor;
     
     // Зеркальное отражение
-    vec4 viewDir = normalize(viewPos - FragPos);
-    vec4 reflectDir = reflect(-lightDir, Normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+    vec3 viewDir3D = normalize((viewPos - FragPos).xyz);
+    vec3 reflectDir3D = reflect(-lightDir3D, normal3D);
+    float spec = pow(max(dot(viewDir3D, reflectDir3D), 0.0), shininess);
     vec4 specular = specularStrength * spec * lightColor;
     
     // Финальный цвет

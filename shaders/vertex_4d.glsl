@@ -24,29 +24,47 @@ void main() {
     // Применяем трансформации
     vec4 worldPos = model * position;
     vec4 viewPos = view * worldPos;
-    vec4 clipPos = projection * viewPos;
+    
+    // Общие параметры для проекции
+    float fov = 45.0; // поле зрения в градусах
+    float aspect = 1.5; // соотношение сторон экрана
+    float near = 0.1;
+    float far = 100.0;
+    
+    // Создаем стандартную OpenGL перспективную матрицу
+    float f = 1.0 / tan(radians(fov) * 0.5);
+    mat4 perspectiveMatrix = mat4(
+        f / aspect, 0.0, 0.0, 0.0,
+        0.0, f, 0.0, 0.0,
+        0.0, 0.0, (far + near) / (near - far), (2.0 * far * near) / (near - far),
+        0.0, 0.0, -1.0, 0.0
+    );
+    
+    vec3 final3D;
     
     // Обрабатываем сечение
     if (useCrossSection) {
-        // Если вершина находится на другой стороне сечения, отбрасываем её
-        if (abs(worldPos.w - crossSectionW) > 0.01) {
+        // Если вершина находится далеко от плоскости сечения, отбрасываем её
+        if (abs(worldPos.w - crossSectionW) > 0.5) {
             gl_Position = vec4(0.0, 0.0, 0.0, -1.0); // Отбрасываем вершину
             return;
         }
+        // Для сечения используем xyz координаты напрямую
+        final3D = viewPos.xyz;
+    } else {
+        // Перспективная проекция из 4D в 3D
+        float perspectiveDistance = 10.0; // Расстояние для перспективной проекции
         
-        // Проецируем на плоскость сечения
-        clipPos = vec4(clipPos.xyz, 0.0);
+        if (abs(perspectiveDistance - viewPos.w) > 0.001) {
+            float factor = perspectiveDistance / (perspectiveDistance - viewPos.w);
+            final3D = viewPos.xyz * factor;
+        } else {
+            final3D = viewPos.xyz;
+        }
     }
     
-    // Перспективная проекция из 4D в 3D
-    float perspectiveDistance = 10.0; // Расстояние для перспективной проекции
-    if (clipPos.w != 0.0) {
-        clipPos.xyz = clipPos.xyz * perspectiveDistance / clipPos.w;
-        clipPos.w = 1.0;
-    }
-    
-    // Дополнительная проекция из 3D в 2D (стандартная OpenGL проекция)
-    gl_Position = clipPos;
+    // Применяем OpenGL проекцию
+    gl_Position = perspectiveMatrix * vec4(final3D, 1.0);
     
     // Передаем данные в фрагментный шейдер
     FragPos = worldPos;

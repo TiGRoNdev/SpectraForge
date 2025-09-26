@@ -1,7 +1,0 @@
-D:\Cursor Projects\4DEngine\src\Core\GameObject4D.cpp;D:\Cursor Projects\4DEngine\build-vcpkg\Engine4D.dir\Release\GameObject4D.obj
-D:\Cursor Projects\4DEngine\src\Input\Input4D.cpp;D:\Cursor Projects\4DEngine\build-vcpkg\Engine4D.dir\Release\Input4D.obj
-D:\Cursor Projects\4DEngine\src\Math\Matrix4.cpp;D:\Cursor Projects\4DEngine\build-vcpkg\Engine4D.dir\Release\Matrix4.obj
-D:\Cursor Projects\4DEngine\src\Math\Quaternion4D.cpp;D:\Cursor Projects\4DEngine\build-vcpkg\Engine4D.dir\Release\Quaternion4D.obj
-D:\Cursor Projects\4DEngine\src\Math\Vector4.cpp;D:\Cursor Projects\4DEngine\build-vcpkg\Engine4D.dir\Release\Vector4.obj
-D:\Cursor Projects\4DEngine\src\Physics\Physics4D.cpp;D:\Cursor Projects\4DEngine\build-vcpkg\Engine4D.dir\Release\Physics4D.obj
-D:\Cursor Projects\4DEngine\src\Rendering\Renderer.cpp;D:\Cursor Projects\4DEngine\build-vcpkg\Engine4D.dir\Release\Renderer.obj

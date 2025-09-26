@@ -1,23 +1,34 @@
-# 4D Game Engine
+# 4D Game Engine - Vulkan Forward+ Edition
 
-Экспериментальный игровой движок для создания игр в четырехмерном пространстве. Движок расширяет концепции 3D игровых движков, добавляя поддержку четвертого пространственного измерения (W-координата) для создания уникальных игровых механик и визуальных эффектов.
+Экспериментальный игровой движок для создания игр в четырехмерном пространстве с современным Vulkan API и технологией Forward+ рендеринга. Движок расширяет концепции 3D игровых движков, добавляя поддержку четвертого пространственного измерения (W-координата) для создания уникальных игровых механик и визуальных эффектов.
 
 ## 🚀 Особенности
 
+### Современная графика
+- **Vulkan API**: Низкоуровневый доступ к GPU для максимальной производительности  
+- **Forward+ Rendering**: Tile-based deferred lighting для эффективной обработки множества источников света
+- **Compute Shaders**: GPU-ускоренный light culling и обработка данных
+- **PBR Materials**: Physically-based rendering с поддержкой материалов
+
+### 4D Функциональность
 - **4D Математика**: Полная поддержка 4D векторов, матриц и кватернионов
-- **4D Рендеринг**: Проекции 4D→3D→2D с поддержкой сечений и перспективы
+- **4D Рендеринг**: Проекции 4D→3D→2D с поддержкой сечений и перспективы  
 - **4D Физика**: Коллизии, физические тела и система частиц в 4D пространстве
 - **4D Навигация**: Интуитивное управление в гиперпространстве
+
+### Архитектура и UI
+- **GUI Система**: Полнофункциональный графический интерфейс с поддержкой различных компонентов и русского языка
 - **Компонентная архитектура**: Гибкая система объектов и компонентов
-- **Кроссплатформенность**: Windows, Linux, macOS
+- **Кроссплатформенность**: Windows, Linux (планируется)
 
 ## 📋 Требования
 
-- **C++17** компилятор
+- **C++17** компилятор  
 - **CMake 3.16+**
-- **OpenGL 3.3+**
+- **Vulkan SDK 1.3.0+** - [Скачать здесь](https://vulkan.lunarg.com/)
 - **GLFW 3.3+**
-- **GLEW 2.1+**
+- **GLM 0.9.9+**
+- **Vulkan Memory Allocator**
 
 ## 🛠️ Быстрый старт
 
@@ -81,7 +92,17 @@ cmake --build --preset windows-default
 ### Запуск демо
 
 ```bash
+# Основная 4D демонстрация
 ./Engine4D_Demo
+
+# GUI демонстрация (полная версия)
+./Engine4D_GUI_Demo
+
+# Простой тестер GUI
+./Engine4D_GUI_Simple
+
+# Русскоязычная демонстрация GUI
+./Engine4D_GUI_Russian
 ```
 
 ## 🎮 Управление
@@ -100,6 +121,8 @@ cmake --build --preset windows-default
 
 - [Техническая документация](docs/README.md)
 - [API Reference](docs/API_Reference.md)
+- [GUI Система](docs/GUI_System.md)
+- [Поддержка русского языка](docs/Russian_Language_Support.md)
 - [Примеры использования](docs/Examples.md)
 - [Инструкции по сборке](BUILD_INSTRUCTIONS.md)
 
@@ -122,12 +145,19 @@ cmake --build --preset windows-default
    - 4D физические тела
    - Система частиц для 4D
 
-4. **Система ввода** (`Engine4D::Input`)
+4. **GUI Система** (`Engine4D::GUI`)
+   - 2D графический интерфейс
+   - Компоненты: кнопки, панели, поля ввода, слайдеры
+   - Система событий и якорей
+   - Адаптивное масштабирование
+   - Полная поддержка русского языка и UTF-8
+
+5. **Система ввода** (`Engine4D::Input`)
    - Навигация в 4D пространстве
    - Управление поворотами в 6 плоскостях
    - Специальные режимы (сечение, проекции)
 
-5. **Система объектов** (`Engine4D::Core`)
+6. **Система объектов** (`Engine4D::Core`)
    - Компонентная архитектура
    - 4D трансформации
    - Управление сценами
@@ -170,6 +200,35 @@ auto controller = std::make_unique<Engine4D::Input::Controller4D>();
 controller->setMoveSpeed(10.0f);
 controller->setWSpeed(5.0f);
 controller->setWMovement(true);
+```
+
+### Создание GUI интерфейса
+
+```cpp
+#include <Engine4D/GUI/GUI.h>
+
+// Инициализация GUI
+GUI::InitializeGUI(1200, 800);
+
+// Создание canvas
+auto canvasObject = GameObject4D::create("UI Canvas");
+auto canvas = canvasObject->addComponent<UICanvas>();
+canvas->setReferenceResolution(1200, 800);
+
+// Создание кнопки
+auto button = std::make_shared<UIButton>();
+button->setText("Привет!");
+button->setRect(UIRect(100, 100, 200, 50));
+button->setOnClick([]() {
+    std::cout << "Кнопка нажата!" << std::endl;
+});
+canvas->addElement(button);
+
+// Создание панели
+auto panel = std::make_shared<UIPanel>();
+panel->setRect(UIRect(50, 50, 300, 400));
+panel->setBackgroundColor(Vector4(0.2f, 0.3f, 0.5f, 0.8f));
+canvas->addElement(panel);
 ```
 
 ## 🎯 Проекции 4D→3D
