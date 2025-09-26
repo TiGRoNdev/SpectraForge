@@ -1,0 +1,45 @@
+{
+  "name": "engine4d",
+  "version": "1.0.0",
+  "description": "4D Game Engine - Experimental game engine for 4D space",
+  "homepage": "https://github.com/yourusername/4d-engine",
+  "license": "MIT",
+  "dependencies": [
+    {
+      "name": "glfw3",
+      "version>=": "3.3.8"
+    },
+    {
+      "name": "glew",
+      "version>=": "2.2.0"
+    },
+    {
+      "name": "opengl",
+      "platform": "!windows"
+    }
+  ],
+  "features": {
+    "examples": {
+      "description": "Build example applications",
+      "dependencies": []
+    },
+    "tests": {
+      "description": "Build unit tests",
+      "dependencies": [
+        {
+          "name": "gtest",
+          "version>=": "1.12.0"
+        }
+      ]
+    },
+    "docs": {
+      "description": "Build documentation",
+      "dependencies": [
+        {
+          "name": "doxygen",
+          "version>=": "1.9.0"
+        }
+      ]
+    }
+  }
+}

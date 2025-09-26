@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  engine4d:
+    build: .
+    container_name: engine4d-demo
+    environment:
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    network_mode: host
+    command: ["./build/Engine4D_Demo"]
