@@ -18,7 +18,11 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # Поиск пакетов
 find_package(OpenGL REQUIRED)
-find_package(glfw3 REQUIRED)
+
+# Поиск GLFW3 через vcpkg
+find_package(glfw3 CONFIG REQUIRED)
+
+# Поиск GLEW через vcpkg
 find_package(GLEW REQUIRED)
 
 # Создание библиотеки движка
@@ -32,7 +36,7 @@ add_library(Engine4D STATIC ${ENGINE_SOURCES})
 # Подключение библиотек к движку
 target_link_libraries(Engine4D PRIVATE 
     OpenGL::GL 
-    glfw 
+    glfw
     GLEW::GLEW
 )
 
@@ -44,7 +48,7 @@ add_executable(Engine4D_Demo
 target_link_libraries(Engine4D_Demo 
     Engine4D
     OpenGL::GL 
-    glfw 
+    glfw
     GLEW::GLEW
 )
 

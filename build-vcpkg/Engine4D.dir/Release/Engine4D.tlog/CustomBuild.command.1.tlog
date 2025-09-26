@@ -1,0 +1,10 @@
+^D:\CURSOR PROJECTS\4DENGINE\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SD:/Cursor Projects/4DEngine" "-BD:/Cursor Projects/4DEngine/build-vcpkg" --check-stamp-file "D:/Cursor Projects/4DEngine/build-vcpkg/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

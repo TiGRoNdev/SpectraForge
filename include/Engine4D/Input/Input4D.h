@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Math/Vector4.h"
+#include "../Math/Matrix4.h"
 #include <GLFW/glfw3.h>
 #include <functional>
 #include <unordered_map>
@@ -88,6 +89,7 @@ public:
     std::function<void()> onReleased;
     std::function<void()> onHeld;
     
+    InputAction4D() = default;
     InputAction4D(const std::string& name);
     void addKey(Key4D key);
     void addMouseButton(MouseButton4D button);
@@ -101,10 +103,10 @@ public:
  */
 class Controller4D {
 public:
-    Vector4 position;           // Позиция в 4D пространстве
-    Vector4 rotation;           // Поворот (углы для 6 плоскостей)
-    Vector4 velocity;           // Скорость движения
-    Vector4 angularVelocity;    // Угловая скорость
+    Math::Vector4 position;           // Позиция в 4D пространстве
+    Math::Vector4 rotation;           // Поворот (углы для 6 плоскостей)
+    Math::Vector4 velocity;           // Скорость движения
+    Math::Vector4 angularVelocity;    // Угловая скорость
     
     float moveSpeed;            // Скорость движения
     float rotationSpeed;        // Скорость поворота
@@ -122,7 +124,7 @@ public:
     void handleInput(const InputState4D& inputState);
     
     // Движение
-    void move(const Vector4& direction);
+    void move(const Math::Vector4& direction);
     void moveForward(float amount);
     void moveRight(float amount);
     void moveUp(float amount);
@@ -140,21 +142,21 @@ public:
     void setMoveSpeed(float speed);
     void setRotationSpeed(float speed);
     void setWSpeed(float speed);
-    void setSensitivity(float sensitivity);
+    void setSensitivity(float newSensitivity);
     void setMouseLook(bool enabled);
     void setWMovement(bool enabled);
     void setRotation(bool enabled);
     
     // Геттеры
-    Vector4 getPosition() const { return position; }
-    Vector4 getRotation() const { return rotation; }
-    Vector4 getVelocity() const { return velocity; }
-    Matrix4 getTransformMatrix() const;
+    Math::Vector4 getPosition() const { return position; }
+    Math::Vector4 getRotation() const { return rotation; }
+    Math::Vector4 getVelocity() const { return velocity; }
+    Math::Matrix4 getTransformMatrix() const;
     
     // Дополнительные методы для совместимости
-    Vector4 forward() const;
-    Vector4 right() const;
-    Vector4 up() const;
+    Math::Vector4 forward() const;
+    Math::Vector4 right() const;
+    Math::Vector4 up() const;
 };
 
 /**
@@ -164,7 +166,7 @@ class InputManager4D {
 public:
     static InputManager4D& getInstance();
     
-    bool initialize(GLFWwindow* window);
+    bool initialize(GLFWwindow* newWindow);
     void cleanup();
     void update();
     
@@ -182,9 +184,9 @@ public:
     bool isMouseJustReleased(MouseButton4D button) const;
     
     // Получение данных мыши
-    Vector4 getMousePosition() const;
-    Vector4 getMouseDelta() const;
-    Vector4 getScrollDelta() const;
+    Math::Vector4 getMousePosition() const;
+    Math::Vector4 getMouseDelta() const;
+    Math::Vector4 getScrollDelta() const;
     
     // Управление курсором
     void setCursorVisible(bool visible);

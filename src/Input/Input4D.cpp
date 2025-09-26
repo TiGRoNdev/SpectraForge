@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <iostream>
 
+using namespace Engine4D::Math;
+
 namespace Engine4D {
 namespace Input {
 
@@ -195,8 +197,8 @@ void Controller4D::setWSpeed(float speed) {
     wSpeed = speed;
 }
 
-void Controller4D::setSensitivity(float sensitivity) {
-    this->sensitivity = sensitivity;
+void Controller4D::setSensitivity(float newSensitivity) {
+    this->sensitivity = newSensitivity;
 }
 
 void Controller4D::setMouseLook(bool enabled) {
@@ -251,8 +253,8 @@ InputManager4D& InputManager4D::getInstance() {
     return instance;
 }
 
-bool InputManager4D::initialize(GLFWwindow* window) {
-    this->window = window;
+bool InputManager4D::initialize(GLFWwindow* newWindow) {
+    this->window = newWindow;
     initialized = false;
     
     // Инициализируем состояние ввода
@@ -269,10 +271,10 @@ bool InputManager4D::initialize(GLFWwindow* window) {
     inputState.lastMouseX = inputState.lastMouseY = 0.0;
     
     // Устанавливаем callbacks
-    glfwSetKeyCallback(window, keyCallback);
-    glfwSetMouseButtonCallback(window, mouseButtonCallback);
-    glfwSetCursorPosCallback(window, cursorPosCallback);
-    glfwSetScrollCallback(window, scrollCallback);
+    glfwSetKeyCallback(newWindow, keyCallback);
+    glfwSetMouseButtonCallback(newWindow, mouseButtonCallback);
+    glfwSetCursorPosCallback(newWindow, cursorPosCallback);
+    glfwSetScrollCallback(newWindow, scrollCallback);
     
     initialized = true;
     return true;
@@ -340,15 +342,15 @@ bool InputManager4D::isMouseJustReleased(MouseButton4D button) const {
 }
 
 Vector4 InputManager4D::getMousePosition() const {
-    return Vector4(inputState.mouseX, inputState.mouseY, 0.0f, 0.0f);
+    return Vector4(static_cast<float>(inputState.mouseX), static_cast<float>(inputState.mouseY), 0.0f, 0.0f);
 }
 
 Vector4 InputManager4D::getMouseDelta() const {
-    return Vector4(inputState.mouseDeltaX, inputState.mouseDeltaY, 0.0f, 0.0f);
+    return Vector4(static_cast<float>(inputState.mouseDeltaX), static_cast<float>(inputState.mouseDeltaY), 0.0f, 0.0f);
 }
 
 Vector4 InputManager4D::getScrollDelta() const {
-    return Vector4(inputState.scrollX, inputState.scrollY, 0.0f, 0.0f);
+    return Vector4(static_cast<float>(inputState.scrollX), static_cast<float>(inputState.scrollY), 0.0f, 0.0f);
 }
 
 void InputManager4D::setCursorVisible(bool visible) {

@@ -36,6 +36,22 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_CXX_STANDARD": "17"
+            },
+            "toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        },
+        {
+            "name": "windows-vcpkg",
+            "displayName": "Windows with vcpkg",
+            "generator": "Visual Studio 17 2022",
+            "binaryDir": "${sourceDir}/build-vcpkg",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
             }
         }
     ],
@@ -54,6 +70,11 @@
             "name": "windows-default",
             "configurePreset": "windows-default",
             "displayName": "Windows Default Build"
+        },
+        {
+            "name": "windows-vcpkg",
+            "configurePreset": "windows-vcpkg",
+            "displayName": "Windows vcpkg Build"
         }
     ]
 }

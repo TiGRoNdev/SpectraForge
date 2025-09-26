@@ -68,7 +68,7 @@ public:
     void setIdentity();
     bool isIdentity() const;
     bool isZero() const;
-    void set(float w, float x, float y, float z, float u = 0.0f, float v = 0.0f);
+    void set(float newW, float newX, float newY, float newZ, float newU = 0.0f, float newV = 0.0f);
 
     // Статические константы
     static Quaternion4D identity();

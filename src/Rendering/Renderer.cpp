@@ -4,6 +4,8 @@
 #include <sstream>
 #include <cmath>
 
+using namespace Engine4D::Math;
+
 namespace Engine4D {
 namespace Rendering {
 
@@ -230,50 +232,50 @@ bool Shader4D::loadFromSource(const std::string& vertexSource, const std::string
 }
 
 void Shader4D::use() const {
-    if (isCompiled) {
-        glUseProgram(programID);
+    if (this->isCompiled) {
+        glUseProgram(this->programID);
     }
 }
 
 void Shader4D::cleanup() {
-    if (programID) {
-        glDeleteProgram(programID);
-        programID = 0;
-        isCompiled = false;
+    if (this->programID) {
+        glDeleteProgram(this->programID);
+        this->programID = 0;
+        this->isCompiled = false;
     }
 }
 
 void Shader4D::setMatrix4(const std::string& name, const Matrix4& matrix) const {
-    if (!isCompiled) return;
+    if (!this->isCompiled) return;
     
-    GLint location = glGetUniformLocation(programID, name.c_str());
+    GLint location = glGetUniformLocation(this->programID, name.c_str());
     if (location != -1) {
         glUniformMatrix4fv(location, 1, GL_FALSE, &matrix.m[0][0]);
     }
 }
 
 void Shader4D::setVector4(const std::string& name, const Vector4& vector) const {
-    if (!isCompiled) return;
+    if (!this->isCompiled) return;
     
-    GLint location = glGetUniformLocation(programID, name.c_str());
+    GLint location = glGetUniformLocation(this->programID, name.c_str());
     if (location != -1) {
         glUniform4f(location, vector.x, vector.y, vector.z, vector.w);
     }
 }
 
 void Shader4D::setFloat(const std::string& name, float value) const {
-    if (!isCompiled) return;
+    if (!this->isCompiled) return;
     
-    GLint location = glGetUniformLocation(programID, name.c_str());
+    GLint location = glGetUniformLocation(this->programID, name.c_str());
     if (location != -1) {
         glUniform1f(location, value);
     }
 }
 
 void Shader4D::setInt(const std::string& name, int value) const {
-    if (!isCompiled) return;
+    if (!this->isCompiled) return;
     
-    GLint location = glGetUniformLocation(programID, name.c_str());
+    GLint location = glGetUniformLocation(this->programID, name.c_str());
     if (location != -1) {
         glUniform1i(location, value);
     }
@@ -303,38 +305,39 @@ GLuint Shader4D::compileShader(const std::string& source, GLenum type) {
 }
 
 bool Shader4D::linkProgram(GLuint vertexShader, GLuint fragmentShader) {
-    programID = glCreateProgram();
-    glAttachShader(programID, vertexShader);
-    glAttachShader(programID, fragmentShader);
-    glLinkProgram(programID);
+    this->programID = glCreateProgram();
+    glAttachShader(this->programID, vertexShader);
+    glAttachShader(this->programID, fragmentShader);
+    glLinkProgram(this->programID);
     
     GLint success;
-    glGetProgramiv(programID, GL_LINK_STATUS, &success);
+    glGetProgramiv(this->programID, GL_LINK_STATUS, &success);
     if (!success) {
         GLchar infoLog[1024];
-        glGetProgramInfoLog(programID, 1024, nullptr, infoLog);
+        glGetProgramInfoLog(this->programID, 1024, nullptr, infoLog);
         std::cerr << "Ошибка линковки программы: " << infoLog << std::endl;
-        glDeleteProgram(programID);
-        programID = 0;
+        glDeleteProgram(this->programID);
+        this->programID = 0;
         return false;
     }
     
-    isCompiled = true;
+    this->isCompiled = true;
     return true;
 }
 
 // Camera4D
-Camera4D::Camera4D() 
-    : position(Vector4::zero())
-    , target(Vector4::unitZ())
-    , up(Vector4::unitY())
-    , right(Vector4::unitX())
-    , fov(45.0f)
-    , nearPlane(0.1f)
-    , farPlane(100.0f)
-    , wDistance(10.0f)
-    , crossSectionW(0.0f)
-    , useCrossSection(false) {}
+Camera4D::Camera4D() {
+    position = Vector4::zero();
+    target = Vector4::unitZ();
+    up = Vector4::unitY();
+    right = Vector4::unitX();
+    fov = 45.0f;
+    nearPlane = 0.1f;
+    farPlane = 100.0f;
+    wDistance = 10.0f;
+    crossSectionW = 0.0f;
+    useCrossSection = false;
+}
 
 void Camera4D::setPosition(const Vector4& pos) {
     position = pos;
@@ -523,6 +526,14 @@ void Renderer::enableBlending(bool enable) {
     } else {
         glDisable(GL_BLEND);
     }
+}
+
+void Renderer::setProjectionMode(ProjectionMode mode) {
+    m_projectionMode = mode;
+}
+
+void Renderer::setCrossSection(float wValue) {
+    m_crossSectionW = wValue;
 }
 
 } // namespace Rendering

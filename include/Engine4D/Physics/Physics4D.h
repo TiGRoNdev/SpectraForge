@@ -8,6 +8,8 @@
 namespace Engine4D {
 namespace Physics {
 
+using namespace Engine4D::Math;
+
 /**
  * @brief 4D физическое тело
  */
@@ -62,6 +64,8 @@ public:
     float radius;              // Радиус (для Sphere)
     Vector4 normal;            // Нормаль (для Plane)
     float distance;            // Расстояние от начала координат (для Plane)
+    float restitution;         // Коэффициент восстановления
+    float friction;            // Коэффициент трения
     
     Collider4D(Type t);
     virtual ~Collider4D() = default;
@@ -72,10 +76,10 @@ public:
     virtual float getVolume() const = 0;
     
     // Трансформации
-    void setCenter(const Vector4& center);
-    void setSize(const Vector4& size);
-    void setRadius(float radius);
-    void setPlane(const Vector4& normal, float distance);
+    void setCenter(const Vector4& newCenter);
+    void setSize(const Vector4& newSize);
+    void setRadius(float newRadius);
+    void setPlane(const Vector4& planeNormal, float planeDistance);
 };
 
 /**
@@ -177,7 +181,7 @@ public:
     RaycastHit4D raycast(const Vector4& origin, const Vector4& direction, float maxDistance = 1000.0f);
     
     // Утилиты
-    void setGravity(const Vector4& gravity);
+    void setGravity(const Vector4& newGravity);
     void setTimeStep(float step);
     void clear();
     
@@ -228,7 +232,7 @@ public:
     void update(float deltaTime);
     void emit(int count = 1);
     void setEmitter(const Vector4& position, const Vector4& velocity);
-    void setGravity(const Vector4& gravity);
+    void setGravity(const Vector4& newGravity);
     void setEmissionRate(float rate);
     void setParticleLife(float life);
     void setParticleSize(float size);

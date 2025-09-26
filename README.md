@@ -23,13 +23,16 @@
 
 ### Установка зависимостей
 
-#### Windows
+#### Windows (Рекомендуется)
 ```bash
 # Через vcpkg
 git clone https://github.com/Microsoft/vcpkg.git
 cd vcpkg
 .\bootstrap-vcpkg.bat
 .\vcpkg install glfw3:x64-windows glew:x64-windows
+
+# Или используйте готовый скрипт
+.\build_with_vcpkg.bat
 ```
 
 #### Linux (Ubuntu)
@@ -44,6 +47,14 @@ brew install cmake glfw glew
 
 ### Сборка
 
+#### Windows с vcpkg
+```bash
+git clone <repository-url>
+cd 4DEngine
+.\build_with_vcpkg.bat
+```
+
+#### Стандартная сборка
 ```bash
 git clone <repository-url>
 cd 4DEngine
@@ -51,6 +62,21 @@ mkdir build && cd build
 cmake ..
 cmake --build . --config Release
 ```
+
+#### Использование CMake Presets
+```bash
+# С vcpkg
+cmake --preset windows-vcpkg
+cmake --build --preset windows-vcpkg
+
+# Стандартная
+cmake --preset windows-default
+cmake --build --preset windows-default
+```
+
+### Решение проблем сборки
+
+Если возникают проблемы с зависимостями, см. [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md) для подробных инструкций.
 
 ### Запуск демо
 

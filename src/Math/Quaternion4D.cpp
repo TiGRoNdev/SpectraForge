@@ -213,6 +213,7 @@ Matrix4 Quaternion4D::toMatrix() const {
     float wu = q.w * q.u;
     float wv = q.w * q.v;
     float uv = q.u * q.v;
+    (void)uv; // Подавляем предупреждение о неиспользуемой переменной
     
     // Заполняем матрицу поворота 4x4
     result.m[0][0] = ww + xx - yy - zz - uu - vv;
@@ -319,7 +320,7 @@ Quaternion4D Quaternion4D::slerp(const Quaternion4D& other, float t) const {
     float dot = this->dot(other);
     
     // Если dot < 0, то slerp не будет кратчайшим путем
-    Quaternion4D target = (dot < 0.0f) ? -other : other;
+    Quaternion4D target = (dot < 0.0f) ? other * (-1.0f) : other;
     if (dot < 0.0f) dot = -dot;
     
     // Если кватернионы очень близки, используем линейную интерполяцию
@@ -366,13 +367,13 @@ bool Quaternion4D::isZero() const {
            std::abs(v) < epsilon;
 }
 
-void Quaternion4D::set(float w, float x, float y, float z, float u, float v) {
-    this->w = w;
-    this->x = x;
-    this->y = y;
-    this->z = z;
-    this->u = u;
-    this->v = v;
+void Quaternion4D::set(float newW, float newX, float newY, float newZ, float newU, float newV) {
+    this->w = newW;
+    this->x = newX;
+    this->y = newY;
+    this->z = newZ;
+    this->u = newU;
+    this->v = newV;
 }
 
 // Статические константы

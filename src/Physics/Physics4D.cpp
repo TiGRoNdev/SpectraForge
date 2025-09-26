@@ -1,6 +1,9 @@
 #include "Engine4D/Physics/Physics4D.h"
 #include <algorithm>
 #include <cmath>
+#include <limits>
+
+using namespace Engine4D::Math;
 
 namespace Engine4D {
 namespace Physics {
@@ -57,23 +60,24 @@ void RigidBody4D::applyAngularImpulse(const Vector4& impulse) {
 
 // Collider4D
 Collider4D::Collider4D(Type t) : type(t), center(Vector4::zero()), size(Vector4::one()), 
-                                 radius(1.0f), normal(Vector4::unitW()), distance(0.0f) {}
+                                 radius(1.0f), normal(Vector4::unitW()), distance(0.0f),
+                                 restitution(0.5f), friction(0.5f) {}
 
-void Collider4D::setCenter(const Vector4& center) {
-    this->center = center;
+void Collider4D::setCenter(const Vector4& newCenter) {
+    this->center = newCenter;
 }
 
-void Collider4D::setSize(const Vector4& size) {
-    this->size = size;
+void Collider4D::setSize(const Vector4& newSize) {
+    this->size = newSize;
 }
 
-void Collider4D::setRadius(float radius) {
-    this->radius = radius;
+void Collider4D::setRadius(float newRadius) {
+    this->radius = newRadius;
 }
 
-void Collider4D::setPlane(const Vector4& normal, float distance) {
-    this->normal = normal.normalized();
-    this->distance = distance;
+void Collider4D::setPlane(const Vector4& planeNormal, float planeDistance) {
+    this->normal = planeNormal.normalized();
+    this->distance = planeDistance;
 }
 
 // SphereCollider4D
@@ -85,19 +89,19 @@ bool SphereCollider4D::intersects(const Collider4D& other) const {
     switch (other.type) {
         case Type::Sphere: {
             const SphereCollider4D& sphere = static_cast<const SphereCollider4D&>(other);
-            float distance = (center - sphere.center).magnitude();
-            return distance <= (radius + sphere.radius);
+            float sphereDistance = (center - sphere.center).magnitude();
+            return sphereDistance <= (radius + sphere.radius);
         }
         case Type::Box: {
             const BoxCollider4D& box = static_cast<const BoxCollider4D&>(other);
             Vector4 closestPoint = box.getClosestPoint(center);
-            float distance = (center - closestPoint).magnitude();
-            return distance <= radius;
+            float boxDistance = (center - closestPoint).magnitude();
+            return boxDistance <= radius;
         }
         case Type::Plane: {
             const PlaneCollider4D& plane = static_cast<const PlaneCollider4D&>(other);
-            float distance = plane.distanceToPoint(center);
-            return std::abs(distance) <= radius;
+            float planeDistance = plane.distanceToPoint(center);
+            return std::abs(planeDistance) <= radius;
         }
         default:
             return false;
@@ -128,8 +132,8 @@ bool BoxCollider4D::intersects(const Collider4D& other) const {
         case Type::Sphere: {
             const SphereCollider4D& sphere = static_cast<const SphereCollider4D&>(other);
             Vector4 closestPoint = getClosestPoint(sphere.center);
-            float distance = (sphere.center - closestPoint).magnitude();
-            return distance <= sphere.radius;
+            float sphereDistance = (sphere.center - closestPoint).magnitude();
+            return sphereDistance <= sphere.radius;
         }
         case Type::Box: {
             const BoxCollider4D& box = static_cast<const BoxCollider4D&>(other);
@@ -186,43 +190,43 @@ Vector4 BoxCollider4D::getNormal(const Vector4& point) const {
     Vector4 max = getMax();
     
     float minDist = std::numeric_limits<float>::max();
-    Vector4 normal = Vector4::zero();
+    Vector4 surfaceNormal = Vector4::zero();
     
     // Проверяем каждую грань
     if (std::abs(point.x - min.x) < minDist) {
         minDist = std::abs(point.x - min.x);
-        normal = Vector4(-1, 0, 0, 0);
+        surfaceNormal = Vector4(-1, 0, 0, 0);
     }
     if (std::abs(point.x - max.x) < minDist) {
         minDist = std::abs(point.x - max.x);
-        normal = Vector4(1, 0, 0, 0);
+        surfaceNormal = Vector4(1, 0, 0, 0);
     }
     if (std::abs(point.y - min.y) < minDist) {
         minDist = std::abs(point.y - min.y);
-        normal = Vector4(0, -1, 0, 0);
+        surfaceNormal = Vector4(0, -1, 0, 0);
     }
     if (std::abs(point.y - max.y) < minDist) {
         minDist = std::abs(point.y - max.y);
-        normal = Vector4(0, 1, 0, 0);
+        surfaceNormal = Vector4(0, 1, 0, 0);
     }
     if (std::abs(point.z - min.z) < minDist) {
         minDist = std::abs(point.z - min.z);
-        normal = Vector4(0, 0, -1, 0);
+        surfaceNormal = Vector4(0, 0, -1, 0);
     }
     if (std::abs(point.z - max.z) < minDist) {
         minDist = std::abs(point.z - max.z);
-        normal = Vector4(0, 0, 1, 0);
+        surfaceNormal = Vector4(0, 0, 1, 0);
     }
     if (std::abs(point.w - min.w) < minDist) {
         minDist = std::abs(point.w - min.w);
-        normal = Vector4(0, 0, 0, -1);
+        surfaceNormal = Vector4(0, 0, 0, -1);
     }
     if (std::abs(point.w - max.w) < minDist) {
         minDist = std::abs(point.w - max.w);
-        normal = Vector4(0, 0, 0, 1);
+        surfaceNormal = Vector4(0, 0, 0, 1);
     }
     
-    return normal;
+    return surfaceNormal;
 }
 
 float BoxCollider4D::getVolume() const {
@@ -259,8 +263,8 @@ bool PlaneCollider4D::intersects(const Collider4D& other) const {
     switch (other.type) {
         case Type::Sphere: {
             const SphereCollider4D& sphere = static_cast<const SphereCollider4D&>(other);
-            float distance = distanceToPoint(sphere.center);
-            return std::abs(distance) <= sphere.radius;
+            float sphereDistance = distanceToPoint(sphere.center);
+            return std::abs(sphereDistance) <= sphere.radius;
         }
         case Type::Box: {
             const BoxCollider4D& box = static_cast<const BoxCollider4D&>(other);
@@ -296,11 +300,12 @@ bool PlaneCollider4D::intersects(const Collider4D& other) const {
 }
 
 Vector4 PlaneCollider4D::getClosestPoint(const Vector4& point) const {
-    float distance = distanceToPoint(point);
-    return point - normal * distance;
+    float pointDistance = distanceToPoint(point);
+    return point - normal * pointDistance;
 }
 
 Vector4 PlaneCollider4D::getNormal(const Vector4& point) const {
+    (void)point; // Подавляем предупреждение о неиспользуемом параметре
     return normal;
 }
 
@@ -405,14 +410,14 @@ CollisionResult4D PhysicsWorld4D::checkSphereSphere(const SphereCollider4D& a, c
     result.hasCollision = false;
     
     Vector4 direction = b.center - a.center;
-    float distance = direction.magnitude();
+    float centerDistance = direction.magnitude();
     float minDistance = a.radius + b.radius;
     
-    if (distance < minDistance) {
+    if (centerDistance < minDistance) {
         result.hasCollision = true;
         result.contactPoint = a.center + direction.normalized() * a.radius;
         result.contactNormal = direction.normalized();
-        result.penetrationDepth = minDistance - distance;
+        result.penetrationDepth = minDistance - centerDistance;
         result.restitution = std::min(a.restitution, b.restitution);
         result.friction = std::min(a.friction, b.friction);
     }
@@ -426,13 +431,13 @@ CollisionResult4D PhysicsWorld4D::checkSphereBox(const SphereCollider4D& sphere,
     
     Vector4 closestPoint = box.getClosestPoint(sphere.center);
     Vector4 direction = sphere.center - closestPoint;
-    float distance = direction.magnitude();
+    float collisionDistance = direction.magnitude();
     
-    if (distance < sphere.radius) {
+    if (collisionDistance < sphere.radius) {
         result.hasCollision = true;
         result.contactPoint = closestPoint;
         result.contactNormal = direction.normalized();
-        result.penetrationDepth = sphere.radius - distance;
+        result.penetrationDepth = sphere.radius - collisionDistance;
         result.restitution = std::min(sphere.restitution, box.restitution);
         result.friction = std::min(sphere.friction, box.friction);
     }
@@ -496,8 +501,8 @@ void PhysicsWorld4D::resolveCollision(const CollisionResult4D& collision) {
     // В реальной реализации здесь должна быть более сложная логика
 }
 
-void PhysicsWorld4D::setGravity(const Vector4& gravity) {
-    this->gravity = gravity;
+void PhysicsWorld4D::setGravity(const Vector4& newGravity) {
+    this->gravity = newGravity;
 }
 
 void PhysicsWorld4D::setTimeStep(float step) {
@@ -521,13 +526,13 @@ PhysicsWorld4D::RaycastHit4D PhysicsWorld4D::raycast(const Vector4& origin, cons
         // В реальной реализации здесь должна быть более точная логика
         Vector4 closestPoint = collider->getClosestPoint(origin);
         Vector4 toClosest = closestPoint - origin;
-        float distance = toClosest.magnitude();
+        float rayDistance = toClosest.magnitude();
         
-        if (distance < hit.distance && distance < maxDistance) {
+        if (rayDistance < hit.distance && rayDistance < maxDistance) {
             hit.hasHit = true;
             hit.point = closestPoint;
             hit.normal = collider->getNormal(closestPoint);
-            hit.distance = distance;
+            hit.distance = rayDistance;
             hit.collider = collider;
         }
     }
@@ -585,8 +590,8 @@ void ParticleSystem4D::setEmitter(const Vector4& position, const Vector4& veloci
     emitterVelocity = velocity;
 }
 
-void ParticleSystem4D::setGravity(const Vector4& gravity) {
-    this->gravity = gravity;
+void ParticleSystem4D::setGravity(const Vector4& newGravity) {
+    this->gravity = newGravity;
 }
 
 void ParticleSystem4D::setEmissionRate(float rate) {

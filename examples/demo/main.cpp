@@ -263,17 +263,17 @@ void handleInput(float deltaTime) {
     if (crossSectionMode) {
         Vector4 scrollDelta = inputManager->getScrollDelta();
         crossSectionW += scrollDelta.y * 0.1f;
-        crossSectionW = std::clamp(crossSectionW, -2.0f, 2.0f);
+        crossSectionW = (crossSectionW < -2.0f) ? -2.0f : (crossSectionW > 2.0f) ? 2.0f : crossSectionW;
         
         if (camera) {
-            camera->camera.setCrossSection(crossSectionW);
+            camera->getCamera().setCrossSection(crossSectionW);
         }
     }
 
     // Обновление позиции камеры
     if (camera) {
-        camera->camera.setPosition(controller->getPosition());
-        camera->camera.setTarget(controller->getPosition() + controller->forward());
+        camera->getCamera().setPosition(controller->getPosition());
+        camera->getCamera().setTarget(controller->getPosition() + controller->forward());
     }
 }
 
@@ -291,7 +291,7 @@ void setupScene() {
 
     // Создание источника света
     GameObject4D* lightObject = GameObject4D::create("Light");
-    lightObject->transform->setPosition(Vector4(5.0f, 5.0f, 5.0f, 0.0f));
+    lightObject->getTransform()->setPosition(Vector4(5.0f, 5.0f, 5.0f, 0.0f));
 
     std::cout << "Сцена создана" << std::endl;
 }

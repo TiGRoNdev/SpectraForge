@@ -1,106 +1,60 @@
 #pragma once
 
+#include "Component.h"
+#include "Transform4D.h"
+#include "Interfaces.h"
 #include "../Math/Vector4.h"
 #include "../Math/Matrix4.h"
 #include "../Math/Quaternion4D.h"
-#include "../Physics/Physics4D.h"
-#include "../Rendering/Renderer.h"
 #include <string>
 #include <vector>
 #include <memory>
-#include <functional>
 
 namespace Engine4D {
+
+// Forward declarations
+namespace Physics {
+    class Collider4D;
+    class RigidBody4D;
+    class ParticleSystem4D;
+}
+
+namespace Rendering {
+    class Mesh4D;
+    class Shader4D;
+    class Camera4D;
+}
+
 namespace Core {
-
-/**
- * @brief Компонент 4D объекта
- */
-class Component4D {
-public:
-    GameObject4D* gameObject;
-    bool enabled;
-    
-    Component4D();
-    virtual ~Component4D() = default;
-    
-    virtual void start() {}
-    virtual void update(float deltaTime) {}
-    virtual void render() {}
-    virtual void cleanup() {}
-    
-    void setEnabled(bool enabled);
-    bool isEnabled() const { return enabled; }
-};
-
-/**
- * @brief Компонент трансформации для 4D объектов
- */
-class Transform4D : public Component4D {
-public:
-    Vector4 position;
-    Quaternion4D rotation;
-    Vector4 scale;
-    
-    Transform4D();
-    virtual ~Transform4D() = default;
-    
-    Matrix4 getLocalMatrix() const;
-    Matrix4 getWorldMatrix() const;
-    
-    Vector4 getWorldPosition() const;
-    Quaternion4D getWorldRotation() const;
-    Vector4 getWorldScale() const;
-    
-    void setPosition(const Vector4& pos);
-    void setRotation(const Quaternion4D& rot);
-    void setScale(const Vector4& scl);
-    
-    void translate(const Vector4& translation);
-    void rotate(const Quaternion4D& rotation);
-    void scaleBy(const Vector4& scale);
-    
-    Vector4 forward() const;
-    Vector4 right() const;
-    Vector4 up() const;
-    Vector4 wAxis() const; // Четвертая ось для 4D
-    
-    // Иерархия
-    void setParent(Transform4D* parent);
-    Transform4D* getParent() const { return parent; }
-    void addChild(Transform4D* child);
-    void removeChild(Transform4D* child);
-    const std::vector<Transform4D*>& getChildren() const { return children; }
-    
-private:
-    Transform4D* parent;
-    std::vector<Transform4D*> children;
-    mutable Matrix4 cachedWorldMatrix;
-    mutable bool worldMatrixDirty;
-    
-    void markWorldMatrixDirty();
-    void updateWorldMatrix() const;
-};
 
 /**
  * @brief Компонент рендеринга для 4D объектов
  */
-class MeshRenderer4D : public Component4D {
+class MeshRenderer4D : public RenderableComponent {
 public:
-    std::shared_ptr<Rendering::Mesh4D> mesh;
-    std::shared_ptr<Rendering::Shader4D> shader;
-    Vector4 color;
-    bool castShadows;
-    bool receiveShadows;
-    
     MeshRenderer4D();
     virtual ~MeshRenderer4D() = default;
     
-    void setMesh(std::shared_ptr<Rendering::Mesh4D> mesh);
-    void setShader(std::shared_ptr<Rendering::Shader4D> shader);
-    void setColor(const Vector4& color);
+    // Component interface
+    std::string getComponentType() const override { return "MeshRenderer4D"; }
+    void render() override;
     
-    virtual void render() override;
+    // Renderer configuration
+    void setMesh(std::shared_ptr<Rendering::Mesh4D> newMesh);
+    void setShader(std::shared_ptr<Rendering::Shader4D> newShader);
+    void setColor(const Math::Vector4& newColor);
+    
+    // Getters
+    std::shared_ptr<Rendering::Mesh4D> getMesh() const { return mesh; }
+    std::shared_ptr<Rendering::Shader4D> getShader() const { return shader; }
+    const Math::Vector4& getColor() const { return color; }
+
+private:
+    std::shared_ptr<Rendering::Mesh4D> mesh;
+    std::shared_ptr<Rendering::Shader4D> shader;
+    Math::Vector4 color;
+    bool castShadows;
+    bool receiveShadows;
 };
 
 /**
@@ -108,38 +62,57 @@ public:
  */
 class Collider4DComponent : public Component4D {
 public:
-    std::shared_ptr<Physics::Collider4D> collider;
-    bool isTrigger;
-    
     Collider4DComponent();
     virtual ~Collider4DComponent() = default;
     
-    void setCollider(std::shared_ptr<Physics::Collider4D> collider);
-    void setTrigger(bool trigger);
+    // Component interface
+    std::string getComponentType() const override { return "Collider4DComponent"; }
     
+    // Collider configuration
+    void setCollider(std::shared_ptr<Physics::Collider4D> newCollider);
+    void setTrigger(bool newTrigger);
+    
+    // Collision detection
     bool checkCollision(const Collider4DComponent& other) const;
+    
+    // Getters
+    std::shared_ptr<Physics::Collider4D> getCollider() const { return collider; }
+    bool isTrigger() const { return trigger; }
+
+private:
+    std::shared_ptr<Physics::Collider4D> collider;
+    bool trigger;
 };
 
 /**
  * @brief Компонент физического тела для 4D объектов
  */
-class RigidBody4DComponent : public Component4D {
+class RigidBody4DComponent : public UpdatableComponent {
 public:
-    std::shared_ptr<Physics::RigidBody4D> rigidBody;
-    bool useGravity;
-    
     RigidBody4DComponent();
     virtual ~RigidBody4DComponent() = default;
     
+    // Component interface
+    std::string getComponentType() const override { return "RigidBody4DComponent"; }
+    void update(float deltaTime) override;
+    
+    // Physics configuration
     void setRigidBody(std::shared_ptr<Physics::RigidBody4D> body);
     void setUseGravity(bool use);
     
-    void addForce(const Vector4& force);
-    void addTorque(const Vector4& torque);
-    void addImpulse(const Vector4& impulse);
-    void addAngularImpulse(const Vector4& impulse);
+    // Force application
+    void addForce(const Math::Vector4& force);
+    void addTorque(const Math::Vector4& torque);
+    void addImpulse(const Math::Vector4& impulse);
+    void addAngularImpulse(const Math::Vector4& impulse);
     
-    virtual void update(float deltaTime) override;
+    // Getters
+    std::shared_ptr<Physics::RigidBody4D> getRigidBody() const { return rigidBody; }
+    bool getUseGravity() const { return useGravity; }
+
+private:
+    std::shared_ptr<Physics::RigidBody4D> rigidBody;
+    bool useGravity;
 };
 
 /**
@@ -147,66 +120,100 @@ public:
  */
 class Camera4DComponent : public Component4D {
 public:
-    Rendering::Camera4D camera;
-    bool isMainCamera;
-    float fieldOfView;
-    float nearPlane;
-    float farPlane;
-    
     Camera4DComponent();
     virtual ~Camera4DComponent() = default;
     
+    // Component interface
+    std::string getComponentType() const override { return "Camera4DComponent"; }
+    
+    // Camera configuration
     void setMainCamera(bool main);
     void setFieldOfView(float fov);
     void setNearPlane(float near);
     void setFarPlane(float far);
     
-    Matrix4 getViewMatrix() const;
-    Matrix4 getProjectionMatrix() const;
-    Matrix4 getViewProjectionMatrix() const;
+    // Matrix getters
+    Math::Matrix4 getViewMatrix() const;
+    Math::Matrix4 getProjectionMatrix() const;
+    Math::Matrix4 getViewProjectionMatrix() const;
+    
+    // Camera getters
+    Rendering::Camera4D& getCamera() { return *camera; }
+    const Rendering::Camera4D& getCamera() const { return *camera; }
+    bool getIsMainCamera() const { return mainCamera; }
+
+private:
+    std::shared_ptr<Rendering::Camera4D> camera;
+    bool mainCamera;
+    float fieldOfView;
+    float nearPlane;
+    float farPlane;
 };
 
 /**
  * @brief Компонент системы частиц для 4D
  */
-class ParticleSystem4DComponent : public Component4D {
+class ParticleSystem4DComponent : public UpdatableRenderableComponent {
 public:
-    std::shared_ptr<Physics::ParticleSystem4D> particleSystem;
-    bool autoPlay;
-    float emissionRate;
-    
     ParticleSystem4DComponent();
     virtual ~ParticleSystem4DComponent() = default;
     
+    // Component interface
+    std::string getComponentType() const override { return "ParticleSystem4DComponent"; }
+    void update(float deltaTime) override;
+    void render() override;
+    
+    // Particle system configuration
     void setParticleSystem(std::shared_ptr<Physics::ParticleSystem4D> system);
     void setAutoPlay(bool play);
     void setEmissionRate(float rate);
     
+    // Particle system control
     void play();
     void stop();
     void emit(int count = 1);
     
-    virtual void update(float deltaTime) override;
-    virtual void render() override;
+    // Getters
+    std::shared_ptr<Physics::ParticleSystem4D> getParticleSystem() const { return particleSystem; }
+    bool getAutoPlay() const { return autoPlay; }
+    float getEmissionRate() const { return emissionRate; }
+
+private:
+    std::shared_ptr<Physics::ParticleSystem4D> particleSystem;
+    bool autoPlay;
+    float emissionRate;
 };
 
 /**
- * @brief 4D игровой объект
+ * @brief 4D игровой объект following SRP and providing clean interface
  */
-class GameObject4D {
+class GameObject4D : public ILifecycle {
 public:
-    std::string name;
-    std::string tag;
-    bool active;
-    bool staticObject;
-    
-    Transform4D* transform;
-    std::vector<std::shared_ptr<Component4D>> components;
-    
-    GameObject4D(const std::string& name = "GameObject4D");
+    explicit GameObject4D(const std::string& name = "GameObject4D");
     virtual ~GameObject4D();
-    
-    // Управление компонентами
+
+    // ILifecycle implementation
+    void start() override;
+    void cleanup() override;
+
+    // Object identification
+    const std::string& getName() const { return name; }
+    void setName(const std::string& newName) { this->name = newName; }
+    const std::string& getTag() const { return tag; }
+    void setTag(const std::string& newTag) { this->tag = newTag; }
+
+    // Object state management
+    void setActive(bool newActive);
+    bool isActive() const { return active; }
+    bool isStatic() const { return staticObject; }
+    void setStatic(bool newIsStatic) { staticObject = newIsStatic; }
+    void destroy();
+
+    // Transform access
+    Transform4D* getTransform() { return transform.get(); }
+    const Transform4D* getTransform() const { return transform.get(); }
+
+    // Component management
     template<typename T>
     T* addComponent();
     template<typename T>
@@ -215,33 +222,43 @@ public:
     std::vector<T*> getComponents();
     template<typename T>
     void removeComponent(T* component);
-    
-    // Управление объектом
-    void setActive(bool active);
-    bool isActive() const { return active; }
-    void destroy();
-    
-    // Обновление
-    void start();
+    void removeComponent(const std::string& componentType);
+
+    // System updates
     void update(float deltaTime);
     void render();
-    void cleanup();
-    
-    // Поиск объектов
+
+    // Static object management
     static GameObject4D* find(const std::string& name);
     static std::vector<GameObject4D*> findAllWithTag(const std::string& tag);
     static GameObject4D* findWithTag(const std::string& tag);
-    
-    // Создание объектов
     static GameObject4D* create(const std::string& name = "GameObject4D");
-    static GameObject4D* createPrimitive(const std::string& type); // "Cube", "Sphere", "Tesseract", etc.
-    
+    static GameObject4D* createPrimitive(const std::string& type);
+
+    // Object registry management
+    static void clearAllObjects();
+    static const std::vector<GameObject4D*>& getAllObjects();
+
 private:
-    static std::vector<GameObject4D*> allObjects;
+    // Object properties
+    std::string name;
+    std::string tag;
+    bool active;
+    bool staticObject;
     bool started;
-    
+
+    // Components
+    std::shared_ptr<Transform4D> transform;
+    std::vector<std::shared_ptr<Component4D>> components;
+
+    // Static registry
+    static std::vector<GameObject4D*> allObjects;
+
+    // Helper methods
     void addToAllObjects();
     void removeFromAllObjects();
+    void updateComponents(float deltaTime);
+    void renderComponents();
 };
 
 // Шаблонные методы

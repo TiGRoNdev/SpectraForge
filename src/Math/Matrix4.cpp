@@ -239,7 +239,7 @@ void Matrix4::setZero() {
 
 // Трансформации
 Matrix4 Matrix4::translation(const Vector4& translation) {
-    return translation(translation.x, translation.y, translation.z, translation.w);
+    return Matrix4::translation(translation.x, translation.y, translation.z, translation.w);
 }
 
 Matrix4 Matrix4::translation(float x, float y, float z, float w) {
@@ -253,7 +253,7 @@ Matrix4 Matrix4::translation(float x, float y, float z, float w) {
 }
 
 Matrix4 Matrix4::scaling(const Vector4& scale) {
-    return scaling(scale.x, scale.y, scale.z, scale.w);
+    return Matrix4::scaling(scale.x, scale.y, scale.z, scale.w);
 }
 
 Matrix4 Matrix4::scaling(float x, float y, float z, float w) {
@@ -267,7 +267,7 @@ Matrix4 Matrix4::scaling(float x, float y, float z, float w) {
 }
 
 Matrix4 Matrix4::scaling(float uniformScale) {
-    return scaling(uniformScale, uniformScale, uniformScale, uniformScale);
+    return Matrix4::scaling(uniformScale, uniformScale, uniformScale, uniformScale);
 }
 
 // Повороты в 4D
@@ -459,6 +459,8 @@ Matrix4 Matrix4::crossSectionProjection(float wValue) {
     Matrix4 result;
     result.setIdentity();
     result.m[3][3] = 0.0f; // Обнуляем w-координату
+    // wValue будет использован в будущих версиях для точного сечения
+    (void)wValue; // Подавляем предупреждение о неиспользуемом параметре
     return result;
 }
 

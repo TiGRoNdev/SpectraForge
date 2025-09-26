@@ -9,6 +9,10 @@
 namespace Engine4D {
 namespace Rendering {
 
+// Используем типы из Math namespace
+using Engine4D::Math::Vector4;
+using Engine4D::Math::Matrix4;
+
 /**
  * @brief Вершина для 4D меша
  * 
@@ -124,6 +128,15 @@ public:
 };
 
 /**
+ * @brief Режимы проекции для рендерера
+ */
+enum class ProjectionMode {
+    Orthographic,    // Ортогональная проекция 4D->3D
+    Perspective,     // Перспективная проекция
+    CrossSection     // Сечение
+};
+
+/**
  * @brief Основной класс рендерера
  */
 class Renderer {
@@ -165,11 +178,7 @@ private:
     bool m_initialized;
     
     // Проекции
-    enum class ProjectionMode {
-        Orthographic,    // Ортогональная проекция 4D->3D
-        Perspective,     // Перспективная проекция
-        CrossSection     // Сечение
-    } m_projectionMode;
+    ProjectionMode m_projectionMode;
     
     float m_crossSectionW;
 };
