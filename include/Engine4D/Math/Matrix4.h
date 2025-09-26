@@ -66,6 +66,10 @@ public:
     // Комбинированные повороты
     static Matrix4 rotation(const Vector4& axis, float angle);
     static Matrix4 eulerAngles(float x, float y, float z, float w);
+    
+    // Дополнительные методы для совместимости
+    static Matrix4 lookAt(const Vector4& eye, const Vector4& target, const Vector4& up);
+    static Matrix4 perspective(float fov, float aspect, float near, float far);
 
     // Проекции
     static Matrix4 orthographicProjection();         // Ортогональная проекция 4D->3D

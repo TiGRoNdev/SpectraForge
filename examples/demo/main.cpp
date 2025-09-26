@@ -46,7 +46,7 @@ int main() {
     std::cout << "=== 4D Game Engine Demo ===" << std::endl;
     std::cout << "Управление:" << std::endl;
     std::cout << "WASD - движение в 3D пространстве" << std::endl;
-    std::cout << "QE - движение в W-измерении" << std::cout;
+    std::cout << "QE - движение в W-измерении" << std::endl;
     std::cout << "Space/Shift - движение вверх/вниз" << std::endl;
     std::cout << "Мышь - поворот камеры" << std::endl;
     std::cout << "1-6 - повороты в различных плоскостях" << std::endl;

@@ -111,6 +111,12 @@ public:
     Matrix4 getProjectionMatrix() const;
     Matrix4 getViewProjectionMatrix() const;
     
+    // Дополнительные методы для совместимости
+    void setAspectRatio(float aspect);
+    void setFieldOfView(float fov);
+    void setNearPlane(float near);
+    void setFarPlane(float far);
+    
     // Навигация в 4D
     void move(const Vector4& direction);
     void rotate(float angle, const Vector4& axis);

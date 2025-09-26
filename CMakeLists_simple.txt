@@ -16,11 +16,6 @@ endif()
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-# Поиск пакетов
-find_package(OpenGL REQUIRED)
-find_package(glfw3 REQUIRED)
-find_package(GLEW REQUIRED)
-
 # Создание библиотеки движка
 file(GLOB_RECURSE ENGINE_SOURCES 
     "src/*.cpp"
@@ -29,27 +24,15 @@ file(GLOB_RECURSE ENGINE_SOURCES
 
 add_library(Engine4D STATIC ${ENGINE_SOURCES})
 
-# Подключение библиотек к движку
-target_link_libraries(Engine4D PRIVATE 
-    OpenGL::GL 
-    glfw 
-    GLEW::GLEW
-)
-
-# Создание исполняемого файла демо
-add_executable(Engine4D_Demo 
+# Создание исполняемого файла демо (без OpenGL зависимостей)
+add_executable(Engine4D_Demo_Simple 
     examples/demo/main.cpp
 )
 
-target_link_libraries(Engine4D_Demo 
-    Engine4D
-    OpenGL::GL 
-    glfw 
-    GLEW::GLEW
-)
+target_link_libraries(Engine4D_Demo_Simple Engine4D)
 
 # Установка
-install(TARGETS Engine4D Engine4D_Demo
+install(TARGETS Engine4D Engine4D_Demo_Simple
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib

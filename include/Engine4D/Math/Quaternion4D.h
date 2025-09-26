@@ -29,10 +29,12 @@ public:
     Quaternion4D operator-(const Quaternion4D& other) const;
     Quaternion4D operator*(const Quaternion4D& other) const;
     Quaternion4D operator*(float scalar) const;
+    Quaternion4D operator/(float scalar) const;
     Quaternion4D& operator+=(const Quaternion4D& other);
     Quaternion4D& operator-=(const Quaternion4D& other);
     Quaternion4D& operator*=(const Quaternion4D& other);
     Quaternion4D& operator*=(float scalar);
+    Quaternion4D& operator/=(float scalar);
     bool operator==(const Quaternion4D& other) const;
     bool operator!=(const Quaternion4D& other) const;
 

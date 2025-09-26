@@ -115,7 +115,7 @@ Vector4 SphereCollider4D::getNormal(const Vector4& point) const {
 
 float SphereCollider4D::getVolume() const {
     // Объем 4D сферы: (π²/2) * r⁴
-    return (M_PI * M_PI / 2.0f) * radius * radius * radius * radius;
+    return (3.14159f * 3.14159f / 2.0f) * radius * radius * radius * radius;
 }
 
 // BoxCollider4D

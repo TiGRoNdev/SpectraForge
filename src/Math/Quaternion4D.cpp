@@ -68,6 +68,13 @@ Quaternion4D Quaternion4D::operator*(float scalar) const {
                        u * scalar, v * scalar);
 }
 
+Quaternion4D Quaternion4D::operator/(float scalar) const {
+    if (std::abs(scalar) < std::numeric_limits<float>::epsilon()) {
+        throw std::invalid_argument("Деление на ноль");
+    }
+    return *this * (1.0f / scalar);
+}
+
 Quaternion4D& Quaternion4D::operator+=(const Quaternion4D& other) {
     w += other.w;
     x += other.x;
@@ -103,6 +110,13 @@ Quaternion4D& Quaternion4D::operator*=(float scalar) {
     return *this;
 }
 
+Quaternion4D& Quaternion4D::operator/=(float scalar) {
+    if (std::abs(scalar) < std::numeric_limits<float>::epsilon()) {
+        throw std::invalid_argument("Деление на ноль");
+    }
+    return *this *= (1.0f / scalar);
+}
+
 bool Quaternion4D::operator==(const Quaternion4D& other) const {
     const float epsilon = std::numeric_limits<float>::epsilon();
     return std::abs(w - other.w) < epsilon &&
@@ -131,7 +145,7 @@ Quaternion4D Quaternion4D::normalized() const {
     if (mag < std::numeric_limits<float>::epsilon()) {
         return Quaternion4D::identity();
     }
-    return *this / mag;
+    return *this * (1.0f / mag);
 }
 
 void Quaternion4D::normalize() {

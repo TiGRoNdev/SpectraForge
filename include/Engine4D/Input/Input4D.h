@@ -150,6 +150,11 @@ public:
     Vector4 getRotation() const { return rotation; }
     Vector4 getVelocity() const { return velocity; }
     Matrix4 getTransformMatrix() const;
+    
+    // Дополнительные методы для совместимости
+    Vector4 forward() const;
+    Vector4 right() const;
+    Vector4 up() const;
 };
 
 /**

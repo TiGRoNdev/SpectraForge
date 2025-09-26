@@ -100,7 +100,7 @@ void Controller4D::handleInput(const InputState4D& inputState) {
         
         // Поворот по X (вверх/вниз)
         rotation.x -= mouseDelta.y;
-        rotation.x = std::clamp(rotation.x, -M_PI/2, M_PI/2);
+        rotation.x = std::clamp(rotation.x, -3.14159f/2, 3.14159f/2);
         
         // Поворот по Y (влево/вправо)
         rotation.y += mouseDelta.x;
@@ -227,6 +227,22 @@ Matrix4 Controller4D::getTransformMatrix() const {
                               rotationYZ * rotationYW * rotationZW;
     
     return translationMatrix * combinedRotation;
+}
+
+Vector4 Controller4D::forward() const {
+    // Создаем матрицу поворота и применяем к вектору "вперед"
+    Matrix4 transform = getTransformMatrix();
+    return transform.transformDirection(Vector4::unitZ());
+}
+
+Vector4 Controller4D::right() const {
+    Matrix4 transform = getTransformMatrix();
+    return transform.transformDirection(Vector4::unitX());
+}
+
+Vector4 Controller4D::up() const {
+    Matrix4 transform = getTransformMatrix();
+    return transform.transformDirection(Vector4::unitY());
 }
 
 // InputManager4D

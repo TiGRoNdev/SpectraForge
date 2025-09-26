@@ -343,6 +343,94 @@ Matrix4 Matrix4::rotationZW(float angle) {
     return result;
 }
 
+// Комбинированные повороты
+Matrix4 Matrix4::rotation(const Vector4& axis, float angle) {
+    // Упрощенная реализация - используем только первые 3 компоненты оси
+    Vector4 normalizedAxis = axis.normalized();
+    float c = std::cos(angle);
+    float s = std::sin(angle);
+    float t = 1.0f - c;
+    
+    Matrix4 result;
+    result.setIdentity();
+    
+    // Используем формулу Родригеса для 3D поворота
+    result.m[0][0] = t * normalizedAxis.x * normalizedAxis.x + c;
+    result.m[0][1] = t * normalizedAxis.x * normalizedAxis.y - s * normalizedAxis.z;
+    result.m[0][2] = t * normalizedAxis.x * normalizedAxis.z + s * normalizedAxis.y;
+    
+    result.m[1][0] = t * normalizedAxis.x * normalizedAxis.y + s * normalizedAxis.z;
+    result.m[1][1] = t * normalizedAxis.y * normalizedAxis.y + c;
+    result.m[1][2] = t * normalizedAxis.y * normalizedAxis.z - s * normalizedAxis.x;
+    
+    result.m[2][0] = t * normalizedAxis.x * normalizedAxis.z - s * normalizedAxis.y;
+    result.m[2][1] = t * normalizedAxis.y * normalizedAxis.z + s * normalizedAxis.x;
+    result.m[2][2] = t * normalizedAxis.z * normalizedAxis.z + c;
+    
+    return result;
+}
+
+Matrix4 Matrix4::eulerAngles(float x, float y, float z, float w) {
+    // Комбинируем повороты в различных плоскостях
+    Matrix4 rotXY = rotationXY(x);
+    Matrix4 rotXZ = rotationXZ(y);
+    Matrix4 rotXW = rotationXW(z);
+    Matrix4 rotYZ = rotationYZ(w);
+    
+    return rotXY * rotXZ * rotXW * rotYZ;
+}
+
+// Дополнительные методы для совместимости
+Matrix4 Matrix4::lookAt(const Vector4& eye, const Vector4& target, const Vector4& up) {
+    Vector4 forward = (target - eye).normalized();
+    Vector4 right = forward.cross(up).normalized();
+    Vector4 upCorrected = right.cross(forward).normalized();
+    
+    Matrix4 result;
+    result.setIdentity();
+    
+    // Первая строка (право)
+    result.m[0][0] = right.x;
+    result.m[0][1] = right.y;
+    result.m[0][2] = right.z;
+    result.m[0][3] = right.w;
+    
+    // Вторая строка (вверх)
+    result.m[1][0] = upCorrected.x;
+    result.m[1][1] = upCorrected.y;
+    result.m[1][2] = upCorrected.z;
+    result.m[1][3] = upCorrected.w;
+    
+    // Третья строка (вперед)
+    result.m[2][0] = -forward.x;
+    result.m[2][1] = -forward.y;
+    result.m[2][2] = -forward.z;
+    result.m[2][3] = -forward.w;
+    
+    // Четвертая строка (позиция)
+    result.m[3][0] = -eye.x;
+    result.m[3][1] = -eye.y;
+    result.m[3][2] = -eye.z;
+    result.m[3][3] = -eye.w;
+    
+    return result;
+}
+
+Matrix4 Matrix4::perspective(float fov, float aspect, float near, float far) {
+    Matrix4 result;
+    result.setZero();
+    
+    float tanHalfFov = std::tan(fov * 0.5f * 3.14159f / 180.0f);
+    
+    result.m[0][0] = 1.0f / (aspect * tanHalfFov);
+    result.m[1][1] = 1.0f / tanHalfFov;
+    result.m[2][2] = -(far + near) / (far - near);
+    result.m[2][3] = -1.0f;
+    result.m[3][2] = -(2.0f * far * near) / (far - near);
+    
+    return result;
+}
+
 // Проекции
 Matrix4 Matrix4::orthographicProjection() {
     // Ортогональная проекция 4D -> 3D (отбрасываем w)

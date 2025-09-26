@@ -424,6 +424,23 @@ Matrix4 Camera4D::getViewProjectionMatrix() const {
     return getProjectionMatrix() * getViewMatrix();
 }
 
+void Camera4D::setAspectRatio(float aspect) {
+    // Для 4D камеры aspect ratio не так важен, но можно использовать для настройки
+    // В реальной реализации здесь должна быть логика настройки проекции
+}
+
+void Camera4D::setFieldOfView(float fov) {
+    this->fov = fov;
+}
+
+void Camera4D::setNearPlane(float near) {
+    this->nearPlane = near;
+}
+
+void Camera4D::setFarPlane(float far) {
+    this->farPlane = far;
+}
+
 // Renderer
 Renderer& Renderer::getInstance() {
     static Renderer instance;
