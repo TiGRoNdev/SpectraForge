@@ -74,6 +74,7 @@ public:
     // Утилиты
     Vector3 transformPoint(const Vector3& point) const;      // Трансформация точки
     Vector3 transformDirection(const Vector3& direction) const; // Трансформация направления
+    Vector3 transformVector(const Vector3& vector) const;    // Трансформация вектора (алиас для transformPoint)
     Vector3 getTranslation() const;                          // Извлечение трансляции
     Vector3 getScale() const;                                // Извлечение масштаба
     void decompose(Vector3& translation, Quaternion& rotation, Vector3& scale) const;

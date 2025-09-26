@@ -72,12 +72,19 @@ if(BUILD_ENGINE_3D)
         ARCHIVE DESTINATION lib
     )
     
-    # Создание простого демо для 3D
+    # Создание демо для 3D
     if(BUILD_EXAMPLES)
+        # Оригинальное 3D демо
         add_executable(Engine3D_Demo 
             examples/3d_demo.cpp
         )
         target_link_libraries(Engine3D_Demo PRIVATE Engine3D)
+        
+        # Новое демо оптимального рендерера
+        add_executable(OptimalRenderer_Demo 
+            examples/optimal_renderer_demo.cpp
+        )
+        target_link_libraries(OptimalRenderer_Demo PRIVATE Engine3D)
     endif()
 endif()
 

@@ -1,6 +1,6 @@
-^D:\CURSOR PROJECTS\4DENGINE\BUILD-VCPKG\CMAKEFILES\A1AE8DD7C24723EE4A7C061E89409E2A\GENERATE.STAMP.RULE
+^D:\CURSOR PROJECTS\HYPERENGINE\BUILD-VCPKG\CMAKEFILES\CCBF54D28725585D1E810BE9BC8EF12F\GENERATE.STAMP.RULE
 setlocal
-"C:\Program Files\CMake\bin\cmake.exe" "-SD:/Cursor Projects/4DEngine" "-BD:/Cursor Projects/4DEngine/build-vcpkg" --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file "D:/Cursor Projects/4DEngine/build-vcpkg/HyperEngine.sln"
+"C:\Program Files\CMake\bin\cmake.exe" "-SD:/Cursor Projects/HyperEngine" "-BD:/Cursor Projects/HyperEngine/build-vcpkg" --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file "D:/Cursor Projects/HyperEngine/build-vcpkg/HyperEngine.sln"
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone

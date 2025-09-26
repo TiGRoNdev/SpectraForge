@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>D:\Cursor Projects\4DEngine\build-vcpkg\x64\Release\ZERO_CHECK</FullPath>
+      <FullPath>D:\Cursor Projects\HyperEngine\build-vcpkg\x64\Release\ZERO_CHECK</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

@@ -428,6 +428,11 @@ Vector3 Matrix4::transformDirection(const Vector3& direction) const {
     return result;
 }
 
+Vector3 Matrix4::transformVector(const Vector3& vector) const {
+    // Алиас для transformPoint - трансформируем как точку с трансляцией
+    return transformPoint(vector);
+}
+
 Vector3 Matrix4::getTranslation() const {
     return Vector3(m[0][3], m[1][3], m[2][3]);
 }
