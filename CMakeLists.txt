@@ -349,9 +349,25 @@ if(BUILD_VULKAN_RENDERER)
         target_link_libraries(VulkanBasic_Demo PRIVATE 
             VulkanRenderer
             Engine3D
-            Vulkan::Headers
-            GPUOpen::VulkanMemoryAllocator
         )
+        
+        # CUDA-Vulkan Interop Demo (требует CUDA)
+        if(BUILD_WITH_CUDA AND CUDA_ADVANCED_FOUND)
+            add_executable(CudaVulkanInterop_Demo 
+                examples/cuda_vulkan_interop_demo.cpp
+            )
+            target_link_libraries(CudaVulkanInterop_Demo PRIVATE 
+                VulkanRenderer
+                Engine3D
+            )
+            
+            # Настройка CUDA для demo
+            configure_cuda_target(CudaVulkanInterop_Demo)
+            
+            message(STATUS "CUDA-Vulkan Interop Demo будет собран")
+        else()
+            message(STATUS "CUDA-Vulkan Interop Demo пропущен (требует CUDA)")
+        endif()
     endif()
 endif()
 

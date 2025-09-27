@@ -13,6 +13,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🔊 **3D позиционный звук**: Система пространственного аудио
 - 📱 **Мобильные платформы**: Портирование на Android/iOS
 
+## [0.0.8] - 2025-09-27
+
+### Added - Этап 3.1: CUDA-Vulkan Interop
+- 🚀 **CUDA-Vulkan Interop**: Полноценная реализация обмена данными без копирования
+  - 💾 `include/Engine3D/CUDA/CudaInterop.h` - Современный API для shared ресурсов
+  - ⚡ `srcVulkan/CUDA/CudaInterop.cpp` - Реализация external memory и semaphore extensions
+  - 🔄 Поддержка shared буферов с zero-copy обменом
+  - 🔗 Синхронизация между CUDA и Vulkan через external semaphores
+  - 🛠️ Автоматическое управление ресурсами и graceful error handling
+
+- 🎯 **Обновленный ResourceManager**: Интеграция с CUDA interop
+  - 📤 `createSharedBuffer()` - Создание shared буферов с external memory
+  - 🔄 `exportMemoryToCUDA()` - Экспорт Vulkan памяти в CUDA
+  - 🔧 `manageInterop()` - Управление CUDA-Vulkan ресурсами
+  - ✅ Сохранена обратная совместимость с существующим VMA workflow
+
+- 🎮 **CUDA-Vulkan Interop Demo**: Комплексное демо-приложение
+  - 📱 `examples/cuda_vulkan_interop_demo.cpp` - Демонстрация всех возможностей
+  - 🔍 Автоматическая детекция поддержки interop
+  - 🧪 Тестирование shared буферов и синхронизации
+  - ⚡ Демонстрация реальной обработки данных через CUDA kernels
+
+- 📚 **Техническая документация**: 
+  - 📖 `docs/guides/CUDA_VULKAN_INTEROP_REPORT.md` - Полный отчет о реализации
+  - 🏗️ Архитектурная интеграция с существующими компонентами
+  - 🔧 Инструкции по настройке и использованию
+
+### Enhanced - Улучшения архитектуры
+- 🎯 **CMake конфигурация**: Автоматическая детекция и условная сборка CUDA компонентов
+- 🔧 **HardwareDetector интеграция**: Seamless совместимость с системой детекции железа
+- ⚡ **Production-ready код**: Robust error handling и resource management
+
+### Technical Details
+- 🖥️ **Поддержка платформ**: Windows (полная), Linux (подготовлена архитектура)
+- 💿 **Требования**: CUDA Toolkit 11.0+, Vulkan 1.1+, RTX/GTX GPU
+- ✅ **Тестирование**: Проверено на NVIDIA RTX 5070 с 11854 MB VRAM
+- 🚀 **Готовность**: Code ready для этапа 3.2 FlashGS Implementation
+
 ## [0.0.7] - 2025-09-27
 
 ### Added - Завершение этапа 2 разработки

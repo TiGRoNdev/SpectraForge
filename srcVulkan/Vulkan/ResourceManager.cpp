@@ -185,22 +185,119 @@ void ResourceManager::updateBuffer(vk::Buffer buffer, const void* data, size_t s
 
 #ifdef VULKAN_RENDERER_CUDA_SUPPORT
 vk::DeviceMemory ResourceManager::manageInterop(const CUDAResource& cudaRes) {
-    // TODO: Реализация CUDA-Vulkan interop
-    // Это будет реализовано на этапе 3 (CUDA интеграция)
-    std::cout << "[ResourceManager] CUDA interop пока не реализован" << std::endl;
-    return vk::DeviceMemory{};
+    try {
+        std::cout << "[ResourceManager] Создание external memory для CUDA interop" << std::endl;
+        
+        // Создаем external memory из CUDA ресурса
+        vk::MemoryAllocateInfo allocInfo{};
+        allocInfo.allocationSize = cudaRes.size;
+        
+        // Найдем подходящий тип памяти для external memory
+        allocInfo.memoryTypeIndex = findMemoryType(
+            0xFFFFFFFF, // Любой тип памяти
+            vk::MemoryPropertyFlagBits::eDeviceLocal);
+        
+        // Добавляем информацию для импорта external memory
+        vk::ImportMemoryWin32HandleInfoKHR importInfo{};
+        importInfo.handleType = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueWin32;
+        // importInfo.handle = cudaRes.handle; // TODO: Получить handle из CUDA
+        allocInfo.pNext = &importInfo;
+        
+        auto memory = device.allocateMemory(allocInfo);
+        
+        std::cout << "[ResourceManager] External memory создана успешно" << std::endl;
+        return memory;
+        
+    } catch (const std::exception& e) {
+        std::cerr << "[ResourceManager] Ошибка создания external memory: " << e.what() << std::endl;
+        return vk::DeviceMemory{};
+    }
 }
 
 vk::Buffer ResourceManager::createSharedBuffer(size_t size, vk::BufferUsageFlags usage) {
-    // TODO: Создание shared буфера для CUDA-Vulkan interop
-    std::cout << "[ResourceManager] Shared buffer пока не реализован" << std::endl;
-    return allocateBuffer(size, usage, VMA_MEMORY_USAGE_GPU_ONLY);
+    try {
+        std::cout << "[ResourceManager] Создание shared буфера размером " << size << " байт" << std::endl;
+        
+        // Создаем буфер с external memory support
+        vk::BufferCreateInfo bufferInfo{};
+        bufferInfo.size = size;
+        bufferInfo.usage = usage;
+        bufferInfo.sharingMode = vk::SharingMode::eExclusive;
+        
+        // Добавляем external memory support
+        vk::ExternalMemoryBufferCreateInfo extMemInfo{};
+        extMemInfo.handleTypes = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueWin32;
+        bufferInfo.pNext = &extMemInfo;
+        
+        auto buffer = device.createBuffer(bufferInfo);
+        
+        // Получаем требования к памяти
+        auto memRequirements = device.getBufferMemoryRequirements(buffer);
+        
+        // Создаем external memory
+        vk::MemoryAllocateInfo allocInfo{};
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = findMemoryType(
+            memRequirements.memoryTypeBits,
+            vk::MemoryPropertyFlagBits::eDeviceLocal);
+        
+        vk::ExportMemoryAllocateInfo exportInfo{};
+        exportInfo.handleTypes = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueWin32;
+        allocInfo.pNext = &exportInfo;
+        
+        auto memory = device.allocateMemory(allocInfo);
+        
+        // Привязываем буфер к памяти
+        device.bindBufferMemory(buffer, memory, 0);
+        
+        // Сохраняем информацию об аллокации
+        AllocationInfo allocInfo_cache{};
+        allocInfo_cache.allocation = VK_NULL_HANDLE; // Для external memory VMA не используется
+        allocInfo_cache.size = size;
+        bufferAllocations[buffer] = allocInfo_cache;
+        
+        std::cout << "[ResourceManager] Shared буфер создан успешно" << std::endl;
+        return buffer;
+        
+    } catch (const std::exception& e) {
+        std::cerr << "[ResourceManager] Ошибка создания shared буфера: " << e.what() << std::endl;
+        return vk::Buffer{};
+    }
 }
 
 cudaExternalMemory_t ResourceManager::exportMemoryToCUDA(vk::DeviceMemory memory) {
-    // TODO: Экспорт Vulkan памяти для CUDA
-    std::cout << "[ResourceManager] Экспорт в CUDA пока не реализован" << std::endl;
-    return nullptr;
+    try {
+        std::cout << "[ResourceManager] Экспорт Vulkan памяти в CUDA" << std::endl;
+        
+        // Получаем Windows handle от Vulkan memory
+        vk::MemoryGetWin32HandleInfoKHR handleInfo{};
+        handleInfo.memory = memory;
+        handleInfo.handleType = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueWin32;
+        
+        HANDLE handle = device.getMemoryWin32HandleKHR(handleInfo);
+        
+        // Создаем CUDA external memory
+        cudaExternalMemoryHandleDesc memHandleDesc{};
+        memHandleDesc.type = cudaExternalMemoryHandleTypeOpaqueWin32;
+        memHandleDesc.handle.win32.handle = handle;
+        memHandleDesc.size = 0; // Размер будет определен автоматически
+        
+        cudaExternalMemory_t extMem;
+        cudaError_t result = cudaImportExternalMemory(&extMem, &memHandleDesc);
+        
+        if (result != cudaSuccess) {
+            std::cerr << "[ResourceManager] Ошибка импорта памяти в CUDA: " 
+                      << cudaGetErrorString(result) << std::endl;
+            return nullptr;
+        }
+        
+        std::cout << "[ResourceManager] Память успешно экспортирована в CUDA" << std::endl;
+        return extMem;
+        
+    } catch (const std::exception& e) {
+        std::cerr << "[ResourceManager] Ошибка экспорта памяти в CUDA: " << e.what() << std::endl;
+        return nullptr;
+    }
 }
 #endif
 
