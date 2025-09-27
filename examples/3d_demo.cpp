@@ -10,6 +10,7 @@
  */
 
 #include "Engine3D/Core/GameObject3D.h"
+#include "Engine3D/Core/Console.h"
 #include "Engine3D/Rendering/Renderer3D.h"
 #include "Engine3D/Rendering/Camera3D.h"
 #include "Engine3D/Rendering/Mesh3D.h"
@@ -36,11 +37,17 @@ public:
     Demo3D() : window(nullptr), running(false) {}
     
     bool initialize() {
-        std::cout << "=== HyperEngine 3D Demo ===" << std::endl;
+        // Инициализация UTF-8 консоли
+        Console::initialize();
+        Console::setTitle("🚀 HyperEngine 3D Demo");
+        
+        std::cout << "🌟═══════════════════════════════════════════🌟" << std::endl;
+        std::cout << "          🚀 HYPERENGINE 3D ДЕМО 🚀" << std::endl;
+        std::cout << "🌟═══════════════════════════════════════════🌟" << std::endl;
         
         // Инициализация GLFW
         if (!glfwInit()) {
-            std::cerr << "Failed to initialize GLFW" << std::endl;
+            Console::error("❌ Не удалось инициализировать GLFW");
             return false;
         }
         
@@ -50,9 +57,9 @@ public:
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         
         // Создание окна
-        window = glfwCreateWindow(1280, 720, "HyperEngine 3D Demo", nullptr, nullptr);
+        window = glfwCreateWindow(1280, 720, "🚀 HyperEngine 3D Demo", nullptr, nullptr);
         if (!window) {
-            std::cerr << "Failed to create GLFW window" << std::endl;
+            Console::error("❌ Не удалось создать окно GLFW");
             glfwTerminate();
             return false;
         }
@@ -75,12 +82,12 @@ public:
         createScene();
         
         running = true;
-        std::cout << "Demo initialized successfully!" << std::endl;
+        Console::info("✅ Демо инициализировано успешно!");
         return true;
     }
     
     void run() {
-        std::cout << "Starting main loop..." << std::endl;
+        Console::info("🔄 Запуск основного цикла рендеринга...");
         
         auto lastTime = glfwGetTime();
         
@@ -96,11 +103,11 @@ public:
             glfwPollEvents();
         }
         
-        std::cout << "Demo finished" << std::endl;
+        Console::info("🏁 Демо завершено");
     }
     
     void cleanup() {
-        std::cout << "Cleaning up demo..." << std::endl;
+        Console::info("🧹 Очистка ресурсов демо...");
         
         // Очистка игровых объектов
         GameObject3D::clearAllObjects();
@@ -116,7 +123,7 @@ public:
         }
         glfwTerminate();
         
-        std::cout << "Demo cleaned up" << std::endl;
+        Console::info("✅ Демо очищено успешно");
     }
 
 private:
@@ -134,17 +141,17 @@ private:
     GameObject3D* cameraObject;
     
     bool initializeEngine() {
-        std::cout << "Initializing engine systems..." << std::endl;
+        Console::info("⚙️ Инициализация систем движка...");
         
         // Инициализация рендерера
         if (!Renderer3D::getInstance().initialize(1280, 720)) {
-            std::cerr << "Failed to initialize Renderer3D" << std::endl;
+            Console::error("❌ Не удалось инициализировать Renderer3D");
             return false;
         }
         
         // Инициализация системы ввода
         if (!InputManager3D::getInstance().initialize(window)) {
-            std::cerr << "Failed to initialize InputManager3D" << std::endl;
+            Console::error("❌ Не удалось инициализировать InputManager3D");
             return false;
         }
         
@@ -170,7 +177,7 @@ private:
         // Настройка действий ввода
         setupInputActions();
         
-        std::cout << "Engine systems initialized" << std::endl;
+        Console::info("✅ Системы движка инициализированы успешно");
         return true;
     }
     
@@ -181,7 +188,7 @@ private:
         InputAction3D exitAction("exit");
         exitAction.addKey(Key3D::Escape);
         exitAction.setOnPressed([this]() {
-            std::cout << "Exit key pressed" << std::endl;
+            Console::info("🚪 Нажата клавиша выхода");
             running = false;
         });
         inputManager.addAction(exitAction);
@@ -193,13 +200,13 @@ private:
             static bool mouseLocked = true;
             mouseLocked = !mouseLocked;
             InputManager3D::getInstance().setCursorLocked(mouseLocked);
-            std::cout << "Mouse " << (mouseLocked ? "locked" : "unlocked") << std::endl;
+            Console::info(mouseLocked ? "🔒 Мышь заблокирована" : "🔓 Мышь разблокирована");
         });
         inputManager.addAction(mouseModeAction);
     }
     
     void createScene() {
-        std::cout << "Creating demo scene..." << std::endl;
+        Console::info("🎬 Создание демонстрационной сцены...");
         
         // Создание объекта камеры
         cameraObject = GameObject3D::create("MainCamera");
@@ -250,7 +257,7 @@ private:
         // Добавление освещения
         setupLighting();
         
-        std::cout << "Scene created with " << GameObject3D::getAllObjects().size() << " objects" << std::endl;
+        Console::info("✅ Сцена создана с " + std::to_string(GameObject3D::getAllObjects().size()) + " объектами");
     }
     
     void setupLighting() {
@@ -276,7 +283,7 @@ private:
         // Установка ambient освещения
         renderer.setAmbientLight(Vector3(0.2f, 0.2f, 0.3f));
         
-        std::cout << "Lighting setup complete" << std::endl;
+        Console::info("💡 Настройка освещения завершена");
     }
     
     void update(float deltaTime) {
@@ -332,7 +339,7 @@ int main() {
     Demo3D demo;
     
     if (!demo.initialize()) {
-        std::cerr << "Failed to initialize demo" << std::endl;
+        Console::error("❌ Не удалось инициализировать демо");
         return -1;
     }
     

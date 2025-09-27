@@ -85,6 +85,18 @@ if(BUILD_ENGINE_3D)
             examples/optimal_renderer_demo.cpp
         )
         target_link_libraries(OptimalRenderer_Demo PRIVATE Engine3D)
+        
+        # Демо UTF-8 консоли
+        add_executable(UTF8Console_Demo 
+            examples/utf8_console_demo.cpp
+        )
+        target_link_libraries(UTF8Console_Demo PRIVATE Engine3D)
+        
+        # Простой тест UTF-8
+        add_executable(SimpleUTF8Test 
+            examples/simple_utf8_test.cpp
+        )
+        target_link_libraries(SimpleUTF8Test PRIVATE Engine3D)
     endif()
 endif()
 

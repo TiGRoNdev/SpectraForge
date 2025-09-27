@@ -1,0 +1,9 @@
+# Профиль оптимального рендерера
+qualityLevel=4
+targetFPS=90
+globalIllumination=1
+reflections=1
+shadows=0
+denoising=1
+upscaling=1
+upscalingFactor=1,5

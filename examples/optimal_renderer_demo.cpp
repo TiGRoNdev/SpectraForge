@@ -15,6 +15,7 @@
 #include "Engine3D/Rendering/Mesh3D.h"
 #include "Engine3D/Math/Vector3.h"
 #include "Engine3D/Math/Matrix4.h"
+#include "Engine3D/Core/Console.h"
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -23,12 +24,13 @@
 
 using namespace Engine3D::Rendering;
 using namespace Engine3D::Math;
+using namespace Engine3D::Core;
 
 /**
  * @brief Создает демонстрационную сцену с гауссианами и мешами
  */
 OptimalRenderer3D::SceneData createDemoScene() {
-    std::cout << "Создание демонстрационной сцены..." << std::endl;
+    Console::info("Создание демонстрационной сцены...");
     
     OptimalRenderer3D::SceneData scene;
     
@@ -60,8 +62,8 @@ OptimalRenderer3D::SceneData createDemoScene() {
     // Вычисляем границы сцены
     scene.calculateBounds();
     
-    std::cout << "Создана демо-сцена с " << scene.gaussianFields.size() 
-              << " полями гауссианов и " << scene.meshes.size() << " мешами" << std::endl;
+    Console::info("Создана демо-сцена с " + std::to_string(scene.gaussianFields.size()) + 
+                  " полями гауссианов и " + std::to_string(scene.meshes.size()) + " мешами");
     
     return scene;
 }
@@ -70,7 +72,7 @@ OptimalRenderer3D::SceneData createDemoScene() {
  * @brief Создает сложную сцену для бенчмарка
  */
 OptimalRenderer3D::SceneData createBenchmarkScene() {
-    std::cout << "Создание сцены для бенчмарка..." << std::endl;
+    Console::info("Создание сцены для бенчмарка...");
     
     OptimalRenderer3D::SceneData scene;
     
@@ -109,8 +111,8 @@ OptimalRenderer3D::SceneData createBenchmarkScene() {
     // Вычисляем границы сцены
     scene.calculateBounds();
     
-    std::cout << "Создана бенчмарк-сцена с " << scene.gaussianFields.size() 
-              << " полями гауссианов и " << scene.meshes.size() << " мешами" << std::endl;
+    Console::info("Создана бенчмарк-сцена с " + std::to_string(scene.gaussianFields.size()) + 
+                  " полями гауссианов и " + std::to_string(scene.meshes.size()) + " мешами");
     
     return scene;
 }
@@ -119,7 +121,9 @@ OptimalRenderer3D::SceneData createBenchmarkScene() {
  * @brief Демонстрация основных возможностей оптимального рендерера
  */
 void demonstrateBasicRendering() {
-    std::cout << "\n=== ДЕМОНСТРАЦИЯ ОСНОВНОГО РЕНДЕРИНГА ===" << std::endl;
+    Console::initialize();
+    std::cout << std::endl;
+    std::cout << "=== ДЕМОНСТРАЦИЯ ОСНОВНОГО РЕНДЕРИНГА ===" << std::endl;
     
     // Создаем оптимальный рендерер с автоматическим определением настроек
     OptimalRendererFactory::CreationParams params;
@@ -132,7 +136,7 @@ void demonstrateBasicRendering() {
     
     auto renderer = OptimalRendererFactory::createOptimalRenderer(params);
     if (!renderer) {
-        std::cerr << "Ошибка создания оптимального рендерера!" << std::endl;
+        Console::error("Ошибка создания оптимального рендерера!");
         return;
     }
     
@@ -154,7 +158,7 @@ void demonstrateBasicRendering() {
     renderer->startProfiling();
     
     // Рендерим несколько кадров для демонстрации
-    std::cout << "\nРендеринг демонстрационных кадров..." << std::endl;
+    Console::info("Рендеринг демонстрационных кадров...");
     
     for (int frame = 0; frame < 10; ++frame) {
         // Поворачиваем камеру вокруг сцены
@@ -174,7 +178,7 @@ void demonstrateBasicRendering() {
         // Основной вызов рендеринга по псевдо-алгоритму
         renderer->renderOptimal3D(scene, camera, hwConfig);
         
-        std::cout << "Кадр " << (frame + 1) << "/10 завершен" << std::endl;
+        Console::info("Кадр " + std::to_string(frame + 1) + "/10 завершен");
         
         // Небольшая пауза для демонстрации
         std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60 FPS
@@ -193,7 +197,8 @@ void demonstrateBasicRendering() {
  * @brief Демонстрация различных уровней качества
  */
 void demonstrateQualityLevels() {
-    std::cout << "\n=== ДЕМОНСТРАЦИЯ УРОВНЕЙ КАЧЕСТВА ===" << std::endl;
+    std::cout << std::endl;
+    std::cout << "=== ДЕМОНСТРАЦИЯ УРОВНЕЙ КАЧЕСТВА ===" << std::endl;
     
     auto renderer = OptimalRendererFactory::createOptimalRenderer();
     if (!renderer) return;
@@ -210,7 +215,8 @@ void demonstrateQualityLevels() {
     
     // Тестируем различные уровни качества
     for (int quality = 1; quality <= 5; ++quality) {
-        std::cout << "\n--- Тестирование уровня качества " << quality << " ---" << std::endl;
+        std::cout << std::endl;
+        std::cout << "--- Тестирование уровня качества " + std::to_string(quality) + " ---" << std::endl;
         
         renderer->setQualityLevel(quality);
         
@@ -231,9 +237,9 @@ void demonstrateQualityLevels() {
         for (float time : frameTimes) avgFrameTime += time;
         avgFrameTime /= frameTimes.size();
         
-        std::cout << "Уровень качества " << quality 
-                  << ": средний frametime = " << avgFrameTime << "мс"
-                  << " (~" << (1000.0f / avgFrameTime) << " FPS)" << std::endl;
+        Console::info("Уровень качества " + std::to_string(quality) + 
+                      ": средний frametime = " + std::to_string(avgFrameTime) + "мс" +
+                      " (~" + std::to_string(1000.0f / avgFrameTime) + " FPS)");
     }
     
     std::cout << "=== ТЕСТ КАЧЕСТВА ЗАВЕРШЕН ===" << std::endl;
@@ -243,7 +249,8 @@ void demonstrateQualityLevels() {
  * @brief Демонстрация адаптивной производительности
  */
 void demonstrateAdaptivePerformance() {
-    std::cout << "\n=== ДЕМОНСТРАЦИЯ АДАПТИВНОЙ ПРОИЗВОДИТЕЛЬНОСТИ ===" << std::endl;
+    std::cout << std::endl;
+    std::cout << "=== ДЕМОНСТРАЦИЯ АДАПТИВНОЙ ПРОИЗВОДИТЕЛЬНОСТИ ===" << std::endl;
     
     auto renderer = OptimalRendererFactory::createOptimalRenderer();
     if (!renderer) return;
@@ -264,8 +271,8 @@ void demonstrateAdaptivePerformance() {
     renderer->setPerformanceTarget(120.0f); // Высокая планка для демонстрации адаптации
     renderer->setQualityLevel(5); // Начинаем с максимального качества
     
-    std::cout << "Начинаем с максимального качества и целевого FPS 120..." << std::endl;
-    std::cout << "Система автоматически адаптирует качество для достижения цели." << std::endl;
+    Console::info("Начинаем с максимального качества и целевого FPS 120...");
+    Console::info("Система автоматически адаптирует качество для достижения цели.");
     
     // Рендерим с адаптацией
     for (int frame = 0; frame < 30; ++frame) {
@@ -283,9 +290,9 @@ void demonstrateAdaptivePerformance() {
         float currentFPS = 1000.0f / metrics.totalFrameTime;
         
         if (frame % 5 == 0) {
-            std::cout << "Кадр " << frame << ": frametime=" << metrics.totalFrameTime 
-                      << "мс, FPS=" << currentFPS
-                      << ", ускорение=" << metrics.renderingSpeedup << "x" << std::endl;
+            Console::info("Кадр " + std::to_string(frame) + ": frametime=" + std::to_string(metrics.totalFrameTime) + 
+                          "мс, FPS=" + std::to_string(currentFPS) +
+                          ", ускорение=" + std::to_string(metrics.renderingSpeedup) + "x");
         }
     }
     
@@ -296,7 +303,8 @@ void demonstrateAdaptivePerformance() {
  * @brief Полный бенчмарк системы
  */
 void runFullBenchmark() {
-    std::cout << "\n=== ПОЛНЫЙ БЕНЧМАРК СИСТЕМЫ ===" << std::endl;
+    std::cout << std::endl;
+    std::cout << "=== ПОЛНЫЙ БЕНЧМАРК СИСТЕМЫ ===" << std::endl;
     
     auto renderer = OptimalRendererFactory::createOptimalRenderer();
     if (!renderer) return;
@@ -313,7 +321,8 @@ void runFullBenchmark() {
     const char* sceneNames[] = {"Простая сцена", "Сложная сцена"};
     
     for (size_t sceneIdx = 0; sceneIdx < testScenes.size(); ++sceneIdx) {
-        std::cout << "\n--- Бенчмарк: " << sceneNames[sceneIdx] << " ---" << std::endl;
+        std::cout << std::endl;
+        std::cout << "--- Бенчмарк: " + std::string(sceneNames[sceneIdx]) + " ---" << std::endl;
         
         auto& scene = testScenes[sceneIdx];
         auto hwConfig = OptimalRendererFactory::detectHardware();
@@ -331,8 +340,9 @@ void runFullBenchmark() {
                 renderer->enableShadows(effects);
                 renderer->enableDenoising(effects);
                 
-                std::cout << "\nКачество " << quality 
-                          << ", эффекты " << (effects ? "вкл" : "выкл") << ":" << std::endl;
+                std::cout << std::endl;
+                Console::info("Качество " + std::to_string(quality) + 
+                              ", эффекты " + (effects ? "вкл" : "выкл") + ":");
                 
                 // Запускаем короткий бенчмарк
                 renderer->runBenchmark(scene, 20);
@@ -347,7 +357,8 @@ void runFullBenchmark() {
  * @brief Демонстрация сохранения и загрузки профилей
  */
 void demonstrateProfiles() {
-    std::cout << "\n=== ДЕМОНСТРАЦИЯ ПРОФИЛЕЙ ===" << std::endl;
+    std::cout << std::endl;
+    std::cout << "=== ДЕМОНСТРАЦИЯ ПРОФИЛЕЙ ===" << std::endl;
     
     auto renderer = OptimalRendererFactory::createOptimalRenderer();
     if (!renderer) return;
@@ -361,27 +372,27 @@ void demonstrateProfiles() {
     renderer->enableDenoising(true);
     renderer->enableUpscaling(true, 1.5f);
     
-    std::cout << "Настроен пользовательский профиль:" << std::endl;
-    std::cout << "  Качество: 4" << std::endl;
-    std::cout << "  Целевой FPS: 90" << std::endl;
-    std::cout << "  GI: включено, Отражения: включены" << std::endl;
-    std::cout << "  Тени: выключены, Деноизинг: включен" << std::endl;
-    std::cout << "  Масштабирование: 1.5x" << std::endl;
+    Console::info("Настроен пользовательский профиль:");
+    std::cout << "  📊 Качество: 4" << std::endl;
+    std::cout << "  🎯 Целевой FPS: 90" << std::endl;
+    std::cout << "  💡 GI: включено, Отражения: включены" << std::endl;
+    std::cout << "  🌑 Тени: выключены, Деноизинг: включен" << std::endl;
+    std::cout << "  📏 Масштабирование: 1.5x" << std::endl;
     
     // Сохраняем профиль
     renderer->saveProfile("custom_profile.txt");
-    std::cout << "\nПрофиль сохранен в custom_profile.txt" << std::endl;
+    Console::info("Профиль сохранен в custom_profile.txt");
     
     // Изменяем настройки
     renderer->setQualityLevel(1);
     renderer->enableGlobalIllumination(false);
     renderer->enableUpscaling(false);
-    std::cout << "Настройки изменены для демонстрации" << std::endl;
+    Console::info("Настройки изменены для демонстрации");
     
     // Загружаем сохраненный профиль
     if (renderer->loadProfile("custom_profile.txt")) {
-        std::cout << "Профиль успешно загружен!" << std::endl;
-        std::cout << "Настройки восстановлены из файла." << std::endl;
+        Console::info("Профиль успешно загружен!");
+        Console::info("Настройки восстановлены из файла.");
     }
     
     std::cout << "=== ДЕМОНСТРАЦИЯ ПРОФИЛЕЙ ЗАВЕРШЕНА ===" << std::endl;
@@ -391,13 +402,20 @@ void demonstrateProfiles() {
  * @brief Главная функция демонстрации
  */
 int main() {
+    // Инициализируем консоль с поддержкой UTF-8
+    if (!Console::initialize()) {
+        std::cerr << "Ошибка инициализации консоли!" << std::endl;
+        return 1;
+    }
+
     std::cout << "=== ДЕМОНСТРАЦИЯ ОПТИМАЛЬНОГО РЕНДЕРЕРА 3D ===" << std::endl;
     std::cout << "Реализация псевдо-алгоритма из 3DRenderer_Whitelist.md" << std::endl;
-    std::cout << "Интегрирует современные технологии 2025 года:\n"
-              << "  - 3D Gaussian Splatting для представления сцены\n"
-              << "  - Гибридный рендеринг (растеризация + RT)\n"
-              << "  - AI деноизинг и нейронное масштабирование\n"
-              << "  - Адаптивные оптимизации производительности\n" << std::endl;
+    std::cout << "Интегрирует современные технологии 2025 года:" << std::endl;
+    std::cout << "  🔹 3D Gaussian Splatting для представления сцены" << std::endl;
+    std::cout << "  🔹 Гибридный рендеринг (растеризация + RT)" << std::endl;
+    std::cout << "  🔹 AI деноизинг и нейронное масштабирование" << std::endl;
+    std::cout << "  🔹 Адаптивные оптимизации производительности" << std::endl;
+    std::cout << std::endl;
     
     try {
         // Запускаем различные демонстрации
@@ -407,7 +425,8 @@ int main() {
         demonstrateProfiles();
         
         // Запрашиваем пользователя о запуске полного бенчмарка
-        std::cout << "\nЖелаете запустить полный бенчмарк? (может занять несколько минут) [y/N]: ";
+        std::cout << std::endl;
+        std::cout << "Желаете запустить полный бенчмарк? (может занять несколько минут) [y/N]: ";
         char response;
         std::cin >> response;
         
@@ -415,11 +434,12 @@ int main() {
             runFullBenchmark();
         }
         
-        std::cout << "\n=== ВСЕ ДЕМОНСТРАЦИИ ЗАВЕРШЕНЫ УСПЕШНО ===" << std::endl;
-        std::cout << "Оптимальный рендерер готов к использованию!" << std::endl;
+        std::cout << std::endl;
+        std::cout << "=== ВСЕ ДЕМОНСТРАЦИИ ЗАВЕРШЕНЫ УСПЕШНО ===" << std::endl;
+        std::cout << "🚀 Оптимальный рендерер готов к использованию!" << std::endl;
         
     } catch (const std::exception& e) {
-        std::cerr << "Ошибка во время демонстрации: " << e.what() << std::endl;
+        Console::error("Ошибка во время демонстрации: " + std::string(e.what()));
         return 1;
     }
     

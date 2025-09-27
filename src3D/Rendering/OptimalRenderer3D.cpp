@@ -209,10 +209,14 @@ bool OptimalRenderer3D::initialize(int width, int height, const HardwareConfig& 
     targetHeight = height;
     
     // Адаптируем разрешение рендеринга под железо
+    std::cout << "Вызов adaptToHardware()..." << std::endl;
     adaptToHardware();
+    std::cout << "adaptToHardware() завершен" << std::endl;
     
     // Создаем гибридный рендерер
+    std::cout << "Создание HybridRenderer3D..." << std::endl;
     hybridRenderer = std::make_unique<HybridRenderer3D>();
+    std::cout << "HybridRenderer3D создан, вызов initialize..." << std::endl;
     if (!hybridRenderer->initialize(renderWidth, renderHeight)) {
         std::cerr << "Ошибка инициализации гибридного рендерера!" << std::endl;
         return false;

@@ -42,18 +42,25 @@ HybridRenderer3D::~HybridRenderer3D() {
 }
 
 bool HybridRenderer3D::initialize(int width, int height) {
+    std::cout << "HybridRenderer3D::initialize() начало" << std::endl;
+    
     // Инициализируем базовый рендерер
+    std::cout << "Вызов Renderer3D::initialize()..." << std::endl;
     if (!Renderer3D::initialize(width, height)) {
+        std::cout << "Ошибка инициализации Renderer3D!" << std::endl;
         return false;
     }
+    std::cout << "Renderer3D::initialize() завершен успешно" << std::endl;
     
     std::cout << "Инициализация гибридного рендерера (" << width << "x" << height << ")..." << std::endl;
     
     // Инициализируем гауссиановый рендерер
+    std::cout << "Инициализация гауссианового рендерера..." << std::endl;
     if (!gaussianRenderer->initialize()) {
         std::cerr << "Ошибка инициализации гауссианового рендерера!" << std::endl;
         return false;
     }
+    std::cout << "Гауссиановый рендерер инициализирован успешно" << std::endl;
     
     // Настраиваем буферы рендеринга
     setupRenderBuffers();
