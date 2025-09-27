@@ -14,6 +14,11 @@ option(BUILD_WITH_FSR "Build with FSR support" ON)
 option(BUILD_EXAMPLES "Build example applications" ON)
 option(BUILD_TESTS "Build test suite" OFF)
 
+# Опции для адаптеров рендеринга
+option(ENABLE_OPENGL_BACKEND "Enable OpenGL rendering backend" ON)
+option(ENABLE_VULKAN_BACKEND "Enable Vulkan rendering backend" ON)
+option(DEFAULT_BACKEND_VULKAN "Use Vulkan as default backend (otherwise OpenGL)" OFF)
+
 # Сначала создаем проект только с C++
 project(HyperEngine VERSION 1.0.0 LANGUAGES CXX)
 
@@ -28,6 +33,25 @@ if(MSVC)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# Определение макросов для адаптеров рендеринга
+if(ENABLE_OPENGL_BACKEND)
+    add_compile_definitions(ENGINE3D_ENABLE_OPENGL)
+    message(STATUS "OpenGL backend enabled")
+endif()
+
+if(ENABLE_VULKAN_BACKEND AND BUILD_VULKAN_RENDERER)
+    add_compile_definitions(ENGINE3D_ENABLE_VULKAN)
+    message(STATUS "Vulkan backend enabled")
+endif()
+
+if(DEFAULT_BACKEND_VULKAN)
+    add_compile_definitions(ENGINE3D_DEFAULT_BACKEND_VULKAN)
+    message(STATUS "Vulkan set as default backend")
+else()
+    add_compile_definitions(ENGINE3D_DEFAULT_BACKEND_OPENGL)
+    message(STATUS "OpenGL set as default backend")
 endif()
 
 # Опции сборки уже определены выше
@@ -171,6 +195,12 @@ if(BUILD_ENGINE_3D)
             examples/utf8_console_demo.cpp
         )
         target_link_libraries(UTF8Console_Demo PRIVATE Engine3D)
+        
+        # Демо адаптеров рендеринга
+        add_executable(RendererAdapter_Demo 
+            examples/renderer_adapter_demo.cpp
+        )
+        target_link_libraries(RendererAdapter_Demo PRIVATE Engine3D)
     endif()
 endif()
 
