@@ -11,6 +11,11 @@
 #include <stdexcept>
 #include <cstring>
 
+#ifdef _WIN32
+    #include <windows.h>
+    #define VK_USE_PLATFORM_WIN32_KHR
+#endif
+
 using namespace Engine3D::Vulkan;
 
 namespace Engine3D::Vulkan {
@@ -84,7 +89,7 @@ vk::Buffer ResourceManager::allocateBuffer(size_t size, vk::BufferUsageFlags usa
         throw std::runtime_error("ResourceManager не инициализирован");
     }
     
-    std::cout << "[ResourceManager] Создание буфера размером " << (size / 1024) << " KB (заглушка)" << std::endl;
+    std::cout << "[ResourceManager] Создание буфера размером " << std::to_string(size / 1024) << " KB (заглушка)" << std::endl;
     
     // TODO: Реальное создание буфера через VMA на следующих этапах
     // Пока возвращаем фиктивный буфер
@@ -197,11 +202,14 @@ vk::DeviceMemory ResourceManager::manageInterop(const CUDAResource& cudaRes) {
             0xFFFFFFFF, // Любой тип памяти
             vk::MemoryPropertyFlagBits::eDeviceLocal);
         
-        // Добавляем информацию для импорта external memory
-        vk::ImportMemoryWin32HandleInfoKHR importInfo{};
-        importInfo.handleType = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueWin32;
+        // Добавляем информацию для импорта external memory (только Windows)
+#ifdef _WIN32
+        // TODO: Требуется расширение VK_KHR_external_memory_win32
+        // vk::ImportMemoryWin32HandleInfoKHR importInfo{};
+        // importInfo.handleType = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueWin32;
         // importInfo.handle = cudaRes.handle; // TODO: Получить handle из CUDA
-        allocInfo.pNext = &importInfo;
+        // allocInfo.pNext = &importInfo;
+#endif
         
         auto memory = device.allocateMemory(allocInfo);
         
@@ -269,30 +277,41 @@ cudaExternalMemory_t ResourceManager::exportMemoryToCUDA(vk::DeviceMemory memory
     try {
         std::cout << "[ResourceManager] Экспорт Vulkan памяти в CUDA" << std::endl;
         
-        // Получаем Windows handle от Vulkan memory
-        vk::MemoryGetWin32HandleInfoKHR handleInfo{};
-        handleInfo.memory = memory;
-        handleInfo.handleType = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueWin32;
+        // Получаем Windows handle от Vulkan memory (только Windows)
+#ifdef _WIN32
+        // TODO: Требуется расширение VK_KHR_external_memory_win32
+        // vk::MemoryGetWin32HandleInfoKHR handleInfo{};
+        // handleInfo.memory = memory;
+        // handleInfo.handleType = vk::ExternalMemoryHandleTypeFlagBits::eOpaqueWin32;
+        // 
+        // HANDLE handle = device.getMemoryWin32HandleKHR(handleInfo);
         
-        HANDLE handle = device.getMemoryWin32HandleKHR(handleInfo);
+        std::cout << "[ResourceManager] Windows CUDA interop не поддерживается (требуется VK_KHR_external_memory_win32)" << std::endl;
+        return cudaExternalMemory_t{};
+#else
+        std::cout << "[ResourceManager] CUDA interop не поддерживается на данной платформе" << std::endl;
+        return cudaExternalMemory_t{};
+#endif
         
-        // Создаем CUDA external memory
-        cudaExternalMemoryHandleDesc memHandleDesc{};
-        memHandleDesc.type = cudaExternalMemoryHandleTypeOpaqueWin32;
-        memHandleDesc.handle.win32.handle = handle;
-        memHandleDesc.size = 0; // Размер будет определен автоматически
-        
-        cudaExternalMemory_t extMem;
-        cudaError_t result = cudaImportExternalMemory(&extMem, &memHandleDesc);
-        
-        if (result != cudaSuccess) {
-            std::cerr << "[ResourceManager] Ошибка импорта памяти в CUDA: " 
-                      << cudaGetErrorString(result) << std::endl;
-            return nullptr;
-        }
-        
-        std::cout << "[ResourceManager] Память успешно экспортирована в CUDA" << std::endl;
-        return extMem;
+        // Остальной код временно закомментирован
+        // 
+        // // Создаем CUDA external memory
+        // cudaExternalMemoryHandleDesc memHandleDesc{};
+        // memHandleDesc.type = cudaExternalMemoryHandleTypeOpaqueWin32;
+        // memHandleDesc.handle.win32.handle = handle;
+        // memHandleDesc.size = 0; // Размер будет определен автоматически
+        // 
+        // cudaExternalMemory_t extMem;
+        // cudaError_t result = cudaImportExternalMemory(&extMem, &memHandleDesc);
+        // 
+        // if (result != cudaSuccess) {
+        //     std::cerr << "[ResourceManager] Ошибка импорта памяти в CUDA: " 
+        //               << cudaGetErrorString(result) << std::endl;
+        //     return nullptr;
+        // }
+        // 
+        // std::cout << "[ResourceManager] Память успешно экспортирована в CUDA" << std::endl;
+        // return extMem;
         
     } catch (const std::exception& e) {
         std::cerr << "[ResourceManager] Ошибка экспорта памяти в CUDA: " << e.what() << std::endl;

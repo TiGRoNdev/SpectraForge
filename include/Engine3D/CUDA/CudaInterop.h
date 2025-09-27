@@ -8,11 +8,12 @@
 #include <cuda_runtime.h>
 #include <cuda.h>
 
-// Проверка поддержки external memory на этапе компиляции
-#if CUDA_VERSION >= 10000
-#include <cudaGL.h>
-#include <cuda_gl_interop.h>
-#endif
+// Для Vulkan interop нам не нужен OpenGL
+// OpenGL заголовки убраны для избежания конфликтов
+// #if CUDA_VERSION >= 10000
+// #include <cudaGL.h>
+// #include <cuda_gl_interop.h>
+// #endif
 
 #endif // CUDA_VULKAN_INTEROP_SUPPORTED
 

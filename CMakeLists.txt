@@ -7,24 +7,64 @@ set(PROJECT_LANGUAGES CXX)
 option(BUILD_ENGINE_3D "Build 3D Engine" ON)
 option(BUILD_ENGINE_4D "Build 4D Engine" OFF)
 option(BUILD_VULKAN_RENDERER "Build Vulkan-based Hybrid Renderer" ON)
-option(BUILD_WITH_CUDA "Build with CUDA support" OFF)
+option(BUILD_WITH_CUDA "Build with CUDA support" ON)
 option(BUILD_WITH_OPTIX "Build with OptiX support" ON)
-option(BUILD_WITH_DLSS "Build with DLSS support" OFF)
+option(BUILD_WITH_DLSS "Build with DLSS support" ON)
 option(BUILD_WITH_FSR "Build with FSR support" ON)
 option(BUILD_EXAMPLES "Build example applications" ON)
 option(BUILD_TESTS "Build test suite" OFF)
+
+# Ранняя настройка CUDA для поддержки
+if(BUILD_WITH_CUDA)
+    # Пытаемся найти CUDA compiler
+    find_program(CUDA_NVCC_EXECUTABLE nvcc)
+    if(CUDA_NVCC_EXECUTABLE)
+        set(CMAKE_CUDA_COMPILER ${CUDA_NVCC_EXECUTABLE})
+        # Только добавляем CUDA если компилятор найден
+        # Но не включаем его в PROJECT_LANGUAGES пока не убедимся что все работает
+        message(STATUS "CUDA compiler found: ${CUDA_NVCC_EXECUTABLE}")
+        set(CUDA_COMPILER_AVAILABLE TRUE)
+    else()
+        message(WARNING "CUDA compiler not found. CUDA support will be disabled.")
+        set(BUILD_WITH_CUDA OFF)
+        set(CUDA_COMPILER_AVAILABLE FALSE)
+    endif()
+endif()
 
 # Опции для адаптеров рендеринга
 option(ENABLE_OPENGL_BACKEND "Enable OpenGL rendering backend" ON)
 option(ENABLE_VULKAN_BACKEND "Enable Vulkan rendering backend" ON)
 option(DEFAULT_BACKEND_VULKAN "Use Vulkan as default backend (otherwise OpenGL)" OFF)
 
-# Сначала создаем проект только с C++
-project(HyperEngine VERSION 1.0.0 LANGUAGES CXX)
+# Создаем проект с поддерживаемыми языками
+project(HyperEngine VERSION 1.0.0 LANGUAGES ${PROJECT_LANGUAGES})
 
 # Установка стандарта C++
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Проверяем CUDA без включения языка (обходим проблему с toolset)
+if(BUILD_WITH_CUDA AND CUDA_COMPILER_AVAILABLE)
+    # Сначала найдем CUDAToolkit для проверки совместимости
+    find_package(CUDAToolkit QUIET)
+    
+    if(CUDAToolkit_FOUND)
+        message(STATUS "CUDAToolkit found: ${CUDAToolkit_VERSION}")
+        
+        # Используем только runtime CUDA без компиляции (обходим проблему toolset)
+        message(STATUS "Using CUDA runtime libraries only (no kernel compilation)")
+        set(CUDA_AVAILABLE FALSE)
+        set(CUDA_RUNTIME_ONLY TRUE)
+    else()
+        message(WARNING "CUDAToolkit not found. CUDA support will be disabled.")
+        set(BUILD_WITH_CUDA OFF)
+        set(CUDA_AVAILABLE FALSE)
+        set(CUDA_RUNTIME_ONLY FALSE)
+    endif()
+else()
+    set(CUDA_AVAILABLE FALSE)
+    set(CUDA_RUNTIME_ONLY FALSE)
+endif()
 
 # Настройки компилятора
 if(MSVC)
@@ -80,30 +120,40 @@ find_package(GLEW REQUIRED)
 # Поиск GLM через vcpkg
 find_package(glm CONFIG REQUIRED)
 
-# Поиск CUDA Toolkit (опциональный)
-if(BUILD_WITH_CUDA)
-    find_package(CUDAToolkit QUIET)
-    
-    if(CUDAToolkit_FOUND)
-        # Расширенная настройка CUDA
-        find_package(CUDAAdvanced)
-        
-        if(CUDA_ADVANCED_FOUND)
-            # Включаем CUDA язык после проверки
-            enable_language(CUDA)
-            message(STATUS "CUDA Toolkit found: ${CUDAToolkit_VERSION}")
-        else()
-            message(WARNING "CUDA Advanced configuration failed. Disabling CUDA support.")
-            set(BUILD_WITH_CUDA OFF)
-        endif()
-    else()
-        message(WARNING "CUDA Toolkit not found. Disabling CUDA support.")
-        set(BUILD_WITH_CUDA OFF)
-    endif()
-endif()
-
 # Добавление пути к CMake модулям
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
+# Поиск CUDA Toolkit (опциональный)
+if(BUILD_WITH_CUDA)
+    # Проверяем наличие nvcc
+    find_program(CUDA_NVCC_EXECUTABLE nvcc)
+    
+    if(CUDA_NVCC_EXECUTABLE)
+        message(STATUS "CUDA compiler found: ${CUDA_NVCC_EXECUTABLE}")
+        
+        # Пытаемся найти CUDAToolkit для линковки библиотек
+        find_package(CUDAToolkit QUIET)
+        
+        if(CUDAToolkit_FOUND)
+            message(STATUS "CUDA Toolkit found: ${CUDAToolkit_VERSION}")
+            
+            # Устанавливаем переменную что CUDA доступен для определений препроцессора
+            set(CUDA_AVAILABLE TRUE)
+            
+            # Ищем расширенную CUDA конфигурацию
+            find_package(CUDAAdvanced QUIET)
+            
+        else()
+            message(STATUS "CUDA compiler found but CUDAToolkit package not available")
+            set(CUDA_AVAILABLE FALSE)
+        endif()
+        
+    else()
+        message(WARNING "CUDA compiler (nvcc) not found. Disabling CUDA support.")
+        set(BUILD_WITH_CUDA OFF)
+        set(CUDA_AVAILABLE FALSE)
+    endif()
+endif()
 
 # Поиск OptiX SDK
 if(BUILD_WITH_OPTIX)
@@ -262,14 +312,113 @@ if(BUILD_VULKAN_RENDERER)
     message(STATUS "Building Vulkan Hybrid Renderer...")
     
     # Сбор файлов для Vulkan рендерера
-    file(GLOB_RECURSE VULKAN_SOURCES 
-        "srcVulkan/*.cpp"
-        "srcVulkan/*.cu"
-        "srcVulkan/*.h"
-    )
+    file(GLOB_RECURSE VULKAN_CPP_SOURCES "srcVulkan/*.cpp")
+    file(GLOB_RECURSE VULKAN_HEADERS "srcVulkan/*.h")
+    
+    # Отдельно собираем CUDA файлы
+    file(GLOB_RECURSE VULKAN_CUDA_SOURCES "srcVulkan/*.cu")
+    
+    # Объединяем исходники
+    set(VULKAN_SOURCES ${VULKAN_CPP_SOURCES} ${VULKAN_HEADERS})
+    
+    # Проверяем наличие скомпилированных CUDA объектных файлов
+    set(CUDA_OBJECT_FILES)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/gaussian_optimization.obj")
+        list(APPEND CUDA_OBJECT_FILES 
+            "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/gaussian_optimization.obj"
+            "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/tile_rasterization.obj"
+            "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/depth_sorting.obj"
+        )
+        # Исключаем заглушки так как у нас есть реальные функции
+        list(REMOVE_ITEM VULKAN_SOURCES "srcVulkan/CUDA/cuda_stubs.cpp")
+        list(REMOVE_ITEM VULKAN_SOURCES "${CMAKE_SOURCE_DIR}/srcVulkan/CUDA/cuda_stubs.cpp")
+        message(STATUS "Using compiled CUDA object files: ${CUDA_OBJECT_FILES}")
+        set(USING_COMPILED_CUDA_OBJECTS TRUE)
+    elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/cuda_kernels_partial.lib")
+        # Если есть библиотека но нет отдельных объектных файлов
+        set(CUDA_LIBRARY_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/cuda_kernels_partial.lib")
+        list(REMOVE_ITEM VULKAN_CPP_SOURCES "${CMAKE_SOURCE_DIR}/srcVulkan/CUDA/cuda_stubs.cpp")
+        message(STATUS "Using compiled CUDA library: ${CUDA_LIBRARY_FILE}")
+        set(USING_COMPILED_CUDA_LIBRARY TRUE)
+    else()
+        # Fallback: Добавляем CUDA файлы или заглушки
+        if(CUDA_AVAILABLE AND VULKAN_CUDA_SOURCES)
+            # Исключаем заглушки и добавляем реальные CUDA файлы
+            list(REMOVE_ITEM VULKAN_CPP_SOURCES "${CMAKE_SOURCE_DIR}/srcVulkan/CUDA/cuda_stubs.cpp")
+            list(APPEND VULKAN_SOURCES ${VULKAN_CUDA_SOURCES})
+            message(STATUS "Building with CUDA kernels: ${VULKAN_CUDA_SOURCES}")
+        elseif(CUDA_RUNTIME_ONLY)
+            # Добавляем заглушки, но с runtime поддержкой
+            list(APPEND VULKAN_SOURCES "srcVulkan/CUDA/cuda_stubs.cpp")
+            message(STATUS "Building with CUDA stubs but with runtime libraries")
+        else()
+            # Добавляем заглушки CUDA если CUDA недоступна
+            list(APPEND VULKAN_SOURCES "srcVulkan/CUDA/cuda_stubs.cpp")
+            message(STATUS "Building with CUDA stubs (CUDA not available)")
+        endif()
+    endif()
     
     # Создание библиотеки Vulkan рендерера
     add_library(VulkanRenderer STATIC ${VULKAN_SOURCES})
+    
+    # Устанавливаем CUDA файлы как CUDA язык если доступен
+    if(CUDA_AVAILABLE AND VULKAN_CUDA_SOURCES)
+        set_source_files_properties(${VULKAN_CUDA_SOURCES} PROPERTIES LANGUAGE CUDA)
+        message(STATUS "Set CUDA language for: ${VULKAN_CUDA_SOURCES}")
+    endif()
+    
+    # Настройка CUDA для VulkanRenderer если доступен
+    if(CUDA_AVAILABLE)
+        # Базовые CUDA настройки для полной компиляции
+        set_property(TARGET VulkanRenderer PROPERTY CUDA_STANDARD 17)
+        set_property(TARGET VulkanRenderer PROPERTY CUDA_STANDARD_REQUIRED ON)
+        set_property(TARGET VulkanRenderer PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+        set_property(TARGET VulkanRenderer PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+        set_property(TARGET VulkanRenderer PROPERTY CUDA_ARCHITECTURES "${CMAKE_CUDA_ARCHITECTURES}")
+        
+        # CUDA compile definitions
+        target_compile_definitions(VulkanRenderer PRIVATE 
+            CUDA_VULKAN_INTEROP_SUPPORTED=1
+            VULKAN_RENDERER_CUDA_SUPPORT=1
+        )
+        
+        # Добавляем CUDA include директории
+        find_package(CUDAToolkit REQUIRED)
+        target_include_directories(VulkanRenderer PRIVATE 
+            ${CUDAToolkit_INCLUDE_DIRS}
+        )
+    elseif(USING_COMPILED_CUDA_OBJECTS OR USING_COMPILED_CUDA_LIBRARY)
+        # CUDA поддержка через скомпилированные объектные файлы/библиотеки
+        target_compile_definitions(VulkanRenderer PRIVATE 
+            CUDA_VULKAN_INTEROP_SUPPORTED=1
+            VULKAN_RENDERER_CUDA_SUPPORT=1
+            USING_PRECOMPILED_CUDA=1
+        )
+        
+        # Добавляем CUDA include пути для скомпилированных файлов
+        if(CUDA_FOUND)
+            find_package(CUDAToolkit REQUIRED)
+            target_include_directories(VulkanRenderer PRIVATE 
+                ${CUDAToolkit_INCLUDE_DIRS}
+            )
+            target_link_libraries(VulkanRenderer PRIVATE CUDA::cudart CUDA::cuda_driver)
+        endif()
+        
+        message(STATUS "VulkanRenderer: CUDA поддержка через скомпилированные файлы включена")
+    elseif(CUDA_RUNTIME_ONLY)
+        # Runtime CUDA поддержка без компиляции kernels
+        target_compile_definitions(VulkanRenderer PRIVATE 
+            CUDA_VULKAN_INTEROP_SUPPORTED=1
+            VULKAN_RENDERER_CUDA_SUPPORT=1
+        )
+        
+        # Линковка только runtime CUDA библиотек  
+        target_link_libraries(VulkanRenderer PRIVATE CUDA::cudart CUDA::cuda_driver)
+        
+        message(STATUS "VulkanRenderer: Runtime CUDA поддержка включена (stubs + runtime)")
+    else()
+        message(STATUS "VulkanRenderer: CUDA поддержка отключена - используются stubs")
+    endif()
     
     # Подключение заголовочных файлов
     target_include_directories(VulkanRenderer PUBLIC 
@@ -281,6 +430,17 @@ if(BUILD_VULKAN_RENDERER)
         ${CMAKE_SOURCE_DIR}/include/Engine3D/Upscaling
     )
     
+    # Линковка скомпилированных CUDA файлов
+    if(USING_COMPILED_CUDA_OBJECTS)
+        # Добавляем объектные файлы к target
+        target_sources(VulkanRenderer PRIVATE ${CUDA_OBJECT_FILES})
+        message(STATUS "Linked CUDA object files to VulkanRenderer")
+    elseif(USING_COMPILED_CUDA_LIBRARY)
+        # Линкуем библиотеку
+        target_link_libraries(VulkanRenderer PRIVATE ${CUDA_LIBRARY_FILE})
+        message(STATUS "Linked CUDA library to VulkanRenderer")
+    endif()
+
     # Базовые библиотеки для Vulkan рендерера
     target_link_libraries(VulkanRenderer PUBLIC 
         Vulkan::Headers
@@ -296,11 +456,6 @@ if(BUILD_VULKAN_RENDERER)
     # Подключение stb через include directories
     target_include_directories(VulkanRenderer PRIVATE ${Stb_INCLUDE_DIR})
     
-    # CUDA поддержка
-    if(BUILD_WITH_CUDA AND CUDA_ADVANCED_FOUND)
-        configure_cuda_target(VulkanRenderer)
-        target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_CUDA_SUPPORT)
-    endif()
     
     # OptiX поддержка
     if(BUILD_WITH_OPTIX AND OptiX_FOUND)
@@ -352,21 +507,41 @@ if(BUILD_VULKAN_RENDERER)
         )
         
         # CUDA-Vulkan Interop Demo (требует CUDA)
-        if(BUILD_WITH_CUDA AND CUDA_ADVANCED_FOUND)
+        if(CUDA_AVAILABLE OR CUDA_RUNTIME_ONLY)
             add_executable(CudaVulkanInterop_Demo 
                 examples/cuda_vulkan_interop_demo.cpp
             )
             target_link_libraries(CudaVulkanInterop_Demo PRIVATE 
                 VulkanRenderer
                 Engine3D
+                CUDA::cudart 
+                CUDA::cuda_driver
             )
             
             # Настройка CUDA для demo
-            configure_cuda_target(CudaVulkanInterop_Demo)
+            target_compile_definitions(CudaVulkanInterop_Demo PRIVATE CUDA_VULKAN_INTEROP_SUPPORTED=1)
             
-            message(STATUS "CUDA-Vulkan Interop Demo будет собран")
+            # FlashGS Demo - демонстрация 3D Gaussian Splatting
+            add_executable(FlashGS_Demo 
+                examples/flashgs_demo.cpp
+            )
+            target_link_libraries(FlashGS_Demo PRIVATE 
+                VulkanRenderer
+                Engine3D
+                CUDA::cudart 
+                CUDA::cuda_driver
+            )
+            
+            # Настройка CUDA для FlashGS demo
+            target_compile_definitions(FlashGS_Demo PRIVATE CUDA_VULKAN_INTEROP_SUPPORTED=1)
+            
+            if(CUDA_AVAILABLE)
+                message(STATUS "CUDA демо будут собраны с полной CUDA поддержкой")
+            else()
+                message(STATUS "CUDA демо будут собраны с runtime CUDA поддержкой (используют stubs)")
+            endif()
         else()
-            message(STATUS "CUDA-Vulkan Interop Demo пропущен (требует CUDA)")
+            message(STATUS "CUDA демо отключены - CUDA не доступна или отключена")
         endif()
     endif()
 endif()

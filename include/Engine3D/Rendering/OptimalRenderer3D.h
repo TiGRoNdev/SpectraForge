@@ -325,7 +325,8 @@ public:
         
         void reset() {
             for (int i = 0; i < 4; ++i) gaussiansPerLevel[i] = 0;
-            averageDistance = totalGaussians = 0;
+            averageDistance = 0.0f;
+            totalGaussians = 0;
             lodAdjustmentFactor = 1.0f;
         }
     };

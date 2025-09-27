@@ -77,10 +77,10 @@ public:
     virtual RaycastHit3D raycast(const Math::Vector3& origin, const Math::Vector3& direction, float maxDistance = 1000.0f) const = 0;
     
     // Настройка
-    void setCenter(const Math::Vector3& center) { this->center = center; }
-    void setTransform(const Math::Matrix4& transform) { this->transform = transform; }
-    void setTrigger(bool trigger) { this->trigger = trigger; }
-    void setEnabled(bool enabled) { this->enabled = enabled; }
+    void setCenter(const Math::Vector3& centerPos) { this->center = centerPos; }
+    void setTransform(const Math::Matrix4& transformMatrix) { this->transform = transformMatrix; }
+    void setTrigger(bool isTrigger) { this->trigger = isTrigger; }
+    void setEnabled(bool isEnabled) { this->enabled = isEnabled; }
     
     // Геттеры
     Type getType() const { return type; }
@@ -128,7 +128,7 @@ public:
     AABB getBoundingBox() const override;
     
     // Специфичные методы
-    void setRadius(float radius) { this->radius = radius; }
+    void setRadius(float radiusValue) { this->radius = radiusValue; }
     float getRadius() const { return radius; }
     
     // Специализированные проверки столкновений
@@ -156,7 +156,7 @@ public:
     AABB getBoundingBox() const override;
     
     // Специфичные методы
-    void setSize(const Math::Vector3& size) { this->size = size; }
+    void setSize(const Math::Vector3& boxSize) { this->size = boxSize; }
     const Math::Vector3& getSize() const { return size; }
     Math::Vector3 getMin() const;
     Math::Vector3 getMax() const;
@@ -237,12 +237,12 @@ public:
     Math::Vector3 getInverseInertia() const;
     
     // Настройки
-    void setKinematic(bool kinematic) { this->kinematic = kinematic; }
+    void setKinematic(bool isKinematic) { this->kinematic = isKinematic; }
     void setGravityScale(float scale) { this->gravityScale = scale; }
-    void setDrag(float drag) { this->drag = drag; }
-    void setAngularDrag(float angularDrag) { this->angularDrag = angularDrag; }
-    void setRestitution(float restitution) { this->restitution = restitution; }
-    void setFriction(float friction) { this->friction = friction; }
+    void setDrag(float dragValue) { this->drag = dragValue; }
+    void setAngularDrag(float angularDragValue) { this->angularDrag = angularDragValue; }
+    void setRestitution(float restitutionValue) { this->restitution = restitutionValue; }
+    void setFriction(float frictionValue) { this->friction = frictionValue; }
     
     bool isKinematic() const { return kinematic; }
     float getGravityScale() const { return gravityScale; }
@@ -321,7 +321,7 @@ public:
     // Настройка эмиттера
     void setEmitterPosition(const Math::Vector3& position) { emitterPosition = position; }
     void setEmitterVelocity(const Math::Vector3& velocity) { emitterVelocity = velocity; }
-    void setGravity(const Math::Vector3& gravity) { this->gravity = gravity; }
+    void setGravity(const Math::Vector3& gravityVector) { this->gravity = gravityVector; }
     void setEmissionRate(float rate) { emissionRate = rate; }
     void setParticleLife(float life) { particleLife = life; }
     void setParticleSize(float size) { particleSize = size; }
@@ -386,9 +386,9 @@ public:
     std::vector<RaycastHit3D> raycastAll(const Math::Vector3& origin, const Math::Vector3& direction, float maxDistance = 1000.0f);
     
     // Настройки мира
-    void setGravity(const Math::Vector3& gravity) { this->gravity = gravity; }
+    void setGravity(const Math::Vector3& gravityVector) { this->gravity = gravityVector; }
     void setTimeStep(float step) { timeStep = step; }
-    void setIterations(int iterations) { this->iterations = iterations; }
+    void setIterations(int iterationCount) { this->iterations = iterationCount; }
     
     const Math::Vector3& getGravity() const { return gravity; }
     float getTimeStep() const { return timeStep; }

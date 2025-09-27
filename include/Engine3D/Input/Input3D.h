@@ -126,7 +126,7 @@ public:
     // Геттеры
     const std::string& getName() const { return name; }
     bool isEnabled() const { return enabled; }
-    void setEnabled(bool enabled) { this->enabled = enabled; }
+    void setEnabled(bool isEnabled) { this->enabled = isEnabled; }
 
 private:
     std::string name;
@@ -149,7 +149,7 @@ public:
     static InputManager3D& getInstance();
     
     // Инициализация и очистка
-    bool initialize(GLFWwindow* window);
+    bool initialize(GLFWwindow* windowPtr);
     void cleanup();
     void update();
     
@@ -307,10 +307,10 @@ public:
     void handleInput(const InputState3D& inputState) override;
     
     // Специфичные настройки FPS
-    void setPitchLimit(float minPitch, float maxPitch);
+    void setPitchLimit(float minPitchValue, float maxPitchValue);
     void setJumpHeight(float height) { jumpHeight = height; }
-    void setGravity(float gravity) { this->gravity = gravity; }
-    void setGrounded(bool grounded) { this->grounded = grounded; }
+    void setGravity(float gravityValue) { this->gravity = gravityValue; }
+    void setGrounded(bool isGrounded) { this->grounded = isGrounded; }
     
     bool isGrounded() const { return grounded; }
     void jump();

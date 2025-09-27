@@ -251,7 +251,7 @@ private:
         }
         std::cout << "Вендор: " << vendorName << std::endl;
         
-        std::cout << "VRAM: " << (detector->getVRAMSize() / 1024 / 1024) << " MB" << std::endl;
+        std::cout << "VRAM: " << std::to_string(detector->getVRAMSize() / 1024 / 1024) << " MB" << std::endl;
         std::cout << "Ray Tracing: " << (detector->supportsRayTracing() ? "Да" : "Нет") << std::endl;
         std::cout << "CUDA: " << (detector->supportsCUDA() ? "Да" : "Нет") << std::endl;
         std::cout << "OptiX: " << (detector->supportsOptiX() ? "Да" : "Нет") << std::endl;

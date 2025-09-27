@@ -373,11 +373,11 @@ void demonstrateProfiles() {
     renderer->enableUpscaling(true, 1.5f);
     
     Console::info("Настроен пользовательский профиль:");
-    std::cout << "  📊 Качество: 4" << std::endl;
-    std::cout << "  🎯 Целевой FPS: 90" << std::endl;
+    std::cout << "  📊 Качество: " << std::to_string(4) << std::endl;
+    std::cout << "  🎯 Целевой FPS: " << std::to_string(90) << std::endl;
     std::cout << "  💡 GI: включено, Отражения: включены" << std::endl;
     std::cout << "  🌑 Тени: выключены, Деноизинг: включен" << std::endl;
-    std::cout << "  📏 Масштабирование: 1.5x" << std::endl;
+    std::cout << "  📏 Масштабирование: " << std::to_string(1.5) << "x" << std::endl;
     
     // Сохраняем профиль
     renderer->saveProfile("custom_profile.txt");

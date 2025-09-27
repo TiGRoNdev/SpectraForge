@@ -79,7 +79,7 @@ void demonstrateBasicRendering(RendererAdapter& adapter) {
         
         adapter.endFrame();
         
-        std::cout << "Кадр " << (frame + 1) << " отрендерен" << std::endl;
+        std::cout << "Кадр " << std::to_string(frame + 1) << " отрендерен" << std::endl;
         
         // Небольшая пауза для имитации реального времени
         std::this_thread::sleep_for(std::chrono::milliseconds(100));

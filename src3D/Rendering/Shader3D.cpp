@@ -45,8 +45,8 @@ bool Shader3D::loadFromFiles(const std::string& vertexPath, const std::string& f
 bool Shader3D::loadFromSource(const std::string& vertexSource, const std::string& fragmentSource) {
     // TODO: Реализовать компиляцию шейдеров для конкретного API (OpenGL/Vulkan)
     std::cout << "Shader3D::loadFromSource() - vertex and fragment shaders\n";
-    std::cout << "Vertex source length: " << vertexSource.length() << std::endl;
-    std::cout << "Fragment source length: " << fragmentSource.length() << std::endl;
+    std::cout << "Vertex source length: " << std::to_string(vertexSource.length()) << std::endl;
+    std::cout << "Fragment source length: " << std::to_string(fragmentSource.length()) << std::endl;
     
     // Заглушка - считаем что загрузка прошла успешно
     programId = 1; // Фиктивный ID
@@ -57,9 +57,9 @@ bool Shader3D::loadFromSource(const std::string& vertexSource, const std::string
 bool Shader3D::loadFromSource(const std::string& vertexSource, const std::string& fragmentSource, const std::string& geometrySource) {
     // TODO: Реализовать компиляцию шейдеров с геометрическим шейдером
     std::cout << "Shader3D::loadFromSource() - vertex, fragment and geometry shaders\n";
-    std::cout << "Vertex source length: " << vertexSource.length() << std::endl;
-    std::cout << "Fragment source length: " << fragmentSource.length() << std::endl;
-    std::cout << "Geometry source length: " << geometrySource.length() << std::endl;
+    std::cout << "Vertex source length: " << std::to_string(vertexSource.length()) << std::endl;
+    std::cout << "Fragment source length: " << std::to_string(fragmentSource.length()) << std::endl;
+    std::cout << "Geometry source length: " << std::to_string(geometrySource.length()) << std::endl;
     
     // Заглушка
     programId = 1;
@@ -93,7 +93,7 @@ void Shader3D::setMatrix4(const std::string& name, const Matrix4& matrix) const 
     int location = getUniformLocation(name);
     if (location != -1) {
         // TODO: Реализовать установку матрицы для конкретного API
-        std::cout << "Setting Matrix4 uniform '" << name << "' at location " << location << std::endl;
+        std::cout << "Setting Matrix4 uniform '" << name << "' at location " << std::to_string(location) << std::endl;
     }
 }
 
@@ -101,8 +101,8 @@ void Shader3D::setVector3(const std::string& name, const Vector3& vector) const 
     int location = getUniformLocation(name);
     if (location != -1) {
         // TODO: Реализовать установку вектора для конкретного API
-        std::cout << "Setting Vector3 uniform '" << name << "' at location " << location 
-                  << " value: (" << vector.x << ", " << vector.y << ", " << vector.z << ")" << std::endl;
+        std::cout << "Setting Vector3 uniform '" << name << "' at location " << std::to_string(location) 
+                  << " value: (" << std::to_string(vector.x) << ", " << std::to_string(vector.y) << ", " << std::to_string(vector.z) << ")" << std::endl;
     }
 }
 

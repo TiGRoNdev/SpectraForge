@@ -26,7 +26,7 @@ bool Renderer3D::initialize(int width, int height) {
     screenHeight = height;
     
     // Инициализация графического API (заглушка)
-    std::cout << "Initializing Renderer3D with resolution " << width << "x" << height << std::endl;
+    std::cout << "Initializing Renderer3D with resolution " << std::to_string(width) << "x" << std::to_string(height) << std::endl;
     
     // Настройки по умолчанию
     setClearColor(0.1f, 0.1f, 0.2f, 1.0f);

@@ -5,9 +5,9 @@
 #include <memory>
 #include <unordered_map>
 
-#ifdef VULKAN_RENDERER_CUDA_SUPPORT
-#include <cuda_runtime.h>
-#include <cuda.h>
+#if defined(VULKAN_RENDERER_CUDA_SUPPORT) && defined(CUDA_VULKAN_INTEROP_SUPPORTED)
+    #include <cuda_runtime.h>
+    #include <cuda.h>
 #endif
 
 namespace Engine3D::Vulkan {
@@ -26,7 +26,7 @@ struct ImageData {
     uint32_t arrayLayers = 1;
 };
 
-#ifdef VULKAN_RENDERER_CUDA_SUPPORT
+#if defined(VULKAN_RENDERER_CUDA_SUPPORT) && defined(CUDA_VULKAN_INTEROP_SUPPORTED)
 /**
  * @brief CUDA ресурс для interop
  */
@@ -121,7 +121,7 @@ public:
      */
     void updateBuffer(vk::Buffer buffer, const void* data, size_t size, size_t offset = 0);
     
-#ifdef VULKAN_RENDERER_CUDA_SUPPORT
+#if defined(VULKAN_RENDERER_CUDA_SUPPORT) && defined(CUDA_VULKAN_INTEROP_SUPPORTED)
     /**
      * @brief Управление CUDA-Vulkan interop
      * @param cudaRes CUDA ресурс
@@ -156,6 +156,14 @@ public:
      * @return VMA аллокатор
      */
     VmaAllocator getAllocator() const { return allocator; }
+    
+    /**
+     * @brief Поиск подходящего типа памяти
+     * @param typeFilter Фильтр типов памяти
+     * @param properties Требуемые свойства памяти
+     * @return Индекс типа памяти
+     */
+    uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
 
 private:
     vk::PhysicalDevice physicalDevice;
@@ -180,14 +188,6 @@ private:
      * @return true если создание успешно
      */
     bool createAllocator();
-    
-    /**
-     * @brief Поиск подходящего типа памяти
-     * @param typeFilter Фильтр типов памяти
-     * @param properties Требуемые свойства памяти
-     * @return Индекс типа памяти
-     */
-    uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
     
     /**
      * @brief Создание command buffer для копирования

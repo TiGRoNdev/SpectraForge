@@ -227,7 +227,9 @@ void HardwareDetector::loadAvailableExtensions() {
             "VK_KHR_acceleration_structure", 
             "VK_KHR_ray_query",
             "VK_KHR_external_memory",
+            "VK_KHR_external_memory_win32",  // Добавлено для CUDA interop
             "VK_KHR_external_semaphore",
+            "VK_KHR_external_semaphore_win32", // Добавлено для CUDA interop
             "VK_EXT_memory_budget"
         };
         

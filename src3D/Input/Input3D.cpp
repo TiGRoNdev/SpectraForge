@@ -132,13 +132,13 @@ InputManager3D& InputManager3D::getInstance() {
     return instance;
 }
 
-bool InputManager3D::initialize(GLFWwindow* window) {
+bool InputManager3D::initialize(GLFWwindow* windowPtr) {
     if (initialized) {
         std::cout << "InputManager3D already initialized" << std::endl;
         return true;
     }
     
-    this->window = window;
+    this->window = windowPtr;
     firstMouse = true;
     lastMouseX = 0.0;
     lastMouseY = 0.0;
@@ -594,9 +594,9 @@ void FirstPersonController::handleInput(const InputState3D& inputState) {
     }
 }
 
-void FirstPersonController::setPitchLimit(float minPitch, float maxPitch) {
-    this->minPitch = minPitch;
-    this->maxPitch = maxPitch;
+void FirstPersonController::setPitchLimit(float minPitchValue, float maxPitchValue) {
+    this->minPitch = minPitchValue;
+    this->maxPitch = maxPitchValue;
 }
 
 void FirstPersonController::jump() {

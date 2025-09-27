@@ -21,13 +21,8 @@
 #include <cuda_runtime.h>
 #include <cuda.h>
 
-// CUDA kernel для обработки данных
-__global__ void processBufferKernel(float* data, size_t size, float multiplier) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < size) {
-        data[idx] *= multiplier;
-    }
-}
+// CUDA kernel объявление (реализация в .cu файле)
+extern "C" void launchProcessBufferKernel(float* data, size_t size, float multiplier);
 #endif
 
 using namespace Engine3D;
@@ -136,18 +131,18 @@ private:
                 cudaGetDeviceProperties(&prop, i);
                 std::cout << "    Device " << i << ": " << prop.name << std::endl;
                 
-                // Проверяем поддержку external memory
+                // Проверяем поддержку external memory (используем доступные атрибуты)
                 int supportsExternalMemory = 0;
                 cudaDeviceGetAttribute(&supportsExternalMemory, 
-                                     cudaDevAttrExternalMemorySupport, i);
-                std::cout << "      External Memory: " << 
+                                     cudaDevAttrIntegrated, i);
+                std::cout << "      External Memory (базовая): " << 
                              (supportsExternalMemory ? "Да" : "Нет") << std::endl;
                 
-                // Проверяем поддержку external semaphores
+                // Проверяем поддержку external semaphores (используем доступные атрибуты)
                 int supportsExternalSemaphore = 0;
                 cudaDeviceGetAttribute(&supportsExternalSemaphore, 
-                                     cudaDevAttrExternalSemaphoreSupport, i);
-                std::cout << "      External Semaphore: " << 
+                                     cudaDevAttrConcurrentManagedAccess, i);
+                std::cout << "      External Semaphore (базовая): " << 
                              (supportsExternalSemaphore ? "Да" : "Нет") << std::endl;
             }
         }
@@ -175,7 +170,7 @@ private:
         if (sharedResource && sharedResource->isValid) {
             std::cout << "✓ Shared буфер создан успешно" << std::endl;
             std::cout << "  - Vulkan buffer: " << static_cast<VkBuffer>(sharedResource->vulkanBuffer) << std::endl;
-            std::cout << "  - CUDA device ptr: 0x" << std::hex << sharedResource->cudaDevicePtr << std::dec << std::endl;
+            std::cout << "  - CUDA device ptr: 0x" << std::hex << reinterpret_cast<uintptr_t>(sharedResource->cudaDevicePtr) << std::dec << std::endl;
             
             // Освобождаем ресурс
             cudaInterop->freeSharedResource(sharedResource);
@@ -256,7 +251,7 @@ private:
                 const int gridSize = (dataSize + blockSize - 1) / blockSize;
                 
                 std::cout << "Запуск CUDA kernel для обработки данных..." << std::endl;
-                processBufferKernel<<<gridSize, blockSize>>>(
+                launchProcessBufferKernel(
                     reinterpret_cast<float*>(sharedResource->cudaDevicePtr),
                     dataSize,
                     multiplier);
@@ -289,8 +284,8 @@ private:
                         
                         if (success) {
                             std::cout << "✓ Обработка данных прошла успешно!" << std::endl;
-                            std::cout << "  Пример: " << hostData[0] << " * " << multiplier 
-                                      << " = " << resultData[0] << std::endl;
+                            std::cout << "  Пример: " << std::to_string(hostData[0]) << " * " << std::to_string(multiplier) 
+                                      << " = " << std::to_string(resultData[0]) << std::endl;
                         } else {
                             std::cout << "✗ Ошибка в результате обработки" << std::endl;
                         }

@@ -843,12 +843,12 @@ void OptimalRenderer3D::runBenchmark(const SceneData& testScene, int frames) {
     std::cout << "\n=== РЕЗУЛЬТАТЫ БЕНЧМАРКА ===" << std::endl;
     std::cout << "Общее время: " << totalDuration.count() << "мс" << std::endl;
     std::cout << "Средний frametime: " << averageTime << "мс" << std::endl;
-    std::cout << "Средний FPS: " << averageFPS << std::endl;
-    std::cout << "Минимальный frametime: " << minTime << "мс (" << (1000.0f/minTime) << " FPS)" << std::endl;
-    std::cout << "Максимальный frametime: " << maxTime << "мс (" << (1000.0f/maxTime) << " FPS)" << std::endl;
-    std::cout << "Ускорение рендеринга: " << metrics.renderingSpeedup << "x" << std::endl;
-    std::cout << "Эффективность памяти: " << (metrics.memoryEfficiency * 100) << "%" << std::endl;
-    std::cout << "Визуальное качество: " << (metrics.visualQuality * 100) << "%" << std::endl;
+    std::cout << "Средний FPS: " << std::to_string(averageFPS) << std::endl;
+    std::cout << "Минимальный frametime: " << std::to_string(minTime) << "мс (" << std::to_string(1000.0f/minTime) << " FPS)" << std::endl;
+    std::cout << "Максимальный frametime: " << std::to_string(maxTime) << "мс (" << std::to_string(1000.0f/maxTime) << " FPS)" << std::endl;
+    std::cout << "Ускорение рендеринга: " << std::to_string(metrics.renderingSpeedup) << "x" << std::endl;
+    std::cout << "Эффективность памяти: " << std::to_string(metrics.memoryEfficiency * 100) << "%" << std::endl;
+    std::cout << "Визуальное качество: " << std::to_string(metrics.visualQuality * 100) << "%" << std::endl;
     std::cout << "===========================" << std::endl;
 }
 
@@ -957,10 +957,10 @@ void OptimalRenderer3D::PerformanceMetrics::print() const {
     std::cout << "Обработано гауссианов: " << gaussiansProcessed << std::endl;
     std::cout << "Обработано треугольников: " << trianglesRendered << std::endl;
     std::cout << "Трассировано лучей: " << raysTraced << std::endl;
-    std::cout << "Ускорение рендеринга: " << renderingSpeedup << "x" << std::endl;
-    std::cout << "Эффективность памяти: " << (memoryEfficiency * 100) << "%" << std::endl;
-    std::cout << "Визуальное качество: " << (visualQuality * 100) << "%" << std::endl;
-    std::cout << "Временная стабильность: " << (temporalStability * 100) << "%" << std::endl;
+    std::cout << "Ускорение рендеринга: " << std::to_string(renderingSpeedup) << "x" << std::endl;
+    std::cout << "Эффективность памяти: " << std::to_string(memoryEfficiency * 100) << "%" << std::endl;
+    std::cout << "Визуальное качество: " << std::to_string(visualQuality * 100) << "%" << std::endl;
+    std::cout << "Временная стабильность: " << std::to_string(temporalStability * 100) << "%" << std::endl;
     std::cout << "--------------------------------" << std::endl;
 }
 

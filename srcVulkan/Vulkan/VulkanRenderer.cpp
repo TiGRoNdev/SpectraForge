@@ -15,8 +15,6 @@
 #include <stdexcept>
 
 using namespace Engine3D::Vulkan;
-using namespace Engine3D::CUDA;
-using namespace Engine3D::OptiX;
 
 namespace Engine3D::Vulkan {
 
