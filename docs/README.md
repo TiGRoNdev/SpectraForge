@@ -1,418 +1,176 @@
-# HyperEngine - Техническая документация
+# Документация HyperEngine
 
-## 📋 Обзор
+Добро пожаловать в центр документации HyperEngine - современного игрового движка с поддержкой 3D и экспериментального 4D рендеринга.
 
-**HyperEngine** - современный модульный игровой движок с поддержкой как классического 3D, так и экспериментального 4D рендеринга. Движок построен на основе принципов SOLID и предоставляет гибкую, расширяемую архитектуру для создания инновационных игровых проектов.
+## 📚 Обзор документации
 
-### Ключевые особенности
+Документация организована в логические разделы для удобства навигации и изучения:
 
-- 🎯 **Модульная архитектура**: Независимые 3D и 4D движки
-- 🚀 **Современные технологии**: OpenGL/Vulkan, Forward+ rendering
-- 🧮 **Богатая математика**: Полная поддержка 3D/4D математики
-- 🎮 **Компонентная система**: Гибкая GameObject-Component архитектура
-- ⚡ **Высокая производительность**: Оптимизированные алгоритмы рендеринга
-- 🌐 **Полная поддержка UTF-8**: Консоль с эмодзи и цветным выводом
+### 🏗️ Архитектурная документация (`architecture/`)
 
-## Архитектура
+Глубокое погружение в архитектуру системы, принципы проектирования и технические решения:
 
-### Основные компоненты
+- **[ARCHITECTURE.md](architecture/ARCHITECTURE.md)** - Полное описание архитектуры проекта
+  - SOLID принципы и их применение
+  - Компонентная система GameObject-Component
+  - Архитектурные паттерны (Factory, Strategy, Adapter)
+  - Модульность и расширяемость
+  - Системы рендеринга и их взаимодействие
 
-1. **Математическая библиотека** (`Engine4D::Math`)
-   - 4D векторы и матрицы
-   - 4D кватернионы для поворотов
-   - Проекции 4D→3D→2D
+### 📖 API справочник (`api/`)
 
-2. **Система рендеринга** (`Engine4D::Rendering`)
-   - 4D меши и геометрия
-   - Шейдеры для 4D объектов
-   - Камера с поддержкой 4D навигации
+Детальная справочная документация по всем компонентам API:
 
-3. **Физическая система** (`Engine4D::Physics`)
-   - 4D коллайдеры (сферы, боксы, плоскости)
-   - 4D физические тела
-   - Система частиц для 4D
+- **[API_Reference.md](api/API_Reference.md)** - Полная справочная документация
+  - Математическая библиотека (Vector3/4, Matrix4, Quaternion)
+  - Система рендеринга (Renderer3D, Camera3D, Mesh3D, Shader3D)
+  - Физическая система (RigidBody3D, Collider3D, PhysicsWorld3D)
+  - Система ввода (Input3D, Controller3D)
+  - Система объектов (GameObject3D, Transform3D, Component)
+  - Консольная система (UTF-8 Console)
+  - Vulkan подсистема (VulkanRenderer, HardwareDetector)
 
-4. **Система ввода** (`Engine4D::Input`)
-   - Навигация в 4D пространстве
-   - Управление поворотами в 6 плоскостях
-   - Специальные режимы (сечение, проекции)
+### 🎯 Руководства и примеры (`guides/`)
 
-5. **Система объектов** (`Engine4D::Core`)
-   - Компонентная архитектура
-   - 4D трансформации
-   - Управление сценами
+Практические руководства, примеры кода и лучшие практики:
 
-## Математические основы
+- **[Examples.md](guides/Examples.md)** - Комплексное руководство с примерами
+  - Быстрый старт и минимальное приложение
+  - Создание 3D сцены с освещением
+  - Работа с компонентами и жизненным циклом
+  - Физическая симуляция и collision detection
+  - Система ввода и First-Person контроллер
+  - Продвинутый рендеринг с OptimalRenderer3D
+  - Оптимизация производительности
+  - UTF-8 консоль с эмодзи и цветами
+  - Vulkan рендеринг с ray tracing
 
-### 4D Векторы
+### 🖼️ Визуальные материалы (`images/`)
 
-4D векторы представляют точки или направления в гиперпространстве с координатами [x, y, z, w]:
+Диаграммы, схемы и визуальные пояснения архитектуры:
 
-```cpp
-Vector4 position(1.0f, 2.0f, 3.0f, 4.0f);
-Vector4 direction = position.normalized();
-float distance = position.magnitude();
-```
+- `architecture/` - Архитектурные диаграммы и схемы
+- `examples/` - Скриншоты примеров и демо
+- `api/` - Диаграммы API и взаимодействий
 
-### 4D Матрицы
+## 🚀 Быстрая навигация
 
-4x4 матрицы используются для трансформаций в 4D пространстве:
+### Для новичков
+1. 📖 Начните с [главного README.md](../README.md) для общего обзора
+2. 🎯 Изучите [Examples.md](guides/Examples.md) для быстрого старта
+3. 📚 Используйте [API_Reference.md](api/API_Reference.md) как справочник
 
-```cpp
-Matrix4 translation = Matrix4::translation(Vector4(1, 2, 3, 4));
-Matrix4 rotation = Matrix4::rotationXY(angle);
-Matrix4 scale = Matrix4::scaling(Vector4(2, 2, 2, 2));
-Matrix4 transform = translation * rotation * scale;
-```
+### Для разработчиков
+1. 🏗️ Изучите [ARCHITECTURE.md](architecture/ARCHITECTURE.md) для понимания дизайна
+2. 🔧 Ознакомьтесь с [CONTRIBUTING.md](../CONTRIBUTING.md) для участия в разработке
+3. 📝 Изучите [CHANGELOG.md](../CHANGELOG.md) для истории изменений
 
-### 4D Кватернионы
+### Для архитекторов
+1. 🏗️ [ARCHITECTURE.md](architecture/ARCHITECTURE.md) - Архитектурные решения
+2. 📊 [Performance Analysis](guides/Examples.md#оптимизация-производительности) - Анализ производительности
+3. 🔄 [Design Patterns](architecture/ARCHITECTURE.md#модульность-и-расширяемость) - Используемые паттерны
 
-4D кватернионы представляют повороты в гиперпространстве с 6 параметрами для 6 плоскостей:
+## 🎓 Образовательные ресурсы
 
-```cpp
-Quaternion4D rotation = Quaternion4D::rotationXW(angle);
-Vector4 rotated = rotation.rotate(vector);
-```
+### Концепции и теория
+- **SOLID принципы** в игровых движках
+- **Компонентная архитектура** для гибкости дизайна
+- **Современные техники рендеринга** (Ray Tracing, Gaussian Splatting)
+- **Оптимизация производительности** для real-time приложений
 
-## Система рендеринга
+### Практические навыки
+- **CMake** для кроссплатформенной сборки
+- **OpenGL/Vulkan** программирование
+- **CUDA/OptiX** для GPU вычислений
+- **AI Upscaling** технологии (DLSS/FSR)
 
-### Проекции 4D→3D
+## 🔧 Техническая информация
 
-Движок поддерживает три основных типа проекций:
+### Версии документации
+- **Версия документации**: 1.0.1
+- **Версия движка**: 1.0.1
+- **Дата обновления**: 27 сентября 2025
+- **Совместимость**: C++17 или новее
 
-1. **Ортогональная проекция**: Отбрасывает W-координату
-2. **Перспективная проекция**: Проецирует 4D объекты на 3D с учетом расстояния
-3. **Сечение**: Показывает 3D срез 4D объекта при заданном W
+### Форматы документации
+- **Markdown** (.md) - Основной формат для GitHub
+- **Doxygen** - Автогенерируемая документация из кода
+- **HTML** - Веб-версия (генерируется из Markdown)
 
-### Шейдеры
-
-Вершинный шейдер обрабатывает 4D координаты и применяет проекции:
-
-```glsl
-#version 330 core
-layout (location = 0) in vec4 position; // 4D позиция
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-uniform float crossSectionW;
-uniform bool useCrossSection;
-
-void main() {
-    vec4 worldPos = model * position;
-    vec4 viewPos = view * worldPos;
-    vec4 clipPos = projection * viewPos;
-    
-    if (useCrossSection) {
-        // Обработка сечения
-        if (abs(worldPos.w - crossSectionW) > 0.01) {
-            gl_Position = vec4(0.0, 0.0, 0.0, -1.0);
-            return;
-        }
-    }
-    
-    // Перспективная проекция 4D→3D
-    float perspectiveDistance = 10.0;
-    if (clipPos.w != 0.0) {
-        clipPos.xyz = clipPos.xyz * perspectiveDistance / clipPos.w;
-    }
-    
-    gl_Position = clipPos;
-}
-```
-
-Фрагментный шейдер создает визуальные эффекты для 4D объектов:
-
-```glsl
-#version 330 core
-in vec4 FragPos;
-in float WCoord;
-uniform bool useWColorGradient;
-
-void main() {
-    vec4 baseColor = Color;
-    
-    // Градиент по W-координате
-    if (useWColorGradient) {
-        float wFactor = (WCoord + 1.0) * 0.5;
-        baseColor = mix(vec4(0.0, 0.0, 1.0, 1.0), 
-                       vec4(1.0, 0.0, 0.0, 1.0), wFactor);
-    }
-    
-    // Эффект прозрачности для далеких W-слоев
-    float wDistance = abs(WCoord);
-    float alpha = 1.0 - smoothstep(0.0, 2.0, wDistance);
-    baseColor.a *= alpha;
-    
-    FragColor = baseColor;
-}
-```
-
-## Физическая система
-
-### 4D Коллайдеры
-
-Движок поддерживает несколько типов 4D коллайдеров:
-
-- **4D Сфера**: Проверка расстояния в 4D пространстве
-- **4D Бокс**: AABB (Axis-Aligned Bounding Box) для 4D
-- **4D Плоскость**: Для создания 4D поверхностей
-
-```cpp
-// Создание 4D сферического коллайдера
-auto sphereCollider = std::make_shared<Physics::SphereCollider4D>(2.0f);
-sphereCollider->setCenter(Vector4(0, 0, 0, 0));
-
-// Создание 4D боксового коллайдера
-auto boxCollider = std::make_shared<Physics::BoxCollider4D>(Vector4(2, 2, 2, 2));
-boxCollider->setCenter(Vector4(1, 1, 1, 1));
-```
-
-### 4D Физические тела
-
-4D физические тела поддерживают:
-- 4D позицию и скорость
-- 6-мерные повороты (по 6 плоскостям)
-- 4D гравитацию и силы
-- Столкновения в 4D пространстве
-
-```cpp
-auto rigidBody = std::make_shared<Physics::RigidBody4D>();
-rigidBody->setPosition(Vector4(0, 0, 0, 0));
-rigidBody->setMass(1.0f);
-rigidBody->applyForce(Vector4(0, -9.81f, 0, 0)); // 4D гравитация
-```
-
-## Система ввода
-
-### 4D Навигация
-
-Система ввода поддерживает навигацию в 4D пространстве:
-
-- **WASD**: Движение в 3D пространстве (X, Y, Z)
-- **QE**: Движение в W-измерении
-- **Space/Shift**: Движение вверх/вниз
-- **Мышь**: Поворот камеры
-- **1-6**: Повороты в различных плоскостях (XY, XZ, XW, YZ, YW, ZW)
-
-### Специальные режимы
-
-- **Tab**: Переключение режима сечения
-- **F1**: Каркасный режим
-- **R**: Сброс вида
-- **Scroll**: Изменение W-координаты сечения
-
-```cpp
-// Создание контроллера 4D
-Controller4D controller;
-controller.setMoveSpeed(10.0f);
-controller.setWSpeed(5.0f);
-controller.setSensitivity(0.002f);
-controller.setWMovement(true);
-controller.setMouseLook(true);
-```
-
-## Система объектов
-
-### Компонентная архитектура
-
-Движок использует компонентную архитектуру для 4D объектов:
-
-```cpp
-// Создание 4D объекта
-GameObject4D* obj = GameObject4D::create("My4DObject");
-
-// Добавление компонентов
-auto* transform = obj->transform; // Автоматически создается
-auto* renderer = obj->addComponent<MeshRenderer4D>();
-auto* collider = obj->addComponent<Collider4DComponent>();
-auto* rigidBody = obj->addComponent<RigidBody4DComponent>();
-auto* camera = obj->addComponent<Camera4DComponent>();
-```
-
-### 4D Трансформации
-
-4D трансформации поддерживают:
-- 4D позицию, поворот и масштаб
-- Иерархию объектов
-- Локальные и мировые координаты
-
-```cpp
-transform->setPosition(Vector4(1, 2, 3, 4));
-transform->setRotation(Quaternion4D::rotationXW(angle));
-transform->setScale(Vector4(2, 2, 2, 2));
-
-// Получение мировых координат
-Vector4 worldPos = transform->getWorldPosition();
-Matrix4 worldMatrix = transform->getWorldMatrix();
-```
-
-## Форматы файлов
-
-### 4D Меши
-
-Движок поддерживает несколько форматов для 4D геометрии:
-
-1. **OFF (Object File Format)**: Расширен для 4D политопов
-2. **.4DO**: Собственный бинарный формат
-3. **Процедурная генерация**: Тессеракты, симплексы, гиперкубы
-
-### Пример OFF файла для тессеракта:
+## 📋 Структура проекта
 
 ```
-4OFF
-16 8 0
-# 16 вершин, 8 граней (кубов), 0 ребер
-# Вершины тессеракта
--1 -1 -1 -1
- 1 -1 -1 -1
- 1  1 -1 -1
--1  1 -1 -1
--1 -1  1 -1
- 1 -1  1 -1
- 1  1  1 -1
--1  1  1 -1
--1 -1 -1  1
- 1 -1 -1  1
- 1  1 -1  1
--1  1 -1  1
--1 -1  1  1
- 1 -1  1  1
- 1  1  1  1
--1  1  1  1
-# Грани (тетраэдры)
-4 0 1 2 3
-4 4 7 6 5
-...
+docs/
+├── README.md                   # Этот файл - центр документации
+├── architecture/               # Архитектурная документация
+│   ├── ARCHITECTURE.md        # Основная архитектурная документация
+│   ├── SOLID_PRINCIPLES.md    # Применение SOLID принципов
+│   ├── COMPONENT_SYSTEM.md    # Система компонентов
+│   └── RENDERING_PIPELINE.md  # Конвейер рендеринга
+├── api/                       # API справочники
+│   ├── API_Reference.md       # Полная справочная документация
+│   ├── Math_API.md           # Математические API
+│   ├── Rendering_API.md      # API рендеринга
+│   └── Physics_API.md        # API физики
+├── guides/                    # Руководства и примеры
+│   ├── Examples.md           # Основные примеры
+│   ├── QuickStart.md         # Быстрый старт
+│   ├── Advanced_Usage.md     # Продвинутое использование
+│   └── Best_Practices.md     # Лучшие практики
+└── images/                    # Визуальные материалы
+    ├── architecture/          # Архитектурные диаграммы
+    ├── examples/             # Скриншоты примеров
+    └── api/                  # API диаграммы
 ```
 
-## Сборка и зависимости
+## 🤝 Участие в документации
 
-### CMake
+Документация - живой проект, который постоянно улучшается сообществом:
 
-Проект использует CMake для сборки:
+### Как помочь с документацией
+1. **Исправления опечаток** - Создайте PR с исправлениями
+2. **Новые примеры** - Добавьте практические примеры использования
+3. **Переводы** - Помогите с переводом на другие языки
+4. **Улучшения структуры** - Предложите улучшения организации
 
-```cmake
-cmake_minimum_required(VERSION 3.16)
-project(Engine4D VERSION 1.0.0 LANGUAGES CXX)
+### Стандарты документации
+- **Ясность** - Документация должна быть понятной для целевой аудитории
+- **Актуальность** - Соответствие текущей версии кода
+- **Полнота** - Покрытие всех важных аспектов функциональности
+- **Примеры** - Практические примеры для каждого API
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+## 📞 Поддержка
 
-find_package(OpenGL REQUIRED)
-find_package(glfw3 REQUIRED)
-find_package(GLEW REQUIRED)
+Если у вас есть вопросы по документации:
 
-add_library(Engine4D STATIC ${ENGINE_SOURCES})
-target_link_libraries(Engine4D OpenGL::GL glfw GLEW::GLEW)
-```
+1. **GitHub Issues** - Для сообщений об ошибках в документации
+2. **GitHub Discussions** - Для вопросов и предложений
+3. **Discord** - Для быстрой помощи от сообщества
+4. **Email** - docs@hyperengine.dev для серьезных вопросов
 
-### Зависимости
+## 🔄 История изменений документации
 
-- **OpenGL 3.3+**: Графический API
-- **GLFW 3.x**: Управление окнами и вводом
-- **GLEW**: Расширения OpenGL
-- **CMake 3.16+**: Система сборки
-- **C++17**: Стандарт языка
+### v1.0.1 (27 сентября 2025)
+- ✅ Создана полная структура документации
+- ✅ Добавлена архитектурная документация
+- ✅ Создан полный API справочник
+- ✅ Добавлены практические примеры и руководства
+- ✅ Организована логическая структура каталогов
 
-### Сборка
+### Планы на будущее
+- 📹 Видео-туториалы для сложных концепций
+- 🌐 Интерактивные примеры в браузере
+- 📱 Мобильная версия документации
+- 🔍 Улучшенный поиск по документации
 
-```bash
-mkdir build
-cd build
-cmake ..
-make -j4
-```
+---
 
-## Примеры использования
+<div align="center">
 
-### Создание простого 4D объекта
+**Документация HyperEngine**
 
-```cpp
-#include <Engine4D/Core/GameObject4D.h>
-#include <Engine4D/Rendering/Renderer.h>
+*Ваш путеводитель в мир современной разработки игр*
 
-// Создание тессеракта
-GameObject4D* tesseract = GameObject4D::createPrimitive("Tesseract");
-tesseract->transform->setPosition(Vector4(0, 0, 0, 0));
-tesseract->transform->setScale(Vector4(2, 2, 2, 2));
+[🏠 Главная](../README.md) | [🏗️ Архитектура](architecture/ARCHITECTURE.md) | [📚 API](api/API_Reference.md) | [🎯 Примеры](guides/Examples.md)
 
-// Настройка рендеринга
-auto* renderer = tesseract->getComponent<MeshRenderer4D>();
-renderer->setColor(Vector4(1, 0, 0, 0.8f));
-```
-
-### Создание 4D камеры
-
-```cpp
-GameObject4D* cameraObj = GameObject4D::create("Camera");
-auto* camera = cameraObj->addComponent<Camera4DComponent>();
-camera->setMainCamera(true);
-camera->setFieldOfView(45.0f);
-
-// Настройка 4D позиции
-cameraObj->transform->setPosition(Vector4(0, 0, -5, 0));
-```
-
-### Создание 4D физического объекта
-
-```cpp
-GameObject4D* physicsObj = GameObject4D::create("PhysicsObject");
-
-// Добавление физического тела
-auto* rigidBody = physicsObj->addComponent<RigidBody4DComponent>();
-auto body = std::make_shared<Physics::RigidBody4D>();
-body->setMass(1.0f);
-rigidBody->setRigidBody(body);
-
-// Добавление коллайдера
-auto* collider = physicsObj->addComponent<Collider4DComponent>();
-auto sphereCollider = std::make_shared<Physics::SphereCollider4D>(1.0f);
-collider->setCollider(sphereCollider);
-```
-
-## Производительность
-
-### Оптимизации
-
-1. **Frustum Culling**: Обрезка 4D объектов за пределами видимости
-2. **LOD (Level of Detail)**: Упрощение геометрии для далеких объектов
-3. **Instancing**: Массовый рендеринг одинаковых объектов
-4. **Spatial Partitioning**: 4D октодеревья для быстрого поиска
-
-### Рекомендации
-
-- Используйте простые 4D формы для лучшей производительности
-- Ограничивайте количество 4D объектов в сцене
-- Применяйте сечение для упрощения визуализации
-- Используйте билборды для далеких объектов
-
-## Ограничения и известные проблемы
-
-1. **Производительность**: 4D рендеринг требует больше вычислений
-2. **Интуитивность**: Навигация в 4D может быть сложной для пользователей
-3. **Совместимость**: Некоторые 3D инструменты не поддерживают 4D
-4. **Память**: 4D данные занимают больше места
-
-## Планы развития
-
-1. **VR поддержка**: Стереоскопический рендеринг 4D объектов
-2. **Анимация**: 4D анимации и переходы
-3. **Звук**: 3D позиционный звук с 4D эффектами
-4. **Сеть**: Многопользовательские 4D игры
-5. **Редактор**: Визуальный редактор 4D сцен
-
-## Лицензия
-
-Проект распространяется под лицензией MIT. См. файл LICENSE для подробностей.
-
-## Контакты
-
-- Автор: [Ваше имя]
-- Email: [your.email@example.com]
-- GitHub: [github.com/yourusername/4d-engine]
-
-## Благодарности
-
-- Alan Zucconi за вдохновляющие туториалы по 4D
-- Miegakure за демонстрацию 4D игровых механик
-- Сообщество разработчиков игр за идеи и поддержку
+</div>
