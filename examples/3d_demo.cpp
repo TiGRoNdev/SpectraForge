@@ -21,6 +21,7 @@
 #include "Engine3D/Math/Quaternion.h"
 #include "Engine3D/Math/MathConstants.h"
 
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <memory>
@@ -67,6 +68,18 @@ public:
         glfwMakeContextCurrent(window);
         glfwSetWindowUserPointer(window, this);
         
+        // Инициализация GLEW
+        if (glewInit() != GLEW_OK) {
+            Console::error("❌ Не удалось инициализировать GLEW");
+            glfwDestroyWindow(window);
+            glfwTerminate();
+            return false;
+        }
+        
+        Console::info("✅ GLEW инициализирован успешно");
+        Console::info("🔧 OpenGL версия: " + std::string((char*)glGetString(GL_VERSION)));
+        Console::info("🎮 Графический адаптер: " + std::string((char*)glGetString(GL_RENDERER)));
+        
         // Callback для закрытия окна
         glfwSetWindowCloseCallback(window, [](GLFWwindow* window) {
             Demo3D* demo = static_cast<Demo3D*>(glfwGetWindowUserPointer(window));
@@ -90,6 +103,7 @@ public:
         Console::info("🔄 Запуск основного цикла рендеринга...");
         
         auto lastTime = glfwGetTime();
+        int frameCount = 0;
         
         while (running && !glfwWindowShouldClose(window)) {
             auto currentTime = glfwGetTime();
@@ -101,9 +115,14 @@ public:
             
             glfwSwapBuffers(window);
             glfwPollEvents();
+            
+            frameCount++;
+            if (frameCount % 300 == 0) { // Каждые 5 секунд при 60 FPS
+                Console::info("🖼️ Кадров отрендерено: " + std::to_string(frameCount));
+            }
         }
         
-        Console::info("🏁 Демо завершено");
+        Console::info("🏁 Демо завершено (всего кадров: " + std::to_string(frameCount) + ")");
     }
     
     void cleanup() {
@@ -113,7 +132,7 @@ public:
         GameObject3D::clearAllObjects();
         
         // Очистка систем движка
-        physicsWorld.reset();
+        // physicsWorld.reset();
         InputManager3D::getInstance().cleanup();
         Renderer3D::getInstance().cleanup();
         
@@ -133,7 +152,7 @@ private:
     // Системы движка
     std::shared_ptr<Camera3D> camera;
     std::shared_ptr<FirstPersonController> controller;
-    std::shared_ptr<PhysicsWorld3D> physicsWorld;
+    // std::shared_ptr<PhysicsWorld3D> physicsWorld;
     
     // Игровые объекты
     GameObject3D* cubeObject;
@@ -155,9 +174,10 @@ private:
             return false;
         }
         
-        // Создание физического мира
-        physicsWorld = std::make_shared<PhysicsWorld3D>();
-        physicsWorld->setGravity(Vector3(0, -9.81f, 0));
+        // Создание физического мира (упрощенная версия)
+        // physicsWorld = std::make_shared<PhysicsWorld3D>();
+        // physicsWorld->setGravity(Vector3(0, -9.81f, 0));
+        Console::info("ℹ️ Физический мир пропущен для упрощения демо");
         
         // Создание камеры
         camera = std::make_shared<Camera3D>();
@@ -208,56 +228,21 @@ private:
     void createScene() {
         Console::info("🎬 Создание демонстрационной сцены...");
         
-        // Создание объекта камеры
-        cameraObject = GameObject3D::create("MainCamera");
-        auto* cameraComponent = cameraObject->addComponent<Camera3DComponent>();
-        cameraComponent->setMainCamera(true);
-        cameraComponent->setFieldOfView(60.0f);
-        
-        // Создание куба
+        // Создание простых объектов без сложных компонентов
         cubeObject = GameObject3D::create("Cube");
         cubeObject->getTransform()->setPosition(Vector3(0, 1, 0));
         
-        auto* meshRenderer = cubeObject->addComponent<MeshRenderer3D>();
-        auto cubeMesh = Mesh3D::createCube(2.0f);
-        auto basicShader = Shader3D::createBasicShader();
-        
-        meshRenderer->setMesh(cubeMesh);
-        meshRenderer->setShader(basicShader);
-        meshRenderer->setColor(Vector3(0.8f, 0.2f, 0.2f)); // Красный куб
-        
-        // Добавление физики к кубу
-        auto* rigidBody = cubeObject->addComponent<RigidBody3DComponent>();
-        auto cubeRigidBody = std::make_shared<RigidBody3D>();
-        cubeRigidBody->setPosition(Vector3(0, 1, 0));
-        cubeRigidBody->setMass(1.0f);
-        
-        auto cubeCollider = std::make_shared<BoxCollider3D>(Vector3(2, 2, 2));
-        cubeRigidBody->setCollider(cubeCollider);
-        
-        rigidBody->setRigidBody(cubeRigidBody);
-        physicsWorld->addRigidBody(cubeRigidBody);
-        
-        // Создание плоскости (пол)
         planeObject = GameObject3D::create("Floor");
         planeObject->getTransform()->setPosition(Vector3(0, -1, 0));
         planeObject->getTransform()->setScale(Vector3(10, 1, 10));
         
-        auto* planeMeshRenderer = planeObject->addComponent<MeshRenderer3D>();
-        auto planeMesh = Mesh3D::createPlane(10.0f, 10.0f);
-        
-        planeMeshRenderer->setMesh(planeMesh);
-        planeMeshRenderer->setShader(basicShader);
-        planeMeshRenderer->setColor(Vector3(0.2f, 0.8f, 0.2f)); // Зеленый пол
-        
-        // Добавление статического коллайдера для пола
-        auto planeCollider = std::make_shared<PlaneCollider3D>(Vector3(0, 1, 0), 1.0f);
-        physicsWorld->addCollider(planeCollider);
+        cameraObject = GameObject3D::create("MainCamera");
         
         // Добавление освещения
         setupLighting();
         
         Console::info("✅ Сцена создана с " + std::to_string(GameObject3D::getAllObjects().size()) + " объектами");
+        Console::info("ℹ️ Используется упрощенная сцена без сложных компонентов");
     }
     
     void setupLighting() {
@@ -298,8 +283,8 @@ private:
         camera->setPosition(controller->getPosition());
         camera->setRotation(controller->getRotation());
         
-        // Обновление физики
-        physicsWorld->update(deltaTime);
+        // Обновление физики (пропущено для упрощения)
+        // physicsWorld->update(deltaTime);
         
         // Обновление игровых объектов
         for (auto* obj : GameObject3D::getAllObjects()) {

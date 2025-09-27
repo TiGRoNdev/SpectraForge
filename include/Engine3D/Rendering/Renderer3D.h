@@ -103,22 +103,22 @@ protected:
     Renderer3D& operator=(const Renderer3D&) = delete;
     
     // Состояние рендерера
-    bool initialized;
-    int screenWidth, screenHeight;
+    bool initialized = false;
+    int screenWidth = 0, screenHeight = 0;
     
     // Камера
     std::shared_ptr<Camera3D> mainCamera;
     
     // Освещение
     std::vector<Light> lights;
-    Math::Vector3 ambientLight;
+    Math::Vector3 ambientLight{0.2f, 0.2f, 0.2f};
     
     // Настройки рендеринга
-    Math::Vector3 clearColor;
-    bool depthTestEnabled;
-    bool blendingEnabled;
-    bool wireframeEnabled;
-    bool backfaceCullingEnabled;
+    Math::Vector3 clearColor{0.1f, 0.1f, 0.2f};
+    bool depthTestEnabled = true;
+    bool blendingEnabled = false;
+    bool wireframeEnabled = false;
+    bool backfaceCullingEnabled = true;
     
     // Статистика
     RenderStats renderStats;

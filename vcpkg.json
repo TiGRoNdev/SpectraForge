@@ -16,10 +16,32 @@
       "name": "glfw3"
     },
     {
+      "name": "glew"
+    },
+    {
       "name": "vulkan"
     },
     {
       "name": "vulkan-memory-allocator"
+    },
+    {
+      "name": "vulkan-hpp"
+    },
+    {
+      "name": "spirv-cross"
+    },
+    {
+      "name": "shaderc"
+    },
+    {
+      "name": "imgui",
+      "features": ["vulkan-binding"]
+    },
+    {
+      "name": "assimp"
+    },
+    {
+      "name": "stb"
     },
     {
       "name": "glm"

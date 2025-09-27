@@ -1,0 +1,153 @@
+---
+alwaysApply: true
+---
+
+Always refer to the UML diagram below when you are designing architecture or refactoring code.
+This single file encapsulates the class relationships, dependencies, and flow, providing a complete view of the project architecture.
+```
+classDiagram
+    direction TB
+    note "Vulkan-Based Hybrid 3D Rendering Engine Architecture~n(Inspired by Vulkan Guide, Hybrid-Rendering Samples, and NVIDIA Tutorials)"
+
+    class Engine {
+        +init(VkInstance instance)
+        +renderFrame(CameraParams params)
+        +shutdown()
+        -Renderer* renderer
+        -SceneManager* sceneManager
+        -ResourceManager* resourceManager
+        -HardwareDetector* hardwareDetector
+    }
+
+    class Renderer {
+        +rasterizePrimary(Gaussians gaussians)
+        +rayTraceSecondary(PrimaryImage image)
+        +denoiseAI(RawEffects effects)
+        +upscale(DenoisedImage image, ResolutionTarget target)
+        +presentFinalImage()
+        -VkDevice device
+        -VkQueue graphicsQueue
+        -VkCommandPool commandPool
+        -FlashGSSplatter* splatter
+        -OptiXRayTracer* rayTracer
+        -DenoiseModule* denoiseModule
+        -Upscaler* upscaler
+        -VkSwapchainKHR swapchain
+    }
+
+    class SceneManager {
+        +loadScene(SceneData data)
+        +updateDynamics()
+        +getGaussians() Gaussians
+        -MultiViewImages images
+        -DynamicElements elements
+    }
+
+    class ResourceManager {
+        +allocateBuffer(size_t size) VkBuffer
+        +createTexture(ImageData data) VkImage
+        +manageInterop(CUDAResource cudaRes) VkExternalMemory
+        -VkPhysicalDevice physicalDevice
+        -MemoryAllocator allocator
+    }
+
+    class HardwareDetector {
+        +detectVendor() VendorType
+        +supportsRayTracing() bool
+        +selectUpscalerPath() UpscalerType
+        -VkPhysicalDeviceProperties props
+    }
+
+    class FlashGSSplatter {
+        +optimizeGaussians(MultiViewImages images)
+        +rasterizeGaussians(CameraParams params) PrimaryImage
+        -cudaStream_t cudaStream
+        -GaussianParams params
+        -TileBasedRasterizer rasterizer
+    }
+
+    class OptiXRayTracer {
+        +buildAccelerationStructures(SceneGeometry geo)
+        +traceRays(LaunchParams params) RawEffects
+        +applySER(CoherencyHints hints)
+        -OptixDeviceContext context
+        -OptixPipeline pipeline
+        -ShaderBindingTable sbt
+        -AccelerationStructure as
+    }
+
+    class DenoiseModule {
+        +denoise(RawEffects effects, AuxBuffers buffers) DenoisedImage
+        -OptixDenoiser denoiser
+        -AutoencoderModel model
+    }
+
+    class Upscaler {
+        <<abstract>>
+        +upscaleImage(DenoisedImage image, ResolutionTarget target) FinalImage
+        +init(HardwareConfig config)
+    }
+
+    class DLSSUpscaler {
+        +superResolution(MotionVectors vectors)
+        +rayReconstruction()
+        +multiFrameGeneration()
+        -StreamlineFramework streamline
+        -TensorCoreAccelerator accelerator
+    }
+
+    class FSRUpscaler {
+        +temporalUpscale(PreviousFrame prev)
+        +frameInterpolation(OpticalFlow flow)
+        +nativeAA()
+        -FidelityFXAPI fxApi
+        -AsyncComputeQueue computeQueue
+    }
+
+    Engine --> Renderer : uses
+    Engine --> SceneManager : manages
+    Engine --> ResourceManager : allocates
+    Engine --> HardwareDetector : detects
+    Renderer --> FlashGSSplatter : for primary raster
+    Renderer --> OptiXRayTracer : for secondary rays
+    Renderer --> DenoiseModule : for AI denoising
+    Renderer --> Upscaler : for post-processing
+    Renderer --> ResourceManager : resources
+    SceneManager --> FlashGSSplatter : provides gaussians
+    OptiXRayTracer --> DenoiseModule : feeds raw
+    Upscaler <|-- DLSSUpscaler : NVIDIA path
+    Upscaler <|-- FSRUpscaler : Cross-vendor path
+    HardwareDetector ..> Upscaler : selects implementation
+    ResourceManager ..> FlashGSSplatter : CUDA-Vulkan interop
+    ResourceManager ..> OptiXRayTracer : external memory
+```
+
+
+The architecture for a high-performance Vulkan-based 3D rendering engine, as depicted in the UML diagram above, synthesizes elements from Vulkan ray tracing best practices, hybrid rendering samples, and NVIDIA/AMD upscaling integrations to achieve real-time performance in complex scenes. At its foundation, the Engine class serves as the entry point, initializing Vulkan instances and coordinating subsystems like Renderer, SceneManager, ResourceManager, and HardwareDetector. This modular setup allows runtime adaptation to hardware, such as selecting DLSS for NVIDIA GPUs or FSR for broader compatibility, addressing vendor variability while optimizing for tasks like 3D Gaussian Splatting (via FlashGSSplatter) and selective ray tracing (via OptiXRayTracer).
+
+Drawing from Vulkan diagrams and tutorials, the Renderer class handles the core pipeline: primary rasterization uses FlashGS's CUDA-accelerated tile-based approach for efficiency (e.g., reducing computations by 81% in large scenes), feeding into OptiX for secondary effects like reflections and global illumination. Denoising leverages OptiX's AI-accelerated module, trained on recurrent autoencoders for low-sample noise reduction, before upscaling. The Upscaler abstract class enables switching between DLSS (with Streamline for super resolution and multi-frame generation, boosting FPS up to 8x on RTX hardware) and FSR (via FidelityFX for temporal upscaling and frame interpolation, supporting async compute on mid-range GPUs).
+
+SceneManager manages data loading and dynamics, providing Gaussians to FlashGSSplatter for optimization—parameters like position, covariance, and opacity are refined using stochastic gradient descent with adaptive density control. ResourceManager ensures efficient allocation, including Vulkan-CUDA interop via external memory extensions to minimize overhead in hybrid workflows. HardwareDetector queries device properties to enable features like ray tracing (requiring RT cores) or fallback to raster-only paths.
+
+Implementation considerations include using Vulkan-Hpp for safe API calls, CMake for building with dependencies (Vulkan SDK, CUDA Toolkit 11.8+, OptiX SDK), and synchronization via command buffers and barriers for interop. Challenges, such as NVIDIA ecosystem bias in OptiX/DLSS, are mitigated by FSR's openness, promoting inclusivity. Energy efficiency is prioritized through GPU-driven rendering and asynchronous queues, aligning with 2025 trends in sustainable graphics.
+
+To illustrate class interactions in a rendering frame (complementing the UML):
+
+| Step | Component Involved | Action | Dependencies | Performance Notes |
+|------|--------------------|--------|--------------|-------------------|
+| 1. Initialization | Engine, HardwareDetector | Detect vendor and init paths | VkPhysicalDeviceProperties | Ensures compatibility (e.g., RT support) |
+| 2. Scene Loading | SceneManager, ResourceManager | Load data, allocate buffers | MultiViewImages, VkBuffer | Prepares Gaussians for splatting |
+| 3. Primary Rasterization | Renderer, FlashGSSplatter | Optimize and rasterize Gaussians | cudaStream_t, TileBasedRasterizer | 4x speedup, 49% memory reduction |
+| 4. Secondary Ray Tracing | Renderer, OptiXRayTracer | Build AS, trace rays with SER | OptixPipeline, AccelerationStructure | Handles reflections/shadows efficiently |
+| 5. Denoising | Renderer, DenoiseModule | Apply AI denoiser with aux buffers | OptixDenoiser, AutoencoderModel | Reduces samples by orders for real-time |
+| 6. Upscaling | Renderer, Upscaler (DLSS/FSR) | Super resolution or temporal upscale | Streamline/FidelityFXAPI | 2-8x FPS boost depending on path |
+| 7. Presentation | Renderer | Present via swapchain | VkSwapchainKHR | Final output to display |
+
+Comparisons of upscaling paths (based on SDK docs):
+
+| Upscaler | Integration | API | Vendor Support | Benefits | Limitations |
+|----------|-------------|-----|----------------|----------|-------------|
+| DLSS | Streamline plugins | Framework | NVIDIA RTX | Up to 8x FPS, ray reconstruction | NVIDIA-only, requires Tensor Cores |
+| FSR | FidelityFX dispatch | C++ HLSL | Broad (AMD/NVIDIA/Intel) | 2x FPS, native AA, async compute | Slightly lower quality on non-AMD hardware |
+
+This framework culminates innovations from sources like Khronos Vulkan guides and NVIDIA tutorials, emphasizing adaptability for AR/VR extensions and future GPU advancements.
