@@ -57,12 +57,8 @@ bool Gaussian3D::intersects(const Vector3& min, const Vector3& max) const {
 
 // === GaussianField3D Implementation ===
 
-GaussianField3D::GaussianField3D() 
-    : uploaded(false)
-    , adaptiveSampling(true)
-    , SSBO(0)
-    , VAO(0)
-    , VBO(0) {
+GaussianField3D::GaussianField3D()
+    : uploaded(false), adaptiveSampling(true), SSBO(0), VAO(0), VBO(0) {
     renderStats.reset();
     SAFE_PRINT_LINE("Создано поле 3D гауссианов");
 }
@@ -329,21 +325,11 @@ void GaussianField3D::updateGaussianBuffer() {
 
 // === GaussianRenderer3D Implementation ===
 
-GaussianRenderer3D::GaussianRenderer3D() 
-    : initialized(false)
-    , gaussianShader(nullptr)
-    , tileShader(nullptr)
-    , renderQuality(1.0f)
-    , alphaBlendingEnabled(true)
-    , tileBasedRenderingEnabled(true)
-    , earlyZRejectionEnabled(true)
-    , adaptiveSamplingEnabled(true)
-    , sortingMethod(0)
-    , tileSize(16)
-    , maxSamplesPerPixel(4)
-    , tileBuffer(0)
-    , depthBuffer(0)
-    , colorBuffer(0) {
+GaussianRenderer3D::GaussianRenderer3D()
+    : initialized(false), gaussianShader(nullptr), tileShader(nullptr),
+      renderQuality(1.0f), alphaBlendingEnabled(true), tileBasedRenderingEnabled(true),
+      earlyZRejectionEnabled(true), adaptiveSamplingEnabled(true), sortingMethod(0),
+      tileSize(16), maxSamplesPerPixel(4), tileBuffer(0), depthBuffer(0), colorBuffer(0) {
     renderStats.reset();
 }
 

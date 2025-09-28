@@ -12,11 +12,9 @@ namespace HyperEngine {
 namespace Rendering {
 
 // Конструктор и деструктор
-Mesh3D::Mesh3D() 
-    : uploaded(false)
-    , VAO(0), VBO(0), EBO(0)
-    , minBounds(0.0f, 0.0f, 0.0f)
-    , maxBounds(0.0f, 0.0f, 0.0f) {
+Mesh3D::Mesh3D()
+    : uploaded(false), VAO(0), VBO(0), EBO(0), minBounds(0.0f, 0.0f, 0.0f),
+      maxBounds(0.0f, 0.0f, 0.0f) {
 }
 
 Mesh3D::~Mesh3D() {

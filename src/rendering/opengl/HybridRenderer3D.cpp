@@ -19,11 +19,9 @@ namespace Rendering {
 
 // === HybridRenderer3D Implementation ===
 
-HybridRenderer3D::HybridRenderer3D() 
-    : dynamicQualityEnabled(false)
-    , targetFrameRate(60.0f)
-    , currentFrameRate(60.0f)
-    , qualityAdjustmentFactor(1.0f) {
+HybridRenderer3D::HybridRenderer3D()
+    : dynamicQualityEnabled(false), targetFrameRate(60.0f), currentFrameRate(60.0f),
+      qualityAdjustmentFactor(1.0f) {
     
     // Инициализация настроек по умолчанию
     renderSettings = RenderSettings{};

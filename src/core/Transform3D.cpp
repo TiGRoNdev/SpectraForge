@@ -6,12 +6,9 @@ using namespace HyperEngine::Math;
 namespace HyperEngine {
 namespace Core {
 
-Transform3D::Transform3D() 
-    : position(Vector3::zero())
-    , rotation(Quaternion::identity())
-    , scale(Vector3::one())
-    , parent(nullptr)
-    , worldMatrixDirty(true) {}
+Transform3D::Transform3D()
+    : position(Vector3::zero()), rotation(Quaternion::identity()), scale(Vector3::one()),
+      parent(nullptr), worldMatrixDirty(true) {}
 
 Transform3D::~Transform3D() {
     cleanup();

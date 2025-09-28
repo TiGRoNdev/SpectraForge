@@ -22,9 +22,8 @@ namespace HyperEngine {
 namespace Input {
 
 // InputAction3D implementation
-InputAction3D::InputAction3D(const std::string& name) 
-    : name(name)
-    , enabled(true) {
+InputAction3D::InputAction3D(const std::string& name)
+    : name(name), enabled(true) {
 }
 
 void InputAction3D::addKey(Key3D key) {
@@ -393,18 +392,11 @@ MouseButton3D InputManager3D::glfwButtonToMouseButton3D(int glfwButton) {
 }
 
 // Controller3D implementation
-Controller3D::Controller3D() 
-    : position(0, 0, 0)
-    , rotation(Quaternion::identity())
-    , velocity(0, 0, 0)
-    , moveSpeed(5.0f)
-    , rotationSpeed(90.0f)
-    , mouseSensitivity(0.1f)
-    , mouseLookEnabled(true)
-    , movementEnabled(true)
-    , rotationEnabled(true)
-    , inputVector(0, 0, 0)
-    , rotationInput(0, 0, 0) {
+Controller3D::Controller3D()
+    : position(0, 0, 0), rotation(Quaternion::identity()), velocity(0, 0, 0),
+      moveSpeed(5.0f), rotationSpeed(90.0f), mouseSensitivity(0.1f),
+      mouseLookEnabled(true), movementEnabled(true), rotationEnabled(true),
+      inputVector(0, 0, 0), rotationInput(0, 0, 0) {
 }
 
 void Controller3D::update(float deltaTime) {
@@ -579,15 +571,9 @@ void Controller3D::processRotationInput(const InputState3D& inputState) {
 }
 
 // FirstPersonController implementation
-FirstPersonController::FirstPersonController() 
-    : Controller3D()
-    , minPitch(-89.0f)
-    , maxPitch(89.0f)
-    , currentPitch(0.0f)
-    , currentYaw(0.0f)
-    , jumpHeight(5.0f)
-    , gravity(-9.81f)
-    , grounded(true) {
+FirstPersonController::FirstPersonController()
+    : Controller3D(), minPitch(-89.0f), maxPitch(89.0f), currentPitch(0.0f),
+      currentYaw(0.0f), jumpHeight(5.0f), gravity(-9.81f), grounded(true) {
 }
 
 void FirstPersonController::handleInput(const InputState3D& inputState) {
@@ -620,18 +606,10 @@ void FirstPersonController::updatePitchYaw() {
 }
 
 // OrbitController implementation
-OrbitController::OrbitController() 
-    : Controller3D()
-    , target(0, 0, 0)
-    , distance(5.0f)
-    , minDistance(1.0f)
-    , maxDistance(20.0f)
-    , minPitch(-89.0f)
-    , maxPitch(89.0f)
-    , currentPitch(0.0f)
-    , currentYaw(0.0f)
-    , zoomSpeed(2.0f)
-    , orbitSpeed(100.0f) {
+OrbitController::OrbitController()
+    : Controller3D(), target(0, 0, 0), distance(5.0f), minDistance(1.0f),
+      maxDistance(20.0f), minPitch(-89.0f), maxPitch(89.0f), currentPitch(0.0f),
+      currentYaw(0.0f), zoomSpeed(2.0f), orbitSpeed(100.0f) {
 }
 
 void OrbitController::handleInput(const InputState3D& inputState) {

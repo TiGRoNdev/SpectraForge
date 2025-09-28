@@ -172,22 +172,12 @@ void OptimalRenderer3D::SceneData::optimizeForHardware(const HardwareConfig& con
 
 // === OptimalRenderer3D Implementation ===
 
-OptimalRenderer3D::OptimalRenderer3D() 
-    : initialized(false)
-    , renderWidth(1920)
-    , renderHeight(1080)
-    , targetWidth(1920)
-    , targetHeight(1080)
-    , qualityLevel(3)
-    , targetFPS(60.0f)
-    , adaptiveQualityEnabled(true)
-    , globalIlluminationEnabled(true)
-    , reflectionsEnabled(true)
-    , shadowsEnabled(true)
-    , denoisingEnabled(true)
-    , upscalingEnabled(false)
-    , upscalingFactor(1.0f)
-    , profilingEnabled(false) {
+OptimalRenderer3D::OptimalRenderer3D()
+    : initialized(false), renderWidth(1920), renderHeight(1080), targetWidth(1920),
+      targetHeight(1080), qualityLevel(3), targetFPS(60.0f), adaptiveQualityEnabled(true),
+      globalIlluminationEnabled(true), reflectionsEnabled(true), shadowsEnabled(true),
+      denoisingEnabled(true), upscalingEnabled(false), upscalingFactor(1.0f),
+      profilingEnabled(false) {
     
     metrics.reset();
     optimizationCache.invalidate();

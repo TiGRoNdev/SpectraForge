@@ -21,18 +21,14 @@ bool Collider3D::AABB::intersects(const AABB& other) const {
 }
 
 // Collider3D base class
-Collider3D::Collider3D(Type type) 
-    : type(type)
-    , center(0, 0, 0)
-    , transform(Matrix4::identity())
-    , trigger(false)
-    , enabled(true) {
+Collider3D::Collider3D(Type type)
+    : type(type), center(0, 0, 0), transform(Matrix4::identity()), trigger(false),
+      enabled(true) {
 }
 
 // SphereCollider3D implementation
-SphereCollider3D::SphereCollider3D(float radius) 
-    : Collider3D(Type::Sphere)
-    , radius(radius) {
+SphereCollider3D::SphereCollider3D(float radius)
+    : Collider3D(Type::Sphere), radius(radius) {
 }
 
 bool SphereCollider3D::intersects(const Collider3D& other) const {
@@ -156,9 +152,8 @@ bool SphereCollider3D::intersectsBox(const BoxCollider3D& other) const {
 }
 
 // BoxCollider3D implementation
-BoxCollider3D::BoxCollider3D(const Vector3& size) 
-    : Collider3D(Type::Box)
-    , size(size) {
+BoxCollider3D::BoxCollider3D(const Vector3& size)
+    : Collider3D(Type::Box), size(size) {
 }
 
 bool BoxCollider3D::intersects(const Collider3D& other) const {
@@ -329,10 +324,8 @@ bool BoxCollider3D::intersectsSphere(const SphereCollider3D& other) const {
 }
 
 // PlaneCollider3D implementation
-PlaneCollider3D::PlaneCollider3D(const Vector3& normal, float distance) 
-    : Collider3D(Type::Plane)
-    , normal(normal.normalized())
-    , distance(distance) {
+PlaneCollider3D::PlaneCollider3D(const Vector3& normal, float distance)
+    : Collider3D(Type::Plane), normal(normal.normalized()), distance(distance) {
 }
 
 bool PlaneCollider3D::intersects(const Collider3D& other) const {
@@ -442,22 +435,11 @@ bool PlaneCollider3D::isPointAbove(const Vector3& point) const {
 }
 
 // RigidBody3D implementation
-RigidBody3D::RigidBody3D() 
-    : position(0, 0, 0)
-    , rotation(Quaternion::identity())
-    , velocity(0, 0, 0)
-    , angularVelocity(0, 0, 0)
-    , force(0, 0, 0)
-    , torque(0, 0, 0)
-    , mass(1.0f)
-    , inverseMass(1.0f)
-    , inertia(1, 1, 1)
-    , kinematic(false)
-    , gravityScale(1.0f)
-    , drag(0.0f)
-    , angularDrag(0.05f)
-    , restitution(0.5f)
-    , friction(0.5f) {
+RigidBody3D::RigidBody3D()
+    : position(0, 0, 0), rotation(Quaternion::identity()), velocity(0, 0, 0),
+      angularVelocity(0, 0, 0), force(0, 0, 0), torque(0, 0, 0), mass(1.0f),
+      inverseMass(1.0f), inertia(1, 1, 1), kinematic(false), gravityScale(1.0f),
+      drag(0.0f), angularDrag(0.05f), restitution(0.5f), friction(0.5f) {
 }
 
 void RigidBody3D::update(float deltaTime) {
@@ -590,19 +572,11 @@ void RigidBody3D::clearForces() {
 }
 
 // ParticleSystem3D implementation
-ParticleSystem3D::ParticleSystem3D(size_t maxParticles) 
-    : particles(maxParticles)
-    , emitterPosition(0, 0, 0)
-    , emitterVelocity(0, 0, 0)
-    , gravity(0, -9.81f, 0)
-    , emissionRate(10.0f)
-    , particleLife(2.0f)
-    , particleSize(1.0f)
-    , startColor(1, 1, 1)
-    , endColor(1, 1, 1)
-    , playing(false)
-    , paused(false)
-    , emissionTimer(0.0f) {
+ParticleSystem3D::ParticleSystem3D(size_t maxParticles)
+    : particles(maxParticles), emitterPosition(0, 0, 0), emitterVelocity(0, 0, 0),
+      gravity(0, -9.81f, 0), emissionRate(10.0f), particleLife(2.0f), particleSize(1.0f),
+      startColor(1, 1, 1), endColor(1, 1, 1), playing(false), paused(false),
+      emissionTimer(0.0f) {
 }
 
 void ParticleSystem3D::update(float deltaTime) {
@@ -695,10 +669,8 @@ ParticleSystem3D::Particle* ParticleSystem3D::getInactiveParticle() {
 }
 
 // PhysicsWorld3D implementation
-PhysicsWorld3D::PhysicsWorld3D() 
-    : gravity(0, -9.81f, 0)
-    , timeStep(1.0f / 60.0f)
-    , iterations(4) {
+PhysicsWorld3D::PhysicsWorld3D()
+    : gravity(0, -9.81f, 0), timeStep(1.0f / 60.0f), iterations(4) {
 }
 
 void PhysicsWorld3D::addRigidBody(std::shared_ptr<RigidBody3D> body) {

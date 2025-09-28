@@ -14,11 +14,7 @@ std::vector<GameObject3D*> GameObject3D::allObjects;
 
 // Конструкторы и деструкторы
 GameObject3D::GameObject3D(const std::string& name)
-    : name(name)
-    , tag("")
-    , active(true)
-    , staticObject(false)
-    , started(false) {
+    : name(name), tag(""), active(true), staticObject(false), started(false) {
     
     // Создаем компонент трансформации
     transform = std::make_shared<Transform3D>();
@@ -215,10 +211,8 @@ void GameObject3D::renderComponents() {
 // Реализация компонентов
 
 // MeshRenderer3D
-MeshRenderer3D::MeshRenderer3D() 
-    : color(1.0f, 1.0f, 1.0f)
-    , castShadows(true)
-    , receiveShadows(true) {
+MeshRenderer3D::MeshRenderer3D()
+    : color(1.0f, 1.0f, 1.0f), castShadows(true), receiveShadows(true) {
 }
 
 void MeshRenderer3D::render() {
@@ -320,11 +314,8 @@ void RigidBody3DComponent::addAngularImpulse(const Vector3& impulse) {
 }
 
 // Camera3DComponent
-Camera3DComponent::Camera3DComponent() 
-    : mainCamera(false)
-    , fieldOfView(60.0f)
-    , nearPlane(0.1f)
-    , farPlane(1000.0f) {
+Camera3DComponent::Camera3DComponent()
+    : mainCamera(false), fieldOfView(60.0f), nearPlane(0.1f), farPlane(1000.0f) {
     // TODO: Создание камеры
     // camera = std::make_shared<Rendering::Camera3D>();
 }
@@ -383,9 +374,8 @@ Matrix4 Camera3DComponent::getViewProjectionMatrix() const {
 }
 
 // ParticleSystem3DComponent
-ParticleSystem3DComponent::ParticleSystem3DComponent() 
-    : autoPlay(true)
-    , emissionRate(10.0f) {
+ParticleSystem3DComponent::ParticleSystem3DComponent()
+    : autoPlay(true), emissionRate(10.0f) {
 }
 
 void ParticleSystem3DComponent::update(float deltaTime) {

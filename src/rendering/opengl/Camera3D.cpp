@@ -9,17 +9,10 @@ namespace Rendering {
 
 // Конструктор
 Camera3D::Camera3D()
-    : position(0.0f, 0.0f, 5.0f)
-    , target(0.0f, 0.0f, 0.0f)
-    , rotation(Quaternion::identity())
-    , perspective(true)
-    , fieldOfView(60.0f)
-    , aspectRatio(16.0f / 9.0f)
-    , nearPlane(0.1f)
-    , farPlane(1000.0f)
-    , orthoLeft(-5.0f), orthoRight(5.0f), orthoBottom(-5.0f), orthoTop(5.0f)
-    , viewMatrixDirty(true)
-    , projectionMatrixDirty(true) {
+    : position(0.0f, 0.0f, 5.0f), target(0.0f, 0.0f, 0.0f), rotation(Quaternion::identity()),
+      perspective(true), fieldOfView(60.0f), aspectRatio(16.0f / 9.0f), nearPlane(0.1f),
+      farPlane(1000.0f), orthoLeft(-5.0f), orthoRight(5.0f), orthoBottom(-5.0f), orthoTop(5.0f),
+      viewMatrixDirty(true), projectionMatrixDirty(true) {
 }
 
 // Настройка позиции и ориентации
