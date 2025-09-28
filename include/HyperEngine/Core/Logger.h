@@ -6,6 +6,7 @@
 #pragma once
 
 #include "EngineCore.h"
+#include "LogLevel.h"
 #include <string>
 #include <fstream>
 #include <memory>
@@ -13,16 +14,6 @@
 
 namespace HyperEngine {
 namespace Core {
-
-/**
- * @brief Уровни логирования
- */
-enum class LogLevel {
-    DEBUG = 0,
-    INFO = 1,
-    WARNING = 2,
-    ERROR = 3
-};
 
 /**
  * @brief Конкретная реализация логгера
@@ -36,7 +27,7 @@ public:
      * @param logFile Путь к файлу лога (опционально)
      * @param level Минимальный уровень логирования
      */
-    explicit Logger(const std::string& logFile = "", LogLevel level = LogLevel::INFO);
+    explicit Logger(const std::string& logFile = "", LogLevel level = LogLevel::INFO_LEVEL);
 
     /**
      * @brief Деструктор

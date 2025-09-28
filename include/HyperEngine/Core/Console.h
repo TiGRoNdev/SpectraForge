@@ -2,18 +2,10 @@
 
 #include <iostream>
 #include <string>
+#include "LogLevel.h"
 
 namespace HyperEngine {
 namespace Core {
-
-// Перечисления для уровней логирования и цветов
-enum class LogLevel {
-    DEBUG_LEVEL,
-    INFO_LEVEL,
-    WARNING_LEVEL,
-    ERROR_LEVEL,
-    CRITICAL_LEVEL
-};
 
 enum class ConsoleColor {
     BLACK,

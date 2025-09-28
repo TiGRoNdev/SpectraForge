@@ -11,6 +11,7 @@ namespace HyperEngine::Rendering {
 struct TextureDesc;
 struct BufferDesc;
 struct MemoryStats;
+enum class ShaderType;
 
 /**
  * @brief Дескрипторы ресурсов - type-safe обертки для внутренних ID
@@ -34,6 +35,17 @@ constexpr ResourceHandle INVALID_HANDLE = 0;
 class IResourceManager {
   public:
     virtual ~IResourceManager() = default;
+
+    /**
+     * @brief Инициализация менеджера ресурсов
+     * @return true если инициализация прошла успешно
+     */
+    virtual bool initialize() = 0;
+
+    /**
+     * @brief Завершение работы менеджера ресурсов
+     */
+    virtual void shutdown() = 0;
 
     // === Управление буферами ===
 

@@ -75,6 +75,22 @@ class IRenderer {
     virtual bool isReady() const = 0;
 
     /**
+     * @brief Проверить инициализацию рендерера
+     * @return true если рендерер инициализирован
+     */
+    virtual bool isInitialized() const = 0;
+
+    /**
+     * @brief Начать рендеринг кадра
+     */
+    virtual void beginFrame() = 0;
+
+    /**
+     * @brief Завершить рендеринг кадра
+     */
+    virtual void endFrame() = 0;
+
+    /**
      * @brief Получить статистику производительности
      * @return Структура с метриками производительности
      */
