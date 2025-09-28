@@ -239,7 +239,7 @@ TEST_F(CudaVulkanInteropTest, FlashGSIntegration) {
                 float cameraPos[3];
             } cameraParams;
 
-            Engine3D::Vulkan::PrimaryImage expectedImage;
+            HyperEngine::Vulkan::PrimaryImage expectedImage;
             expectedImage.width = testImageWidth;
             expectedImage.height = testImageHeight;
 
@@ -283,7 +283,7 @@ TEST_F(CudaVulkanInteropTest, OptiXIntegration) {
             launchParams.height = testImageHeight;
             launchParams.maxDepth = 4;
 
-            Engine3D::Vulkan::RawEffects expectedEffects;
+            HyperEngine::Vulkan::RawEffects expectedEffects;
             EXPECT_CALL(*mockOptiX, traceRays(testing::_))
                 .WillOnce(testing::Return(expectedEffects));
 
@@ -419,7 +419,7 @@ TEST_F(CudaVulkanInteropTest, InteropStressTest) {
                 try {
                     // Симуляция интенсивного использования interop
                     struct CameraParams cameraParams;
-                    Engine3D::Vulkan::PrimaryImage mockImage;
+                    HyperEngine::Vulkan::PrimaryImage mockImage;
                     mockImage.width = testImageWidth;
                     mockImage.height = testImageHeight;
 
@@ -449,3 +449,4 @@ TEST_F(CudaVulkanInteropTest, CudaSupportDisabled) {
 }
 
 #endif  // VULKAN_RENDERER_CUDA_SUPPORT
+

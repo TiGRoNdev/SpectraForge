@@ -9,29 +9,29 @@
  * - Основы физики и рендеринга
  */
 
-#include "Engine3D/Core/GameObject3D.h"
-#include "Engine3D/Core/Console.h"
-#include "Engine3D/Rendering/Renderer3D.h"
-#include "Engine3D/Rendering/Camera3D.h"
-#include "Engine3D/Rendering/Mesh3D.h"
-#include "Engine3D/Rendering/Shader3D.h"
-#include "Engine3D/Input/Input3D.h"
-#include "Engine3D/Physics/Physics3D.h"
-#include "Engine3D/Math/Math.h"
-#include "Engine3D/Math/Quaternion.h"
-#include "Engine3D/Math/MathConstants.h"
+#include "HyperEngine/Core/GameObject3D.h"
+#include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Rendering/Renderer3D.h"
+#include "HyperEngine/Rendering/Camera3D.h"
+#include "HyperEngine/Rendering/Mesh3D.h"
+#include "HyperEngine/Rendering/Shader3D.h"
+#include "HyperEngine/Input/Input3D.h"
+#include "HyperEngine/Physics/Physics3D.h"
+#include "HyperEngine/Math/Math.h"
+#include "HyperEngine/Math/Quaternion.h"
+#include "HyperEngine/Math/MathConstants.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <memory>
 
-using namespace Engine3D;
-using namespace Engine3D::Core;
-using namespace Engine3D::Rendering;
-using namespace Engine3D::Input;
-using namespace Engine3D::Physics;
-using namespace Engine3D::Math;
+using namespace HyperEngine;
+using namespace HyperEngine::Core;
+using namespace HyperEngine::Rendering;
+using namespace HyperEngine::Input;
+using namespace HyperEngine::Physics;
+using namespace HyperEngine::Math;
 
 class Demo3D {
 public:
@@ -333,3 +333,4 @@ int main() {
     
     return 0;
 }
+

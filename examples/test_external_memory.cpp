@@ -3,9 +3,9 @@
  * @brief Простой тест для проверки реальных Vulkan external memory handles
  */
 
-#include "Engine3D/Core/Console.h"
-#include "Engine3D/Vulkan/VulkanEngine.h"
-#include "Engine3D/CUDA/CudaInterop.h"
+#include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Vulkan/VulkanEngine.h"
+#include "HyperEngine/CUDA/CudaInterop.h"
 
 #include <iostream>
 #include <memory>
@@ -18,9 +18,9 @@
 #include <windows.h>
 #endif
 
-using namespace Engine3D;
-using namespace Engine3D::Vulkan;
-using namespace Engine3D::CUDA;
+using namespace HyperEngine;
+using namespace HyperEngine::Vulkan;
+using namespace HyperEngine::CUDA;
 
 int main() {
     try {
@@ -128,3 +128,4 @@ int main() {
         return -1;
     }
 }
+

@@ -1,11 +1,11 @@
 #include <benchmark/benchmark.h>
 #include <random>
 #include <vector>
-#include "Engine3D/Math/Matrix4.h"
-#include "Engine3D/Math/Quaternion.h"
-#include "Engine3D/Math/Vector3.h"
+#include "HyperEngine/Math/Matrix4.h"
+#include "HyperEngine/Math/Quaternion.h"
+#include "HyperEngine/Math/Vector3.h"
 
-using namespace Engine3D::Math;
+using namespace HyperEngine::Math;
 
 // Глобальные переменные для тестов
 std::random_device rd;
@@ -426,3 +426,4 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+

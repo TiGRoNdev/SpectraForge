@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <cmath>
-#include "Engine3D/Math/Math.h"
+#include "HyperEngine/Math/Math.h"
 
-using namespace Engine3D::Math;
+using namespace HyperEngine::Math;
 
 // Тесты Vector3
 class Vector3Test : public ::testing::Test {
@@ -276,3 +276,4 @@ int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
+

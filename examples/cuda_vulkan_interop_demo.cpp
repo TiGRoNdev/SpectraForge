@@ -12,12 +12,12 @@
 #include <cstring>
 
 // Основные заголовки движка
-#include "Engine3D/Core/Engine3D.h"
-#include "Engine3D/Vulkan/VulkanEngine.h"
-#include "Engine3D/Vulkan/ResourceManager.h"
-#include "Engine3D/Vulkan/HardwareDetector.h"
-#include "Engine3D/CUDA/CudaInterop.h"
-#include "Engine3D/Core/Console.h"
+#include "HyperEngine/Core/Engine3D.h"
+#include "HyperEngine/Vulkan/VulkanEngine.h"
+#include "HyperEngine/Vulkan/ResourceManager.h"
+#include "HyperEngine/Vulkan/HardwareDetector.h"
+#include "HyperEngine/CUDA/CudaInterop.h"
+#include "HyperEngine/Core/Console.h"
 
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
 #include <cuda_runtime.h>
@@ -27,8 +27,8 @@
 // extern "C" void launchProcessBufferKernel(float* data, size_t size, float multiplier);
 #endif
 
-using namespace Engine3D;
-using namespace Engine3D::Core;
+using namespace HyperEngine;
+using namespace HyperEngine::Core;
 
 class CudaVulkanInteropDemo {
 public:
@@ -428,3 +428,4 @@ int main() {
         return 1;
     }
 }
+

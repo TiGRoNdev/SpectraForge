@@ -15,16 +15,16 @@
 #include <vulkan/vulkan.hpp>
 
 // Engine headers
-#include "Engine3D/Vulkan/VulkanEngine.h"
-#include "Engine3D/Vulkan/HardwareDetector.h"
-#include "Engine3D/Vulkan/ResourceManager.h"
-#include "Engine3D/Vulkan/VulkanRenderer.h"
-#include "Engine3D/Vulkan/SceneManager.h"
-#include "Engine3D/Core/Console.h"
+#include "HyperEngine/Vulkan/VulkanEngine.h"
+#include "HyperEngine/Vulkan/HardwareDetector.h"
+#include "HyperEngine/Vulkan/ResourceManager.h"
+#include "HyperEngine/Vulkan/VulkanRenderer.h"
+#include "HyperEngine/Vulkan/SceneManager.h"
+#include "HyperEngine/Core/Console.h"
 
-using namespace Engine3D;
-using namespace Engine3D::Vulkan;
-using namespace Engine3D::Core;
+using namespace HyperEngine;
+using namespace HyperEngine::Vulkan;
+using namespace HyperEngine::Core;
 
 /**
  * @brief Создание базового Vulkan instance
@@ -203,3 +203,4 @@ int main() {
         return -1;
     }
 }
+

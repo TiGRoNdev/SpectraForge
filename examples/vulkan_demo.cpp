@@ -11,30 +11,30 @@
 #include <chrono>
 
 #ifdef VULKAN_RENDERER_BUILD
-#include <Engine3D/Vulkan/VulkanEngine.h>
-#include <Engine3D/Vulkan/HardwareDetector.h>
-#include <Engine3D/Vulkan/ResourceManager.h>
+#include <HyperEngine/Vulkan/VulkanEngine.h>
+#include <HyperEngine/Vulkan/HardwareDetector.h>
+#include <HyperEngine/Vulkan/ResourceManager.h>
 
 #ifdef VULKAN_RENDERER_CUDA_SUPPORT
-#include <Engine3D/CUDA/FlashGSSplatter.h>
+#include <HyperEngine/CUDA/FlashGSSplatter.h>
 #endif
 
 #ifdef VULKAN_RENDERER_OPTIX_SUPPORT
-#include <Engine3D/OptiX/OptiXRayTracer.h>
+#include <HyperEngine/OptiX/OptiXRayTracer.h>
 #endif
 
-#include <Engine3D/Upscaling/Upscaler.h>
-#include <Engine3D/Upscaling/DLSSUpscaler.h>
+#include <HyperEngine/Upscaling/Upscaler.h>
+#include <HyperEngine/Upscaling/DLSSUpscaler.h>
 #endif
 
-#include <Engine3D/Core/Console.h>
+#include <HyperEngine/Core/Console.h>
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-using namespace Engine3D;
-using namespace Engine3D::Core;
+using namespace HyperEngine;
+using namespace HyperEngine::Core;
 
 /**
  * @brief Класс демо-приложения
@@ -386,3 +386,4 @@ int main() {
     demo.shutdown();
     return 0;
 }
+

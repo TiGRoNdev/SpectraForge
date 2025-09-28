@@ -1,12 +1,12 @@
 #pragma once
 #include <gmock/gmock.h>
-#include "Engine3D/Core/Interfaces.h"
-#include "Engine3D/Rendering/RendererAdapter.h"
+#include "HyperEngine/Core/Interfaces.h"
+#include "HyperEngine/Rendering/RendererAdapter.h"
 
 namespace HyperEngine::Testing::Mocks {
 
-using namespace Engine3D::Rendering;
-using namespace Engine3D::Core;
+using namespace HyperEngine::Rendering;
+using namespace HyperEngine::Core;
 
 /**
  * @brief Mock объект для IRendererAdapter
@@ -41,19 +41,19 @@ class MockRendererAdapter : public IRendererAdapter {
     MOCK_METHOD(void,
                 renderMesh,
                 (const Mesh3D& mesh,
-                 const Engine3D::Math::Matrix4& transform,
+                 const HyperEngine::Math::Matrix4& transform,
                  const Shader3D& shader),
                 (override));
     MOCK_METHOD(void,
                 renderMesh,
                 (std::shared_ptr<Mesh3D> mesh,
-                 const Engine3D::Math::Matrix4& transform,
+                 const HyperEngine::Math::Matrix4& transform,
                  std::shared_ptr<Shader3D> shader),
                 (override));
     MOCK_METHOD(void,
                 renderWireframe,
                 (const Mesh3D& mesh,
-                 const Engine3D::Math::Matrix4& transform,
+                 const HyperEngine::Math::Matrix4& transform,
                  const Shader3D& shader),
                 (override));
 
@@ -92,9 +92,9 @@ class MockLifecycle : public ILifecycle {
  */
 class MockTransformable : public ITransformable {
   public:
-    MOCK_METHOD(Engine3D::Math::Vector3, getPosition, (), (const override));
-    MOCK_METHOD(void, setPosition, (const Engine3D::Math::Vector3& position), (override));
-    MOCK_METHOD(Engine3D::Math::Matrix4, getTransformMatrix, (), (const override));
+    MOCK_METHOD(HyperEngine::Math::Vector3, getPosition, (), (const override));
+    MOCK_METHOD(void, setPosition, (const HyperEngine::Math::Vector3& position), (override));
+    MOCK_METHOD(HyperEngine::Math::Matrix4, getTransformMatrix, (), (const override));
 };
 
 /**
@@ -110,7 +110,7 @@ class MockDrawable : public IDrawable {
  */
 class MockPrimitiveFactory : public IPrimitiveFactory {
   public:
-    MOCK_METHOD(std::shared_ptr<Engine3D::GameObject3D>,
+    MOCK_METHOD(std::shared_ptr<HyperEngine::GameObject3D>,
                 createPrimitive,
                 (const std::string& type),
                 (override));
@@ -121,10 +121,10 @@ class MockPrimitiveFactory : public IPrimitiveFactory {
  */
 class MockProjectionStrategy : public IProjectionStrategy {
   public:
-    MOCK_METHOD(Engine3D::Math::Matrix4, getProjectionMatrix, (), (const override));
-    MOCK_METHOD(Engine3D::Math::Vector3,
+    MOCK_METHOD(HyperEngine::Math::Matrix4, getProjectionMatrix, (), (const override));
+    MOCK_METHOD(HyperEngine::Math::Vector3,
                 project,
-                (const Engine3D::Math::Vector3& point),
+                (const HyperEngine::Math::Vector3& point),
                 (const override));
 };
 
@@ -174,8 +174,8 @@ class MockFactory {
     static std::unique_ptr<MockTransformable> createBasicTransformable() {
         auto mock = std::make_unique<MockTransformable>();
 
-        Engine3D::Math::Vector3 defaultPosition(0.0f, 0.0f, 0.0f);
-        Engine3D::Math::Matrix4 identityMatrix = Engine3D::Math::Matrix4::identity();
+        HyperEngine::Math::Vector3 defaultPosition(0.0f, 0.0f, 0.0f);
+        HyperEngine::Math::Matrix4 identityMatrix = HyperEngine::Math::Matrix4::identity();
 
         EXPECT_CALL(*mock, getPosition()).WillRepeatedly(testing::Return(defaultPosition));
         EXPECT_CALL(*mock, getTransformMatrix()).WillRepeatedly(testing::Return(identityMatrix));
@@ -186,3 +186,4 @@ class MockFactory {
 };
 
 }  // namespace HyperEngine::Testing::Mocks
+

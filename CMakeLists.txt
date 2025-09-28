@@ -77,20 +77,20 @@ endif()
 
 # Определение макросов для адаптеров рендеринга
 if(ENABLE_OPENGL_BACKEND)
-    add_compile_definitions(ENGINE3D_ENABLE_OPENGL)
+    add_compile_definitions(HyperEngine_ENABLE_OPENGL)
     message(STATUS "OpenGL backend enabled")
 endif()
 
 if(ENABLE_VULKAN_BACKEND AND BUILD_VULKAN_RENDERER)
-    add_compile_definitions(ENGINE3D_ENABLE_VULKAN)
+    add_compile_definitions(HyperEngine_ENABLE_VULKAN)
     message(STATUS "Vulkan backend enabled")
 endif()
 
 if(DEFAULT_BACKEND_VULKAN)
-    add_compile_definitions(ENGINE3D_DEFAULT_BACKEND_VULKAN)
+    add_compile_definitions(HyperEngine_DEFAULT_BACKEND_VULKAN)
     message(STATUS "Vulkan set as default backend")
 else()
-    add_compile_definitions(ENGINE3D_DEFAULT_BACKEND_OPENGL)
+    add_compile_definitions(HyperEngine_DEFAULT_BACKEND_OPENGL)
     message(STATUS "OpenGL set as default backend")
 endif()
 
@@ -192,35 +192,45 @@ endif()
 # Сборка 3D движка
 # ============================================================
 if(BUILD_ENGINE_3D)
-    message(STATUS "Building 3D Engine...")
+    message(STATUS "Building HyperEngine with modular architecture...")
     
-    # Сбор файлов для 3D движка
-    file(GLOB_RECURSE ENGINE3D_SOURCES 
-        "src3D/*.cpp"
-        "src3D/*.h"
+    # Подключаем новую модульную структуру
+    add_subdirectory(src)
+    
+    # Создаем основную библиотеку HyperEngine, объединяющую все модули
+    add_library(HyperEngine INTERFACE)
+    
+    # Подключаем все модули к основной библиотеке
+    target_link_libraries(HyperEngine INTERFACE
+        HyperEngine_Core
+        HyperEngine_Math
+        HyperEngine_RenderingCommon
+        HyperEngine_OpenGL
+        HyperEngine_Physics
+        HyperEngine_Input
     )
     
-    # Создание библиотеки 3D движка
-    add_library(Engine3D STATIC ${ENGINE3D_SOURCES})
+    # Подключаем опциональные модули
+    if(BUILD_WITH_CUDA)
+        target_link_libraries(HyperEngine INTERFACE HyperEngine_CUDA)
+    endif()
     
-    # Подключение заголовочных файлов
-    target_include_directories(Engine3D PUBLIC 
-        ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/include/Engine3D
-    )
+    if(BUILD_WITH_OPTIX)
+        target_link_libraries(HyperEngine INTERFACE HyperEngine_OptiX)
+    endif()
     
-    # Подключение библиотек к 3D движку
-    target_link_libraries(Engine3D PUBLIC 
+    # Подключение внешних библиотек
+    target_link_libraries(HyperEngine INTERFACE
         glfw
         GLEW::GLEW
         glm::glm
     )
     
     # Определения компилятора для 3D
-    target_compile_definitions(Engine3D PUBLIC ENGINE_3D_BUILD)
+    target_compile_definitions(HyperEngine INTERFACE ENGINE_3D_BUILD)
     
     # Установка 3D движка
-    install(TARGETS Engine3D
+    install(TARGETS HyperEngine
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
@@ -229,34 +239,34 @@ if(BUILD_ENGINE_3D)
     # Создание демо для 3D
     if(BUILD_EXAMPLES)
         # Оригинальное 3D демо
-        add_executable(Engine3D_Demo 
+        add_executable(HyperEngine_Demo 
             examples/3d_demo.cpp
         )
-        target_link_libraries(Engine3D_Demo PRIVATE Engine3D)
+        target_link_libraries(HyperEngine_Demo PRIVATE HyperEngine)
         
         # Новое демо оптимального рендерера
         add_executable(OptimalRenderer_Demo 
             examples/optimal_renderer_demo.cpp
         )
-        target_link_libraries(OptimalRenderer_Demo PRIVATE Engine3D)
+        target_link_libraries(OptimalRenderer_Demo PRIVATE HyperEngine)
         
         # Демо UTF-8 консоли
         add_executable(UTF8Console_Demo 
             examples/utf8_console_demo.cpp
         )
-        target_link_libraries(UTF8Console_Demo PRIVATE Engine3D)
+        target_link_libraries(UTF8Console_Demo PRIVATE HyperEngine)
         
         # Демо адаптеров рендеринга
         add_executable(RendererAdapter_Demo 
             examples/renderer_adapter_demo.cpp
         )
-        target_link_libraries(RendererAdapter_Demo PRIVATE Engine3D)
+        target_link_libraries(RendererAdapter_Demo PRIVATE HyperEngine)
         
         # Демо безопасной консоли
         add_executable(SafeConsole_Demo 
             examples/safe_console_demo.cpp
         )
-        target_link_libraries(SafeConsole_Demo PRIVATE Engine3D)
+        target_link_libraries(SafeConsole_Demo PRIVATE HyperEngine)
     endif()
 endif()
 
@@ -272,8 +282,8 @@ if(BUILD_ENGINE_4D)
         "src/*.h"
     )
     
-    # Исключаем src3D файлы
-    list(FILTER ENGINE4D_SOURCES EXCLUDE REGEX "src3D/.*")
+    # Исключаем src файлы
+    list(FILTER ENGINE4D_SOURCES EXCLUDE REGEX "src/.*")
     
     # Создание библиотеки 4D движка
     add_library(Engine4D STATIC ${ENGINE4D_SOURCES})
@@ -318,11 +328,11 @@ if(BUILD_VULKAN_RENDERER)
     message(STATUS "Building Vulkan Hybrid Renderer...")
     
     # Сбор файлов для Vulkan рендерера
-    file(GLOB_RECURSE VULKAN_CPP_SOURCES "srcVulkan/*.cpp")
-    file(GLOB_RECURSE VULKAN_HEADERS "srcVulkan/*.h")
+    file(GLOB_RECURSE VULKAN_CPP_SOURCES "src/*.cpp")
+    file(GLOB_RECURSE VULKAN_HEADERS "src/*.h")
     
     # Отдельно собираем CUDA файлы
-    file(GLOB_RECURSE VULKAN_CUDA_SOURCES "srcVulkan/*.cu")
+    file(GLOB_RECURSE VULKAN_CUDA_SOURCES "src/*.cu")
     
     # Объединяем исходники
     set(VULKAN_SOURCES ${VULKAN_CPP_SOURCES} ${VULKAN_HEADERS})
@@ -331,7 +341,7 @@ if(BUILD_VULKAN_RENDERER)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/cuda_kernels_partial.lib")
         # Если есть библиотека но нет отдельных объектных файлов
         set(CUDA_LIBRARY_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/cuda_kernels_partial.lib")
-        list(REMOVE_ITEM VULKAN_CPP_SOURCES "${CMAKE_SOURCE_DIR}/srcVulkan/CUDA/cuda_stubs.cpp")
+        list(REMOVE_ITEM VULKAN_CPP_SOURCES "${CMAKE_SOURCE_DIR}/src/CUDA/cuda_stubs.cpp")
         message(STATUS "Using compiled CUDA library: ${CUDA_LIBRARY_FILE}")
         set(USING_COMPILED_CUDA_LIBRARY TRUE)
     elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/gaussian_optimization.obj")
@@ -343,24 +353,24 @@ if(BUILD_VULKAN_RENDERER)
             "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/depth_sorting.obj"
         )
         # Исключаем заглушки так как у нас есть реальные функции
-        list(REMOVE_ITEM VULKAN_SOURCES "srcVulkan/CUDA/cuda_stubs.cpp")
-        list(REMOVE_ITEM VULKAN_SOURCES "${CMAKE_SOURCE_DIR}/srcVulkan/CUDA/cuda_stubs.cpp")
+        list(REMOVE_ITEM VULKAN_SOURCES "src/CUDA/cuda_stubs.cpp")
+        list(REMOVE_ITEM VULKAN_SOURCES "${CMAKE_SOURCE_DIR}/src/CUDA/cuda_stubs.cpp")
         message(STATUS "Using compiled CUDA object files: ${CUDA_OBJECT_FILES}")
         set(USING_COMPILED_CUDA_OBJECTS TRUE)
     else()
         # Fallback: Добавляем CUDA файлы или заглушки
         if(CUDA_AVAILABLE AND VULKAN_CUDA_SOURCES)
             # Исключаем заглушки и добавляем реальные CUDA файлы
-            list(REMOVE_ITEM VULKAN_CPP_SOURCES "${CMAKE_SOURCE_DIR}/srcVulkan/CUDA/cuda_stubs.cpp")
+            list(REMOVE_ITEM VULKAN_CPP_SOURCES "${CMAKE_SOURCE_DIR}/src/CUDA/cuda_stubs.cpp")
             list(APPEND VULKAN_SOURCES ${VULKAN_CUDA_SOURCES})
             message(STATUS "Building with CUDA kernels: ${VULKAN_CUDA_SOURCES}")
         elseif(CUDA_RUNTIME_ONLY)
             # Добавляем заглушки, но с runtime поддержкой
-            list(APPEND VULKAN_SOURCES "srcVulkan/CUDA/cuda_stubs.cpp")
+            list(APPEND VULKAN_SOURCES "src/CUDA/cuda_stubs.cpp")
             message(STATUS "Building with CUDA stubs but with runtime libraries")
         else()
             # Добавляем заглушки CUDA если CUDA недоступна
-            list(APPEND VULKAN_SOURCES "srcVulkan/CUDA/cuda_stubs.cpp")
+            list(APPEND VULKAN_SOURCES "src/CUDA/cuda_stubs.cpp")
             message(STATUS "Building with CUDA stubs (CUDA not available)")
         endif()
     endif()
@@ -429,11 +439,11 @@ if(BUILD_VULKAN_RENDERER)
     # Подключение заголовочных файлов
     target_include_directories(VulkanRenderer PUBLIC 
         ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/include/Engine3D
-        ${CMAKE_SOURCE_DIR}/include/Engine3D/Vulkan
-        ${CMAKE_SOURCE_DIR}/include/Engine3D/CUDA
-        ${CMAKE_SOURCE_DIR}/include/Engine3D/OptiX
-        ${CMAKE_SOURCE_DIR}/include/Engine3D/Upscaling
+        ${CMAKE_SOURCE_DIR}/include/HyperEngine
+        ${CMAKE_SOURCE_DIR}/include/HyperEngine/Vulkan
+        ${CMAKE_SOURCE_DIR}/include/HyperEngine/CUDA
+        ${CMAKE_SOURCE_DIR}/include/HyperEngine/OptiX
+        ${CMAKE_SOURCE_DIR}/include/HyperEngine/Upscaling
     )
     
     # Линковка скомпилированных CUDA файлов
@@ -503,7 +513,7 @@ if(BUILD_VULKAN_RENDERER)
         )
         target_link_libraries(VulkanRenderer_Demo PRIVATE 
             VulkanRenderer
-            Engine3D
+            HyperEngine
         )
         
         # Добавляем CUDA библиотеки к VulkanRenderer_Demo если CUDA доступна
@@ -519,7 +529,7 @@ if(BUILD_VULKAN_RENDERER)
         )
         target_link_libraries(VulkanBasic_Demo PRIVATE 
             VulkanRenderer
-            Engine3D
+            HyperEngine
         )
         
         # Добавляем CUDA библиотеки к VulkanBasic_Demo если CUDA доступна
@@ -535,7 +545,7 @@ if(BUILD_VULKAN_RENDERER)
             )
             target_link_libraries(CudaVulkanInterop_Demo PRIVATE 
                 VulkanRenderer
-                Engine3D
+                HyperEngine
                 CUDA::cudart 
                 CUDA::cuda_driver
             )
@@ -549,7 +559,7 @@ if(BUILD_VULKAN_RENDERER)
             )
             target_link_libraries(ExternalMemory_Test PRIVATE 
                 VulkanRenderer
-                Engine3D
+                HyperEngine
                 CUDA::cudart 
                 CUDA::cuda_driver
             )
@@ -561,7 +571,7 @@ if(BUILD_VULKAN_RENDERER)
             )
             target_link_libraries(FlashGS_Demo PRIVATE 
                 VulkanRenderer
-                Engine3D
+                HyperEngine
                 CUDA::cudart 
                 CUDA::cuda_driver
             )
@@ -576,7 +586,7 @@ if(BUILD_VULKAN_RENDERER)
                 )
                 target_link_libraries(OptiXRayTracer_Demo PRIVATE 
                     VulkanRenderer
-                    Engine3D
+                    HyperEngine
                     CUDA::cudart
                     CUDA::cuda_driver
                 )
@@ -620,7 +630,7 @@ endif()
 # Установка заголовочных файлов
 # ============================================================
 if(BUILD_ENGINE_3D)
-    install(DIRECTORY include/Engine3D/ DESTINATION include/Engine3D)
+    install(DIRECTORY include/HyperEngine/ DESTINATION include/HyperEngine)
 endif()
 
 if(BUILD_ENGINE_4D)
@@ -648,3 +658,4 @@ endif()
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "========================================")
 message(STATUS "")
+

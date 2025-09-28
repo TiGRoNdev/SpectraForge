@@ -9,12 +9,12 @@
  * - Безопасное преобразование чисел в строки
  */
 
-#include "Engine3D/Core/Console.h"
+#include "HyperEngine/Core/Console.h"
 #include <iostream>
 #include <vector>
 #include <string>
 
-using namespace Engine3D::Core;
+using namespace HyperEngine::Core;
 
 class SafeConsoleDemo {
 public:
@@ -142,3 +142,4 @@ int main() {
         return 1;
     }
 }
+

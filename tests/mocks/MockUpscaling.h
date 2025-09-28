@@ -1,10 +1,10 @@
 #pragma once
 #include <gmock/gmock.h>
-#include "Engine3D/Upscaling/Upscaler.h"
+#include "HyperEngine/Upscaling/Upscaler.h"
 
 namespace HyperEngine::Testing::Mocks {
 
-using namespace Engine3D::Upscaling;
+using namespace HyperEngine::Upscaling;
 
 /**
  * @brief Mock объект для базового класса Upscaler
@@ -241,3 +241,4 @@ class UpscalingMockFactory {
 };
 
 }  // namespace HyperEngine::Testing::Mocks
+

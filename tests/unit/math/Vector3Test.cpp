@@ -1,9 +1,9 @@
 #include <cmath>
-#include "Engine3D/Math/Vector3.h"
+#include "HyperEngine/Math/Vector3.h"
 #include "TestFramework.h"
 
 using namespace HyperEngine::Testing;
-using namespace Engine3D::Math;
+using namespace HyperEngine::Math;
 
 /**
  * @brief Unit тесты для класса Vector3
@@ -274,3 +274,4 @@ TEST_F(Vector3Test, SmallValues) {
     Vector3 normalized = small.normalized();
     EXPECT_NORMALIZED(normalized);
 }
+

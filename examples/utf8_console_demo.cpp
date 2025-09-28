@@ -10,17 +10,17 @@
  * - Работу с русским языком
  */
 
-#include "Engine3D/Core/Console.h"
-#include "Engine3D/Core/GameObject3D.h"
-#include "Engine3D/Rendering/Renderer3D.h"
-#include "Engine3D/Math/Vector3.h"
+#include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/GameObject3D.h"
+#include "HyperEngine/Rendering/Renderer3D.h"
+#include "HyperEngine/Math/Vector3.h"
 #include <iostream>
 #include <sstream>
 #include <thread>
 #include <chrono>
 
-using namespace Engine3D::Core;
-using namespace Engine3D::Math;
+using namespace HyperEngine::Core;
+using namespace HyperEngine::Math;
 
 class UTF8Demo {
 public:

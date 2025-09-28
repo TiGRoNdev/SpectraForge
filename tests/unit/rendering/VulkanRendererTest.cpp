@@ -1,10 +1,10 @@
-#include "Engine3D/Vulkan/VulkanRenderer.h"
+#include "HyperEngine/Vulkan/VulkanRenderer.h"
 #include "TestFramework.h"
 #include "mocks/MockVulkanRenderer.h"
 
 using namespace HyperEngine::Testing;
 using namespace HyperEngine::Testing::Mocks;
-using namespace Engine3D::Vulkan;
+using namespace HyperEngine::Vulkan;
 
 /**
  * @brief Unit тесты для VulkanRenderer
@@ -362,3 +362,4 @@ INSTANTIATE_TEST_SUITE_P(ResolutionTests,
                                            std::make_tuple(2560, 1440, 1.5f),
                                            std::make_tuple(3840, 2160, 1.0f),
                                            std::make_tuple(3840, 2160, 2.0f)));
+

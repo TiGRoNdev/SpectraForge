@@ -16,12 +16,12 @@
 #include <random>
 
 // Core Engine includes
-#include <Engine3D/Core/Console.h>
-#include <Engine3D/CUDA/FlashGSSplatter.h>
-#include <Engine3D/Vulkan/SceneManager.h>
-#include <Engine3D/CUDA/CudaInterop.h>
-#include <Engine3D/Vulkan/VulkanRenderer.h>
-#include <Engine3D/Vulkan/HardwareDetector.h>
+#include <HyperEngine/Core/Console.h>
+#include <HyperEngine/CUDA/FlashGSSplatter.h>
+#include <HyperEngine/Vulkan/SceneManager.h>
+#include <HyperEngine/CUDA/CudaInterop.h>
+#include <HyperEngine/Vulkan/VulkanRenderer.h>
+#include <HyperEngine/Vulkan/HardwareDetector.h>
 
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
 #include <cuda_runtime.h>
@@ -40,8 +40,8 @@ struct float4 {
 };
 #endif
 
-using namespace Engine3D;
-using namespace Engine3D::CUDA;
+using namespace HyperEngine;
+using namespace HyperEngine::CUDA;
 
 /**
  * @brief Генерация тестового точечного облака
@@ -133,7 +133,7 @@ void performanceTest(FlashGSSplatter& splatter, const std::vector<float4>& point
     // Тест оптимизации
     SAFE_PRINT_LINE("🔄 Запуск оптимизации (50 итераций)...");
     
-    Engine3D::Vulkan::MultiViewImages testImages;
+    HyperEngine::Vulkan::MultiViewImages testImages;
     testImages.viewCount = 4;
     
     start = std::chrono::high_resolution_clock::now();
@@ -309,3 +309,4 @@ int main() {
     
     return 0;
 }
+

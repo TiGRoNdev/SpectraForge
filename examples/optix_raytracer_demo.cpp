@@ -10,10 +10,10 @@
 #include <vector>
 #include <memory>
 #include <chrono>
-#include "Engine3D/Core/Console.h"
+#include "HyperEngine/Core/Console.h"
 
 #ifdef VULKAN_RENDERER_OPTIX_SUPPORT
-#include "Engine3D/OptiX/OptiXRayTracer.h"
+#include "HyperEngine/OptiX/OptiXRayTracer.h"
 #include <cuda_runtime.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -21,10 +21,10 @@
 
 using namespace std;
 using namespace glm;
-using namespace Engine3D::Core;
+using namespace HyperEngine::Core;
 
 #ifdef VULKAN_RENDERER_OPTIX_SUPPORT
-using namespace Engine3D::OptiX;
+using namespace HyperEngine::OptiX;
 
 /**
  * @brief Создание тестовой геометрии - простой куб
@@ -286,3 +286,4 @@ int main() {
 }
 
 #endif // VULKAN_RENDERER_OPTIX_SUPPORT
+

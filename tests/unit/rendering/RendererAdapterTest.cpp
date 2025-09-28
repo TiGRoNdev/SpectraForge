@@ -1,10 +1,10 @@
-#include "Engine3D/Rendering/RendererAdapter.h"
+#include "HyperEngine/Rendering/RendererAdapter.h"
 #include "TestFramework.h"
 #include "mocks/MockRenderer.h"
 
 using namespace HyperEngine::Testing;
 using namespace HyperEngine::Testing::Mocks;
-using namespace Engine3D::Rendering;
+using namespace HyperEngine::Rendering;
 
 /**
  * @brief Unit тесты для RendererAdapter
@@ -148,10 +148,10 @@ TEST_F(RendererAdapterTest, CameraManagement) {
 
     // Создаем тестовую камеру
     auto camera = std::make_shared<Camera3D>();
-    camera->setPosition(Engine3D::Math::Vector3(0, 0, 5));
-    camera->lookAt(Engine3D::Math::Vector3(0, 0, 5),
-                   Engine3D::Math::Vector3(0, 0, 0),
-                   Engine3D::Math::Vector3(0, 1, 0));
+    camera->setPosition(HyperEngine::Math::Vector3(0, 0, 5));
+    camera->lookAt(HyperEngine::Math::Vector3(0, 0, 5),
+                   HyperEngine::Math::Vector3(0, 0, 0),
+                   HyperEngine::Math::Vector3(0, 1, 0));
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
@@ -169,7 +169,7 @@ TEST_F(RendererAdapterTest, MeshRendering) {
     // Создаем тестовые объекты
     Mesh3D testMesh;
     Shader3D testShader;
-    Engine3D::Math::Matrix4 transform = Engine3D::Math::Matrix4::identity();
+    HyperEngine::Math::Matrix4 transform = HyperEngine::Math::Matrix4::identity();
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
@@ -185,7 +185,7 @@ TEST_F(RendererAdapterTest, WireframeRendering) {
 
     Mesh3D testMesh;
     Shader3D testShader;
-    Engine3D::Math::Matrix4 transform = Engine3D::Math::Matrix4::identity();
+    HyperEngine::Math::Matrix4 transform = HyperEngine::Math::Matrix4::identity();
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
@@ -306,3 +306,4 @@ INSTANTIATE_TEST_SUITE_P(ResolutionTests,
                                            std::make_pair(1920, 1080),
                                            std::make_pair(2560, 1440),
                                            std::make_pair(3840, 2160)));
+

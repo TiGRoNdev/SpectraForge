@@ -1,10 +1,10 @@
 #pragma once
 #include <gmock/gmock.h>
-#include "Engine3D/Vulkan/VulkanRenderer.h"
+#include "HyperEngine/Vulkan/VulkanRenderer.h"
 
 namespace HyperEngine::Testing::Mocks {
 
-using namespace Engine3D::Vulkan;
+using namespace HyperEngine::Vulkan;
 
 /**
  * @brief Mock объект для VulkanRenderer
@@ -259,3 +259,4 @@ class VulkanMockFactory {
 };
 
 }  // namespace HyperEngine::Testing::Mocks
+

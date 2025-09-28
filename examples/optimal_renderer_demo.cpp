@@ -10,21 +10,21 @@
  * - Автоматическое определение конфигурации железа
  */
 
-#include "Engine3D/Rendering/OptimalRenderer3D.h"
-#include "Engine3D/Rendering/Gaussian3D.h"
-#include "Engine3D/Rendering/Mesh3D.h"
-#include "Engine3D/Math/Vector3.h"
-#include "Engine3D/Math/Matrix4.h"
-#include "Engine3D/Core/Console.h"
+#include "HyperEngine/Rendering/OptimalRenderer3D.h"
+#include "HyperEngine/Rendering/Gaussian3D.h"
+#include "HyperEngine/Rendering/Mesh3D.h"
+#include "HyperEngine/Math/Vector3.h"
+#include "HyperEngine/Math/Matrix4.h"
+#include "HyperEngine/Core/Console.h"
 #include <iostream>
 #include <memory>
 #include <vector>
 #include <chrono>
 #include <thread>
 
-using namespace Engine3D::Rendering;
-using namespace Engine3D::Math;
-using namespace Engine3D::Core;
+using namespace HyperEngine::Rendering;
+using namespace HyperEngine::Math;
+using namespace HyperEngine::Core;
 
 /**
  * @brief Создает демонстрационную сцену с гауссианами и мешами
@@ -481,3 +481,4 @@ int main() {
  *     }
  * }
  */
+

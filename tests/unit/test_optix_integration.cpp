@@ -13,9 +13,9 @@
 #include <cuda_runtime.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "Engine3D/OptiX/OptiXRayTracer.h"
+#include "HyperEngine/OptiX/OptiXRayTracer.h"
 
-using namespace Engine3D::OptiX;
+using namespace HyperEngine::OptiX;
 using namespace glm;
 
 class OptiXTest : public ::testing::Test {
@@ -249,3 +249,4 @@ TEST(OptiXStubTest, OptiXNotSupported) {
 }
 
 #endif  // VULKAN_RENDERER_OPTIX_SUPPORT
+
