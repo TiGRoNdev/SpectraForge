@@ -2,14 +2,66 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, refactoring/* ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
+
+env:
+  VCPKG_BINARY_SOURCES: 'clear;x-gha,readwrite'
 
 jobs:
+  # Проверка качества кода перед сборкой
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup LLVM/Clang
+      uses: KyleMayes/install-llvm-action@v1
+      with:
+        version: '16'
+        directory: ${{ runner.temp }}/llvm
+    
+    - name: Cache pre-commit
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pre-commit
+        key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+    
+    - name: Install pre-commit
+      run: |
+        python -m pip install --upgrade pip
+        pip install pre-commit
+    
+    - name: Run pre-commit checks
+      run: |
+        pre-commit install
+        pre-commit run --all-files --show-diff-on-failure
+    
+    - name: Run quality check script
+      run: |
+        chmod +x scripts/quality_check.sh
+        ./scripts/quality_check.sh
+    
+    - name: Upload quality reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: quality-reports-${{ github.sha }}
+        path: build/quality-reports/
+
+  # Основная сборка
   build:
+    name: Build and Test
+    needs: code-quality
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         build_type: [Debug, Release]
@@ -18,35 +70,57 @@ jobs:
             build_type: Debug
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
     
-    - name: Install dependencies (Ubuntu)
+    - name: Export GitHub Actions cache environment variables
+      uses: actions/github-script@v6
+      with:
+        script: |
+          core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+          core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+    
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: 'latest'
+    
+    - name: Install system dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential cmake libgl1-mesa-dev libglfw3-dev libglew-dev
+        sudo apt-get install -y build-essential cmake ninja-build \
+          libgl1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
     
-    - name: Install dependencies (macOS)
+    - name: Install system dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
-        brew install cmake glfw glew
-    
-    - name: Install dependencies (Windows)
-      if: matrix.os == 'windows-latest'
-      run: |
-        git clone https://github.com/Microsoft/vcpkg.git
-        cd vcpkg
-        .\bootstrap-vcpkg.bat
-        .\vcpkg install glfw3:x64-windows glew:x64-windows
+        brew install cmake ninja
     
     - name: Configure CMake
       run: |
-        cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DCMAKE_TOOLCHAIN_FILE=${{ matrix.os == 'windows-latest' && 'vcpkg/scripts/buildsystems/vcpkg.cmake' || '' }}
+        cmake -B build \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DBUILD_TESTING=ON \
+          -G Ninja
     
     - name: Build
-      run: cmake --build build --config ${{ matrix.build_type }}
+      run: cmake --build build --config ${{ matrix.build_type }} --parallel
     
     - name: Test
       working-directory: build
-      run: ctest --output-on-failure --config ${{ matrix.build_type }}
+      run: ctest --output-on-failure --config ${{ matrix.build_type }} --parallel
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      if: matrix.build_type == 'Release'
+      with:
+        name: build-artifacts-${{ matrix.os }}-${{ matrix.build_type }}
+        path: |
+          build/src/
+          build/examples/
+          !build/**/*.obj
+          !build/**/*.o
