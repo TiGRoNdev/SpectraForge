@@ -4,6 +4,7 @@
  */
 
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 #include "HyperEngine/Vulkan/VulkanEngine.h"
 #include "HyperEngine/CUDA/CudaInterop.h"
 
@@ -19,6 +20,7 @@
 #endif
 
 using namespace HyperEngine;
+using namespace HyperEngine::Core;
 using namespace HyperEngine::Vulkan;
 using namespace HyperEngine::CUDA;
 

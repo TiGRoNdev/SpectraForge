@@ -11,6 +11,7 @@
  */
 
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 #include "HyperEngine/Core/GameObject3D.h"
 #include "HyperEngine/Rendering/Renderer3D.h"
 #include "HyperEngine/Math/Vector3.h"

@@ -10,6 +10,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include "HyperEngine/Core/SafeConsole.h"
 
 // Vulkan headers
 #include <vulkan/vulkan.hpp>
@@ -23,6 +24,7 @@
 #include "HyperEngine/Core/Console.h"
 
 using namespace HyperEngine;
+using namespace HyperEngine::Core;
 using namespace HyperEngine::Vulkan;
 using namespace HyperEngine::Core;
 

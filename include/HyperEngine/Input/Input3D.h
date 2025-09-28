@@ -152,6 +152,9 @@ public:
     Math::Vector3 getMouseDelta() const;
     Math::Vector3 getScrollDelta() const;
     
+    // Получение состояния ввода
+    const InputState3D& getInputState() const { return inputState; }
+    
     // Управление курсором
     void setCursorVisible(bool visible);
     void setCursorLocked(bool locked);

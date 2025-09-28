@@ -54,3 +54,6 @@ inline std::string SAFE_TO_STRING<const char*>(const char* const& value) {
 
 #define SAFE_ERROR(text) \
     HyperEngine::Core::Console::safeError(HyperEngine::Core::SAFE_TO_STRING(text))
+
+#define SAFE_PRINT_FALLBACK(text, fallback) \
+    HyperEngine::Core::Console::safePrint(HyperEngine::Core::SAFE_TO_STRING(text) + " (fallback: " + HyperEngine::Core::SAFE_TO_STRING(fallback) + ")")

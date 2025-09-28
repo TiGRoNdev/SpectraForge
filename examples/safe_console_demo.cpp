@@ -10,6 +10,7 @@
  */
 
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 #include <iostream>
 #include <vector>
 #include <string>

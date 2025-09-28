@@ -11,6 +11,7 @@
 #include <memory>
 #include <chrono>
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 
 #ifdef VULKAN_RENDERER_OPTIX_SUPPORT
 #include "HyperEngine/OptiX/OptiXRayTracer.h"

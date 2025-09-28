@@ -11,6 +11,7 @@
 
 #include "HyperEngine/Core/GameObject3D.h"
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 #include "HyperEngine/Rendering/Renderer3D.h"
 #include "HyperEngine/Rendering/Camera3D.h"
 #include "HyperEngine/Rendering/Mesh3D.h"
@@ -192,7 +193,7 @@ private:
         controller = std::make_shared<FirstPersonController>();
         controller->setPosition(Vector3(0, 2, 5));
         controller->setMoveSpeed(5.0f);
-        controller->setSensitivity(0.1f);
+        controller->setMouseSensitivity(0.1f);
         
         // Настройка действий ввода
         setupInputActions();

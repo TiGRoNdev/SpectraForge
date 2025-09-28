@@ -9,6 +9,9 @@
 #include <iostream>
 #include <memory>
 #include <chrono>
+#include "HyperEngine/Core/SafeConsole.h"
+
+using namespace HyperEngine::Core;
 
 #ifdef VULKAN_RENDERER_BUILD
 #include <HyperEngine/Vulkan/VulkanEngine.h>

@@ -13,10 +13,13 @@
 #include <vector>
 #include <memory>
 #include <chrono>
+#include "HyperEngine/Core/SafeConsole.h"
 #include <random>
 
 // Core Engine includes
 #include <HyperEngine/Core/Console.h>
+
+using namespace HyperEngine::Core;
 #include <HyperEngine/CUDA/FlashGSSplatter.h>
 #include <HyperEngine/Vulkan/SceneManager.h>
 #include <HyperEngine/CUDA/CudaInterop.h>

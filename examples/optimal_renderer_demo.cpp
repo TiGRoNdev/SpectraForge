@@ -13,10 +13,13 @@
 #include "HyperEngine/Rendering/OptimalRenderer3D.h"
 #include "HyperEngine/Rendering/Gaussian3D.h"
 #include "HyperEngine/Rendering/Mesh3D.h"
+#include "HyperEngine/Core/SafeConsole.h"
 #include "HyperEngine/Math/Vector3.h"
 #include "HyperEngine/Math/Matrix4.h"
 #include "HyperEngine/Core/Console.h"
 #include <iostream>
+
+using namespace HyperEngine::Core;
 #include <memory>
 #include <vector>
 #include <chrono>

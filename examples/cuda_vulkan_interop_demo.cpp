@@ -10,14 +10,16 @@
 #include <vector>
 #include <memory>
 #include <cstring>
+#include "HyperEngine/Core/SafeConsole.h"
 
 // Основные заголовки движка
-#include "HyperEngine/Core/Engine3D.h"
 #include "HyperEngine/Vulkan/VulkanEngine.h"
 #include "HyperEngine/Vulkan/ResourceManager.h"
 #include "HyperEngine/Vulkan/HardwareDetector.h"
 #include "HyperEngine/CUDA/CudaInterop.h"
 #include "HyperEngine/Core/Console.h"
+
+using namespace HyperEngine::Core;
 
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
 #include <cuda_runtime.h>

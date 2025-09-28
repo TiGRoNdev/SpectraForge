@@ -71,6 +71,13 @@ if(MSVC)
     add_compile_options(/W4)
     # Отключаем предупреждения о deprecated функциях
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+    
+    # Исправление конфликтов LIBCMT - используем динамическую CRT
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    
+    # Дополнительные флаги линкера для исправления конфликтов
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:LIBCMT")
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -204,7 +211,6 @@ if(BUILD_ENGINE_3D)
     target_link_libraries(HyperEngine INTERFACE
         HyperEngine_Core
         HyperEngine_Math
-        HyperEngine_RenderingCommon
         HyperEngine_OpenGL
         HyperEngine_Physics
         HyperEngine_Input
@@ -296,10 +302,10 @@ if(BUILD_ENGINE_4D)
     
     # Подключение библиотек к 4D движку
     target_link_libraries(Engine4D PUBLIC 
-        Vulkan::Headers
+        Vulkan::Vulkan
         glfw
         glm::glm
-        VulkanMemoryAllocator
+        GPUOpen::VulkanMemoryAllocator
     )
     
     # Определения компилятора для 4D
@@ -459,8 +465,8 @@ if(BUILD_VULKAN_RENDERER)
 
     # Базовые библиотеки для Vulkan рендерера
     target_link_libraries(VulkanRenderer PUBLIC 
-        Vulkan::Headers
-        VulkanMemoryAllocator
+        Vulkan::Vulkan
+        GPUOpen::VulkanMemoryAllocator
         spirv-cross-core
         unofficial::shaderc::shaderc
         imgui::imgui

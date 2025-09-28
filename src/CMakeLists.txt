@@ -54,22 +54,24 @@ add_library(HyperEngine_Upscaling STATIC ${UPSCALING_SOURCES})
 # Настройка зависимостей
 target_link_libraries(HyperEngine_Core PUBLIC HyperEngine_Math)
 
-if(TARGET HyperEngine_RenderingCommon)
-    target_link_libraries(HyperEngine_RenderingCommon PUBLIC HyperEngine_Core HyperEngine_Math)
-endif()
-
 if(TARGET HyperEngine_OpenGL)
-    target_link_libraries(HyperEngine_OpenGL PUBLIC HyperEngine_Core HyperEngine_Math)
-    if(TARGET HyperEngine_RenderingCommon)
-        target_link_libraries(HyperEngine_OpenGL PUBLIC HyperEngine_RenderingCommon)
-    endif()
+    target_link_libraries(HyperEngine_OpenGL PUBLIC 
+        HyperEngine_Core 
+        HyperEngine_Math
+        GLEW::GLEW
+        glfw
+        glm::glm
+    )
 endif()
 
 if(TARGET HyperEngine_Vulkan)
-    target_link_libraries(HyperEngine_Vulkan PUBLIC HyperEngine_Core HyperEngine_Math)
-    if(TARGET HyperEngine_RenderingCommon)
-        target_link_libraries(HyperEngine_Vulkan PUBLIC HyperEngine_RenderingCommon)
-    endif()
+    target_link_libraries(HyperEngine_Vulkan PUBLIC 
+        HyperEngine_Core 
+        HyperEngine_Math
+        Vulkan::Vulkan
+        GPUOpen::VulkanMemoryAllocator
+        glm::glm
+    )
 endif()
 
 target_link_libraries(HyperEngine_Physics PUBLIC HyperEngine_Math)
@@ -79,9 +81,6 @@ target_link_libraries(HyperEngine_Input PUBLIC HyperEngine_Core glfw)
 set(COMMON_TARGETS HyperEngine_Core HyperEngine_Math HyperEngine_Physics HyperEngine_Input HyperEngine_Upscaling)
 
 # Добавляем условные цели
-if(TARGET HyperEngine_RenderingCommon)
-    list(APPEND COMMON_TARGETS HyperEngine_RenderingCommon)
-endif()
 if(TARGET HyperEngine_OpenGL)
     list(APPEND COMMON_TARGETS HyperEngine_OpenGL)
 endif()
@@ -103,6 +102,19 @@ if(BUILD_WITH_CUDA)
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
     )
     target_compile_features(HyperEngine_CUDA PUBLIC cxx_std_20)
+    
+    # Добавляем зависимости для CUDA модуля
+    target_link_libraries(HyperEngine_CUDA PUBLIC 
+        HyperEngine_Core 
+        HyperEngine_Math
+        Vulkan::Vulkan
+        GPUOpen::VulkanMemoryAllocator
+    )
+    
+    # Добавляем CUDA include директории
+    find_package(CUDAToolkit REQUIRED)
+    target_include_directories(HyperEngine_CUDA PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+    target_link_libraries(HyperEngine_CUDA PUBLIC CUDA::cudart CUDA::cuda_driver)
 endif()
 
 if(BUILD_WITH_OPTIX)

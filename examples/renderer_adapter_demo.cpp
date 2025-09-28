@@ -13,6 +13,7 @@
 #include "HyperEngine/Math/Matrix4.h"
 #include "HyperEngine/Math/Vector3.h"
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 
 #include <iostream>
 #include <memory>
