@@ -73,7 +73,7 @@ if(TARGET HyperEngine_Vulkan)
 endif()
 
 target_link_libraries(HyperEngine_Physics PUBLIC HyperEngine_Math)
-target_link_libraries(HyperEngine_Input PUBLIC HyperEngine_Core)
+target_link_libraries(HyperEngine_Input PUBLIC HyperEngine_Core glfw)
 
 # Include директории
 set(COMMON_TARGETS HyperEngine_Core HyperEngine_Math HyperEngine_Physics HyperEngine_Input HyperEngine_Upscaling)

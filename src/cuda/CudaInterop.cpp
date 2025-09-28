@@ -8,12 +8,15 @@
 
 #include "HyperEngine/CUDA/CudaInterop.h"
 #include "HyperEngine/Vulkan/ResourceManager.h"
+#include "HyperEngine/Core/SafeConsole.h"
 #include "HyperEngine/Core/Console.h"
 #include <iostream>
 #include <stdexcept>
 #include <cstring>
 #include <vector>
 #include <string>
+
+using namespace HyperEngine::Core;
 
 #ifdef _WIN32
 #include <windows.h>

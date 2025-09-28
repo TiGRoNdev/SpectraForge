@@ -1,5 +1,7 @@
 #include "HyperEngine/Rendering/RendererAdapter.h"
 #include "HyperEngine/Rendering/Renderer3D.h"
+#include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 #include <iostream>
 #include <stdexcept>
 
@@ -7,8 +9,6 @@
 #ifdef ENGINE3D_ENABLE_VULKAN
 // #include "HyperEngine/Vulkan/VulkanEngine.h"
 // #include "HyperEngine/Vulkan/HardwareDetector.h"
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
 // Пока не включаем, так как Vulkan компоненты не собираются с Engine3D
 #endif
 
