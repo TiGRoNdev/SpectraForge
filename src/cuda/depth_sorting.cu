@@ -14,7 +14,7 @@
 #include <thrust/execution_policy.h>
 
 // Определяем необходимые типы локально, чтобы избежать зависимостей от Vulkan
-namespace Engine3D::CUDA {
+namespace HyperEngine::CUDA {
     /**
      * @brief Проецированный гауссиан на экране (локальное определение)
      */
@@ -28,7 +28,7 @@ namespace Engine3D::CUDA {
     };
 }
 
-namespace Engine3D::CUDA {
+namespace HyperEngine::CUDA {
 
 /**
  * @brief Структура для сортировки (ключ-значение)
@@ -57,14 +57,14 @@ struct DepthComparator {
  * @param numGaussians Количество гауссианов
  */
 __global__ void prepareSortPairs(
-    const Engine3D::CUDA::ProjectedGaussian* projected,
+    const HyperEngine::CUDA::ProjectedGaussian* projected,
     DepthSortPair* sortPairs,
     int numGaussians
 ) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx >= numGaussians) return;
     
-    const Engine3D::CUDA::ProjectedGaussian& proj = projected[idx];
+    const HyperEngine::CUDA::ProjectedGaussian& proj = projected[idx];
     
     // Создаем пару ключ-значение для сортировки
     sortPairs[idx].depth = proj.depth;
@@ -158,7 +158,7 @@ __global__ void localBitonicSort(
  * @param numTiles Количество тайлов
  */
 __global__ void sortByTiles(
-    const Engine3D::CUDA::ProjectedGaussian* projected,
+    const HyperEngine::CUDA::ProjectedGaussian* projected,
     const uint32_t* tileAssignments,
     uint32_t* sortedIndices,
     uint32_t* tileOffsets,
@@ -255,7 +255,7 @@ __global__ void buildTileLists(
         }
     }
 
-} // namespace Engine3D::CUDA
+} // namespace HyperEngine::CUDA
 
 /**
  * @brief Host функции для управления сортировкой с C linkage
@@ -266,12 +266,12 @@ extern "C" {
      * @brief Быстрая сортировка с использованием CUB библиотеки
      */
     cudaError_t launchCubRadixSort(
-        const Engine3D::CUDA::ProjectedGaussian* d_projected,
+        const HyperEngine::CUDA::ProjectedGaussian* d_projected,
         uint32_t* d_sortedIndices,
         int numGaussians,
         cudaStream_t stream = 0
     ) {
-        using namespace Engine3D::CUDA;
+        using namespace HyperEngine::CUDA;
         
         // Временные буферы для сортировки
         DepthSortPair* d_sortPairs = nullptr;
@@ -315,7 +315,7 @@ extern "C" {
             cudaMalloc(&d_valuesOut, numGaussians * sizeof(uint32_t));
             
             // Извлекаем ключи и значения из структуры
-            Engine3D::CUDA::extractKeysValuesKernel<<<gridSize, blockSize, 0, stream>>>(
+            HyperEngine::CUDA::extractKeysValuesKernel<<<gridSize, blockSize, 0, stream>>>(
                 d_sortPairs, d_keys, d_values, numGaussians
             );
             
@@ -355,12 +355,12 @@ extern "C" {
      * @brief Сортировка с использованием Thrust (альтернативный метод)
      */
     cudaError_t launchThrustSort(
-        const Engine3D::CUDA::ProjectedGaussian* d_projected,
+        const HyperEngine::CUDA::ProjectedGaussian* d_projected,
         uint32_t* d_sortedIndices,
         int numGaussians,
         cudaStream_t stream = 0
     ) {
-        using namespace Engine3D::CUDA;
+        using namespace HyperEngine::CUDA;
         
         try {
             // Создаем temporary vectors
@@ -395,7 +395,7 @@ extern "C" {
      * @brief Сортировка с учетом тайлов
      */
     cudaError_t launchTileAwareSorting(
-        const Engine3D::CUDA::ProjectedGaussian* d_projected,
+        const HyperEngine::CUDA::ProjectedGaussian* d_projected,
         const uint32_t* d_tileAssignments,
         uint32_t* d_sortedIndices,
         uint32_t* d_tileOffsets,
@@ -403,7 +403,7 @@ extern "C" {
         int numTiles,
         cudaStream_t stream = 0
     ) {
-        using namespace Engine3D::CUDA;
+        using namespace HyperEngine::CUDA;
         
         try {
             // Сначала выполняем обычную сортировку по глубине
@@ -446,12 +446,12 @@ extern "C" {
      * @brief Битонная сортировка для малых данных
      */
     cudaError_t launchBitonicSort(
-        const Engine3D::CUDA::ProjectedGaussian* d_projected,
+        const HyperEngine::CUDA::ProjectedGaussian* d_projected,
         uint32_t* d_sortedIndices,
         int numGaussians,
         cudaStream_t stream = 0
     ) {
-        using namespace Engine3D::CUDA;
+        using namespace HyperEngine::CUDA;
         
         try {
             // Ограничиваем битонную сортировку группами по 1024 элемента

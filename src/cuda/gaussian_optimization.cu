@@ -11,7 +11,7 @@
 #include <device_launch_parameters.h>
 #include <math.h>
 
-namespace Engine3D::CUDA {
+namespace HyperEngine::CUDA {
 
 /**
  * @brief Структура гауссиана на GPU
@@ -254,7 +254,7 @@ extern "C" {
      */
     cudaError_t launchGaussianInitialization(
         const float4* d_points,
-        Engine3D::CUDA::GPUGaussian* d_gaussians,
+        HyperEngine::CUDA::GPUGaussian* d_gaussians,
         int numPoints,
         float baseScale,
         cudaStream_t stream = 0
@@ -273,7 +273,7 @@ extern "C" {
      * @brief Вычисление градиентов
      */
     cudaError_t launchGradientComputation(
-        const Engine3D::CUDA::GPUGaussian* d_gaussians,
+        const HyperEngine::CUDA::GPUGaussian* d_gaussians,
         const float4* d_imageTarget,
         const float4* d_imageRendered,
         float4* d_gradients,
@@ -297,9 +297,9 @@ extern "C" {
      * @brief Обновление параметров гауссианов
      */
     cudaError_t launchParameterUpdate(
-        Engine3D::CUDA::GPUGaussian* d_gaussians,
+        HyperEngine::CUDA::GPUGaussian* d_gaussians,
         const float4* d_gradients,
-        Engine3D::CUDA::OptimizationParams params,
+        HyperEngine::CUDA::OptimizationParams params,
         int numGaussians,
         cudaStream_t stream = 0
     ) {
@@ -314,4 +314,4 @@ extern "C" {
     }
 }
 
-} // namespace Engine3D::CUDA
+} // namespace HyperEngine::CUDA
