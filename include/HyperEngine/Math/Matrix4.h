@@ -93,10 +93,11 @@ class Matrix4 {
     static Matrix4 identity();
     static Matrix4 zero();
 
-    // Операторы ввода/вывода
-    friend std::ostream& operator<<(std::ostream& os, const Matrix4& mat);
-    friend std::istream& operator>>(std::istream& is, Matrix4& mat);
 };
+
+// Операторы ввода/вывода
+std::ostream& operator<<(std::ostream& os, const Matrix4& mat);
+std::istream& operator>>(std::istream& is, Matrix4& mat);
 
 // Оператор для скалярного умножения слева
 Matrix4 operator*(float scalar, const Matrix4& mat);

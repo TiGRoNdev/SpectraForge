@@ -89,7 +89,7 @@ std::vector<float4> generateSpherePointCloud(int numPoints, float radius = 2.0f)
     
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<float> angleDist(0.0f, 2.0f * M_PI);
+    std::uniform_real_distribution<float> angleDist(0.0f, 2.0f * static_cast<float>(M_PI));
     std::uniform_real_distribution<float> uDist(-1.0f, 1.0f);
     std::uniform_real_distribution<float> intensityDist(0.5f, 1.0f);
     
@@ -126,7 +126,7 @@ void performanceTest(FlashGSSplatter& splatter, const std::vector<float4>& point
     // Инициализация гауссианов из точечного облака
     auto start = std::chrono::high_resolution_clock::now();
     
-    splatter.initializeFromPointCloud(points.data(), points.size(), 0.05f);
+    splatter.initializeFromPointCloud(points.data(), static_cast<int>(points.size()), 0.05f);
     
     auto end = std::chrono::high_resolution_clock::now();
     auto initTime = std::chrono::duration<float, std::milli>(end - start).count();

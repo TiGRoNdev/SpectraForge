@@ -501,6 +501,7 @@ Matrix4 Matrix4::zero() {
 }
 
 // Операторы ввода/вывода
+namespace HyperEngine::Math {
 std::ostream& operator<<(std::ostream& os, const Matrix4& mat) {
     os << "Matrix4:\n";
     for (int i = 0; i < 4; ++i) {
@@ -525,8 +526,8 @@ std::istream& operator>>(std::istream& is, Matrix4& mat) {
 }
 
 // Оператор для скалярного умножения слева
-namespace HyperEngine::Math {
 Matrix4 operator*(float scalar, const Matrix4& mat) {
     return mat * scalar;
 }
+
 }  // namespace HyperEngine::Math

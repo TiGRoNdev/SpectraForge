@@ -18,7 +18,10 @@ add_unit_test(rendering_tests
         rendering/RendererAdapterTest.cpp
         rendering/VulkanRendererTest.cpp
     LIBS
-        # Здесь будут библиотеки рендеринга
+        HyperEngine_Math
+        HyperEngine_Core
+        HyperEngine_OpenGL
+        HyperEngine_Vulkan
 )
 
 # Unit тесты для основных компонентов

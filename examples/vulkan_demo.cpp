@@ -324,8 +324,8 @@ private:
             firstMouse = false;
         }
         
-        float xoffset = xpos - lastX;
-        float yoffset = lastY - ypos;
+        float xoffset = static_cast<float>(xpos) - lastX;
+        float yoffset = lastY - static_cast<float>(ypos);
         lastX = xpos;
         lastY = ypos;
         

@@ -17,8 +17,10 @@
 #include "HyperEngine/Core/SafeConsole.h"
 
 #ifdef _WIN32
-#include <vulkan/vulkan_win32.h>
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <windows.h>
+#include <vulkan/vulkan_win32.h>
 #include "HyperEngine/Core/Console.h"
 #endif
 
@@ -128,6 +130,9 @@ bool VulkanEngine::init(vk::Instance vulkanInstance) {
 }
 
 void VulkanEngine::renderFrame(const CameraParams& params) {
+    // Подавляем предупреждение о неиспользуемом параметре
+    (void)params;
+    
     if (!initialized) {
         SAFE_ERROR("[VulkanEngine] Ошибка: Движок не инициализирован");
         return;

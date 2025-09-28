@@ -133,6 +133,8 @@ class TestUtils {
      * @return Путь к созданному файлу
      */
     static std::string createTempFile(const std::string& content) {
+        // Подавляем предупреждение о неиспользуемом параметре
+        (void)content;
         // Реализация создания временного файла
         // (упрощенная версия для демонстрации)
         return "temp_test_file.tmp";
@@ -143,6 +145,8 @@ class TestUtils {
      * @param filepath Путь к файлу
      */
     static void removeTempFile(const std::string& filepath) {
+        // Подавляем предупреждение о неиспользуемом параметре
+        (void)filepath;
         // Реализация удаления файла
     }
 };

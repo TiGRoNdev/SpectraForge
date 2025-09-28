@@ -21,10 +21,10 @@ echo 🔧 Запуск Clang-Tidy...
 if exist %CLANG_TIDY% (
     if exist "build-vcpkg\compile_commands.json" (
         echo Используем compile_commands.json из build-vcpkg
-        
+
         REM Создаем временный файл со списком файлов для анализа
         dir /s /b src\*.cpp | head -20 > temp_cpp_files.txt
-        
+
         set ANALYZED_FILES=0
         for /f "delims=" %%f in (temp_cpp_files.txt) do (
             echo Анализируем: %%f
@@ -34,7 +34,7 @@ if exist %CLANG_TIDY% (
             )
             set /a ANALYZED_FILES+=1
         )
-        
+
         del temp_cpp_files.txt 2>nul
         echo ✅ Проанализировано файлов: !ANALYZED_FILES!
     ) else (
