@@ -112,7 +112,7 @@ class Vector2 {
 
     // Преобразование в строку для отладки
     std::string toString() const {
-        return "Vector2(" + SAFE_TO_STRING(x) + ", " + SAFE_TO_STRING(y) + ")";
+        return "Vector2(" + HyperEngine::Core::SAFE_TO_STRING(x) + ", " + HyperEngine::Core::SAFE_TO_STRING(y) + ")";
     }
 };
 

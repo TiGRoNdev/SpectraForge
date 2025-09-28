@@ -7,13 +7,16 @@
 #ifdef _WIN32
     #include <GLFW/glfw3.h>
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 #else
     #include <GLFW/glfw3.h>
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 #endif
 
 using namespace HyperEngine::Math;
 using namespace HyperEngine::Input;
+using namespace HyperEngine::Core;
 
 namespace HyperEngine {
 namespace Input {

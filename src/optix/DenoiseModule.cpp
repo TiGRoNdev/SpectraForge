@@ -9,8 +9,10 @@
 #include "HyperEngine/Vulkan/VulkanRenderer.h"
 #include <iostream>
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 
 using namespace HyperEngine::OptiX;
+using namespace HyperEngine::Core;
 
 namespace HyperEngine::OptiX {
 

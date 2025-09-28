@@ -14,6 +14,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <cstring>
+#include "HyperEngine/Core/SafeConsole.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -22,6 +23,7 @@
 #endif
 
 using namespace HyperEngine::Vulkan;
+using namespace HyperEngine::Core;
 
 namespace HyperEngine::Vulkan {
 

@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
 // Объявления внешних CUDA kernel функций с C linkage
@@ -88,6 +89,7 @@ extern "C" {
 #endif
 
 using namespace HyperEngine::CUDA;
+using namespace HyperEngine::Core;
 
 namespace HyperEngine::CUDA {
 

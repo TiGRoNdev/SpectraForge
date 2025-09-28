@@ -13,10 +13,12 @@
 #include <algorithm>
 #include <cstring>
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 
 #ifdef VULKAN_RENDERER_OPTIX_SUPPORT
 
 using namespace HyperEngine::OptiX;
+using namespace HyperEngine::Core;
 
 namespace HyperEngine::OptiX {
 

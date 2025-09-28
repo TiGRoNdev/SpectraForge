@@ -8,6 +8,7 @@
 #include <cmath>
 #include <functional>
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -15,6 +16,7 @@
 
 using namespace HyperEngine::Math;
 using namespace HyperEngine::Rendering;
+using namespace HyperEngine::Core;
 
 namespace HyperEngine {
 namespace Rendering {

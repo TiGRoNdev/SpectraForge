@@ -14,8 +14,10 @@
 #include <iostream>
 #include <stdexcept>
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 
 using namespace HyperEngine::Vulkan;
+using namespace HyperEngine::Core;
 
 namespace HyperEngine::Vulkan {
 

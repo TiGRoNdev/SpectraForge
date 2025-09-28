@@ -8,6 +8,7 @@
 // #include "HyperEngine/Vulkan/VulkanEngine.h"
 // #include "HyperEngine/Vulkan/HardwareDetector.h"
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 // Пока не включаем, так как Vulkan компоненты не собираются с Engine3D
 #endif
 
@@ -19,6 +20,7 @@
 #endif
 
 using namespace HyperEngine::Rendering;
+using namespace HyperEngine::Core;
 using namespace HyperEngine::Math;
 
 namespace HyperEngine {

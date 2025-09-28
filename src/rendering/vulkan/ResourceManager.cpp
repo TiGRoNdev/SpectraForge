@@ -14,10 +14,12 @@
 #ifdef _WIN32
     #include <windows.h>
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
     #define VK_USE_PLATFORM_WIN32_KHR
 #endif
 
 using namespace HyperEngine::Vulkan;
+using namespace HyperEngine::Core;
 
 namespace HyperEngine::Vulkan {
 
