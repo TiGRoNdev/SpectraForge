@@ -271,25 +271,42 @@ std::shared_ptr<SyncObject> CudaInterop::createSyncObject() {
             throw std::runtime_error("Не удалось создать временный Windows handle для semaphore");
         }
         
-        std::cout << "[CudaInterop] Временная заглушка для semaphore handle (требуется VK_KHR_external_semaphore_win32)" << std::endl;
+        // RAII-обертка для автоматического освобождения handle в случае исключения
+        auto handleGuard = [handle]() { 
+            if (handle != INVALID_HANDLE_VALUE) {
+                CloseHandle(handle);
+            }
+        };
+        
+        try {
+            std::cout << "[CudaInterop] Временная заглушка для semaphore handle (требуется VK_KHR_external_semaphore_win32)" << std::endl;
+            
+            // Импортируем в CUDA
+            cudaExternalSemaphoreHandleDesc semHandleDesc{};
+            semHandleDesc.type = cudaExternalSemaphoreHandleTypeOpaqueWin32;
+            semHandleDesc.handle.win32.handle = handle;
+            
+            cudaError_t result = cudaImportExternalSemaphore(
+                &syncObj->cudaExternalSemaphore, &semHandleDesc);
+            
+            if (result != cudaSuccess) {
+                handleGuard(); // Освобождаем handle перед выбросом исключения
+                throw std::runtime_error("Ошибка импорта semaphore в CUDA: " + 
+                                       std::string(cudaGetErrorString(result)));
+            }
+            
+            // Handle успешно передан в CUDA, не освобождаем его здесь
+            // CUDA теперь владеет handle и освободит его при cudaDestroyExternalSemaphore
+            
+        } catch (...) {
+            handleGuard(); // Освобождаем handle в случае любого исключения
+            throw;
+        }
 #else
         void* handle = nullptr;
         std::cout << "[CudaInterop] Non-Windows платформы пока не поддерживаются" << std::endl;
         return nullptr;
 #endif
-        
-        // Импортируем в CUDA
-        cudaExternalSemaphoreHandleDesc semHandleDesc{};
-        semHandleDesc.type = cudaExternalSemaphoreHandleTypeOpaqueWin32;
-        semHandleDesc.handle.win32.handle = handle;
-        
-        cudaError_t result = cudaImportExternalSemaphore(
-            &syncObj->cudaExternalSemaphore, &semHandleDesc);
-        
-        if (result != cudaSuccess) {
-            throw std::runtime_error("Ошибка импорта semaphore в CUDA: " + 
-                                   std::string(cudaGetErrorString(result)));
-        }
         
         syncObj->isValid = true;
         syncObjects.push_back(syncObj);
@@ -354,28 +371,44 @@ cudaExternalMemory_t CudaInterop::importVulkanMemory(vk::DeviceMemory vulkanMemo
             throw std::runtime_error("Не удалось создать временный Windows handle для памяти");
         }
         
-        std::cout << "[CudaInterop] Временная заглушка для memory handle (требуется VK_KHR_external_memory_win32)" << std::endl;
+        // RAII-обертка для автоматического освобождения handle в случае исключения
+        auto handleGuard = [handle]() { 
+            if (handle != INVALID_HANDLE_VALUE) {
+                CloseHandle(handle);
+            }
+        };
+        
+        try {
+            std::cout << "[CudaInterop] Временная заглушка для memory handle (требуется VK_KHR_external_memory_win32)" << std::endl;
+            
+            // Создаем CUDA external memory
+            cudaExternalMemoryHandleDesc memHandleDesc{};
+            memHandleDesc.type = cudaExternalMemoryHandleTypeOpaqueWin32;
+            memHandleDesc.handle.win32.handle = handle;
+            memHandleDesc.size = size;
+            
+            cudaExternalMemory_t extMem;
+            cudaError_t cudaResult = cudaImportExternalMemory(&extMem, &memHandleDesc);
+            
+            if (cudaResult != cudaSuccess) {
+                handleGuard(); // Освобождаем handle перед выбросом исключения
+                throw std::runtime_error("Ошибка импорта Vulkan памяти в CUDA: " + 
+                                       std::string(cudaGetErrorString(cudaResult)));
+            }
+            
+            // Handle успешно передан в CUDA, не освобождаем его здесь
+            // CUDA теперь владеет handle и освободит его при cudaDestroyExternalMemory
+            return extMem;
+            
+        } catch (...) {
+            handleGuard(); // Освобождаем handle в случае любого исключения
+            throw;
+        }
 #else
         void* handle = nullptr;
         std::cout << "[CudaInterop] Non-Windows платформы пока не поддерживаются" << std::endl;
         return nullptr;
 #endif
-        
-        // Создаем CUDA external memory
-        cudaExternalMemoryHandleDesc memHandleDesc{};
-        memHandleDesc.type = cudaExternalMemoryHandleTypeOpaqueWin32;
-        memHandleDesc.handle.win32.handle = handle;
-        memHandleDesc.size = size;
-        
-        cudaExternalMemory_t extMem;
-        cudaError_t cudaResult = cudaImportExternalMemory(&extMem, &memHandleDesc);
-        
-        if (cudaResult != cudaSuccess) {
-            throw std::runtime_error("Ошибка импорта Vulkan памяти в CUDA: " + 
-                                   std::string(cudaGetErrorString(cudaResult)));
-        }
-        
-        return extMem;
         
     } catch (const std::exception& e) {
         std::cout << "[CudaInterop] " << e.what() << std::endl;
