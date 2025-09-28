@@ -16,6 +16,8 @@
 #include "../Core/Interfaces/IInitializable.h"
 #include "../Core/Interfaces/IConfigurable.h"
 #include "../Core/EngineCore.h"
+#include "../Math/Matrix4.h"
+#include "../Math/Vector3.h"
 #include <memory>
 #include <vector>
 

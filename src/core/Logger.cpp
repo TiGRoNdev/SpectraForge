@@ -22,7 +22,7 @@ Logger::Logger(const std::string& logFile, LogLevel level)
         logFileStream.open(logFilePath, std::ios::app);
         if (logFileStream.is_open()) {
             fileOutput = true;
-            log(LogLevel::INFO, "Логгер инициализирован с файлом: " + logFilePath);
+            log(LogLevel::INFO_LEVEL, "Логгер инициализирован с файлом: " + logFilePath);
         } else {
             SAFE_ERROR("Не удалось открыть файл лога: " + logFilePath);
         }
@@ -31,25 +31,25 @@ Logger::Logger(const std::string& logFile, LogLevel level)
 
 Logger::~Logger() {
     if (logFileStream.is_open()) {
-        log(LogLevel::INFO, "Логгер завершает работу");
+        log(LogLevel::INFO_LEVEL, "Логгер завершает работу");
         logFileStream.close();
     }
 }
 
 void Logger::logInfo(const std::string& message) {
-    log(LogLevel::INFO, message);
+    log(LogLevel::INFO_LEVEL, message);
 }
 
 void Logger::logWarning(const std::string& message) {
-    log(LogLevel::WARNING, message);
+    log(LogLevel::WARNING_LEVEL, message);
 }
 
 void Logger::logError(const std::string& message) {
-    log(LogLevel::ERROR, message);
+    log(LogLevel::ERROR_LEVEL, message);
 }
 
 void Logger::logDebug(const std::string& message) {
-    log(LogLevel::DEBUG, message);
+    log(LogLevel::DEBUG_LEVEL, message);
 }
 
 void Logger::setLogLevel(LogLevel level) {
@@ -71,16 +71,16 @@ void Logger::log(LogLevel level, const std::string& message) {
     // Вывод в консоль
     if (consoleOutput) {
         switch (level) {
-            case LogLevel::DEBUG:
+            case LogLevel::DEBUG_LEVEL:
                 SAFE_PRINT_LINE("🔍 " + fullMessage);
                 break;
-            case LogLevel::INFO:
+            case LogLevel::INFO_LEVEL:
                 SAFE_INFO(fullMessage);
                 break;
-            case LogLevel::WARNING:
+            case LogLevel::WARNING_LEVEL:
                 SAFE_WARNING(fullMessage);
                 break;
-            case LogLevel::ERROR:
+            case LogLevel::ERROR_LEVEL:
                 SAFE_ERROR(fullMessage);
                 break;
         }
@@ -95,10 +95,10 @@ void Logger::log(LogLevel level, const std::string& message) {
 
 std::string Logger::levelToString(LogLevel level) const {
     switch (level) {
-        case LogLevel::DEBUG:   return "DEBUG";
-        case LogLevel::INFO:    return "INFO";
-        case LogLevel::WARNING: return "WARN";
-        case LogLevel::ERROR:   return "ERROR";
+        case LogLevel::DEBUG_LEVEL:   return "DEBUG";
+        case LogLevel::INFO_LEVEL:    return "INFO";
+        case LogLevel::WARNING_LEVEL: return "WARN";
+        case LogLevel::ERROR_LEVEL:   return "ERROR";
         default:                return "UNKNOWN";
     }
 }

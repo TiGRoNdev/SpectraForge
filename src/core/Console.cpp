@@ -231,7 +231,7 @@ void Console::error(const std::string& message) {
 }
 
 void Console::critical(const std::string& message) {
-    log(message, LogLevel::CRITICAL_LEVEL);
+    log(message, LogLevel::ERROR_LEVEL); // Используем ERROR_LEVEL вместо CRITICAL, так как у нас нет CRITICAL
 }
 
 void Console::log(const std::string& message, LogLevel level) {
@@ -358,7 +358,6 @@ std::string Console::getLogLevelEmoji(LogLevel level) {
         case LogLevel::INFO_LEVEL: return "ℹ️";
         case LogLevel::WARNING_LEVEL: return "⚠️";
         case LogLevel::ERROR_LEVEL: return "❌";
-        case LogLevel::CRITICAL_LEVEL: return "🚨";
         default: return "";
     }
 }
@@ -369,7 +368,6 @@ ConsoleColor Console::getLogLevelColor(LogLevel level) {
         case LogLevel::INFO_LEVEL: return ConsoleColor::GREEN;
         case LogLevel::WARNING_LEVEL: return ConsoleColor::YELLOW;
         case LogLevel::ERROR_LEVEL: return ConsoleColor::RED;
-        case LogLevel::CRITICAL_LEVEL: return ConsoleColor::BRIGHT_RED;
         default: return ConsoleColor::RESET;
     }
 }
@@ -380,7 +378,6 @@ std::string Console::getLogLevelString(LogLevel level) {
         case LogLevel::INFO_LEVEL: return "INFO";
         case LogLevel::WARNING_LEVEL: return "WARNING";
         case LogLevel::ERROR_LEVEL: return "ERROR";
-        case LogLevel::CRITICAL_LEVEL: return "CRITICAL";
         default: return "UNKNOWN";
     }
 }
