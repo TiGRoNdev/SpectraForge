@@ -9,22 +9,22 @@
  * - Интеграцию с CUDA-Vulkan interop
  */
 
-#include <iostream>
-#include <vector>
-#include <memory>
 #include <chrono>
-#include "HyperEngine/Core/SafeConsole.h"
+#include <iostream>
+#include <memory>
 #include <random>
+#include <vector>
+#include "HyperEngine/Core/SafeConsole.h"
 
 // Core Engine includes
 #include <HyperEngine/Core/Console.h>
 
 using namespace HyperEngine::Core;
-#include <HyperEngine/CUDA/FlashGSSplatter.h>
-#include <HyperEngine/Vulkan/SceneManager.h>
 #include <HyperEngine/CUDA/CudaInterop.h>
-#include <HyperEngine/Vulkan/VulkanRenderer.h>
+#include <HyperEngine/CUDA/FlashGSSplatter.h>
 #include <HyperEngine/Vulkan/HardwareDetector.h>
+#include <HyperEngine/Vulkan/SceneManager.h>
+#include <HyperEngine/Vulkan/VulkanRenderer.h>
 
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
 #include <cuda_runtime.h>
@@ -68,12 +68,13 @@ std::vector<float4> generateTestPointCloud(int numPoints) {
         point.x = posDist(gen);
         point.y = posDist(gen);
         point.z = posDist(gen);
-        point.w = intensityDist(gen); // intensity
+        point.w = intensityDist(gen);  // intensity
 
         points.push_back(point);
     }
 
-    std::cout << "✅ Точечное облако создано: " << SAFE_TO_STRING(points.size()) << " точек" << std::endl;
+    std::cout << "✅ Точечное облако создано: " << SAFE_TO_STRING(points.size()) << " точек"
+              << std::endl;
     return points;
 }
 
@@ -93,13 +94,14 @@ std::vector<float4> generateSpherePointCloud(int numPoints, float radius = 2.0f)
     std::uniform_real_distribution<float> uDist(-1.0f, 1.0f);
     std::uniform_real_distribution<float> intensityDist(0.5f, 1.0f);
 
-    std::cout << "🌐 Генерация сферы из " << SAFE_TO_STRING(numPoints) << " точек (радиус " << SAFE_TO_STRING(radius) << ")..." << std::endl;
+    std::cout << "🌐 Генерация сферы из " << SAFE_TO_STRING(numPoints) << " точек (радиус "
+              << SAFE_TO_STRING(radius) << ")..." << std::endl;
 
     for (int i = 0; i < numPoints; i++) {
         // Равномерное распределение точек на сфере
-        float theta = angleDist(gen);      // азимутальный угол
-        float u = uDist(gen);              // cos(полярный угол)
-        float phi = acosf(u);               // полярный угол
+        float theta = angleDist(gen);  // азимутальный угол
+        float u = uDist(gen);          // cos(полярный угол)
+        float phi = acosf(u);          // полярный угол
 
         float4 point;
         point.x = radius * sinf(phi) * cosf(theta);
@@ -144,7 +146,8 @@ void performanceTest(FlashGSSplatter& splatter, const std::vector<float4>& point
     end = std::chrono::high_resolution_clock::now();
 
     auto optimTime = std::chrono::duration<float, std::milli>(end - start).count();
-    std::cout << "⏱️  Оптимизация (50 итераций): " << SAFE_TO_STRING(optimTime) << " мс" << std::endl;
+    std::cout << "⏱️  Оптимизация (50 итераций): " << SAFE_TO_STRING(optimTime) << " мс"
+              << std::endl;
 
     // Тест растеризации
     SAFE_PRINT_LINE("🎨 Тест растеризации...");
@@ -167,18 +170,23 @@ void performanceTest(FlashGSSplatter& splatter, const std::vector<float4>& point
     end = std::chrono::high_resolution_clock::now();
 
     auto rasterTime = std::chrono::duration<float, std::milli>(end - start).count();
-    std::cout << "⏱️  Растеризация (1920x1080): " << SAFE_TO_STRING(rasterTime) << " мс" << std::endl;
+    std::cout << "⏱️  Растеризация (1920x1080): " << SAFE_TO_STRING(rasterTime) << " мс"
+              << std::endl;
 
     // Итоговая статистика
     SAFE_PRINT_LINE("\n📈 === СТАТИСТИКА ПРОИЗВОДИТЕЛЬНОСТИ ===");
-    std::cout << "🔹 Активных гауссианов: " << SAFE_TO_STRING(splatter.getActiveGaussianCount()) << std::endl;
-    std::cout << "🔹 Время последнего рендера: " << SAFE_TO_STRING(splatter.getLastRenderTime()) << " мс" << std::endl;
-    std::cout << "🔹 FPS (приблизительно): " << SAFE_TO_STRING(1000.0f / splatter.getLastRenderTime()) << std::endl;
+    std::cout << "🔹 Активных гауссианов: " << SAFE_TO_STRING(splatter.getActiveGaussianCount())
+              << std::endl;
+    std::cout << "🔹 Время последнего рендера: " << SAFE_TO_STRING(splatter.getLastRenderTime())
+              << " мс" << std::endl;
+    std::cout << "🔹 FPS (приблизительно): "
+              << SAFE_TO_STRING(1000.0f / splatter.getLastRenderTime()) << std::endl;
 
     // Вычисляем производительность
     float totalTime = initTime + optimTime + rasterTime;
     std::cout << "🔹 Общее время: " << SAFE_TO_STRING(totalTime) << " мс" << std::endl;
-    std::cout << "🔹 Точек в секунду: " << SAFE_TO_STRING(points.size() * 1000.0f / totalTime) << std::endl;
+    std::cout << "🔹 Точек в секунду: " << SAFE_TO_STRING(points.size() * 1000.0f / totalTime)
+              << std::endl;
 
 #else
     SAFE_PRINT_LINE("⚠️  CUDA interop не поддерживается - пропускаем тест производительности");
@@ -208,10 +216,14 @@ void demonstrateFlashGSCapabilities() {
         cudaGetDeviceProperties(&props, 0);
 
         std::cout << "\n💻 CUDA Устройство: " << props.name << std::endl;
-        std::cout << "🔹 Compute Capability: " << SAFE_TO_STRING(props.major) << "." << SAFE_TO_STRING(props.minor) << std::endl;
-        std::cout << "🔹 Глобальная память: " << SAFE_TO_STRING(props.totalGlobalMem / 1024 / 1024) << " МБ" << std::endl;
-        std::cout << "🔹 Мультипроцессоры: " << SAFE_TO_STRING(props.multiProcessorCount) << std::endl;
-        std::cout << "🔹 Максимальных потоков на блок: " << SAFE_TO_STRING(props.maxThreadsPerBlock) << std::endl;
+        std::cout << "🔹 Compute Capability: " << SAFE_TO_STRING(props.major) << "."
+                  << SAFE_TO_STRING(props.minor) << std::endl;
+        std::cout << "🔹 Глобальная память: " << SAFE_TO_STRING(props.totalGlobalMem / 1024 / 1024)
+                  << " МБ" << std::endl;
+        std::cout << "🔹 Мультипроцессоры: " << SAFE_TO_STRING(props.multiProcessorCount)
+                  << std::endl;
+        std::cout << "🔹 Максимальных потоков на блок: " << SAFE_TO_STRING(props.maxThreadsPerBlock)
+                  << std::endl;
     }
 #endif
 }
@@ -223,7 +235,6 @@ int main() {
     // Инициализация UTF-8 консоли
     Core::Console console;
     console.initialize();
-
 
     SAFE_PRINT_LINE("🎮 FlashGS Demo - CUDA-ускоренный 3D Gaussian Splatting");
     SAFE_PRINT_LINE("========================================================");
@@ -301,7 +312,8 @@ int main() {
 
         // Завершение
         SAFE_PRINT_LINE("\n✅ === ДЕМО ЗАВЕРШЕНО УСПЕШНО ===");
-        SAFE_PRINT_LINE("🎯 FlashGS показал высокую производительность CUDA-ускоренного рендеринга");
+        SAFE_PRINT_LINE(
+            "🎯 FlashGS показал высокую производительность CUDA-ускоренного рендеринга");
         SAFE_PRINT_LINE("📈 Tile-based подход обеспечивает эффективную растеризацию больших сцен");
         SAFE_PRINT_LINE("🚀 Готов к интеграции в полнофункциональный рендеринг pipeline");
 

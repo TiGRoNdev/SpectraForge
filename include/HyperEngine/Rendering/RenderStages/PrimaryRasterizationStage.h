@@ -39,9 +39,9 @@ class PrimaryRasterizationStage : public IRenderStage {
         float cullingThreshold = 0.01f;    ///< Порог отсечения по размеру
         bool enableOcclusion = true;       ///< Включить occlusion culling
         bool enableFrustumCulling = true;  ///< Включить frustum culling
-        uint32_t maxGaussians = 1000000;  ///< Максимальное количество Gaussian'ов
-        bool enableLOD = true;            ///< Включить level-of-detail
-        float lodDistance = 100.0f;  ///< Расстояние начала LOD
+        uint32_t maxGaussians = 1000000;   ///< Максимальное количество Gaussian'ов
+        bool enableLOD = true;             ///< Включить level-of-detail
+        float lodDistance = 100.0f;        ///< Расстояние начала LOD
     } settings_;
 
   public:

@@ -10,7 +10,7 @@ set ERRORS=0
 set WARNINGS=0
 
 REM Путь к clang-format
-set CLANG_FORMAT="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\Llvm\bin\clang-format.exe"
+set CLANG_FORMAT="C:\Program Files\LLVM\bin\clang-format.exe"
 
 REM Создать директорию для отчетов
 if not exist "build\quality-reports" mkdir "build\quality-reports"
@@ -65,7 +65,7 @@ echo.
 echo 🧪 Запуск тестов...
 if exist "build-vcpkg" (
     cd build-vcpkg
-    ctest --output-on-failure > ..\build\quality-reports\tests.log 2>&1
+    ctest -C Release --output-on-failure > ..\build\quality-reports\tests.log 2>&1
     if !errorlevel! equ 0 (
         echo ✅ Все тесты прошли успешно
     ) else (

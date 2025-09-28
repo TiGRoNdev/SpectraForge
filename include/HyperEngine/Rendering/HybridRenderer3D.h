@@ -32,7 +32,7 @@ class HybridRenderer3D : public Renderer3D {
     enum class RenderPass {
         DEPTH_PREPASS,           // Предварительный проход глубины
         GAUSSIAN_RASTERIZATION,  // Растеризация гауссианов
-        RAY_TRACED_GI,  // Трассировка лучей для глобального освещения
+        RAY_TRACED_GI,           // Трассировка лучей для глобального освещения
         RAY_TRACED_REFLECTIONS,  // Трассировка лучей для отражений
         RAY_TRACED_SHADOWS,      // Трассировка лучей для теней
         COMPOSITING,             // Композитинг результатов
@@ -209,8 +209,8 @@ class HybridRenderer3D : public Renderer3D {
 class ReSTIRGlobalIllumination {
   public:
     struct ReSTIRSettings {
-        int candidateSamples = 8;  // Количество кандидатов для выборки
-        int spatialSamples = 4;  // Пространственная повторная выборка
+        int candidateSamples = 8;     // Количество кандидатов для выборки
+        int spatialSamples = 4;       // Пространственная повторная выборка
         int temporalSamples = 4;      // Временная повторная выборка
         float spatialRadius = 32.0f;  // Радиус пространственной выборки
         bool enableTemporalReuse = true;
@@ -277,9 +277,9 @@ class ReSTIRGlobalIllumination {
 class AIDenoiser {
   public:
     enum class DenoiserType {
-        FAST_BILATERAL,  // Быстрый билатеральный фильтр
-        EDGE_AWARE,      // Edge-aware деноизинг
-        NEURAL_NETWORK,  // Нейронная сеть (если поддерживается)
+        FAST_BILATERAL,        // Быстрый билатеральный фильтр
+        EDGE_AWARE,            // Edge-aware деноизинг
+        NEURAL_NETWORK,        // Нейронная сеть (если поддерживается)
         TEMPORAL_ACCUMULATION  // Временное накопление
     };
 
@@ -348,10 +348,10 @@ class AIDenoiser {
 class NeuralUpscaler {
   public:
     enum class UpscalerType {
-        BILINEAR,  // Стандартное билинейное масштабирование
-        LANCZOS,   // Lanczos фильтр
+        BILINEAR,       // Стандартное билинейное масштабирование
+        LANCZOS,        // Lanczos фильтр
         EDGE_ENHANCED,  // Улучшение краев
-        AI_ENHANCED  // ИИ масштабирование (если поддерживается)
+        AI_ENHANCED     // ИИ масштабирование (если поддерживается)
     };
 
     struct UpscalerSettings {

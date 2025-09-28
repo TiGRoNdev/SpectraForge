@@ -9,7 +9,7 @@ where clang-format >nul 2>&1
 if %errorlevel% neq 0 (
     echo ❌ clang-format не найден в системе
     echo 📥 Попытка установки через vcpkg...
-    
+
     REM Пытаемся установить через vcpkg
     if exist "vcpkg\vcpkg.exe" (
         vcpkg\vcpkg.exe install llvm[clang-format]:x64-windows
@@ -26,13 +26,13 @@ if %errorlevel% neq 0 (
 )
 
 REM Создаем директорию для отчетов
-if not exist "build\quality-reports" mkdir "build\quality-reports"
+if not exist "..\build\quality-reports" mkdir "..\build\quality-reports"
 
 echo 🔍 Поиск файлов C++...
 set FILES_FOUND=0
 
 REM Форматируем файлы в src
-for /r src %%f in (*.cpp *.h) do (
+for /r ..\src %%f in (*.cpp *.h) do (
     echo Форматирование: %%f
     clang-format -i --style=file "%%f"
     if %errorlevel% neq 0 (
@@ -43,7 +43,7 @@ for /r src %%f in (*.cpp *.h) do (
 )
 
 REM Форматируем файлы в include
-for /r include %%f in (*.cpp *.h) do (
+for /r ..\include %%f in (*.cpp *.h) do (
     echo Форматирование: %%f
     clang-format -i --style=file "%%f"
     if %errorlevel% neq 0 (
@@ -54,7 +54,7 @@ for /r include %%f in (*.cpp *.h) do (
 )
 
 REM Форматируем файлы в tests
-for /r tests %%f in (*.cpp *.h) do (
+for /r ..\tests %%f in (*.cpp *.h) do (
     echo Форматирование: %%f
     clang-format -i --style=file "%%f"
     if %errorlevel% neq 0 (
@@ -65,7 +65,7 @@ for /r tests %%f in (*.cpp *.h) do (
 )
 
 REM Форматируем файлы в examples
-for /r examples %%f in (*.cpp *.h) do (
+for /r ..\examples %%f in (*.cpp *.h) do (
     echo Форматирование: %%f
     clang-format -i --style=file "%%f"
     if %errorlevel% neq 0 (
@@ -82,7 +82,7 @@ echo.
 
 REM Проверяем результат
 echo 🔍 Проверка результата форматирования...
-clang-format --dry-run --Werror --style=file src\**\*.cpp src\**\*.h include\**\*.cpp include\**\*.h tests\**\*.cpp tests\**\*.h examples\**\*.cpp examples\**\*.h > build\quality-reports\format-check-after.log 2>&1
+clang-format --dry-run --Werror --style=file ..\src\**\*.cpp ..\src\**\*.h ..\include\**\*.cpp ..\include\**\*.h ..\tests\**\*.cpp ..\tests\**\*.h ..\examples\**\*.cpp ..\examples\**\*.h > ..\build\quality-reports\format-check-after.log 2>&1
 
 if %errorlevel% equ 0 (
     echo ✅ Все файлы соответствуют стандартам форматирования!

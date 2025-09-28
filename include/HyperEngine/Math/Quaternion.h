@@ -23,7 +23,7 @@ class Quaternion {
     Quaternion(float w, float x, float y, float z);
     Quaternion(const Quaternion& other);
     explicit Quaternion(const Vector3& axis, float angle);  // Из оси и угла
-    explicit Quaternion(const Vector3& eulerAngles);  // Из углов Эйлера (pitch, yaw, roll)
+    explicit Quaternion(const Vector3& eulerAngles);        // Из углов Эйлера (pitch, yaw, roll)
 
     // Операторы
     Quaternion& operator=(const Quaternion& other);
@@ -41,18 +41,18 @@ class Quaternion {
     bool operator!=(const Quaternion& other) const;
 
     // Основные операции
-    float magnitude() const;         // Длина кватерниона
-    float magnitudeSquared() const;  // Квадрат длины
-    Quaternion normalized() const;   // Нормализованный кватернион
-    void normalize();                // Нормализация на месте
-    Quaternion conjugate() const;    // Сопряженный кватернион
-    Quaternion inverse() const;      // Обратный кватернион
+    float magnitude() const;                   // Длина кватерниона
+    float magnitudeSquared() const;            // Квадрат длины
+    Quaternion normalized() const;             // Нормализованный кватернион
+    void normalize();                          // Нормализация на месте
+    Quaternion conjugate() const;              // Сопряженный кватернион
+    Quaternion inverse() const;                // Обратный кватернион
     float dot(const Quaternion& other) const;  // Скалярное произведение
 
     // Повороты
-    Vector3 rotate(const Vector3& vec) const;  // Поворот вектора
-    Matrix4 toMatrix() const;                  // Преобразование в матрицу
-    Vector3 toEulerAngles() const;  // Преобразование в углы Эйлера
+    Vector3 rotate(const Vector3& vec) const;             // Поворот вектора
+    Matrix4 toMatrix() const;                             // Преобразование в матрицу
+    Vector3 toEulerAngles() const;                        // Преобразование в углы Эйлера
     void toAxisAngle(Vector3& axis, float& angle) const;  // Преобразование в ось-угол
 
     // Создание поворотов
@@ -64,7 +64,7 @@ class Quaternion {
 
     // Интерполяция
     Quaternion slerp(const Quaternion& other, float t) const;  // Сферическая интерполяция
-    Quaternion lerp(const Quaternion& other, float t) const;  // Линейная интерполяция
+    Quaternion lerp(const Quaternion& other, float t) const;   // Линейная интерполяция
     Quaternion nlerp(const Quaternion& other,
                      float t) const;  // Нормализованная линейная интерполяция
 

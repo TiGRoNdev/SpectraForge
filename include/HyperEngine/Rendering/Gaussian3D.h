@@ -15,12 +15,12 @@ namespace Rendering {
  * что позволяет эффективно представлять сложные геометрические формы.
  */
 struct Gaussian3D {
-    Math::Vector3 position;  // Позиция центра гауссиана
+    Math::Vector3 position;    // Позиция центра гауссиана
     Math::Matrix4 covariance;  // Матрица ковариации (определяет форму)
     Math::Vector3 color;       // RGB цвет
     float opacity;             // Прозрачность (0.0 - 1.0)
     Math::Vector3 scale;       // Масштаб по осям
-    Math::Vector3 rotation;  // Углы поворота (Эйлера)
+    Math::Vector3 rotation;    // Углы поворота (Эйлера)
 
     // Дополнительные параметры для оптимизации
     float importance;  // Важность гауссиана для LOD

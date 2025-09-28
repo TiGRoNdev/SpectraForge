@@ -24,10 +24,10 @@ namespace HyperEngine::Rendering {
  */
 enum class StandardRenderStage {
     PrimaryRasterization,  ///< Первичная растеризация (Gaussian Splatting)
-    SecondaryRayTracing,  ///< Вторичная трассировка лучей (отражения, тени, GI, AO)
-    AIDenoising,    ///< AI деноизинг (OptiX Denoiser)
-    Upscaling,      ///< Upscaling (DLSS/FSR/Basic)
-    FinalComposite  ///< Финальный композитинг (tone mapping, post-effects)
+    SecondaryRayTracing,   ///< Вторичная трассировка лучей (отражения, тени, GI, AO)
+    AIDenoising,           ///< AI деноизинг (OptiX Denoiser)
+    Upscaling,             ///< Upscaling (DLSS/FSR/Basic)
+    FinalComposite         ///< Финальный композитинг (tone mapping, post-effects)
 };
 
 /**

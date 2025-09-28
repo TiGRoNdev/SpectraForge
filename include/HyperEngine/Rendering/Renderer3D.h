@@ -55,7 +55,7 @@ class Renderer3D {
         enum Type { DIRECTIONAL, POINT, SPOT };
 
         Type type;
-        Math::Vector3 position;  // Для точечного и направленного света
+        Math::Vector3 position;   // Для точечного и направленного света
         Math::Vector3 direction;  // Для направленного и прожекторного света
         Math::Vector3 color;
         float intensity;

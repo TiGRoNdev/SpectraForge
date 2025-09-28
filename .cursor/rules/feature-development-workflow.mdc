@@ -4,7 +4,7 @@ globs: ["**/*.cpp", "**/*.h", "**/*.hpp", "**/*.md"]
 alwaysApply: true
 ---
 
-# Feature Development Workflow for 4D Engine
+# Feature Development Workflow for HyperEngine
 
 @context {
   "type": "workflow_guidelines",
@@ -15,6 +15,7 @@ alwaysApply: true
 }
 
 ## 1. Development Workflow Steps
+
 Follow these steps for new features.
 
 @workflow_rules [
@@ -49,6 +50,7 @@ Follow these steps for new features.
 ## 2. Tables for Quick Reference
 
 ### Workflow Steps Summary
+
 | Step | Description | Tools/Command |
 |------|-------------|---------------|
 | 1 | Create branch | git checkout -b |
@@ -57,6 +59,7 @@ Follow these steps for new features.
 | 4 | Create PR | mcp_github_create_pull_request |
 
 ## 3. Best Practices and Enforcement
+
 - Atomic commits with semantic messages.
 - Require PR approvals.
 - Integrate with GitHub Actions.

@@ -68,8 +68,7 @@ bool Console::initialize() {
     }
 
     if (!colorSuccess) {
-        SAFE_PRINT_LINE(
-            "⚠️ Предупреждение: цветной вывод недоступен");
+        SAFE_PRINT_LINE("⚠️ Предупреждение: цветной вывод недоступен");
     }
 
     if (!vtSuccess) {

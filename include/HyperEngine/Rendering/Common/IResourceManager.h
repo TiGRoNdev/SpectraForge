@@ -193,8 +193,8 @@ enum class MemoryProperty : uint32_t {
  * @brief Описание буфера
  */
 struct BufferDesc {
-    size_t size = 0;                          ///< Размер в байтах
-    BufferUsage usage = BufferUsage::Vertex;  ///< Способ использования
+    size_t size = 0;                                                ///< Размер в байтах
+    BufferUsage usage = BufferUsage::Vertex;                        ///< Способ использования
     MemoryProperty memoryProperties = MemoryProperty::DeviceLocal;  ///< Свойства памяти
     const void* initialData = nullptr;  ///< Начальные данные (опционально)
     std::string debugName;              ///< Имя для отладки
@@ -289,17 +289,17 @@ enum class TextureUsage : uint32_t {
  * @brief Описание текстуры
  */
 struct TextureDesc {
-    uint32_t width = 1;        ///< Ширина
-    uint32_t height = 1;       ///< Высота
-    uint32_t depth = 1;        ///< Глубина (для 3D текстур)
-    uint32_t mipLevels = 1;    ///< Количество мип-уровней
-    uint32_t arrayLayers = 1;  ///< Количество слоев
+    uint32_t width = 1;                                 ///< Ширина
+    uint32_t height = 1;                                ///< Высота
+    uint32_t depth = 1;                                 ///< Глубина (для 3D текстур)
+    uint32_t mipLevels = 1;                             ///< Количество мип-уровней
+    uint32_t arrayLayers = 1;                           ///< Количество слоев
     TextureFormat format = TextureFormat::RGBA8_UNORM;  ///< Формат пикселей
     TextureType type = TextureType::Texture2D;          ///< Тип текстуры
     TextureUsage usage = TextureUsage::Sampled;         ///< Способ использования
-    uint32_t samples = 1;               ///< Количество MSAA сэмплов
-    const void* initialData = nullptr;  ///< Начальные данные
-    std::string debugName;              ///< Имя для отладки
+    uint32_t samples = 1;                               ///< Количество MSAA сэмплов
+    const void* initialData = nullptr;                  ///< Начальные данные
+    std::string debugName;                              ///< Имя для отладки
 };
 
 /**

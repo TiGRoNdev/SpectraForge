@@ -55,8 +55,8 @@ class Mesh3D {
     size_t getTriangleCount() const { return indices.size() / 3; }
 
     // Геометрические операции
-    void calculateNormals();   // Вычисление нормалей
-    void calculateTangents();  // Вычисление касательных для normal mapping
+    void calculateNormals();                      // Вычисление нормалей
+    void calculateTangents();                     // Вычисление касательных для normal mapping
     Math::Vector3 getCenter() const;              // Центр меша
     Math::Vector3 getSize() const;                // Размер bounding box
     void transform(const Math::Matrix4& matrix);  // Трансформация меша

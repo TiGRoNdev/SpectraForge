@@ -120,10 +120,10 @@ struct RenderContext {
     struct {
         TextureHandle primaryColorBuffer = INVALID_HANDLE;  ///< Результат первичной растеризации
         TextureHandle primaryDepthBuffer = INVALID_HANDLE;  ///< Depth buffer первичной растеризации
-        TextureHandle motionVectors = INVALID_HANDLE;  ///< Motion vectors для temporal effects
-        TextureHandle normalBuffer = INVALID_HANDLE;  ///< Буфер нормалей для деноизинга
-        BufferHandle gaussianBuffer = INVALID_HANDLE;  ///< Буфер с данными Gaussian'ов
-        uint32_t gaussianCount = 0;                    ///< Количество Gaussian'ов
+        TextureHandle motionVectors = INVALID_HANDLE;       ///< Motion vectors для temporal effects
+        TextureHandle normalBuffer = INVALID_HANDLE;        ///< Буфер нормалей для деноизинга
+        BufferHandle gaussianBuffer = INVALID_HANDLE;       ///< Буфер с данными Gaussian'ов
+        uint32_t gaussianCount = 0;                         ///< Количество Gaussian'ов
     } primaryRaster;
 
     struct {
@@ -131,22 +131,22 @@ struct RenderContext {
         TextureHandle shadows = INVALID_HANDLE;             ///< Ray-traced тени
         TextureHandle globalIllumination = INVALID_HANDLE;  ///< Global illumination
         TextureHandle ambientOcclusion = INVALID_HANDLE;    ///< Ray-traced AO
-        BufferHandle rayCounters = INVALID_HANDLE;  ///< Счетчики лучей для оптимизации
+        BufferHandle rayCounters = INVALID_HANDLE;          ///< Счетчики лучей для оптимизации
     } rayTracing;
 
     struct {
         TextureHandle denoisedReflections = INVALID_HANDLE;  ///< Очищенные отражения
         TextureHandle denoisedShadows = INVALID_HANDLE;      ///< Очищенные тени
         TextureHandle denoisedGI = INVALID_HANDLE;           ///< Очищенный GI
-        TextureHandle varianceBuffer = INVALID_HANDLE;  ///< Буфер variance для деноизинга
+        TextureHandle varianceBuffer = INVALID_HANDLE;       ///< Буфер variance для деноизинга
     } denoising;
 
     struct {
-        TextureHandle upscaledImage = INVALID_HANDLE;  ///< Результат upscaling
+        TextureHandle upscaledImage = INVALID_HANDLE;       ///< Результат upscaling
         TextureHandle motionVectorsHiRes = INVALID_HANDLE;  ///< Motion vectors высокого разрешения
-        float upscaleFactor = 1.0f;  ///< Коэффициент увеличения
-        int outputWidth = 1920;      ///< Итоговая ширина
-        int outputHeight = 1080;     ///< Итоговая высота
+        float upscaleFactor = 1.0f;                         ///< Коэффициент увеличения
+        int outputWidth = 1920;                             ///< Итоговая ширина
+        int outputHeight = 1080;                            ///< Итоговая высота
     } upscaling;
 
     // === Выходные данные ===
@@ -157,11 +157,11 @@ struct RenderContext {
 
     // === Настройки рендеринга ===
     struct {
-        bool enableRayTracing = true;  ///< Включить ray tracing
-        bool enableDenoising = true;   ///< Включить AI деноизинг
-        bool enableUpscaling = true;   ///< Включить upscaling
+        bool enableRayTracing = true;     ///< Включить ray tracing
+        bool enableDenoising = true;      ///< Включить AI деноизинг
+        bool enableUpscaling = true;      ///< Включить upscaling
         bool enableDebugOverlay = false;  ///< Показать отладочную информацию
-        bool enableProfiling = false;  ///< Включить профилирование
+        bool enableProfiling = false;     ///< Включить профилирование
     } settings;
 
     // === Ресурсы ===
@@ -171,8 +171,8 @@ struct RenderContext {
     struct {
         std::unordered_map<std::string, float> stageTimes;  ///< Время выполнения этапов
         uint32_t drawCalls = 0;                             ///< Количество draw calls
-        uint32_t computeDispatches = 0;  ///< Количество compute dispatches
-        size_t memoryUsed = 0;           ///< Использованная память
+        uint32_t computeDispatches = 0;                     ///< Количество compute dispatches
+        size_t memoryUsed = 0;                              ///< Использованная память
     } debug;
 };
 

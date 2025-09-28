@@ -26,11 +26,11 @@ class FinalCompositeStage : public IRenderStage {
 
     // Настройки композитинга
     struct CompositeSettings {
-        bool enableToneMapping = true;   ///< Включить tone mapping
-        bool enableColorGrading = true;  ///< Включить color grading
-        bool enableBloom = true;         ///< Включить bloom эффект
-        bool enableVignette = false;     ///< Включить виньетирование
-        bool enableFXAA = true;          ///< Включить FXAA
+        bool enableToneMapping = true;    ///< Включить tone mapping
+        bool enableColorGrading = true;   ///< Включить color grading
+        bool enableBloom = true;          ///< Включить bloom эффект
+        bool enableVignette = false;      ///< Включить виньетирование
+        bool enableFXAA = true;           ///< Включить FXAA
         bool enableDebugOverlay = false;  ///< Показать отладочную информацию
         float exposure = 1.0f;            ///< Экспозиция
         float gamma = 2.2f;               ///< Гамма коррекция

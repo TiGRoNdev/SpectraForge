@@ -6,17 +6,17 @@
  * с поддержкой FlashGS, OptiX ray tracing и AI upscaling.
  */
 
+#include <chrono>
 #include <iostream>
 #include <memory>
-#include <chrono>
 #include "HyperEngine/Core/SafeConsole.h"
 
 using namespace HyperEngine::Core;
 
 #ifdef VULKAN_RENDERER_BUILD
-#include <HyperEngine/Vulkan/VulkanEngine.h>
 #include <HyperEngine/Vulkan/HardwareDetector.h>
 #include <HyperEngine/Vulkan/ResourceManager.h>
+#include <HyperEngine/Vulkan/VulkanEngine.h>
 
 #ifdef VULKAN_RENDERER_CUDA_SUPPORT
 #include <HyperEngine/CUDA/FlashGSSplatter.h>
@@ -26,15 +26,15 @@ using namespace HyperEngine::Core;
 #include <HyperEngine/OptiX/OptiXRayTracer.h>
 #endif
 
-#include <HyperEngine/Upscaling/Upscaler.h>
 #include <HyperEngine/Upscaling/DLSSUpscaler.h>
+#include <HyperEngine/Upscaling/Upscaler.h>
 #endif
 
-#include <HyperEngine/Core/Console.h>
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan.hpp>
+#include <HyperEngine/Core/Console.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <vulkan/vulkan.hpp>
 
 using namespace HyperEngine;
 using namespace HyperEngine::Core;
@@ -43,7 +43,7 @@ using namespace HyperEngine::Core;
  * @brief Класс демо-приложения
  */
 class VulkanDemo {
-public:
+  public:
     VulkanDemo() = default;
     ~VulkanDemo() = default;
 
@@ -136,8 +136,8 @@ public:
 
             if (totalTime >= 1.0f) {
                 float fps = frameCount / totalTime;
-                std::string title = "Vulkan Hybrid Renderer Demo - FPS: " +
-                                  SAFE_TO_STRING(static_cast<int>(fps));
+                std::string title =
+                    "Vulkan Hybrid Renderer Demo - FPS: " + SAFE_TO_STRING(static_cast<int>(fps));
                 glfwSetWindowTitle(window, title.c_str());
 
                 frameCount = 0;
@@ -176,7 +176,7 @@ public:
         SAFE_PRINT_LINE("Демо завершено.");
     }
 
-private:
+  private:
     GLFWwindow* window = nullptr;
     vk::Instance instance;
     vk::Device device;
@@ -214,7 +214,8 @@ private:
             uint32_t glfwExtensionCount = 0;
             const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-            std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+            std::vector<const char*> extensions(glfwExtensions,
+                                                glfwExtensions + glfwExtensionCount);
 
             vk::InstanceCreateInfo createInfo{};
             createInfo.pApplicationInfo = &appInfo;
@@ -249,24 +250,40 @@ private:
         auto vendor = detector->detectVendor();
         std::string vendorName;
         switch (vendor) {
-            case Vulkan::VendorType::NVIDIA: vendorName = "NVIDIA"; break;
-            case Vulkan::VendorType::AMD: vendorName = "AMD"; break;
-            case Vulkan::VendorType::INTEL: vendorName = "Intel"; break;
-            default: vendorName = "Other"; break;
+            case Vulkan::VendorType::NVIDIA:
+                vendorName = "NVIDIA";
+                break;
+            case Vulkan::VendorType::AMD:
+                vendorName = "AMD";
+                break;
+            case Vulkan::VendorType::INTEL:
+                vendorName = "Intel";
+                break;
+            default:
+                vendorName = "Other";
+                break;
         }
         std::cout << "Вендор: " << vendorName << std::endl;
 
-        std::cout << "VRAM: " << SAFE_TO_STRING(detector->getVRAMSize() / 1024 / 1024) << " MB" << std::endl;
-        std::cout << "Ray Tracing: " << (detector->supportsRayTracing() ? "Да" : "Нет") << std::endl;
+        std::cout << "VRAM: " << SAFE_TO_STRING(detector->getVRAMSize() / 1024 / 1024) << " MB"
+                  << std::endl;
+        std::cout << "Ray Tracing: " << (detector->supportsRayTracing() ? "Да" : "Нет")
+                  << std::endl;
         std::cout << "CUDA: " << (detector->supportsCUDA() ? "Да" : "Нет") << std::endl;
         std::cout << "OptiX: " << (detector->supportsOptiX() ? "Да" : "Нет") << std::endl;
 
         auto upscaler = detector->selectUpscalerPath();
         std::string upscalerName;
         switch (upscaler) {
-            case Vulkan::UpscalerType::DLSS: upscalerName = "DLSS"; break;
-            case Vulkan::UpscalerType::FSR: upscalerName = "FSR"; break;
-            default: upscalerName = "None"; break;
+            case Vulkan::UpscalerType::DLSS:
+                upscalerName = "DLSS";
+                break;
+            case Vulkan::UpscalerType::FSR:
+                upscalerName = "FSR";
+                break;
+            default:
+                upscalerName = "None";
+                break;
         }
         std::cout << "Upscaler: " << upscalerName << std::endl;
         SAFE_PRINT_LINE("=========================");
@@ -313,7 +330,7 @@ private:
      * @brief Обновление камеры
      */
     void updateCamera(float deltaTime) {
-        (void)deltaTime; // Подавляем предупреждение о неиспользуемом параметре
+        (void)deltaTime;  // Подавляем предупреждение о неиспользуемом параметре
 
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
@@ -335,8 +352,10 @@ private:
         yaw += xoffset;
         pitch += yoffset;
 
-        if (pitch > 89.0f) pitch = 89.0f;
-        if (pitch < -89.0f) pitch = -89.0f;
+        if (pitch > 89.0f)
+            pitch = 89.0f;
+        if (pitch < -89.0f)
+            pitch = -89.0f;
 
         glm::vec3 direction;
         direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
@@ -352,7 +371,8 @@ private:
         CameraParams params;
 
         params.viewMatrix = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-        params.projectionMatrix = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
+        params.projectionMatrix =
+            glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 100.0f);
         params.position = cameraPos;
         params.direction = cameraFront;
         params.fov = 45.0f;
