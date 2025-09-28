@@ -7,11 +7,11 @@ Component3D::Component3D()
     : gameObject(nullptr)
     , enabled(true) {}
 
-void Component3D::setEnabled(bool enabled) {
-    this->enabled = enabled;
+void Component3D::setEnabled(bool isEnabled) {
+    this->enabled = isEnabled;
 }
 
-void Component3D::setGameObject(GameObject3D* gameObject) {
-    this->gameObject = gameObject;
+void Component3D::setGameObject(GameObject3D* gameObj) {
+    this->gameObject = gameObj;
 }
 

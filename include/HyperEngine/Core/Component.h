@@ -22,11 +22,11 @@ class Component3D : public ILifecycle {
     void cleanup() override {}
 
     // Управление компонентами
-    void setEnabled(bool enabled);
+    void setEnabled(bool isEnabled);
     bool isEnabled() const { return enabled; }
 
     // Ассоциация с GameObject
-    void setGameObject(GameObject3D* gameObject);
+    void setGameObject(GameObject3D* gameObj);
     GameObject3D* getGameObject() const { return gameObject; }
 
     // Идентификация компонента
