@@ -91,47 +91,49 @@ void Renderer3D::endFrame() {
     }
     
     // TODO: Завершение кадра для конкретного API
-    std::cout << "Ending frame. Stats: " 
-              << renderStats.drawCalls << " draw calls, "
-              << renderStats.trianglesRendered << " triangles, "
-              << renderStats.verticesProcessed << " vertices" << std::endl;
+    SAFE_PRINT_LINE("Ending frame. Stats: " + 
+                     SAFE_TO_STRING(renderStats.drawCalls) + " draw calls, " +
+                     SAFE_TO_STRING(renderStats.trianglesRendered) + " triangles, " +
+                     SAFE_TO_STRING(renderStats.verticesProcessed) + " vertices");
 }
 
 void Renderer3D::clear() {
     // TODO: Очистка буферов для конкретного API
-    std::cout << "Clearing buffers with color (" 
-              << clearColor.x << ", " << clearColor.y << ", " << clearColor.z << ")" << std::endl;
+    SAFE_PRINT_LINE("Clearing buffers with color (" + 
+                     SAFE_TO_STRING(clearColor.x) + ", " + 
+                     SAFE_TO_STRING(clearColor.y) + ", " + 
+                     SAFE_TO_STRING(clearColor.z) + ")");
 }
 
 // Настройки рендеринга
 void Renderer3D::setClearColor(float r, float g, float b, float a) {
     clearColor = Vector3(r, g, b);
-    std::cout << "Set clear color to (" << r << ", " << g << ", " << b << ", " << a << ")" << std::endl;
+    SAFE_PRINT_LINE("Set clear color to (" + SAFE_TO_STRING(r) + ", " + SAFE_TO_STRING(g) + ", " + SAFE_TO_STRING(b) + ", " + SAFE_TO_STRING(a) + ")");
 }
 
 void Renderer3D::setViewport(int x, int y, int width, int height) {
     // TODO: Установка viewport для конкретного API
-    std::cout << "Set viewport to (" << x << ", " << y << ", " << width << ", " << height << ")" << std::endl;
+    SAFE_PRINT_LINE("Set viewport to (" + SAFE_TO_STRING(x) + ", " + SAFE_TO_STRING(y) + ", " + SAFE_TO_STRING(width) + ", " + SAFE_TO_STRING(height) + ")");
 }
 
 void Renderer3D::enableDepthTest(bool enable) {
     depthTestEnabled = enable;
-    std::cout << "Depth test " << (enable ? "enabled" : "disabled") << std::endl;
+    SAFE_PRINT_LINE("Depth test " + std::string(enable ? "enabled" : "disabled"));
 }
 
 void Renderer3D::enableBlending(bool enable) {
     blendingEnabled = enable;
-    std::cout << "Blending " << (enable ? "enabled" : "disabled") << std::endl;
+    SAFE_PRINT_LINE("Blending " + std::string(enable ? "enabled" : "disabled"));
 }
 
 void Renderer3D::enableWireframe(bool enable) {
     wireframeEnabled = enable;
-    std::cout << "Wireframe mode " << (enable ? "enabled" : "disabled") << std::endl;
+    SAFE_PRINT_LINE("Wireframe mode " + std::string(enable ? "enabled" : "disabled"));
 }
 
 void Renderer3D::enableBackfaceCulling(bool enable) {
     backfaceCullingEnabled = enable;
-    std::cout << "Backface culling " << (enable ? "enabled" : "disabled") << std::endl;
+    SAFE_PRINT_LINE("Backface culling " + std::string(enable ? "enabled" : "disabled"));
 }
 
 // Управление камерой
@@ -150,7 +152,7 @@ void Renderer3D::renderMesh(const Mesh3D& mesh, const Math::Matrix4& transform, 
         return;
     }
     
-    std::cout << "Rendering mesh with " << mesh.getTriangleCount() << " triangles" << std::endl;
+    SAFE_PRINT_LINE("Rendering mesh with " + SAFE_TO_STRING(mesh.getTriangleCount()) + " triangles");
     
     // Используем шейдер
     shader.use();
@@ -186,13 +188,13 @@ void Renderer3D::renderWireframe(const Mesh3D& mesh, const Math::Matrix4& transf
 // Система освещения
 void Renderer3D::addLight(const Light& light) {
     lights.push_back(light);
-    std::cout << "Added light. Total lights: " << lights.size() << std::endl;
+    SAFE_PRINT_LINE("Added light. Total lights: " + SAFE_TO_STRING(lights.size()));
 }
 
 void Renderer3D::removeLight(size_t index) {
     if (index < lights.size()) {
         lights.erase(lights.begin() + index);
-        std::cout << "Removed light. Remaining lights: " << lights.size() << std::endl;
+        SAFE_PRINT_LINE("Removed light. Remaining lights: " + SAFE_TO_STRING(lights.size()));
     }
 }
 
@@ -211,7 +213,7 @@ void Renderer3D::onWindowResize(int width, int height) {
     }
     
     setViewport(0, 0, width, height);
-    std::cout << "Window resized to " << width << "x" << height << std::endl;
+    SAFE_PRINT_LINE("Window resized to " + SAFE_TO_STRING(width) + "x" + SAFE_TO_STRING(height));
 }
 
 // Вспомогательные методы

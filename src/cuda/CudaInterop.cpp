@@ -52,29 +52,29 @@ bool CudaInterop::initializeInterop(vk::Device dev,
         this->physicalDevice = physDev;
         this->resourceManager = resMgr;
         
-        std::cout << "[CudaInterop] Инициализация CUDA-Vulkan interop..." << std::endl;
+        SAFE_PRINT_LINE("[CudaInterop] Инициализация CUDA-Vulkan interop...");
         
         // Проверяем базовую поддержку interop
         if (!isInteropSupported()) {
-            std::cout << "[CudaInterop] Ошибка: Interop не поддерживается на данной платформе" << std::endl;
+            SAFE_ERROR("[CudaInterop] Ошибка: Interop не поддерживается на данной платформе");
             return false;
         }
         
         // Проверяем поддержку необходимых Vulkan расширений
         if (!checkVulkanExtensionSupport()) {
-            std::cout << "[CudaInterop] Ошибка: Необходимые Vulkan расширения не поддерживаются" << std::endl;
+            SAFE_ERROR("[CudaInterop] Ошибка: Необходимые Vulkan расширения не поддерживаются");
             return false;
         }
         
         // Инициализируем CUDA контекст
         if (!initCudaContext()) {
-            std::cout << "[CudaInterop] Ошибка инициализации CUDA контекста" << std::endl;
+            SAFE_ERROR("[CudaInterop] Ошибка инициализации CUDA контекста");
             return false;
         }
         
         // Проверяем поддержку external memory
         if (!checkExternalMemorySupport()) {
-            std::cout << "[CudaInterop] Ошибка: External memory не поддерживается" << std::endl;
+            SAFE_ERROR("[CudaInterop] Ошибка: External memory не поддерживается");
             return false;
         }
         
@@ -90,13 +90,13 @@ bool CudaInterop::initializeInterop(vk::Device dev,
         }
         
         initialized = true;
-        std::cout << "[CudaInterop] Инициализация завершена успешно" << std::endl;
-        std::cout << "[CudaInterop] Возможности: " << getInteropCapabilities() << std::endl;
+        SAFE_PRINT_LINE("[CudaInterop] Инициализация завершена успешно");
+        SAFE_PRINT_LINE("[CudaInterop] Возможности: " + SAFE_TO_STRING(getInteropCapabilities()));
         
         return true;
         
     } catch (const std::exception& e) {
-        std::cout << "[CudaInterop] Ошибка инициализации: " << e.what() << std::endl;
+        SAFE_ERROR("[CudaInterop] Ошибка инициализации: " + std::string(e.what()));
         return false;
     }
 }
@@ -106,7 +106,7 @@ void CudaInterop::cleanup() {
         return;
     }
     
-    std::cout << "[CudaInterop] Освобождение ресурсов..." << std::endl;
+    SAFE_PRINT_LINE("[CudaInterop] Освобождение ресурсов...");
     
     // Освобождаем все shared ресурсы
     for (auto& resource : sharedResources) {
@@ -137,7 +137,7 @@ void CudaInterop::cleanup() {
     }
     
     initialized = false;
-    std::cout << "[CudaInterop] Освобождение ресурсов завершено" << std::endl;
+    SAFE_PRINT_LINE("[CudaInterop] Освобождение ресурсов завершено");
 }
 
 std::shared_ptr<SharedResource> CudaInterop::createSharedBuffer(
@@ -146,7 +146,7 @@ std::shared_ptr<SharedResource> CudaInterop::createSharedBuffer(
     unsigned int cudaFlags) {
     
     if (!initialized) {
-        std::cout << "[CudaInterop] Ошибка: Interop не инициализирован" << std::endl;
+        SAFE_ERROR("[CudaInterop] Ошибка: Interop не инициализирован");
         return nullptr;
     }
     
@@ -155,7 +155,7 @@ std::shared_ptr<SharedResource> CudaInterop::createSharedBuffer(
         resource->size = size;
         resource->isValid = false;
         
-        std::cout << "[CudaInterop] Создание shared буфера размером " << size << " байт" << std::endl;
+        SAFE_PRINT_LINE("[CudaInterop] Создание shared буфера размером " + SAFE_TO_STRING(size) + " байт");
         
         // Создаем Vulkan буфер с external memory
         vk::BufferCreateInfo bufferInfo{};
@@ -211,11 +211,11 @@ std::shared_ptr<SharedResource> CudaInterop::createSharedBuffer(
         resource->isValid = true;
         sharedResources.push_back(resource);
         
-        std::cout << "[CudaInterop] Shared буфер создан успешно" << std::endl;
+        SAFE_PRINT_LINE("[CudaInterop] Shared буфер создан успешно");
         return resource;
         
     } catch (const std::exception& e) {
-        std::cout << "[CudaInterop] Ошибка создания shared буфера: " << e.what() << std::endl;
+        SAFE_ERROR("[CudaInterop] Ошибка создания shared буфера: " + std::string(e.what()));
         return nullptr;
     }
 }
@@ -225,7 +225,7 @@ void CudaInterop::freeSharedResource(std::shared_ptr<SharedResource> resource) {
         return;
     }
     
-    std::cout << "[CudaInterop] Освобождение shared ресурса" << std::endl;
+    SAFE_PRINT_LINE("[CudaInterop] Освобождение shared ресурса");
     
     // Освобождаем CUDA ресурсы
     if (resource->cudaExternalMemory) {
@@ -246,7 +246,7 @@ void CudaInterop::freeSharedResource(std::shared_ptr<SharedResource> resource) {
 
 std::shared_ptr<SyncObject> CudaInterop::createSyncObject() {
     if (!initialized) {
-        std::cout << "[CudaInterop] Ошибка: Interop не инициализирован" << std::endl;
+        SAFE_ERROR("[CudaInterop] Ошибка: Interop не инициализирован");
         return nullptr;
     }
     

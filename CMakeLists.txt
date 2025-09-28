@@ -273,6 +273,15 @@ if(BUILD_ENGINE_3D)
             examples/safe_console_demo.cpp
         )
         target_link_libraries(SafeConsole_Demo PRIVATE HyperEngine)
+
+        # SOLID Principles Demo
+        add_executable(SOLIDPrinciples_Demo 
+            examples/solid_principles_demo.cpp
+            src/core/EngineCore.cpp
+            src/core/Logger.cpp
+            src/rendering/ModernRenderer3D.cpp
+        )
+        target_link_libraries(SOLIDPrinciples_Demo PRIVATE HyperEngine)
     endif()
 endif()
 
