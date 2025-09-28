@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Interfaces.h"
 #include <string>
+#include "Interfaces.h"
 
 namespace Engine3D {
 namespace Core {
@@ -13,7 +13,7 @@ class GameObject3D;
  * @brief Базовый класс компонента, следующий принципу единственной ответственности
  */
 class Component3D : public ILifecycle {
-public:
+  public:
     Component3D();
     virtual ~Component3D() = default;
 
@@ -24,18 +24,18 @@ public:
     // Управление компонентами
     void setEnabled(bool enabled);
     bool isEnabled() const { return enabled; }
-    
+
     // Ассоциация с GameObject
     void setGameObject(GameObject3D* gameObject);
     GameObject3D* getGameObject() const { return gameObject; }
-    
+
     // Идентификация компонента
     virtual std::string getComponentType() const = 0;
 
-protected:
+  protected:
     GameObject3D* gameObject;
     bool enabled;
-    
+
     // Дружественный класс для доступа к protected членам
     friend class GameObject3D;
 };
@@ -44,7 +44,7 @@ protected:
  * @brief Компонент для объектов, которые нуждаются в обновлениях
  */
 class UpdatableComponent : public Component3D, public IUpdatable {
-public:
+  public:
     virtual ~UpdatableComponent() = default;
     std::string getComponentType() const override { return "UpdatableComponent"; }
 };
@@ -53,7 +53,7 @@ public:
  * @brief Компонент для объектов, которые можно рендерить
  */
 class RenderableComponent : public Component3D, public IRenderable {
-public:
+  public:
     virtual ~RenderableComponent() = default;
     std::string getComponentType() const override { return "RenderableComponent"; }
 };
@@ -62,10 +62,10 @@ public:
  * @brief Компонент для объектов, которые нуждаются в обновлении и рендеринге
  */
 class UpdatableRenderableComponent : public Component3D, public IUpdatable, public IRenderable {
-public:
+  public:
     virtual ~UpdatableRenderableComponent() = default;
     std::string getComponentType() const override { return "UpdatableRenderableComponent"; }
 };
 
-} // namespace Core
-} // namespace Engine3D
+}  // namespace Core
+}  // namespace Engine3D

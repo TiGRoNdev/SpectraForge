@@ -1,8 +1,8 @@
 #include "HyperEngine/Math/Quaternion.h"
-#include "HyperEngine/Math/Matrix4.h"
-#include "HyperEngine/Math/MathConstants.h"
-#include <cmath>
 #include <algorithm>
+#include <cmath>
+#include "HyperEngine/Math/MathConstants.h"
+#include "HyperEngine/Math/Matrix4.h"
 
 using namespace HyperEngine::Math;
 
@@ -20,7 +20,7 @@ Quaternion::Quaternion(const Vector3& axis, float angle) {
     const float halfAngle = angle * 0.5f;
     const float s = std::sin(halfAngle);
     const Vector3 normalizedAxis = axis.normalized();
-    
+
     w = std::cos(halfAngle);
     x = normalizedAxis.x * s;
     y = normalizedAxis.y * s;
@@ -28,11 +28,11 @@ Quaternion::Quaternion(const Vector3& axis, float angle) {
 }
 
 Quaternion::Quaternion(const Vector3& eulerAngles) {
-    const float cr = std::cos(eulerAngles.x * 0.5f); // roll
+    const float cr = std::cos(eulerAngles.x * 0.5f);  // roll
     const float sr = std::sin(eulerAngles.x * 0.5f);
-    const float cp = std::cos(eulerAngles.y * 0.5f); // pitch
+    const float cp = std::cos(eulerAngles.y * 0.5f);  // pitch
     const float sp = std::sin(eulerAngles.y * 0.5f);
-    const float cy = std::cos(eulerAngles.z * 0.5f); // yaw
+    const float cy = std::cos(eulerAngles.z * 0.5f);  // yaw
     const float sy = std::sin(eulerAngles.z * 0.5f);
 
     w = cr * cp * cy + sr * sp * sy;
@@ -61,12 +61,10 @@ Quaternion Quaternion::operator-(const Quaternion& other) const {
 }
 
 Quaternion Quaternion::operator*(const Quaternion& other) const {
-    return Quaternion(
-        w * other.w - x * other.x - y * other.y - z * other.z,
-        w * other.x + x * other.w + y * other.z - z * other.y,
-        w * other.y - x * other.z + y * other.w + z * other.x,
-        w * other.z + x * other.y - y * other.x + z * other.w
-    );
+    return Quaternion(w * other.w - x * other.x - y * other.y - z * other.z,
+                      w * other.x + x * other.w + y * other.z - z * other.y,
+                      w * other.y - x * other.z + y * other.w + z * other.x,
+                      w * other.z + x * other.y - y * other.x + z * other.w);
 }
 
 Quaternion Quaternion::operator*(float scalar) const {
@@ -112,10 +110,8 @@ Quaternion& Quaternion::operator/=(float scalar) {
 
 bool Quaternion::operator==(const Quaternion& other) const {
     const float epsilon = 1e-6f;
-    return std::abs(w - other.w) < epsilon &&
-           std::abs(x - other.x) < epsilon &&
-           std::abs(y - other.y) < epsilon &&
-           std::abs(z - other.z) < epsilon;
+    return std::abs(w - other.w) < epsilon && std::abs(x - other.x) < epsilon
+           && std::abs(y - other.y) < epsilon && std::abs(z - other.z) < epsilon;
 }
 
 bool Quaternion::operator!=(const Quaternion& other) const {
@@ -219,7 +215,7 @@ Vector3 Quaternion::toEulerAngles() const {
     // Pitch (y-axis rotation)
     const float sinp = 2.0f * (w * y - z * x);
     if (std::abs(sinp) >= 1.0f) {
-        angles.y = std::copysign(M_PI / 2.0f, sinp); // use 90 degrees if out of range
+        angles.y = std::copysign(M_PI / 2.0f, sinp);  // use 90 degrees if out of range
     } else {
         angles.y = std::asin(sinp);
     }
@@ -234,7 +230,7 @@ Vector3 Quaternion::toEulerAngles() const {
 
 void Quaternion::toAxisAngle(Vector3& axis, float& angle) const {
     const float sinHalfAngle = std::sqrt(x * x + y * y + z * z);
-    
+
     if (sinHalfAngle < 1e-6f) {
         // Нет поворота
         axis = Vector3::unitX();
@@ -260,49 +256,44 @@ Quaternion Quaternion::fromEulerAngles(const Vector3& eulerAngles) {
 
 Quaternion Quaternion::fromMatrix(const Matrix4& mat) {
     const float trace = mat.m[0][0] + mat.m[1][1] + mat.m[2][2];
-    
+
     if (trace > 0.0f) {
-        const float s = std::sqrt(trace + 1.0f) * 2.0f; // s = 4 * qw
-        return Quaternion(
-            0.25f * s,
-            (mat.m[2][1] - mat.m[1][2]) / s,
-            (mat.m[0][2] - mat.m[2][0]) / s,
-            (mat.m[1][0] - mat.m[0][1]) / s
-        );
+        const float s = std::sqrt(trace + 1.0f) * 2.0f;  // s = 4 * qw
+        return Quaternion(0.25f * s,
+                          (mat.m[2][1] - mat.m[1][2]) / s,
+                          (mat.m[0][2] - mat.m[2][0]) / s,
+                          (mat.m[1][0] - mat.m[0][1]) / s);
     } else if (mat.m[0][0] > mat.m[1][1] && mat.m[0][0] > mat.m[2][2]) {
-        const float s = std::sqrt(1.0f + mat.m[0][0] - mat.m[1][1] - mat.m[2][2]) * 2.0f; // s = 4 * qx
-        return Quaternion(
-            (mat.m[2][1] - mat.m[1][2]) / s,
-            0.25f * s,
-            (mat.m[0][1] + mat.m[1][0]) / s,
-            (mat.m[0][2] + mat.m[2][0]) / s
-        );
+        const float s =
+            std::sqrt(1.0f + mat.m[0][0] - mat.m[1][1] - mat.m[2][2]) * 2.0f;  // s = 4 * qx
+        return Quaternion((mat.m[2][1] - mat.m[1][2]) / s,
+                          0.25f * s,
+                          (mat.m[0][1] + mat.m[1][0]) / s,
+                          (mat.m[0][2] + mat.m[2][0]) / s);
     } else if (mat.m[1][1] > mat.m[2][2]) {
-        const float s = std::sqrt(1.0f + mat.m[1][1] - mat.m[0][0] - mat.m[2][2]) * 2.0f; // s = 4 * qy
-        return Quaternion(
-            (mat.m[0][2] - mat.m[2][0]) / s,
-            (mat.m[0][1] + mat.m[1][0]) / s,
-            0.25f * s,
-            (mat.m[1][2] + mat.m[2][1]) / s
-        );
+        const float s =
+            std::sqrt(1.0f + mat.m[1][1] - mat.m[0][0] - mat.m[2][2]) * 2.0f;  // s = 4 * qy
+        return Quaternion((mat.m[0][2] - mat.m[2][0]) / s,
+                          (mat.m[0][1] + mat.m[1][0]) / s,
+                          0.25f * s,
+                          (mat.m[1][2] + mat.m[2][1]) / s);
     } else {
-        const float s = std::sqrt(1.0f + mat.m[2][2] - mat.m[0][0] - mat.m[1][1]) * 2.0f; // s = 4 * qz
-        return Quaternion(
-            (mat.m[1][0] - mat.m[0][1]) / s,
-            (mat.m[0][2] + mat.m[2][0]) / s,
-            (mat.m[1][2] + mat.m[2][1]) / s,
-            0.25f * s
-        );
+        const float s =
+            std::sqrt(1.0f + mat.m[2][2] - mat.m[0][0] - mat.m[1][1]) * 2.0f;  // s = 4 * qz
+        return Quaternion((mat.m[1][0] - mat.m[0][1]) / s,
+                          (mat.m[0][2] + mat.m[2][0]) / s,
+                          (mat.m[1][2] + mat.m[2][1]) / s,
+                          0.25f * s);
     }
 }
 
 Quaternion Quaternion::lookRotation(const Vector3& forward, const Vector3& up) {
     const Vector3 normalizedForward = forward.normalized();
     const Vector3 normalizedUp = up.normalized();
-    
+
     const Vector3 right = normalizedUp.cross(normalizedForward).normalized();
     const Vector3 actualUp = normalizedForward.cross(right);
-    
+
     Matrix4 rotationMatrix;
     rotationMatrix.m[0][0] = right.x;
     rotationMatrix.m[0][1] = right.y;
@@ -313,25 +304,25 @@ Quaternion Quaternion::lookRotation(const Vector3& forward, const Vector3& up) {
     rotationMatrix.m[2][0] = normalizedForward.x;
     rotationMatrix.m[2][1] = normalizedForward.y;
     rotationMatrix.m[2][2] = normalizedForward.z;
-    
+
     return fromMatrix(rotationMatrix);
 }
 
 // Интерполяция
 Quaternion Quaternion::slerp(const Quaternion& other, float t) const {
     const float cosTheta = dot(other);
-    
+
     // Если кватернионы очень близки, используем линейную интерполяцию
     if (std::abs(cosTheta) >= 1.0f - 1e-6f) {
         return lerp(other, t);
     }
-    
+
     const float theta = std::acos(std::abs(cosTheta));
     const float sinTheta = std::sin(theta);
-    
+
     const float w1 = std::sin((1.0f - t) * theta) / sinTheta;
     const float w2 = std::sin(t * theta) / sinTheta;
-    
+
     if (cosTheta < 0.0f) {
         return *this * w1 - other * w2;
     } else {
@@ -361,18 +352,14 @@ void Quaternion::setIdentity() {
 
 bool Quaternion::isIdentity() const {
     const float epsilon = 1e-6f;
-    return std::abs(w - 1.0f) < epsilon &&
-           std::abs(x) < epsilon &&
-           std::abs(y) < epsilon &&
-           std::abs(z) < epsilon;
+    return std::abs(w - 1.0f) < epsilon && std::abs(x) < epsilon && std::abs(y) < epsilon
+           && std::abs(z) < epsilon;
 }
 
 bool Quaternion::isZero() const {
     const float epsilon = 1e-6f;
-    return std::abs(w) < epsilon &&
-           std::abs(x) < epsilon &&
-           std::abs(y) < epsilon &&
-           std::abs(z) < epsilon;
+    return std::abs(w) < epsilon && std::abs(x) < epsilon && std::abs(y) < epsilon
+           && std::abs(z) < epsilon;
 }
 
 void Quaternion::set(float w, float x, float y, float z) {
@@ -388,7 +375,7 @@ float Quaternion::angle() const {
 
 Vector3 Quaternion::axis() const {
     const float sinHalfAngle = std::sqrt(x * x + y * y + z * z);
-    
+
     if (sinHalfAngle < 1e-6f) {
         return Vector3::unitX();
     } else {
@@ -421,5 +408,5 @@ Quaternion operator*(float scalar, const Quaternion& q) {
     return q * scalar;
 }
 
-} // namespace Math
-} // namespace HyperEngine
+}  // namespace Math
+}  // namespace HyperEngine

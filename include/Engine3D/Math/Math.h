@@ -3,18 +3,18 @@
 /**
  * @file Math.h
  * @brief Основной заголовочный файл математической библиотеки 3D движка
- * 
+ *
  * Включает все основные математические классы и функции для работы с 3D графикой:
  * - Vector2: 2D векторы
- * - Vector3: 3D векторы  
+ * - Vector3: 3D векторы
  * - Matrix4: 4x4 матрицы для трансформаций
  * - Quaternion: кватернионы для поворотов
  */
 
+#include "Matrix4.h"
+#include "Quaternion.h"
 #include "Vector2.h"
 #include "Vector3.h"
-#include "Matrix4.h" 
-#include "Quaternion.h"
 
 namespace Engine3D {
 namespace Math {
@@ -52,5 +52,5 @@ inline bool isNearlyZero(float value, float epsilon = EPSILON) {
     return std::abs(value) < epsilon;
 }
 
-} // namespace Math
-} // namespace Engine3D
+}  // namespace Math
+}  // namespace Engine3D

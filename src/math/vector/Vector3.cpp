@@ -71,9 +71,8 @@ Vector3& Vector3::operator/=(float scalar) {
 
 bool Vector3::operator==(const Vector3& other) const {
     const float epsilon = std::numeric_limits<float>::epsilon();
-    return std::abs(x - other.x) < epsilon &&
-           std::abs(y - other.y) < epsilon &&
-           std::abs(z - other.z) < epsilon;
+    return std::abs(x - other.x) < epsilon && std::abs(y - other.y) < epsilon
+           && std::abs(z - other.z) < epsilon;
 }
 
 bool Vector3::operator!=(const Vector3& other) const {
@@ -82,19 +81,27 @@ bool Vector3::operator!=(const Vector3& other) const {
 
 float Vector3::operator[](int index) const {
     switch (index) {
-        case 0: return x;
-        case 1: return y;
-        case 2: return z;
-        default: throw std::out_of_range("Индекс Vector3 должен быть от 0 до 2");
+        case 0:
+            return x;
+        case 1:
+            return y;
+        case 2:
+            return z;
+        default:
+            throw std::out_of_range("Индекс Vector3 должен быть от 0 до 2");
     }
 }
 
 float& Vector3::operator[](int index) {
     switch (index) {
-        case 0: return x;
-        case 1: return y;
-        case 2: return z;
-        default: throw std::out_of_range("Индекс Vector3 должен быть от 0 до 2");
+        case 0:
+            return x;
+        case 1:
+            return y;
+        case 2:
+            return z;
+        default:
+            throw std::out_of_range("Индекс Vector3 должен быть от 0 до 2");
     }
 }
 
@@ -104,11 +111,7 @@ float Vector3::dot(const Vector3& other) const {
 }
 
 Vector3 Vector3::cross(const Vector3& other) const {
-    return Vector3(
-        y * other.z - z * other.y,
-        z * other.x - x * other.z,
-        x * other.y - y * other.x
-    );
+    return Vector3(y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x);
 }
 
 float Vector3::magnitude() const {
@@ -174,23 +177,23 @@ Vector3 Vector3::project(const Vector3& other) const {
     // Проекция вектора this на вектор other
     float dotProduct = this->dot(other);
     float otherMagnitudeSquared = other.magnitudeSquared();
-    
+
     if (otherMagnitudeSquared < std::numeric_limits<float>::epsilon()) {
         return Vector3::zero();
     }
-    
+
     return other * (dotProduct / otherMagnitudeSquared);
 }
 
 float Vector3::angle(const Vector3& other) const {
     float mag1 = magnitude();
     float mag2 = other.magnitude();
-    
-    if (mag1 < std::numeric_limits<float>::epsilon() || 
-        mag2 < std::numeric_limits<float>::epsilon()) {
+
+    if (mag1 < std::numeric_limits<float>::epsilon()
+        || mag2 < std::numeric_limits<float>::epsilon()) {
         return 0.0f;
     }
-    
+
     float cosAngle = this->dot(other) / (mag1 * mag2);
     cosAngle = std::clamp(cosAngle, -1.0f, 1.0f);
     return std::acos(cosAngle);
@@ -249,10 +252,10 @@ std::ostream& operator<<(std::ostream& os, const Vector3& vec) {
 
 std::istream& operator>>(std::istream& is, Vector3& vec) {
     char ch;
-    is >> ch; // '['
-    is >> vec.x >> ch; // x и ','
-    is >> vec.y >> ch; // y и ','
-    is >> vec.z >> ch; // z и ']'
+    is >> ch;           // '['
+    is >> vec.x >> ch;  // x и ','
+    is >> vec.y >> ch;  // y и ','
+    is >> vec.z >> ch;  // z и ']'
     return is;
 }
 
@@ -261,4 +264,4 @@ namespace HyperEngine::Math {
 Vector3 operator*(float scalar, const Vector3& vec) {
     return vec * scalar;
 }
-} // namespace HyperEngine::Math
+}  // namespace HyperEngine::Math

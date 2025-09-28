@@ -1,34 +1,34 @@
 #pragma once
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <chrono>
-#include <stdexcept>
 #include <iostream>
+#include <stdexcept>
 
 namespace HyperEngine::Testing {
 
 /**
  * @brief Базовый класс для всех тестов HyperEngine
- * 
+ *
  * Предоставляет общую инфраструктуру для инициализации и очистки
  * тестовой среды. Включает настройку консоли и логирования.
  */
 class HyperEngineTest : public ::testing::Test {
-protected:
+  protected:
     void SetUp() override {
         // Инициализация тестовой среды
         setupTestEnvironment();
-        
+
         // Настройка логирования для тестов
         setupTestLogging();
     }
-    
+
     void TearDown() override {
         // Очистка после тестов
         cleanupTestEnvironment();
     }
 
-private:
+  private:
     /**
      * @brief Настройка тестового окружения
      */
@@ -36,7 +36,7 @@ private:
         // Инициализация консоли для вывода UTF-8
         std::cout << "Настройка тестового окружения..." << std::endl;
     }
-    
+
     /**
      * @brief Настройка логирования для тестов
      */
@@ -44,7 +44,7 @@ private:
         // Настройка минимального уровня логирования для тестов
         // (здесь будет добавлена интеграция с системой логирования)
     }
-    
+
     /**
      * @brief Очистка тестового окружения
      */
@@ -63,11 +63,11 @@ private:
  * @param message Сообщение для вывода в случае исключения
  */
 #define EXPECT_NO_THROW_WITH_MESSAGE(statement, message) \
-    try { \
-        statement; \
-    } catch (const std::exception& e) { \
-        FAIL() << message << ": " << e.what(); \
-    } catch (...) { \
+    try {                                                \
+        statement;                                       \
+    } catch (const std::exception& e) {                  \
+        FAIL() << message << ": " << e.what();           \
+    } catch (...) {                                      \
         FAIL() << message << ": Неизвестное исключение"; \
     }
 
@@ -76,14 +76,15 @@ private:
  * @param statement Блок кода для выполнения
  * @param max_milliseconds Максимальное время выполнения в миллисекундах
  */
-#define EXPECT_PERFORMANCE_UNDER(statement, max_milliseconds) \
-    { \
-        auto start = std::chrono::high_resolution_clock::now(); \
-        statement; \
-        auto end = std::chrono::high_resolution_clock::now(); \
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start); \
-        EXPECT_LT(duration.count(), max_milliseconds) \
-            << "Операция заняла " << duration.count() << "ms, ожидалось < " << max_milliseconds << "ms"; \
+#define EXPECT_PERFORMANCE_UNDER(statement, max_milliseconds)                                   \
+    {                                                                                           \
+        auto start = std::chrono::high_resolution_clock::now();                                 \
+        statement;                                                                              \
+        auto end = std::chrono::high_resolution_clock::now();                                   \
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);     \
+        EXPECT_LT(duration.count(), max_milliseconds)                                           \
+            << "Операция заняла " << duration.count() << "ms, ожидалось < " << max_milliseconds \
+            << "ms";                                                                            \
     }
 
 /**
@@ -92,7 +93,7 @@ private:
  * @param min_val Минимальное допустимое значение
  * @param max_val Максимальное допустимое значение
  */
-#define EXPECT_FLOAT_IN_RANGE(value, min_val, max_val) \
+#define EXPECT_FLOAT_IN_RANGE(value, min_val, max_val)                                   \
     EXPECT_GE(value, min_val) << "Значение " << value << " меньше минимума " << min_val; \
     EXPECT_LE(value, max_val) << "Значение " << value << " больше максимума " << max_val
 
@@ -107,7 +108,7 @@ private:
  * @brief Утилиты для работы с тестовыми данными
  */
 class TestUtils {
-public:
+  public:
     /**
      * @brief Генерация случайного числа в диапазоне
      * @param min Минимальное значение
@@ -117,17 +118,15 @@ public:
     static float randomFloat(float min = 0.0f, float max = 1.0f) {
         return min + static_cast<float>(rand()) / RAND_MAX * (max - min);
     }
-    
+
     /**
      * @brief Генерация случайного целого числа в диапазоне
      * @param min Минимальное значение
      * @param max Максимальное значение
      * @return Случайное число в диапазоне [min, max]
      */
-    static int randomInt(int min = 0, int max = 100) {
-        return min + rand() % (max - min + 1);
-    }
-    
+    static int randomInt(int min = 0, int max = 100) { return min + rand() % (max - min + 1); }
+
     /**
      * @brief Создание временного файла для тестов
      * @param content Содержимое файла
@@ -138,7 +137,7 @@ public:
         // (упрощенная версия для демонстрации)
         return "temp_test_file.tmp";
     }
-    
+
     /**
      * @brief Удаление временного файла
      * @param filepath Путь к файлу
@@ -152,13 +151,13 @@ public:
  * @brief Базовый класс для тестов производительности
  */
 class PerformanceTest : public HyperEngineTest {
-protected:
+  protected:
     void SetUp() override {
         HyperEngineTest::SetUp();
         warmupSystem();
     }
 
-private:
+  private:
     /**
      * @brief Прогрев системы для стабильных измерений производительности
      */
@@ -166,7 +165,7 @@ private:
         // Выполнение нескольких операций для прогрева кеша и процессора
         for (int i = 0; i < 1000; ++i) {
             volatile float result = static_cast<float>(i) * 1.1f;
-            (void)result; // Подавление предупреждения о неиспользуемой переменной
+            (void)result;  // Подавление предупреждения о неиспользуемой переменной
         }
     }
 };
@@ -174,12 +173,10 @@ private:
 /**
  * @brief Параметризованные тесты для тестирования с различными входными данными
  */
-template<typename T>
+template <typename T>
 class ParameterizedTest : public HyperEngineTest, public ::testing::WithParamInterface<T> {
-protected:
-    T getParam() {
-        return ::testing::WithParamInterface<T>::GetParam();
-    }
+  protected:
+    T getParam() { return ::testing::WithParamInterface<T>::GetParam(); }
 };
 
-} // namespace HyperEngine::Testing
+}  // namespace HyperEngine::Testing

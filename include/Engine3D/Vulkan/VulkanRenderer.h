@@ -1,29 +1,29 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
 #include <memory>
+#include <vulkan/vulkan.hpp>
 
 // Forward declarations
 namespace Engine3D {
-    struct CameraParams;
-    
-    namespace Vulkan {
-        class ResourceManager;
-    }
-    
-    namespace CUDA {
-        class FlashGSSplatter;
-    }
-    
-    namespace OptiX {
-        class DenoiseModule;
-        class OptiXRayTracer;
-    }
-    
-    namespace Upscaling {
-        class Upscaler;
-    }
+struct CameraParams;
+
+namespace Vulkan {
+class ResourceManager;
 }
+
+namespace CUDA {
+class FlashGSSplatter;
+}
+
+namespace OptiX {
+class DenoiseModule;
+class OptiXRayTracer;
+}  // namespace OptiX
+
+namespace Upscaling {
+class Upscaler;
+}
+}  // namespace Engine3D
 
 namespace Engine3D::Vulkan {
 
@@ -66,7 +66,7 @@ struct FinalImage {
 
 /**
  * @brief Основной класс рендерера Vulkan
- * 
+ *
  * Реализует гибридный рендеринг согласно UML архитектуре:
  * - Primary rasterization через FlashGS
  * - Secondary ray tracing через OptiX
@@ -74,17 +74,17 @@ struct FinalImage {
  * - Upscaling (DLSS/FSR)
  */
 class VulkanRenderer {
-public:
+  public:
     /**
      * @brief Конструктор
      */
     VulkanRenderer();
-    
+
     /**
      * @brief Деструктор
      */
     ~VulkanRenderer();
-    
+
     /**
      * @brief Инициализация рендерера
      * @param device Vulkan устройство
@@ -92,33 +92,33 @@ public:
      * @return true если инициализация успешна
      */
     bool init(vk::Device device, ResourceManager* resourceManager);
-    
+
     /**
      * @brief Завершение работы рендерера
      */
     void shutdown();
-    
+
     /**
      * @brief Первичная растеризация гауссианов
      * @param gaussians Гауссианы для рендеринга
      * @return Первичное изображение
      */
     PrimaryImage rasterizePrimary(const Gaussians& gaussians);
-    
+
     /**
      * @brief Вторичный ray tracing для эффектов
      * @param image Первичное изображение
      * @return Сырые эффекты
      */
     RawEffects rayTraceSecondary(const PrimaryImage& image);
-    
+
     /**
      * @brief AI деноизинг
      * @param effects Сырые эффекты
      * @return Деноизированное изображение
      */
     DenoisedImage denoiseAI(const RawEffects& effects);
-    
+
     /**
      * @brief Upscaling изображения
      * @param image Деноизированное изображение
@@ -126,37 +126,37 @@ public:
      * @return Финальное изображение
      */
     FinalImage upscale(const DenoisedImage& image, const ResolutionTarget& target);
-    
+
     /**
      * @brief Презентация финального изображения
      */
     void presentFinalImage();
-    
+
     /**
      * @brief Проверка инициализации
      * @return true если рендерер инициализирован
      */
     bool isInitialized() const { return initialized; }
 
-private:
+  private:
     vk::Device device;
     vk::Queue graphicsQueue;
     vk::CommandPool commandPool;
     vk::SwapchainKHR swapchain;
-    
+
     ResourceManager* resourceManager = nullptr;
-    
+
     // Компоненты рендеринга (будут созданы на следующих этапах)
     std::unique_ptr<Engine3D::CUDA::FlashGSSplatter> splatter;
     std::unique_ptr<Engine3D::OptiX::OptiXRayTracer> rayTracer;
     std::unique_ptr<Engine3D::OptiX::DenoiseModule> denoiseModule;
     std::unique_ptr<Engine3D::Upscaling::Upscaler> upscaler;
-    
+
     bool initialized = false;
-    
+
     // Запрет копирования
     VulkanRenderer(const VulkanRenderer&) = delete;
     VulkanRenderer& operator=(const VulkanRenderer&) = delete;
 };
 
-} // namespace Engine3D::Vulkan
+}  // namespace Engine3D::Vulkan

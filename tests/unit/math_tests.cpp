@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
-#include "Engine3D/Math/Math.h"
 #include <cmath>
+#include "Engine3D/Math/Math.h"
 
 using namespace Engine3D::Math;
 
 // Тесты Vector3
 class Vector3Test : public ::testing::Test {
-protected:
+  protected:
     void SetUp() override {
         v1 = Vector3(1.0f, 2.0f, 3.0f);
         v2 = Vector3(4.0f, 5.0f, 6.0f);
@@ -53,7 +53,7 @@ TEST_F(Vector3Test, ScalarMultiplication) {
 
 TEST_F(Vector3Test, DotProduct) {
     float result = v1.dot(v2);
-    EXPECT_FLOAT_EQ(result, 32.0f); // 1*4 + 2*5 + 3*6 = 32
+    EXPECT_FLOAT_EQ(result, 32.0f);  // 1*4 + 2*5 + 3*6 = 32
 }
 
 TEST_F(Vector3Test, CrossProduct) {
@@ -66,7 +66,7 @@ TEST_F(Vector3Test, CrossProduct) {
 
 TEST_F(Vector3Test, Magnitude) {
     float mag = v1.magnitude();
-    float expected = std::sqrt(1.0f + 4.0f + 9.0f); // sqrt(14)
+    float expected = std::sqrt(1.0f + 4.0f + 9.0f);  // sqrt(14)
     EXPECT_FLOAT_EQ(mag, expected);
 }
 
@@ -83,7 +83,7 @@ TEST_F(Vector3Test, StaticMethods) {
 
 // Тесты Matrix4
 class Matrix4Test : public ::testing::Test {
-protected:
+  protected:
     void SetUp() override {
         identity = Matrix4::identity();
         zero_matrix = Matrix4::zero();
@@ -119,7 +119,7 @@ TEST_F(Matrix4Test, Translation) {
     Matrix4 trans = Matrix4::translation(translation);
     Vector3 point(1.0f, 2.0f, 3.0f);
     Vector3 result = trans * point;
-    
+
     EXPECT_FLOAT_EQ(result.x, 6.0f);
     EXPECT_FLOAT_EQ(result.y, 12.0f);
     EXPECT_FLOAT_EQ(result.z, 18.0f);
@@ -130,7 +130,7 @@ TEST_F(Matrix4Test, Scaling) {
     Matrix4 scaleMatrix = Matrix4::scaling(scale);
     Vector3 point(1.0f, 2.0f, 3.0f);
     Vector3 result = scaleMatrix * point;
-    
+
     EXPECT_FLOAT_EQ(result.x, 2.0f);
     EXPECT_FLOAT_EQ(result.y, 6.0f);
     EXPECT_FLOAT_EQ(result.z, 12.0f);
@@ -140,29 +140,29 @@ TEST_F(Matrix4Test, Multiplication) {
     Matrix4 m1 = Matrix4::translation(1.0f, 2.0f, 3.0f);
     Matrix4 m2 = Matrix4::scaling(2.0f, 2.0f, 2.0f);
     Matrix4 result = m1 * m2;
-    
+
     Vector3 point(1.0f, 1.0f, 1.0f);
     Vector3 transformed = result * point;
-    
+
     // Сначала масштабирование, потом сдвиг
-    EXPECT_FLOAT_EQ(transformed.x, 3.0f); // 1*2 + 1 = 3
-    EXPECT_FLOAT_EQ(transformed.y, 4.0f); // 1*2 + 2 = 4
-    EXPECT_FLOAT_EQ(transformed.z, 5.0f); // 1*2 + 3 = 5
+    EXPECT_FLOAT_EQ(transformed.x, 3.0f);  // 1*2 + 1 = 3
+    EXPECT_FLOAT_EQ(transformed.y, 4.0f);  // 1*2 + 2 = 4
+    EXPECT_FLOAT_EQ(transformed.z, 5.0f);  // 1*2 + 3 = 5
 }
 
 TEST_F(Matrix4Test, Determinant) {
     Matrix4 m = Matrix4::identity();
     EXPECT_FLOAT_EQ(m.determinant(), 1.0f);
-    
+
     Matrix4 scale = Matrix4::scaling(2.0f, 3.0f, 4.0f);
-    EXPECT_FLOAT_EQ(scale.determinant(), 24.0f); // 2*3*4 = 24
+    EXPECT_FLOAT_EQ(scale.determinant(), 24.0f);  // 2*3*4 = 24
 }
 
 TEST_F(Matrix4Test, Inverse) {
     Matrix4 m = Matrix4::scaling(2.0f, 3.0f, 4.0f);
     Matrix4 inv = m.inverse();
     Matrix4 result = m * inv;
-    
+
     // Результат должен быть близок к единичной матрице
     for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 4; ++j) {
@@ -177,7 +177,7 @@ TEST_F(Matrix4Test, Inverse) {
 
 // Тесты Quaternion
 class QuaternionTest : public ::testing::Test {
-protected:
+  protected:
     void SetUp() override {
         identity = Quaternion::identity();
         zero_quat = Quaternion::zero();
@@ -201,16 +201,16 @@ TEST_F(QuaternionTest, Identity) {
 
 TEST_F(QuaternionTest, AxisAngleConstruction) {
     Vector3 axis = Vector3::unitY();
-    float angle = PI / 2.0f; // 90 градусов
+    float angle = PI / 2.0f;  // 90 градусов
     Quaternion q = Quaternion::fromAxisAngle(axis, angle);
-    
+
     EXPECT_NEAR(q.magnitude(), 1.0f, 1e-6f);
-    
+
     // Поворот точки вокруг Y на 90 градусов
     Vector3 point = Vector3::unitX();
     Vector3 rotated = q.rotate(point);
     Vector3 expected = Vector3::unitZ();
-    
+
     EXPECT_NEAR(rotated.x, expected.x, 1e-6f);
     EXPECT_NEAR(rotated.y, expected.y, 1e-6f);
     EXPECT_NEAR(rotated.z, expected.z, 1e-6f);
@@ -223,11 +223,11 @@ TEST_F(QuaternionTest, Multiplication) {
     Quaternion q1 = Quaternion::fromAxisAngle(axis, angle);
     Quaternion q2 = Quaternion::fromAxisAngle(axis, angle);
     Quaternion result = q1 * q2;
-    
+
     Vector3 point = Vector3::unitX();
     Vector3 rotated = result.rotate(point);
-    Vector3 expected = -Vector3::unitX(); // Поворот на 180 градусов
-    
+    Vector3 expected = -Vector3::unitX();  // Поворот на 180 градусов
+
     EXPECT_NEAR(rotated.x, expected.x, 1e-6f);
     EXPECT_NEAR(rotated.y, expected.y, 1e-6f);
     EXPECT_NEAR(rotated.z, expected.z, 1e-6f);
@@ -242,7 +242,7 @@ TEST_F(QuaternionTest, Normalization) {
 TEST_F(QuaternionTest, Conjugate) {
     Quaternion q(1.0f, 2.0f, 3.0f, 4.0f);
     Quaternion conj = q.conjugate();
-    
+
     EXPECT_FLOAT_EQ(conj.w, q.w);
     EXPECT_FLOAT_EQ(conj.x, -q.x);
     EXPECT_FLOAT_EQ(conj.y, -q.y);
@@ -252,20 +252,20 @@ TEST_F(QuaternionTest, Conjugate) {
 TEST_F(QuaternionTest, Slerp) {
     Quaternion q1 = Quaternion::identity();
     Quaternion q2 = Quaternion::fromAxisAngle(Vector3::unitY(), PI / 2.0f);
-    
+
     Quaternion mid = q1.slerp(q2, 0.5f);
-    
+
     // Результат должен быть нормализован
     EXPECT_NEAR(mid.magnitude(), 1.0f, 1e-6f);
-    
+
     // Результат должен быть между q1 и q2
     Vector3 point = Vector3::unitX();
     Vector3 rotated = mid.rotate(point);
-    
+
     // Поворот на 45 градусов должен дать вектор (cos(45), 0, sin(45))
     float cos45 = std::cos(PI / 4.0f);
     float sin45 = std::sin(PI / 4.0f);
-    
+
     EXPECT_NEAR(rotated.x, cos45, 1e-5f);
     EXPECT_NEAR(rotated.y, 0.0f, 1e-6f);
     EXPECT_NEAR(rotated.z, sin45, 1e-5f);

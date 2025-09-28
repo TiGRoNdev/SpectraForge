@@ -1,28 +1,28 @@
 /**
  * @file Engine3D.h
  * @brief Главный заголовочный файл движка Engine3D
- * 
+ *
  * Этот файл объединяет все основные компоненты движка для удобного включения
  */
 
 #pragma once
 
 // Математические библиотеки
-#include "Engine3D/Math/Vector3.h"
 #include "Engine3D/Math/Matrix4.h"
+#include "Engine3D/Math/Vector3.h"
 // #include "Engine3D/Math/Transform.h" // Временно отключен
 
 // Система рендеринга
-#include "Engine3D/Rendering/Renderer3D.h"
 #include "Engine3D/Rendering/Camera3D.h"
-#include "Engine3D/Rendering/Mesh3D.h"
 #include "Engine3D/Rendering/Material3D.h"
-#include "Engine3D/Rendering/Shader3D.h"
+#include "Engine3D/Rendering/Mesh3D.h"
 #include "Engine3D/Rendering/OptimalRenderer3D.h"
+#include "Engine3D/Rendering/Renderer3D.h"
+#include "Engine3D/Rendering/Shader3D.h"
 
 // Vulkan рендеринг
-#include "Engine3D/Vulkan/VulkanRenderer.h"
 #include "Engine3D/Vulkan/ResourceManager.h"
+#include "Engine3D/Vulkan/VulkanRenderer.h"
 
 // CUDA интеграция (если доступна)
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
@@ -60,11 +60,11 @@ struct EngineInfo {
 
 /**
  * @brief Основной класс движка
- * 
+ *
  * Управляет инициализацией и работой всех подсистем движка
  */
 class Engine {
-public:
+  public:
     /**
      * @brief Инициализация движка
      * @param windowWidth Ширина окна
@@ -73,26 +73,26 @@ public:
      * @return true если инициализация успешна
      */
     static bool initialize(int windowWidth, int windowHeight, const char* windowTitle);
-    
+
     /**
      * @brief Завершение работы движка
      */
     static void shutdown();
-    
+
     /**
      * @brief Получение информации о движке
      * @return Структура с информацией о версии
      */
     static EngineInfo getEngineInfo();
-    
+
     /**
      * @brief Проверка инициализации движка
      * @return true если движок инициализирован
      */
     static bool isInitialized();
 
-private:
+  private:
     static bool initialized;
 };
 
-} // namespace Engine3D
+}  // namespace Engine3D

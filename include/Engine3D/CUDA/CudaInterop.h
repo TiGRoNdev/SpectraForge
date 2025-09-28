@@ -1,12 +1,12 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
 #include <memory>
 #include <unordered_map>
+#include <vulkan/vulkan.hpp>
 
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
-#include <cuda_runtime.h>
 #include <cuda.h>
+#include <cuda_runtime.h>
 
 #ifdef _WIN32
 #ifndef NOMINMAX
@@ -31,10 +31,10 @@
 // #include <cuda_gl_interop.h>
 // #endif
 
-#endif // CUDA_VULKAN_INTEROP_SUPPORTED
+#endif  // CUDA_VULKAN_INTEROP_SUPPORTED
 
 namespace Engine3D::Vulkan {
-    class ResourceManager;
+class ResourceManager;
 }
 
 namespace Engine3D::CUDA {
@@ -64,22 +64,22 @@ struct SyncObject {
 
 /**
  * @brief Основной класс для CUDA-Vulkan interop
- * 
+ *
  * Обеспечивает создание shared ресурсов и синхронизацию
  * между CUDA и Vulkan без копирования данных
  */
 class CudaInterop {
-public:
+  public:
     /**
      * @brief Конструктор
      */
     CudaInterop();
-    
+
     /**
      * @brief Деструктор
      */
     ~CudaInterop();
-    
+
     /**
      * @brief Инициализация CUDA-Vulkan interop
      * @param device Vulkan логическое устройство
@@ -87,15 +87,15 @@ public:
      * @param resourceManager Менеджер ресурсов Vulkan
      * @return true если инициализация успешна
      */
-    bool initializeInterop(vk::Device device, 
-                          vk::PhysicalDevice physicalDevice,
-                          Vulkan::ResourceManager* resourceManager);
-    
+    bool initializeInterop(vk::Device device,
+                           vk::PhysicalDevice physicalDevice,
+                           Vulkan::ResourceManager* resourceManager);
+
     /**
      * @brief Завершение работы interop
      */
     void cleanup();
-    
+
     /**
      * @brief Создание shared буфера
      * @param size Размер буфера в байтах
@@ -107,33 +107,33 @@ public:
         size_t size,
         vk::BufferUsageFlags vulkanUsage = vk::BufferUsageFlagBits::eStorageBuffer,
         unsigned int cudaFlags = cudaMemAttachGlobal);
-    
+
     /**
      * @brief Освобождение shared ресурса
      * @param resource Ресурс для освобождения
      */
     void freeSharedResource(std::shared_ptr<SharedResource> resource);
-    
+
     /**
      * @brief Создание объекта синхронизации
      * @return Объект синхронизации
      */
     std::shared_ptr<SyncObject> createSyncObject();
-    
+
     /**
      * @brief Сигнализация от Vulkan к CUDA
      * @param syncObj Объект синхронизации
      * @param stream CUDA stream
      */
     void signalVulkanToCuda(std::shared_ptr<SyncObject> syncObj, cudaStream_t stream = 0);
-    
+
     /**
      * @brief Ожидание сигнала от CUDA в Vulkan
      * @param syncObj Объект синхронизации
      * @param commandBuffer Command buffer для вставки wait
      */
     void waitCudaFromVulkan(std::shared_ptr<SyncObject> syncObj, vk::CommandBuffer commandBuffer);
-    
+
     /**
      * @brief Импорт Vulkan памяти в CUDA
      * @param vulkanMemory Vulkan память
@@ -141,7 +141,7 @@ public:
      * @return CUDA external memory
      */
     cudaExternalMemory_t importVulkanMemory(vk::DeviceMemory vulkanMemory, size_t size);
-    
+
     /**
      * @brief Экспорт CUDA памяти в Vulkan
      * @param cudaPtr CUDA указатель
@@ -149,103 +149,103 @@ public:
      * @return Vulkan память
      */
     vk::DeviceMemory exportCudaMemory(CUdeviceptr cudaPtr, size_t size);
-    
+
     /**
      * @brief Проверка поддержки interop
      * @return true если interop поддерживается
      */
     static bool isInteropSupported();
-    
+
     /**
      * @brief Получение информации о возможностях interop
      * @return Строка с информацией
      */
     std::string getInteropCapabilities() const;
-    
+
     /**
      * @brief Проверка инициализации
      * @return true если инициализирован
      */
     bool isInitialized() const { return initialized; }
 
-private:
+  private:
     vk::Device device;
     vk::PhysicalDevice physicalDevice;
     Vulkan::ResourceManager* resourceManager = nullptr;
-    
+
     CUcontext cudaContext = nullptr;
     CUdevice cudaDevice = -1;
-    
+
     // Кэш созданных ресурсов
     std::vector<std::shared_ptr<SharedResource>> sharedResources;
     std::vector<std::shared_ptr<SyncObject>> syncObjects;
-    
+
     bool initialized = false;
     bool hasPlatformSupport = false;
-    
+
     /**
      * @brief Инициализация CUDA контекста
      * @return true если успешно
      */
     bool initCudaContext();
-    
+
     /**
      * @brief Проверка поддержки external memory
      * @return true если поддерживается
      */
     bool checkExternalMemorySupport();
-    
+
     /**
      * @brief Проверка поддержки external semaphores
      * @return true если поддерживается
      */
     bool checkExternalSemaphoreSupport();
-    
+
     /**
      * @brief Проверка поддержки необходимых Vulkan расширений
      * @return true если все необходимые расширения поддерживаются
      */
     bool checkVulkanExtensionSupport();
-    
+
     /**
      * @brief Получение CUDA device из Vulkan физического устройства
      * @return true если найдено совпадение
      */
     bool findMatchingCudaDevice();
-    
+
     /**
      * @brief Тестирование поддержки external memory на устройстве
      * @param device CUDA device ID
      * @return true если external memory поддерживается
      */
     static bool testExternalMemorySupport(int device);
-    
+
     // Запрет копирования
     CudaInterop(const CudaInterop&) = delete;
     CudaInterop& operator=(const CudaInterop&) = delete;
 };
 
-#else // CUDA_VULKAN_INTEROP_SUPPORTED
+#else  // CUDA_VULKAN_INTEROP_SUPPORTED
 
 /**
  * @brief Заглушка для случая без поддержки CUDA
  */
 class CudaInterop {
-public:
+  public:
     CudaInterop() = default;
     ~CudaInterop() = default;
-    
-    bool initializeInterop(vk::Device, vk::PhysicalDevice, Vulkan::ResourceManager*) { 
-        return false; 
+
+    bool initializeInterop(vk::Device, vk::PhysicalDevice, Vulkan::ResourceManager*) {
+        return false;
     }
-    
+
     void cleanup() {}
-    
+
     static bool isInteropSupported() { return false; }
     std::string getInteropCapabilities() const { return "CUDA interop not supported"; }
     bool isInitialized() const { return false; }
 };
 
-#endif // CUDA_VULKAN_INTEROP_SUPPORTED
+#endif  // CUDA_VULKAN_INTEROP_SUPPORTED
 
-} // namespace Engine3D::CUDA
+}  // namespace Engine3D::CUDA

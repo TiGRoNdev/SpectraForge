@@ -5,9 +5,9 @@
  * @brief Система поддержки UTF-8 консоли для кроссплатформенного отображения Unicode символов
  */
 
-#include <string>
 #include <iostream>
 #include <locale>
+#include <string>
 #include "Engine3D/Core/Console.h"
 
 namespace Engine3D {
@@ -51,7 +51,7 @@ enum class LogLevel {
  * @brief Класс для управления консолью с поддержкой UTF-8
  */
 class Console {
-public:
+  public:
     /**
      * @brief Инициализирует консоль с поддержкой UTF-8
      * @return true если инициализация прошла успешно
@@ -179,7 +179,7 @@ public:
      * @param value Числовое значение
      * @return Строковое представление числа
      */
-    template<typename T>
+    template <typename T>
     static std::string safeToString(const T& value) {
         try {
             return std::to_string(value);
@@ -226,7 +226,7 @@ public:
      */
     static void safeError(const std::string& message);
 
-private:
+  private:
     static bool initialized;
     static bool utf8Supported;
     static bool colorSupported;
@@ -261,8 +261,8 @@ private:
     static std::string getLogLevelString(LogLevel level);
 };
 
-} // namespace Core
-} // namespace Engine3D
+}  // namespace Core
+}  // namespace Engine3D
 
 // Удобные макросы для логирования
 #define LOG_DEBUG(msg) Engine3D::Core::Console::debug(msg)
@@ -279,4 +279,3 @@ private:
 #define SAFE_INFO(msg) Engine3D::Core::Console::safeInfo(msg)
 #define SAFE_WARNING(msg) Engine3D::Core::Console::safeWarning(msg)
 #define SAFE_ERROR(msg) Engine3D::Core::Console::safeError(msg)
-

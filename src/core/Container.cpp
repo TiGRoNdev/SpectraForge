@@ -6,4 +6,4 @@ namespace HyperEngine::Core::DI {
 std::unique_ptr<Container> ServiceLocator::instance_ = nullptr;
 std::mutex ServiceLocator::mutex_;
 
-} // namespace HyperEngine::Core::DI
+}  // namespace HyperEngine::Core::DI

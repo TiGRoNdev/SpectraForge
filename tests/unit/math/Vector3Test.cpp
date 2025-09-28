@@ -1,20 +1,20 @@
-#include "TestFramework.h"
-#include "Engine3D/Math/Vector3.h"
 #include <cmath>
+#include "Engine3D/Math/Vector3.h"
+#include "TestFramework.h"
 
 using namespace HyperEngine::Testing;
 using namespace Engine3D::Math;
 
 /**
  * @brief Unit тесты для класса Vector3
- * 
+ *
  * Тестирует базовые математические операции с 3D векторами
  */
 class Vector3Test : public HyperEngineTest {
-protected:
+  protected:
     void SetUp() override {
         HyperEngineTest::SetUp();
-        
+
         // Инициализация тестовых векторов
         v1 = Vector3(1.0f, 2.0f, 3.0f);
         v2 = Vector3(4.0f, 5.0f, 6.0f);
@@ -105,7 +105,7 @@ TEST_F(Vector3Test, ScalarMultiplicationAssignment) {
 // Тесты векторных операций
 TEST_F(Vector3Test, DotProduct) {
     float result = v1.dot(v2);
-    EXPECT_FLOAT_EQ(result, 32.0f); // 1*4 + 2*5 + 3*6 = 32
+    EXPECT_FLOAT_EQ(result, 32.0f);  // 1*4 + 2*5 + 3*6 = 32
 }
 
 TEST_F(Vector3Test, CrossProduct) {
@@ -127,19 +127,19 @@ TEST_F(Vector3Test, CrossProductAnticommutative) {
 // Тесты длины и нормализации
 TEST_F(Vector3Test, Magnitude) {
     float mag = v1.magnitude();
-    float expected = std::sqrt(1.0f + 4.0f + 9.0f); // sqrt(14)
+    float expected = std::sqrt(1.0f + 4.0f + 9.0f);  // sqrt(14)
     EXPECT_FLOAT_EQ(mag, expected);
 }
 
 TEST_F(Vector3Test, MagnitudeSquared) {
     float magSq = v1.magnitudeSquared();
-    EXPECT_FLOAT_EQ(magSq, 14.0f); // 1 + 4 + 9 = 14
+    EXPECT_FLOAT_EQ(magSq, 14.0f);  // 1 + 4 + 9 = 14
 }
 
 TEST_F(Vector3Test, Normalization) {
     Vector3 result = v1.normalized();
     EXPECT_NORMALIZED(result);
-    
+
     // Проверяем, что направление сохранилось
     Vector3 expected = v1 / v1.magnitude();
     EXPECT_NEAR(result.x, expected.x, 1e-6f);
@@ -186,7 +186,7 @@ TEST_F(Vector3Test, LinearInterpolation) {
 TEST_F(Vector3Test, LerpBoundaryValues) {
     Vector3 start = v1.lerp(v2, 0.0f);
     Vector3 end = v1.lerp(v2, 1.0f);
-    
+
     EXPECT_EQ(start, v1);
     EXPECT_EQ(end, v2);
 }
@@ -201,7 +201,7 @@ TEST_F(Vector3Test, StaticUnitVectors) {
     EXPECT_NORMALIZED(unitX);
     EXPECT_NORMALIZED(unitY);
     EXPECT_NORMALIZED(unitZ);
-    
+
     EXPECT_EQ(unitX, Vector3(1.0f, 0.0f, 0.0f));
     EXPECT_EQ(unitY, Vector3(0.0f, 1.0f, 0.0f));
     EXPECT_EQ(unitZ, Vector3(0.0f, 0.0f, 1.0f));
@@ -218,7 +218,7 @@ TEST_F(Vector3Test, EqualityWithTolerance) {
     Vector3 almost = Vector3(1.0000001f, 2.0000001f, 3.0000001f);
     // Точное равенство должно быть false
     EXPECT_NE(v1, almost);
-    
+
     // Но они должны быть почти равны
     EXPECT_NEAR(v1.x, almost.x, 1e-6f);
     EXPECT_NEAR(v1.y, almost.y, 1e-6f);
@@ -238,24 +238,28 @@ TEST_F(Vector3Test, NaNHandling) {
 // Тесты производительности
 TEST_F(Vector3Test, DotProductPerformance) {
     const int iterations = 10000;
-    
-    EXPECT_PERFORMANCE_UNDER({
-        for (int i = 0; i < iterations; ++i) {
-            volatile float result = v1.dot(v2);
-            (void)result; // Подавление предупреждения
-        }
-    }, 10); // Должно выполниться за < 10ms
+
+    EXPECT_PERFORMANCE_UNDER(
+        {
+            for (int i = 0; i < iterations; ++i) {
+                volatile float result = v1.dot(v2);
+                (void)result;  // Подавление предупреждения
+            }
+        },
+        10);  // Должно выполниться за < 10ms
 }
 
 TEST_F(Vector3Test, CrossProductPerformance) {
     const int iterations = 10000;
-    
-    EXPECT_PERFORMANCE_UNDER({
-        for (int i = 0; i < iterations; ++i) {
-            Vector3 result = v1.cross(v2);
-            (void)result; // Подавление предупреждения
-        }
-    }, 10); // Должно выполниться за < 10ms
+
+    EXPECT_PERFORMANCE_UNDER(
+        {
+            for (int i = 0; i < iterations; ++i) {
+                Vector3 result = v1.cross(v2);
+                (void)result;  // Подавление предупреждения
+            }
+        },
+        10);  // Должно выполниться за < 10ms
 }
 
 // Тесты граничных значений

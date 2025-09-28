@@ -1,9 +1,9 @@
 #include "HyperEngine/Math/Matrix4.h"
-#include "HyperEngine/Math/Quaternion.h"
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <stdexcept>
+#include "HyperEngine/Math/Quaternion.h"
 
 using namespace HyperEngine::Math;
 
@@ -80,14 +80,15 @@ Vector3 Matrix4::operator*(const Vector3& vec) const {
     float y = m[1][0] * vec.x + m[1][1] * vec.y + m[1][2] * vec.z + m[1][3];
     float z = m[2][0] * vec.x + m[2][1] * vec.y + m[2][2] * vec.z + m[2][3];
     float w = m[3][0] * vec.x + m[3][1] * vec.y + m[3][2] * vec.z + m[3][3];
-    
+
     // Если w != 1, выполняем перспективное деление
-    if (std::abs(w) > std::numeric_limits<float>::epsilon() && std::abs(w - 1.0f) > std::numeric_limits<float>::epsilon()) {
+    if (std::abs(w) > std::numeric_limits<float>::epsilon()
+        && std::abs(w - 1.0f) > std::numeric_limits<float>::epsilon()) {
         x /= w;
         y /= w;
         z /= w;
     }
-    
+
     return Vector3(x, y, z);
 }
 
@@ -161,60 +162,62 @@ Matrix4 Matrix4::transpose() const {
 float Matrix4::determinant() const {
     // Вычисление определителя 4x4 матрицы через разложение по первой строке
     float det = 0.0f;
-    
+
     // Миноры 3x3
-    float m00 = m[1][1] * (m[2][2] * m[3][3] - m[2][3] * m[3][2]) -
-                m[1][2] * (m[2][1] * m[3][3] - m[2][3] * m[3][1]) +
-                m[1][3] * (m[2][1] * m[3][2] - m[2][2] * m[3][1]);
-    
-    float m01 = m[1][0] * (m[2][2] * m[3][3] - m[2][3] * m[3][2]) -
-                m[1][2] * (m[2][0] * m[3][3] - m[2][3] * m[3][0]) +
-                m[1][3] * (m[2][0] * m[3][2] - m[2][2] * m[3][0]);
-    
-    float m02 = m[1][0] * (m[2][1] * m[3][3] - m[2][3] * m[3][1]) -
-                m[1][1] * (m[2][0] * m[3][3] - m[2][3] * m[3][0]) +
-                m[1][3] * (m[2][0] * m[3][1] - m[2][1] * m[3][0]);
-    
-    float m03 = m[1][0] * (m[2][1] * m[3][2] - m[2][2] * m[3][1]) -
-                m[1][1] * (m[2][0] * m[3][2] - m[2][2] * m[3][0]) +
-                m[1][2] * (m[2][0] * m[3][1] - m[2][1] * m[3][0]);
-    
+    float m00 = m[1][1] * (m[2][2] * m[3][3] - m[2][3] * m[3][2])
+                - m[1][2] * (m[2][1] * m[3][3] - m[2][3] * m[3][1])
+                + m[1][3] * (m[2][1] * m[3][2] - m[2][2] * m[3][1]);
+
+    float m01 = m[1][0] * (m[2][2] * m[3][3] - m[2][3] * m[3][2])
+                - m[1][2] * (m[2][0] * m[3][3] - m[2][3] * m[3][0])
+                + m[1][3] * (m[2][0] * m[3][2] - m[2][2] * m[3][0]);
+
+    float m02 = m[1][0] * (m[2][1] * m[3][3] - m[2][3] * m[3][1])
+                - m[1][1] * (m[2][0] * m[3][3] - m[2][3] * m[3][0])
+                + m[1][3] * (m[2][0] * m[3][1] - m[2][1] * m[3][0]);
+
+    float m03 = m[1][0] * (m[2][1] * m[3][2] - m[2][2] * m[3][1])
+                - m[1][1] * (m[2][0] * m[3][2] - m[2][2] * m[3][0])
+                + m[1][2] * (m[2][0] * m[3][1] - m[2][1] * m[3][0]);
+
     det = m[0][0] * m00 - m[0][1] * m01 + m[0][2] * m02 - m[0][3] * m03;
-    
+
     return det;
 }
 
 Matrix4 Matrix4::adjugate() const {
     Matrix4 result;
-    
+
     // Вычисляем алгебраические дополнения для каждого элемента
     for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 4; ++j) {
             // Создаем минор 3x3, исключая строку i и столбец j
             float minor[3][3];
             int mi = 0, mj = 0;
-            
+
             for (int row = 0; row < 4; ++row) {
-                if (row == i) continue;
+                if (row == i)
+                    continue;
                 mj = 0;
                 for (int col = 0; col < 4; ++col) {
-                    if (col == j) continue;
+                    if (col == j)
+                        continue;
                     minor[mi][mj] = m[row][col];
                     mj++;
                 }
                 mi++;
             }
-            
+
             // Вычисляем определитель минора 3x3
-            float det3 = minor[0][0] * (minor[1][1] * minor[2][2] - minor[1][2] * minor[2][1]) -
-                        minor[0][1] * (minor[1][0] * minor[2][2] - minor[1][2] * minor[2][0]) +
-                        minor[0][2] * (minor[1][0] * minor[2][1] - minor[1][1] * minor[2][0]);
-            
+            float det3 = minor[0][0] * (minor[1][1] * minor[2][2] - minor[1][2] * minor[2][1])
+                         - minor[0][1] * (minor[1][0] * minor[2][2] - minor[1][2] * minor[2][0])
+                         + minor[0][2] * (minor[1][0] * minor[2][1] - minor[1][1] * minor[2][0]);
+
             // Алгебраическое дополнение с учетом знака
             result.m[j][i] = ((i + j) % 2 == 0) ? det3 : -det3;
         }
     }
-    
+
     return result;
 }
 
@@ -223,7 +226,7 @@ Matrix4 Matrix4::inverse() const {
     if (std::abs(det) < std::numeric_limits<float>::epsilon()) {
         throw std::runtime_error("Матрица необратима (определитель равен нулю)");
     }
-    
+
     return adjugate() * (1.0f / det);
 }
 
@@ -320,23 +323,23 @@ Matrix4 Matrix4::rotation(const Vector3& axis, float angle) {
     float c = std::cos(angle);
     float s = std::sin(angle);
     float t = 1.0f - c;
-    
+
     Matrix4 result;
     result.setIdentity();
-    
+
     // Формула Родригеса для поворота вокруг произвольной оси
     result.m[0][0] = t * normalizedAxis.x * normalizedAxis.x + c;
     result.m[0][1] = t * normalizedAxis.x * normalizedAxis.y - s * normalizedAxis.z;
     result.m[0][2] = t * normalizedAxis.x * normalizedAxis.z + s * normalizedAxis.y;
-    
+
     result.m[1][0] = t * normalizedAxis.x * normalizedAxis.y + s * normalizedAxis.z;
     result.m[1][1] = t * normalizedAxis.y * normalizedAxis.y + c;
     result.m[1][2] = t * normalizedAxis.y * normalizedAxis.z - s * normalizedAxis.x;
-    
+
     result.m[2][0] = t * normalizedAxis.x * normalizedAxis.z - s * normalizedAxis.y;
     result.m[2][1] = t * normalizedAxis.y * normalizedAxis.z + s * normalizedAxis.x;
     result.m[2][2] = t * normalizedAxis.z * normalizedAxis.z + c;
-    
+
     return result;
 }
 
@@ -349,7 +352,7 @@ Matrix4 Matrix4::eulerAngles(float pitch, float yaw, float roll) {
     Matrix4 rotX = rotationX(pitch);
     Matrix4 rotY = rotationY(yaw);
     Matrix4 rotZ = rotationZ(roll);
-    
+
     return rotY * rotX * rotZ;
 }
 
@@ -358,59 +361,64 @@ Matrix4 Matrix4::lookAt(const Vector3& eye, const Vector3& target, const Vector3
     Vector3 forward = (target - eye).normalized();
     Vector3 right = forward.cross(up).normalized();
     Vector3 upCorrected = right.cross(forward).normalized();
-    
+
     Matrix4 result;
     result.setIdentity();
-    
+
     // Ориентация
     result.m[0][0] = right.x;
     result.m[0][1] = right.y;
     result.m[0][2] = right.z;
-    
+
     result.m[1][0] = upCorrected.x;
     result.m[1][1] = upCorrected.y;
     result.m[1][2] = upCorrected.z;
-    
+
     result.m[2][0] = -forward.x;
     result.m[2][1] = -forward.y;
     result.m[2][2] = -forward.z;
-    
+
     // Позиция (через скалярное произведение для инверсии)
     result.m[0][3] = -right.dot(eye);
     result.m[1][3] = -upCorrected.dot(eye);
     result.m[2][3] = forward.dot(eye);
-    
+
     return result;
 }
 
 Matrix4 Matrix4::perspective(float fovY, float aspect, float near, float far) {
     Matrix4 result;
     result.setZero();
-    
+
     float tanHalfFov = std::tan(fovY * 0.5f);
-    
+
     result.m[0][0] = 1.0f / (aspect * tanHalfFov);
     result.m[1][1] = 1.0f / tanHalfFov;
     result.m[2][2] = -(far + near) / (far - near);
     result.m[2][3] = -1.0f;
     result.m[3][2] = -(2.0f * far * near) / (far - near);
-    
+
     return result;
 }
 
-Matrix4 Matrix4::orthographic(float left, float right, float bottom, float top, float near, float far) {
+Matrix4 Matrix4::orthographic(float left,
+                              float right,
+                              float bottom,
+                              float top,
+                              float near,
+                              float far) {
     Matrix4 result;
     result.setZero();
-    
+
     result.m[0][0] = 2.0f / (right - left);
     result.m[1][1] = 2.0f / (top - bottom);
     result.m[2][2] = -2.0f / (far - near);
     result.m[3][3] = 1.0f;
-    
+
     result.m[0][3] = -(right + left) / (right - left);
     result.m[1][3] = -(top + bottom) / (top - bottom);
     result.m[2][3] = -(far + near) / (far - near);
-    
+
     return result;
 }
 
@@ -448,17 +456,17 @@ Vector3 Matrix4::getScale() const {
 void Matrix4::decompose(Vector3& translation, Quaternion& rotation, Vector3& scale) const {
     // Извлекаем трансляцию
     translation = getTranslation();
-    
+
     // Извлекаем масштаб
     scale = getScale();
-    
+
     // Создаем матрицу без масштаба для извлечения поворота
     Matrix4 rotMatrix = *this;
     rotMatrix.m[0][3] = 0;
     rotMatrix.m[1][3] = 0;
     rotMatrix.m[2][3] = 0;
     rotMatrix.m[3][3] = 1;
-    
+
     // Нормализуем столбцы
     if (scale.x != 0.0f) {
         rotMatrix.m[0][0] /= scale.x;
@@ -475,7 +483,7 @@ void Matrix4::decompose(Vector3& translation, Quaternion& rotation, Vector3& sca
         rotMatrix.m[1][2] /= scale.z;
         rotMatrix.m[2][2] /= scale.z;
     }
-    
+
     rotation = Quaternion::fromMatrix(rotMatrix);
 }
 
@@ -499,7 +507,8 @@ std::ostream& operator<<(std::ostream& os, const Matrix4& mat) {
         os << "[";
         for (int j = 0; j < 4; ++j) {
             os << mat.m[i][j];
-            if (j < 3) os << ", ";
+            if (j < 3)
+                os << ", ";
         }
         os << "]\n";
     }
@@ -520,4 +529,4 @@ namespace HyperEngine::Math {
 Matrix4 operator*(float scalar, const Matrix4& mat) {
     return mat * scalar;
 }
-} // namespace HyperEngine::Math
+}  // namespace HyperEngine::Math
