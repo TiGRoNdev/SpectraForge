@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+1. Always wrap a variable in the SAFE_TO_STRING macro before outputting it to the console.
+1. Always use SAFE_TO_STRING instead of std::to_string().
+2. Initialize the console at the beginning of the program.
+3. Use SAFE_* macros for brevity.

@@ -75,24 +75,24 @@ int main() {
         Console::initialize();
 
         // Создание Vulkan instance
-        std::cout << "=== Vulkan Basic Demo ===" << std::endl;
-        std::cout << "Демонстрация основных Vulkan классов HyperEngine" << std::endl;
+        SAFE_PRINT_LINE("=== Vulkan Basic Demo ===");
+        SAFE_PRINT_LINE("Демонстрация основных Vulkan классов HyperEngine");
         std::cout << std::endl;
         
         // 1. Создаем Vulkan instance
-        std::cout << "1. Создание Vulkan instance..." << std::endl;
+        SAFE_PRINT_LINE("1. Создание Vulkan instance...");
         vk::Instance instance = createVulkanInstance();
-        std::cout << "   ✓ Vulkan instance создан" << std::endl;
+        SAFE_PRINT_LINE("   ✓ Vulkan instance создан");
         
         // 2. Создаем и инициализируем VulkanEngine
         std::cout << std::endl << "2. Инициализация VulkanEngine..." << std::endl;
         auto engine = std::make_unique<VulkanEngine>();
         
         if (!engine->init(instance)) {
-            std::cerr << "   ✗ Ошибка инициализации VulkanEngine" << std::endl;
+            SAFE_ERROR("   ✗ Ошибка инициализации VulkanEngine");
             return -1;
         }
-        std::cout << "   ✓ VulkanEngine инициализирован" << std::endl;
+        SAFE_PRINT_LINE("   ✓ VulkanEngine инициализирован");
         
         // 3. Тестируем HardwareDetector
         std::cout << std::endl << "3. Тестирование HardwareDetector..." << std::endl;
@@ -102,9 +102,9 @@ int main() {
             
             size_t vramSize = hardwareDetector->getVRAMSize();
             if (vramSize > 0) {
-                std::cout << "   VRAM: " << std::to_string(vramSize / (1024 * 1024)) << " MB" << std::endl;
+                std::cout << "   VRAM: " << SAFE_TO_STRING(vramSize / (1024 * 1024)) << " MB" << std::endl;
             } else {
-                std::cout << "   VRAM: Не удалось определить" << std::endl;
+                SAFE_PRINT_LINE("   VRAM: Не удалось определить");
             }
             
             VendorType vendor = hardwareDetector->detectVendor();
@@ -143,7 +143,7 @@ int main() {
                 testScene.texturePaths = {"diffuse.png", "normal.png", "roughness.png"};
                 
                 if (sceneManager->loadScene(testScene)) {
-                    std::cout << "   ✓ Тестовая сцена загружена" << std::endl;
+                    SAFE_PRINT_LINE("   ✓ Тестовая сцена загружена");
                     std::cout << "   Объектов в сцене: " << sceneManager->getObjectCount() << std::endl;
                     
                     // Тестируем обновление динамики
@@ -151,15 +151,15 @@ int main() {
                     
                     // Получаем гауссианы
                     Gaussians gaussians = sceneManager->getGaussians();
-                    std::cout << "   Гауссианов для рендеринга: " << std::to_string(gaussians.count) << std::endl;
+                    std::cout << "   Гауссианов для рендеринга: " << SAFE_TO_STRING(gaussians.count) << std::endl;
                 } else {
-                    std::cout << "   ✗ Ошибка загрузки тестовой сцены" << std::endl;
+                    SAFE_PRINT_LINE("   ✗ Ошибка загрузки тестовой сцены");
                 }
             } catch (const std::exception& e) {
                 std::cerr << "   ✗ Исключение в SceneManager: " << e.what() << std::endl;
             }
         } else {
-            std::cout << "   ✗ SceneManager недоступен" << std::endl;
+            SAFE_PRINT_LINE("   ✗ SceneManager недоступен");
         }
         
         // 5. Тестируем рендеринг (заглушки)
@@ -176,24 +176,24 @@ int main() {
                 camera.farPlane = 100.0f;
                 
                 // Выполняем один кадр рендеринга
-                std::cout << "   Выполнение тестового кадра..." << std::endl;
+                SAFE_PRINT_LINE("   Выполнение тестового кадра...");
                 engine->renderFrame(camera);
-                std::cout << "   ✓ Тестовый кадр выполнен" << std::endl;
+                SAFE_PRINT_LINE("   ✓ Тестовый кадр выполнен");
             } catch (const std::exception& e) {
                 std::cerr << "   ✗ Ошибка рендеринга: " << e.what() << std::endl;
             }
         } else {
-            std::cout << "   ✗ Рендерер или SceneManager недоступны" << std::endl;
+            SAFE_PRINT_LINE("   ✗ Рендерер или SceneManager недоступны");
         }
         
         // 6. Завершение работы
         std::cout << std::endl << "6. Завершение работы..." << std::endl;
         engine->shutdown();
-        std::cout << "   ✓ VulkanEngine завершен" << std::endl;
+        SAFE_PRINT_LINE("   ✓ VulkanEngine завершен");
         
         // Уничтожаем Vulkan instance
         instance.destroy();
-        std::cout << "   ✓ Vulkan instance уничтожен" << std::endl;
+        SAFE_PRINT_LINE("   ✓ Vulkan instance уничтожен");
         
         std::cout << std::endl << "=== Демо завершено успешно ===" << std::endl;
         return 0;

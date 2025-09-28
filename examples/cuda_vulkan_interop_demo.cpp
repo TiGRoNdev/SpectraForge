@@ -9,6 +9,7 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include <cstring>
 
 // Основные заголовки движка
 #include "Engine3D/Core/Engine3D.h"
@@ -16,16 +17,18 @@
 #include "Engine3D/Vulkan/ResourceManager.h"
 #include "Engine3D/Vulkan/HardwareDetector.h"
 #include "Engine3D/CUDA/CudaInterop.h"
+#include "Engine3D/Core/Console.h"
 
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
 #include <cuda_runtime.h>
 #include <cuda.h>
 
 // CUDA kernel объявление (реализация в .cu файле)
-extern "C" void launchProcessBufferKernel(float* data, size_t size, float multiplier);
+// extern "C" void launchProcessBufferKernel(float* data, size_t size, float multiplier);
 #endif
 
 using namespace Engine3D;
+using namespace Engine3D::Core;
 
 class CudaVulkanInteropDemo {
 public:
@@ -34,53 +37,67 @@ public:
 
     bool initialize() {
         try {
-            std::cout << "=== CUDA-Vulkan Interop Demo ===" << std::endl;
+            Console::initialize();
+            SAFE_PRINT_LINE("=== CUDA-Vulkan Interop Demo ===");
             
             // Проверяем поддержку interop
             if (!CUDA::CudaInterop::isInteropSupported()) {
-                std::cerr << "CUDA-Vulkan interop не поддерживается на данной системе" << std::endl;
+                SAFE_ERROR("CUDA-Vulkan interop не поддерживается на данной системе");
                 return false;
             }
             
-            std::cout << "✓ CUDA-Vulkan interop поддерживается" << std::endl;
+            SAFE_PRINT_LINE("✓ CUDA-Vulkan interop поддерживается");
             
             // Инициализируем Vulkan Engine
             vulkanEngine = std::make_unique<Vulkan::VulkanEngine>();
-            if (!vulkanEngine->init(VK_NULL_HANDLE)) {
-                std::cerr << "Ошибка инициализации Vulkan Engine" << std::endl;
+            
+            // Создаем Vulkan instance для демо
+            vulkanInstance = createVulkanInstance();
+            if (!vulkanInstance) {
+                SAFE_ERROR("Ошибка создания Vulkan instance");
                 return false;
             }
             
-            std::cout << "✓ Vulkan Engine инициализирован" << std::endl;
+            if (!vulkanEngine->init(vulkanInstance)) {
+                SAFE_ERROR("Ошибка инициализации Vulkan Engine");
+                return false;
+            }
             
-            // Получаем ResourceManager
-            // TODO: Добавить метод получения ResourceManager из VulkanEngine
+            SAFE_PRINT_LINE("✓ Vulkan Engine инициализирован");
             
-            // Инициализируем CUDA Interop
+            // Инициализируем CUDA Interop с реальными Vulkan объектами
             cudaInterop = std::make_unique<CUDA::CudaInterop>();
-            // TODO: Передать реальные Vulkan объекты
-            // if (!cudaInterop->initializeInterop(device, physicalDevice, resourceManager)) {
-            //     std::cerr << "Ошибка инициализации CUDA Interop" << std::endl;
-            //     return false;
-            // }
             
-            std::cout << "✓ CUDA Interop готов к инициализации" << std::endl;
+            // Получаем Vulkan объекты из движка
+            auto device = vulkanEngine->getDevice();
+            auto physicalDevice = vulkanEngine->getPhysicalDevice();
+            auto resourceManager = vulkanEngine->getResourceManager();
+            
+            if (device && physicalDevice && resourceManager) {
+                if (!cudaInterop->initializeInterop(device, physicalDevice, resourceManager)) {
+                    SAFE_ERROR("Ошибка инициализации CUDA Interop");
+                    return false;
+                }
+                SAFE_PRINT_LINE("✓ CUDA Interop инициализирован успешно");
+            } else {
+                SAFE_WARNING("⚠ CUDA Interop не может быть инициализирован - отсутствуют Vulkan объекты");
+            }
             
             return true;
             
         } catch (const std::exception& e) {
-            std::cerr << "Ошибка инициализации: " << e.what() << std::endl;
+            SAFE_ERROR("Ошибка инициализации: " + std::string(e.what()));
             return false;
         }
     }
 
     void runDemo() {
         if (!initialize()) {
-            std::cerr << "Инициализация не удалась" << std::endl;
+            SAFE_ERROR("Инициализация не удалась");
             return;
         }
 
-        std::cout << "\n=== Демонстрация возможностей ===" << std::endl;
+        SAFE_PRINT_LINE("\n=== Демонстрация возможностей ===");
         
         // Демо 1: Проверка поддержки
         demonstrateCapabilities();
@@ -100,23 +117,22 @@ public:
 private:
     std::unique_ptr<Vulkan::VulkanEngine> vulkanEngine;
     std::unique_ptr<CUDA::CudaInterop> cudaInterop;
+    vk::Instance vulkanInstance;
     
     void demonstrateCapabilities() {
-        std::cout << "\n--- Проверка возможностей системы ---" << std::endl;
+        SAFE_PRINT_LINE("\n--- Проверка возможностей системы ---");
         
         // Проверяем Vulkan возможности
-        std::cout << "Vulkan:" << std::endl;
-        std::cout << "  - Инициализирован: " << (vulkanEngine ? "Да" : "Нет") << std::endl;
+        SAFE_PRINT_LINE("Vulkan:");
+        SAFE_PRINT_LINE("  - Инициализирован: " + std::string(vulkanEngine ? "Да" : "Нет"));
         
         // Проверяем CUDA возможности
-        std::cout << "CUDA:" << std::endl;
-        std::cout << "  - Interop поддерживается: " << 
-                     (CUDA::CudaInterop::isInteropSupported() ? "Да" : "Нет") << std::endl;
+        SAFE_PRINT_LINE("CUDA:");
+        SAFE_PRINT_LINE("  - Interop поддерживается: " + std::string(CUDA::CudaInterop::isInteropSupported() ? "Да" : "Нет"));
         
         if (cudaInterop) {
-            std::cout << "  - Инициализирован: " << 
-                         (cudaInterop->isInitialized() ? "Да" : "Нет") << std::endl;
-            std::cout << "  - Возможности: " << cudaInterop->getInteropCapabilities() << std::endl;
+            SAFE_PRINT_LINE("  - Инициализирован: " + std::string(cudaInterop->isInitialized() ? "Да" : "Нет"));
+            SAFE_PRINT_LINE("  - Возможности: " + cudaInterop->getInteropCapabilities());
         }
         
         #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
@@ -124,12 +140,12 @@ private:
         int deviceCount = 0;
         cudaError_t result = cudaGetDeviceCount(&deviceCount);
         if (result == cudaSuccess) {
-            std::cout << "  - Количество CUDA устройств: " << deviceCount << std::endl;
+            SAFE_PRINT_LINE("  - Количество CUDA устройств: " + SAFE_TO_STRING(deviceCount));
             
             for (int i = 0; i < deviceCount; ++i) {
                 cudaDeviceProp prop;
                 cudaGetDeviceProperties(&prop, i);
-                std::cout << "    Device " << i << ": " << prop.name << std::endl;
+                SAFE_PRINT_LINE("    Device " + SAFE_TO_STRING(i) + ": " + std::string(prop.name));
                 
                 // Проверяем поддержку external memory (используем доступные атрибуты)
                 int supportsExternalMemory = 0;
@@ -150,16 +166,16 @@ private:
     }
     
     void demonstrateSharedBuffer() {
-        std::cout << "\n--- Демонстрация Shared Buffer ---" << std::endl;
+        SAFE_PRINT_LINE("\n--- Демонстрация Shared Buffer ---");
         
         if (!cudaInterop || !cudaInterop->isInitialized()) {
-            std::cout << "CUDA Interop не инициализирован, пропускаем демо" << std::endl;
+            SAFE_WARNING("CUDA Interop не инициализирован, пропускаем демо");
             return;
         }
         
         const size_t bufferSize = 1024 * sizeof(float);
         
-        std::cout << "Создание shared буфера размером " << bufferSize << " байт..." << std::endl;
+        SAFE_PRINT_LINE("Создание shared буфера размером " + SAFE_TO_STRING(bufferSize) + " байт...");
         
         // Создаем shared буфер
         auto sharedResource = cudaInterop->createSharedBuffer(
@@ -168,66 +184,66 @@ private:
             cudaMemAttachGlobal);
         
         if (sharedResource && sharedResource->isValid) {
-            std::cout << "✓ Shared буфер создан успешно" << std::endl;
-            std::cout << "  - Vulkan buffer: " << static_cast<VkBuffer>(sharedResource->vulkanBuffer) << std::endl;
-            std::cout << "  - CUDA device ptr: 0x" << std::hex << reinterpret_cast<uintptr_t>(sharedResource->cudaDevicePtr) << std::dec << std::endl;
+            SAFE_PRINT_LINE("✓ Shared буфер создан успешно");
+            SAFE_PRINT_LINE("  - Vulkan buffer: " + SAFE_TO_STRING(reinterpret_cast<uintptr_t>(static_cast<VkBuffer>(sharedResource->vulkanBuffer))));
+            SAFE_PRINT_LINE("  - CUDA device ptr: 0x" + SAFE_TO_STRING(static_cast<uintptr_t>(sharedResource->cudaDevicePtr)));
             
             // Освобождаем ресурс
             cudaInterop->freeSharedResource(sharedResource);
-            std::cout << "✓ Shared буфер освобожден" << std::endl;
+            SAFE_PRINT_LINE("✓ Shared буфер освобожден");
         } else {
-            std::cout << "✗ Ошибка создания shared буфера" << std::endl;
+            SAFE_ERROR("✗ Ошибка создания shared буфера");
         }
     }
     
     void demonstrateSynchronization() {
-        std::cout << "\n--- Демонстрация синхронизации ---" << std::endl;
+        SAFE_PRINT_LINE("\n--- Демонстрация синхронизации ---");
         
         if (!cudaInterop || !cudaInterop->isInitialized()) {
-            std::cout << "CUDA Interop не инициализирован, пропускаем демо" << std::endl;
+            SAFE_WARNING("CUDA Interop не инициализирован, пропускаем демо");
             return;
         }
         
-        std::cout << "Создание объекта синхронизации..." << std::endl;
+        SAFE_PRINT_LINE("Создание объекта синхронизации...");
         
         auto syncObject = cudaInterop->createSyncObject();
         
         if (syncObject && syncObject->isValid) {
-            std::cout << "✓ Объект синхронизации создан успешно" << std::endl;
+            SAFE_PRINT_LINE("✓ Объект синхронизации создан успешно");
             std::cout << "  - Vulkan semaphore: " << static_cast<VkSemaphore>(syncObject->vulkanSemaphore) << std::endl;
             std::cout << "  - CUDA external semaphore: " << syncObject->cudaExternalSemaphore << std::endl;
             
             // Демонстрируем синхронизацию
-            std::cout << "Тестирование синхронизации Vulkan -> CUDA..." << std::endl;
+            SAFE_PRINT_LINE("Тестирование синхронизации Vulkan -> CUDA...");
             cudaInterop->signalVulkanToCuda(syncObject);
-            std::cout << "✓ Сигнал отправлен" << std::endl;
+            SAFE_PRINT_LINE("✓ Сигнал отправлен");
             
             // TODO: Добавить реальное тестирование с command buffer
             
         } else {
-            std::cout << "✗ Ошибка создания объекта синхронизации" << std::endl;
+            SAFE_PRINT_LINE("✗ Ошибка создания объекта синхронизации");
         }
     }
     
     void demonstrateDataProcessing() {
-        std::cout << "\n--- Демонстрация обработки данных ---" << std::endl;
+        SAFE_PRINT_LINE("\n--- Демонстрация обработки данных ---");
         
         #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
         if (!cudaInterop || !cudaInterop->isInitialized()) {
-            std::cout << "CUDA Interop не инициализирован, пропускаем демо" << std::endl;
+            SAFE_WARNING("CUDA Interop не инициализирован, пропускаем демо");
             return;
         }
         
         const size_t dataSize = 1024;
         const size_t bufferSize = dataSize * sizeof(float);
         
-        std::cout << "Создание буфера для обработки " << dataSize << " элементов..." << std::endl;
+        std::cout << "Создание буфера для обработки " << SAFE_TO_STRING(dataSize) << " элементов..." << std::endl;
         
         // Создаем shared буфер
         auto sharedResource = cudaInterop->createSharedBuffer(bufferSize);
         
         if (sharedResource && sharedResource->isValid) {
-            std::cout << "✓ Буфер создан, заполняем тестовыми данными..." << std::endl;
+            SAFE_PRINT_LINE("✓ Буфер создан, заполняем тестовыми данными...");
             
             // Инициализируем данные на GPU
             std::vector<float> hostData(dataSize);
@@ -243,23 +259,24 @@ private:
                 cudaMemcpyHostToDevice);
             
             if (result == cudaSuccess) {
-                std::cout << "✓ Данные скопированы в shared буфер" << std::endl;
+                SAFE_PRINT_LINE("✓ Данные скопированы в shared буфер");
                 
                 // Обрабатываем данные CUDA kernel'ом
                 const float multiplier = 2.0f;
                 const int blockSize = 256;
                 const int gridSize = (dataSize + blockSize - 1) / blockSize;
+                (void)multiplier; // Подавляем предупреждения о неиспользуемых переменных
+                (void)blockSize;
+                (void)gridSize;
                 
-                std::cout << "Запуск CUDA kernel для обработки данных..." << std::endl;
-                launchProcessBufferKernel(
-                    reinterpret_cast<float*>(sharedResource->cudaDevicePtr),
-                    dataSize,
-                    multiplier);
+                SAFE_PRINT_LINE("Запуск CUDA kernel для обработки данных...");
+                // TODO: Добавить компиляцию CUDA kernels
+                SAFE_PRINT_LINE("CUDA kernel пока не скомпилирован, пропускаем...");
                 
                 // Ждем завершения
                 result = cudaDeviceSynchronize();
                 if (result == cudaSuccess) {
-                    std::cout << "✓ CUDA обработка завершена" << std::endl;
+                    SAFE_PRINT_LINE("✓ CUDA обработка завершена");
                     
                     // Копируем результат обратно для проверки
                     std::vector<float> resultData(dataSize);
@@ -270,7 +287,7 @@ private:
                         cudaMemcpyDeviceToHost);
                     
                     if (result == cudaSuccess) {
-                        std::cout << "✓ Результат получен" << std::endl;
+                        SAFE_PRINT_LINE("✓ Результат получен");
                         
                         // Проверяем несколько значений
                         bool success = true;
@@ -283,11 +300,10 @@ private:
                         }
                         
                         if (success) {
-                            std::cout << "✓ Обработка данных прошла успешно!" << std::endl;
-                            std::cout << "  Пример: " << std::to_string(hostData[0]) << " * " << std::to_string(multiplier) 
-                                      << " = " << std::to_string(resultData[0]) << std::endl;
+                            SAFE_PRINT_LINE("✓ Обработка данных прошла успешно!");
+                            std::cout << "  Пример: " << SAFE_TO_STRING(hostData[0]) << " * " << SAFE_TO_STRING(multiplier) << " = " << SAFE_TO_STRING(resultData[0]) << std::endl;
                         } else {
-                            std::cout << "✗ Ошибка в результате обработки" << std::endl;
+                            SAFE_PRINT_LINE("✗ Ошибка в результате обработки");
                         }
                     } else {
                         std::cout << "✗ Ошибка копирования результата: " 
@@ -305,43 +321,110 @@ private:
             // Освобождаем ресурс
             cudaInterop->freeSharedResource(sharedResource);
         } else {
-            std::cout << "✗ Ошибка создания буфера для обработки" << std::endl;
+            SAFE_PRINT_LINE("✗ Ошибка создания буфера для обработки");
         }
         
         #else
-        std::cout << "CUDA поддержка не включена в сборку" << std::endl;
+        SAFE_PRINT_LINE("CUDA поддержка не включена в сборку");
         #endif
     }
     
     void cleanup() {
-        std::cout << "\n--- Освобождение ресурсов ---" << std::endl;
+        SAFE_PRINT_LINE("\n--- Освобождение ресурсов ---");
         
         if (cudaInterop) {
             cudaInterop->cleanup();
             cudaInterop.reset();
-            std::cout << "✓ CUDA Interop очищен" << std::endl;
+            SAFE_PRINT_LINE("✓ CUDA Interop очищен");
         }
         
         if (vulkanEngine) {
             vulkanEngine->shutdown();
             vulkanEngine.reset();
-            std::cout << "✓ Vulkan Engine завершен" << std::endl;
+            SAFE_PRINT_LINE("✓ Vulkan Engine завершен");
         }
         
-        std::cout << "✓ Все ресурсы освобождены" << std::endl;
+        if (vulkanInstance) {
+            vulkanInstance.destroy();
+            vulkanInstance = vk::Instance{};
+            SAFE_PRINT_LINE("✓ Vulkan Instance освобожден");
+        }
+        
+        SAFE_PRINT_LINE("✓ Все ресурсы освобождены");
+    }
+    
+    /**
+     * @brief Создание Vulkan instance для демо
+     * @return Vulkan instance
+     */
+    vk::Instance createVulkanInstance() {
+        try {
+            // Информация о приложении
+            vk::ApplicationInfo appInfo{};
+            appInfo.pApplicationName = "CUDA-Vulkan Interop Demo";
+            appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+            appInfo.pEngineName = "HyperEngine";
+            appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+            appInfo.apiVersion = VK_API_VERSION_1_2;
+            
+            // Создание instance
+            vk::InstanceCreateInfo createInfo{};
+            createInfo.pApplicationInfo = &appInfo;
+            
+            // Включаем validation layers в debug режиме
+            #ifdef _DEBUG
+            const std::vector<const char*> validationLayers = {
+                "VK_LAYER_KHRONOS_validation"
+            };
+            
+            // Проверяем доступность validation layers
+            auto availableLayers = vk::enumerateInstanceLayerProperties();
+            bool validationSupported = false;
+            for (const auto& layerName : validationLayers) {
+                for (const auto& layerProps : availableLayers) {
+                    if (strcmp(layerName, layerProps.layerName) == 0) {
+                        validationSupported = true;
+                        break;
+                    }
+                }
+                if (!validationSupported) break;
+            }
+            
+            if (validationSupported) {
+                createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+                createInfo.ppEnabledLayerNames = validationLayers.data();
+                SAFE_PRINT_LINE("[VulkanInstance] Validation layers включены");
+            }
+            #endif
+            
+            // Создаем instance
+            vk::Instance instance = vk::createInstance(createInfo);
+            SAFE_PRINT_LINE("[VulkanInstance] Vulkan instance создан успешно");
+            
+            return instance;
+            
+        } catch (const std::exception& e) {
+            std::cerr << "[VulkanInstance] Ошибка создания Vulkan instance: " << e.what() << std::endl;
+            return vk::Instance{};
+        }
     }
 };
 
 int main() {
     try {
         CudaVulkanInteropDemo demo;
+        SAFE_PRINT_LINE("Демо объект создан, запускаем...");
+        
         demo.runDemo();
         
-        std::cout << "\n=== Демонстрация завершена ===" << std::endl;
+        SAFE_PRINT_LINE("\n=== Демонстрация завершена ===");
         return 0;
         
     } catch (const std::exception& e) {
         std::cerr << "Критическая ошибка: " << e.what() << std::endl;
+        return 1;
+    } catch (...) {
+        SAFE_ERROR("Неизвестная критическая ошибка");
         return 1;
     }
 }

@@ -7,6 +7,7 @@
 #include <chrono>
 #include <algorithm>
 #include <functional>
+#include "Engine3D/Core/Console.h"
 
 using namespace Engine3D::Math;
 using namespace Engine3D::Rendering;
@@ -34,7 +35,7 @@ HybridRenderer3D::HybridRenderer3D()
     hybridStats.reset();
     frameTimeHistory.reserve(60); // Храним историю за последнюю секунду
     
-    std::cout << "Создан гибридный рендерер 3D" << std::endl;
+    SAFE_PRINT_LINE("Создан гибридный рендерер 3D");
 }
 
 HybridRenderer3D::~HybridRenderer3D() {
@@ -42,44 +43,44 @@ HybridRenderer3D::~HybridRenderer3D() {
 }
 
 bool HybridRenderer3D::initialize(int width, int height) {
-    std::cout << "HybridRenderer3D::initialize() начало" << std::endl;
+    SAFE_PRINT_LINE("HybridRenderer3D::initialize() начало");
     
     // Инициализируем базовый рендерер
-    std::cout << "Вызов Renderer3D::initialize()..." << std::endl;
+    SAFE_PRINT_LINE("Вызов Renderer3D::initialize()...");
     if (!Renderer3D::initialize(width, height)) {
-        std::cout << "Ошибка инициализации Renderer3D!" << std::endl;
+        SAFE_PRINT_LINE("Ошибка инициализации Renderer3D!");
         return false;
     }
-    std::cout << "Renderer3D::initialize() завершен успешно" << std::endl;
+    SAFE_PRINT_LINE("Renderer3D::initialize() завершен успешно");
     
     std::cout << "Инициализация гибридного рендерера (" << width << "x" << height << ")..." << std::endl;
     
     // Инициализируем гауссиановый рендерер
-    std::cout << "Инициализация гауссианового рендерера..." << std::endl;
+    SAFE_PRINT_LINE("Инициализация гауссианового рендерера...");
     if (!gaussianRenderer->initialize()) {
-        std::cerr << "Ошибка инициализации гауссианового рендерера!" << std::endl;
+        SAFE_ERROR("Ошибка инициализации гауссианового рендерера!");
         return false;
     }
-    std::cout << "Гауссиановый рендерер инициализирован успешно" << std::endl;
+    SAFE_PRINT_LINE("Гауссиановый рендерер инициализирован успешно");
     
     // Настраиваем буферы рендеринга
     setupRenderBuffers();
     resizeRenderBuffers(width, height);
     
     // TODO: Загрузка шейдеров для различных пассов
-    std::cout << "Загрузка шейдеров гибридного рендеринга..." << std::endl;
+    SAFE_PRINT_LINE("Загрузка шейдеров гибридного рендеринга...");
     // depthPrepassShader = loadShader("depth_prepass");
     // rayTracingShader = loadShader("ray_tracing");
     // compositingShader = loadShader("compositing");
     // denoisingShader = loadShader("denoising");
     // upscalingShader = loadShader("upscaling");
     
-    std::cout << "Гибридный рендерер успешно инициализирован" << std::endl;
+    SAFE_PRINT_LINE("Гибридный рендерер успешно инициализирован");
     return true;
 }
 
 void HybridRenderer3D::cleanup() {
-    std::cout << "Очистка гибридного рендерера..." << std::endl;
+    SAFE_PRINT_LINE("Очистка гибридного рендерера...");
     
     // Очищаем буферы
     renderBuffers.cleanup();
@@ -100,7 +101,7 @@ void HybridRenderer3D::cleanup() {
     // Очищаем базовый рендерер
     Renderer3D::cleanup();
     
-    std::cout << "Гибридный рендерер очищен" << std::endl;
+    SAFE_PRINT_LINE("Гибридный рендерер очищен");
 }
 
 void HybridRenderer3D::beginFrame() {
@@ -203,7 +204,7 @@ void HybridRenderer3D::renderScene(const std::vector<std::shared_ptr<GaussianFie
 
 void HybridRenderer3D::setRenderSettings(const RenderSettings& settings) {
     renderSettings = settings;
-    std::cout << "Обновлены настройки гибридного рендеринга" << std::endl;
+    SAFE_PRINT_LINE("Обновлены настройки гибридного рендеринга");
     
     // Обновляем настройки дочерних рендереров
     if (gaussianRenderer) {
@@ -260,7 +261,7 @@ void HybridRenderer3D::executeGaussianRasterization(const std::vector<std::share
     bindRenderTarget(RenderPass::GAUSSIAN_RASTERIZATION);
     
     if (!gaussianRenderer) {
-        std::cerr << "Гауссиановый рендерер не инициализирован!" << std::endl;
+        SAFE_ERROR("Гауссиановый рендерер не инициализирован!");
         return;
     }
     
@@ -276,7 +277,7 @@ void HybridRenderer3D::executeGaussianRasterization(const std::vector<std::share
 }
 
 void HybridRenderer3D::executeRayTracedGI() {
-    std::cout << "Выполнение ray-traced глобального освещения..." << std::endl;
+    SAFE_PRINT_LINE("Выполнение ray-traced глобального освещения...");
     
     bindRenderTarget(RenderPass::RAY_TRACED_GI);
     setupShaderForPass(RenderPass::RAY_TRACED_GI);
@@ -288,7 +289,7 @@ void HybridRenderer3D::executeRayTracedGI() {
 }
 
 void HybridRenderer3D::executeRayTracedReflections() {
-    std::cout << "Выполнение ray-traced отражений..." << std::endl;
+    SAFE_PRINT_LINE("Выполнение ray-traced отражений...");
     
     bindRenderTarget(RenderPass::RAY_TRACED_REFLECTIONS);
     setupShaderForPass(RenderPass::RAY_TRACED_REFLECTIONS);
@@ -299,7 +300,7 @@ void HybridRenderer3D::executeRayTracedReflections() {
 }
 
 void HybridRenderer3D::executeRayTracedShadows() {
-    std::cout << "Выполнение ray-traced теней..." << std::endl;
+    SAFE_PRINT_LINE("Выполнение ray-traced теней...");
     
     bindRenderTarget(RenderPass::RAY_TRACED_SHADOWS);
     setupShaderForPass(RenderPass::RAY_TRACED_SHADOWS);
@@ -310,7 +311,7 @@ void HybridRenderer3D::executeRayTracedShadows() {
 }
 
 void HybridRenderer3D::executeCompositing() {
-    std::cout << "Выполнение композитинга..." << std::endl;
+    SAFE_PRINT_LINE("Выполнение композитинга...");
     
     bindRenderTarget(RenderPass::COMPOSITING);
     setupShaderForPass(RenderPass::COMPOSITING);
@@ -320,14 +321,14 @@ void HybridRenderer3D::executeCompositing() {
 }
 
 void HybridRenderer3D::executeDenoising() {
-    std::cout << "Выполнение AI деноизинга..." << std::endl;
+    SAFE_PRINT_LINE("Выполнение AI деноизинга...");
     
     // TODO: Применение деноизинга к ray-traced буферам
     // Использование temporal и spatial фильтров
 }
 
 void HybridRenderer3D::executeNeuralUpscaling() {
-    std::cout << "Выполнение нейронного масштабирования..." << std::endl;
+    SAFE_PRINT_LINE("Выполнение нейронного масштабирования...");
     
     // TODO: Применение AI upscaling для повышения разрешения
     float scaleFactor = renderSettings.upscalingFactor;
@@ -385,7 +386,7 @@ void HybridRenderer3D::adjustRenderSettings() {
 }
 
 void HybridRenderer3D::setupRenderBuffers() {
-    std::cout << "Настройка буферов гибридного рендеринга..." << std::endl;
+    SAFE_PRINT_LINE("Настройка буферов гибридного рендеринга...");
     
     // TODO: Создание GPU буферов для различных этапов рендеринга
     renderBuffers.width = screenWidth;
@@ -463,7 +464,7 @@ void HybridRenderer3D::RenderBuffers::resize(int w, int h) {
 
 void HybridRenderer3D::RenderBuffers::cleanup() {
     // TODO: Очистка GPU ресурсов буферов
-    std::cout << "Очистка render buffers" << std::endl;
+    SAFE_PRINT_LINE("Очистка render buffers");
 }
 
 // === ReSTIRGlobalIllumination Implementation ===
@@ -485,14 +486,14 @@ bool ReSTIRGlobalIllumination::initialize(int width, int height) {
     setupReservoirs();
     
     initialized = true;
-    std::cout << "ReSTIR GI успешно инициализирован" << std::endl;
+    SAFE_PRINT_LINE("ReSTIR GI успешно инициализирован");
     return true;
 }
 
 void ReSTIRGlobalIllumination::cleanup() {
     if (!initialized) return;
     
-    std::cout << "Очистка ReSTIR GI..." << std::endl;
+    SAFE_PRINT_LINE("Очистка ReSTIR GI...");
     // TODO: Очистка GPU ресурсов
     initialized = false;
 }
@@ -506,7 +507,7 @@ void ReSTIRGlobalIllumination::computeGlobalIllumination(const Math::Matrix4& vi
     
     auto startTime = std::chrono::high_resolution_clock::now();
     
-    std::cout << "Вычисление глобального освещения ReSTIR..." << std::endl;
+    SAFE_PRINT_LINE("Вычисление глобального освещения ReSTIR...");
     
     // Этапы ReSTIR алгоритма
     this->candidateGeneration();
@@ -521,12 +522,12 @@ void ReSTIRGlobalIllumination::computeGlobalIllumination(const Math::Matrix4& vi
 
 void ReSTIRGlobalIllumination::setSettings(const ReSTIRSettings& newSettings) {
     settings = newSettings;
-    std::cout << "Обновлены настройки ReSTIR GI" << std::endl;
+    SAFE_PRINT_LINE("Обновлены настройки ReSTIR GI");
 }
 
 void ReSTIRGlobalIllumination::setupReservoirs() {
     // TODO: Настройка reservoir буферов для ReSTIR
-    std::cout << "Настройка reservoirs для ReSTIR..." << std::endl;
+    SAFE_PRINT_LINE("Настройка reservoirs для ReSTIR...");
 }
 
 void ReSTIRGlobalIllumination::candidateGeneration() {
@@ -565,7 +566,7 @@ AIDenoiser::~AIDenoiser() {
 }
 
 bool AIDenoiser::initialize() {
-    std::cout << "Инициализация AI деноизера..." << std::endl;
+    SAFE_PRINT_LINE("Инициализация AI деноизера...");
     
     // TODO: Загрузка шейдеров для деноизинга
     // bilateralShader = loadShader("bilateral_denoise");
@@ -573,14 +574,14 @@ bool AIDenoiser::initialize() {
     // temporalShader = loadShader("temporal_denoise");
     
     initialized = true;
-    std::cout << "AI деноизер успешно инициализирован" << std::endl;
+    SAFE_PRINT_LINE("AI деноизер успешно инициализирован");
     return true;
 }
 
 void AIDenoiser::cleanup() {
     if (!initialized) return;
     
-    std::cout << "Очистка AI деноизера..." << std::endl;
+    SAFE_PRINT_LINE("Очистка AI деноизера...");
     // TODO: Очистка ресурсов
     initialized = false;
 }
@@ -619,22 +620,22 @@ void AIDenoiser::denoise(unsigned int noisyBuffer, unsigned int outputBuffer,
 
 void AIDenoiser::setSettings(const DenoiserSettings& newSettings) {
     settings = newSettings;
-    std::cout << "Обновлены настройки AI деноизера" << std::endl;
+    SAFE_PRINT_LINE("Обновлены настройки AI деноизера");
 }
 
 void AIDenoiser::applyBilateralFilter(unsigned int input, unsigned int output) {
     // TODO: Применение билатерального фильтра
-    std::cout << "Применение билатерального фильтра..." << std::endl;
+    SAFE_PRINT_LINE("Применение билатерального фильтра...");
 }
 
 void AIDenoiser::applyEdgeAwareFilter(unsigned int input, unsigned int output, unsigned int normalBuffer) {
     // TODO: Применение edge-aware фильтра с использованием нормалей
-    std::cout << "Применение edge-aware фильтра..." << std::endl;
+    SAFE_PRINT_LINE("Применение edge-aware фильтра...");
 }
 
 void AIDenoiser::applyTemporalAccumulation(unsigned int input, unsigned int output, unsigned int motionBuffer) {
     // TODO: Применение временного накопления с motion vectors
-    std::cout << "Применение временного накопления..." << std::endl;
+    SAFE_PRINT_LINE("Применение временного накопления...");
 }
 
 // === NeuralUpscaler Implementation ===
@@ -650,7 +651,7 @@ NeuralUpscaler::~NeuralUpscaler() {
 }
 
 bool NeuralUpscaler::initialize() {
-    std::cout << "Инициализация нейронного масштабировщика..." << std::endl;
+    SAFE_PRINT_LINE("Инициализация нейронного масштабировщика...");
     
     // TODO: Загрузка шейдеров для масштабирования
     // bilinearShader = loadShader("bilinear_upscale");
@@ -658,14 +659,14 @@ bool NeuralUpscaler::initialize() {
     // edgeEnhancedShader = loadShader("edge_enhanced_upscale");
     
     initialized = true;
-    std::cout << "Нейронный масштабировщик успешно инициализирован" << std::endl;
+    SAFE_PRINT_LINE("Нейронный масштабировщик успешно инициализирован");
     return true;
 }
 
 void NeuralUpscaler::cleanup() {
     if (!initialized) return;
     
-    std::cout << "Очистка нейронного масштабировщика..." << std::endl;
+    SAFE_PRINT_LINE("Очистка нейронного масштабировщика...");
     // TODO: Очистка ресурсов
     initialized = false;
 }
@@ -705,25 +706,25 @@ void NeuralUpscaler::upscale(unsigned int inputBuffer, unsigned int outputBuffer
 
 void NeuralUpscaler::setSettings(const UpscalerSettings& newSettings) {
     settings = newSettings;
-    std::cout << "Обновлены настройки нейронного масштабировщика" << std::endl;
+    SAFE_PRINT_LINE("Обновлены настройки нейронного масштабировщика");
 }
 
 void NeuralUpscaler::applyBilinearUpscaling(unsigned int input, unsigned int output,
                                            int inW, int inH, int outW, int outH) {
     // TODO: Применение билинейного масштабирования
-    std::cout << "Применение билинейного масштабирования..." << std::endl;
+    SAFE_PRINT_LINE("Применение билинейного масштабирования...");
 }
 
 void NeuralUpscaler::applyLanczosUpscaling(unsigned int input, unsigned int output,
                                           int inW, int inH, int outW, int outH) {
     // TODO: Применение Lanczos масштабирования
-    std::cout << "Применение Lanczos масштабирования..." << std::endl;
+    SAFE_PRINT_LINE("Применение Lanczos масштабирования...");
 }
 
 void NeuralUpscaler::applyEdgeEnhancedUpscaling(unsigned int input, unsigned int output,
                                                int inW, int inH, int outW, int outH) {
     // TODO: Применение масштабирования с улучшением краев
-    std::cout << "Применение масштабирования с улучшением краев..." << std::endl;
+    SAFE_PRINT_LINE("Применение масштабирования с улучшением краев...");
 }
 
 } // namespace Rendering

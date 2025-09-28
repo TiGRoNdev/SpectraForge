@@ -27,11 +27,11 @@ using namespace Engine3D::Core;
  * @brief Демонстрация базового рендеринга с адаптером
  */
 void demonstrateBasicRendering(RendererAdapter& adapter) {
-    std::cout << "\n=== Демонстрация базового рендеринга ===" << std::endl;
+    SAFE_PRINT_LINE("\n=== Демонстрация базового рендеринга ===");
     
     // Инициализация рендерера
     if (!adapter.initialize(800, 600)) {
-        std::cerr << "Ошибка инициализации рендерера!" << std::endl;
+        SAFE_ERROR("Ошибка инициализации рендерера!");
         return;
     }
     
@@ -47,14 +47,14 @@ void demonstrateBasicRendering(RendererAdapter& adapter) {
     // Создание меша (куб)
     auto mesh = Mesh3D::createCube(2.0f);
     if (!mesh) {
-        std::cerr << "Ошибка создания меша!" << std::endl;
+        SAFE_ERROR("Ошибка создания меша!");
         return;
     }
     
     // Создание шейдера
     auto shader = Shader3D::createBasicShader();
     if (!shader) {
-        std::cerr << "Ошибка создания шейдера!" << std::endl;
+        SAFE_ERROR("Ошибка создания шейдера!");
         return;
     }
     
@@ -64,7 +64,7 @@ void demonstrateBasicRendering(RendererAdapter& adapter) {
     adapter.enableBackfaceCulling(true);
     
     // Симуляция рендеринга нескольких кадров
-    std::cout << "Рендеринг 5 кадров..." << std::endl;
+    SAFE_PRINT_LINE("Рендеринг 5 кадров...");
     
     for (int frame = 0; frame < 5; ++frame) {
         adapter.beginFrame();
@@ -79,20 +79,20 @@ void demonstrateBasicRendering(RendererAdapter& adapter) {
         
         adapter.endFrame();
         
-        std::cout << "Кадр " << std::to_string(frame + 1) << " отрендерен" << std::endl;
+        std::cout << "Кадр " << SAFE_TO_STRING(frame + 1) << " отрендерен" << std::endl;
         
         // Небольшая пауза для имитации реального времени
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     
-    std::cout << "Рендеринг завершен" << std::endl;
+    SAFE_PRINT_LINE("Рендеринг завершен");
 }
 
 /**
  * @brief Демонстрация переключения между backend'ами
  */
 void demonstrateBackendSwitching() {
-    std::cout << "\n=== Демонстрация переключения backend'ов ===" << std::endl;
+    SAFE_PRINT_LINE("\n=== Демонстрация переключения backend'ов ===");
     
     RendererAdapter& adapter = RendererAdapter::getInstance();
     
@@ -119,7 +119,7 @@ void demonstrateBackendSwitching() {
             
             // Быстрый тест рендеринга
             if (adapter.initialize(640, 480)) {
-                std::cout << "Инициализация успешна" << std::endl;
+                SAFE_PRINT_LINE("Инициализация успешна");
                 
                 // Тест базовых функций
                 adapter.setClearColor(0.1f, 0.2f, 0.3f, 1.0f);
@@ -129,10 +129,10 @@ void demonstrateBackendSwitching() {
                 adapter.clear();
                 adapter.endFrame();
                 
-                std::cout << "Базовый рендеринг работает" << std::endl;
+                SAFE_PRINT_LINE("Базовый рендеринг работает");
                 
                 // Тест поддерживаемых функций
-                std::cout << "Поддерживаемые функции:" << std::endl;
+                SAFE_PRINT_LINE("Поддерживаемые функции:");
                 std::vector<std::string> features = {
                     "basic_rendering", "wireframe", "depth_test", "blending",
                     "ray_tracing", "gaussian_splatting", "compute_shaders"
@@ -158,7 +158,7 @@ void demonstrateBackendSwitching() {
  * @brief Демонстрация автоматического выбора backend'а
  */
 void demonstrateAutoBackendSelection() {
-    std::cout << "\n=== Демонстрация автоматического выбора backend'а ===" << std::endl;
+    SAFE_PRINT_LINE("\n=== Демонстрация автоматического выбора backend'а ===");
     
     RendererAdapter& adapter = RendererAdapter::getInstance();
     
@@ -174,7 +174,7 @@ void demonstrateAutoBackendSelection() {
         
         adapter.cleanup();
     } else {
-        std::cout << "Ошибка автоматического выбора backend'а" << std::endl;
+        SAFE_PRINT_LINE("Ошибка автоматического выбора backend'а");
     }
 }
 
@@ -182,12 +182,12 @@ void demonstrateAutoBackendSelection() {
  * @brief Демонстрация обработки ошибок
  */
 void demonstrateErrorHandling() {
-    std::cout << "\n=== Демонстрация обработки ошибок ===" << std::endl;
+    SAFE_PRINT_LINE("\n=== Демонстрация обработки ошибок ===");
     
     RendererAdapter& adapter = RendererAdapter::getInstance();
     
     // Попытка рендеринга без инициализации
-    std::cout << "Тест рендеринга без инициализации..." << std::endl;
+    SAFE_PRINT_LINE("Тест рендеринга без инициализации...");
     
     auto mesh = Mesh3D::createCube(1.0f);
     auto shader = Shader3D::createBasicShader();
@@ -196,11 +196,11 @@ void demonstrateErrorHandling() {
         adapter.beginFrame();  // Должно быть безопасно
         adapter.renderMesh(*mesh, Matrix4::identity(), *shader);  // Должно быть безопасно
         adapter.endFrame();    // Должно быть безопасно
-        std::cout << "Обработка ошибок работает корректно" << std::endl;
+        SAFE_PRINT_LINE("Обработка ошибок работает корректно");
     }
     
     // Тест недоступного backend'а (если есть)
-    std::cout << "Тест недоступных backend'ов..." << std::endl;
+    SAFE_PRINT_LINE("Тест недоступных backend'ов...");
     
     // Проверяем каждый backend на доступность
     std::vector<RenderBackend> allBackends = {
@@ -224,9 +224,9 @@ void demonstrateErrorHandling() {
  */
 int main() {
     Console::initialize();
-    std::cout << "=== Демонстрация RendererAdapter ===" << std::endl;
-    std::cout << "Версия движка: HyperEngine v1.0.0" << std::endl;
-    std::cout << "Этап разработки: 2.2 Интеграция с существующим кодом" << std::endl;
+    SAFE_PRINT_LINE("=== Демонстрация RendererAdapter ===");
+    SAFE_PRINT_LINE("Версия движка: HyperEngine v1.0.0");
+    SAFE_PRINT_LINE("Этап разработки: 2.2 Интеграция с существующим кодом");
     
     try {
         // 1. Демонстрация автоматического выбора
@@ -238,7 +238,7 @@ int main() {
         // 3. Демонстрация обработки ошибок
         demonstrateErrorHandling();
         
-        std::cout << "\n=== Демонстрация завершена успешно ===" << std::endl;
+        SAFE_PRINT_LINE("\n=== Демонстрация завершена успешно ===");
         
     } catch (const std::exception& e) {
         std::cerr << "Ошибка во время демонстрации: " << e.what() << std::endl;
@@ -252,7 +252,7 @@ int main() {
  * @brief Дополнительная функция для тестирования производительности
  */
 void performanceComparison() {
-    std::cout << "\n=== Сравнение производительности backend'ов ===" << std::endl;
+    SAFE_PRINT_LINE("\n=== Сравнение производительности backend'ов ===");
     
     RendererAdapter& adapter = RendererAdapter::getInstance();
     auto availableBackends = adapter.getAvailableBackends();
@@ -262,7 +262,7 @@ void performanceComparison() {
     auto shader = Shader3D::createPhongShader();
     
     if (!mesh || !shader) {
-        std::cout << "Не удалось создать тестовые данные" << std::endl;
+        SAFE_PRINT_LINE("Не удалось создать тестовые данные");
         return;
     }
     

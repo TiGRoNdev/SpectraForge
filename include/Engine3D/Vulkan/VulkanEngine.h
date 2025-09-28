@@ -95,6 +95,24 @@ public:
      * @return true если движок инициализирован
      */
     bool isInitialized() const { return initialized; }
+    
+    /**
+     * @brief Получить Vulkan instance
+     * @return Vulkan instance
+     */
+    vk::Instance getInstance() const { return instance; }
+    
+    /**
+     * @brief Получить физическое устройство
+     * @return Vulkan физическое устройство
+     */
+    vk::PhysicalDevice getPhysicalDevice() const { return physicalDevice; }
+    
+    /**
+     * @brief Получить логическое устройство
+     * @return Vulkan логическое устройство
+     */
+    vk::Device getDevice() const { return device; }
 
 private:
     std::unique_ptr<VulkanRenderer> renderer;
@@ -102,7 +120,17 @@ private:
     std::unique_ptr<ResourceManager> resourceManager;
     std::unique_ptr<HardwareDetector> hardwareDetector;
     
+    vk::Instance instance;
+    vk::PhysicalDevice physicalDevice;
+    vk::Device device;
+    
     bool initialized = false;
+    
+    /**
+     * @brief Создание логического устройства
+     * @return Vulkan логическое устройство
+     */
+    vk::Device createLogicalDevice();
     
     // Запрет копирования
     VulkanEngine(const VulkanEngine&) = delete;

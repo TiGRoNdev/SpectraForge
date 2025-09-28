@@ -9,6 +9,7 @@
 #include "Engine3D/Vulkan/HardwareDetector.h"
 #include <iostream>
 #include <algorithm>
+#include "Engine3D/Core/Console.h"
 
 using namespace Engine3D::Vulkan;
 
@@ -74,23 +75,23 @@ UpscalerType HardwareDetector::selectUpscalerPath() {
         case VendorType::NVIDIA:
             // Проверяем поддержку DLSS (требует RTX карты)
             if (supportsRayTracing()) {
-                std::cout << "[HardwareDetector] Выбран путь DLSS для NVIDIA RTX" << std::endl;
+                SAFE_PRINT_LINE("[HardwareDetector] Выбран путь DLSS для NVIDIA RTX");
                 return UpscalerType::DLSS;
             }
             // Fallback на FSR для старых NVIDIA карт
-            std::cout << "[HardwareDetector] Fallback на FSR для старой NVIDIA карты" << std::endl;
+            SAFE_PRINT_LINE("[HardwareDetector] Fallback на FSR для старой NVIDIA карты");
             return UpscalerType::FSR;
             
         case VendorType::AMD:
-            std::cout << "[HardwareDetector] Выбран путь FSR для AMD" << std::endl;
+            SAFE_PRINT_LINE("[HardwareDetector] Выбран путь FSR для AMD");
             return UpscalerType::FSR;
             
         case VendorType::INTEL:
-            std::cout << "[HardwareDetector] Выбран путь FSR для Intel" << std::endl;
+            SAFE_PRINT_LINE("[HardwareDetector] Выбран путь FSR для Intel");
             return UpscalerType::FSR;
             
         default:
-            std::cout << "[HardwareDetector] Неизвестный вендор, upscaling отключен" << std::endl;
+            SAFE_PRINT_LINE("[HardwareDetector] Неизвестный вендор, upscaling отключен");
             return UpscalerType::NONE;
     }
 }
@@ -107,9 +108,9 @@ bool HardwareDetector::supportsCUDA() {
     if (cudaSupported) {
         // Дополнительно можно проверить наличие CUDA runtime
         // Пока просто возвращаем true для NVIDIA
-        std::cout << "[HardwareDetector] CUDA поддерживается (NVIDIA GPU)" << std::endl;
+        SAFE_PRINT_LINE("[HardwareDetector] CUDA поддерживается (NVIDIA GPU)");
     } else {
-        std::cout << "[HardwareDetector] CUDA не поддерживается (не NVIDIA GPU)" << std::endl;
+        SAFE_PRINT_LINE("[HardwareDetector] CUDA не поддерживается (не NVIDIA GPU)");
     }
     
     return cudaSupported;
@@ -127,9 +128,9 @@ bool HardwareDetector::supportsOptiX() {
     bool optixSupported = (vendor == VendorType::NVIDIA) && rtSupported;
     
     if (optixSupported) {
-        std::cout << "[HardwareDetector] OptiX поддерживается (NVIDIA RTX)" << std::endl;
+        SAFE_PRINT_LINE("[HardwareDetector] OptiX поддерживается (NVIDIA RTX)");
     } else {
-        std::cout << "[HardwareDetector] OptiX не поддерживается" << std::endl;
+        SAFE_PRINT_LINE("[HardwareDetector] OptiX не поддерживается");
     }
     
     return optixSupported;
@@ -203,9 +204,9 @@ bool HardwareDetector::checkRayTracingSupport() {
     bool rtSupported = hasRayTracingPipeline && hasAccelerationStructure && hasRayQuery;
     
     if (rtSupported) {
-        std::cout << "[HardwareDetector] Ray Tracing полностью поддерживается" << std::endl;
+        SAFE_PRINT_LINE("[HardwareDetector] Ray Tracing полностью поддерживается");
     } else {
-        std::cout << "[HardwareDetector] Ray Tracing не поддерживается:" << std::endl;
+        SAFE_PRINT_LINE("[HardwareDetector] Ray Tracing не поддерживается:");
         std::cout << "  - VK_KHR_ray_tracing_pipeline: " << (hasRayTracingPipeline ? "Да" : "Нет") << std::endl;
         std::cout << "  - VK_KHR_acceleration_structure: " << (hasAccelerationStructure ? "Да" : "Нет") << std::endl;
         std::cout << "  - VK_KHR_ray_query: " << (hasRayQuery ? "Да" : "Нет") << std::endl;

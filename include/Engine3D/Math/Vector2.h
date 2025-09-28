@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <string>
+#include "Engine3D/Core/Console.h"
 
 namespace Engine3D {
 namespace Math {
@@ -143,7 +144,7 @@ public:
 
     // Преобразование в строку для отладки
     std::string toString() const {
-        return "Vector2(" + std::to_string(x) + ", " + std::to_string(y) + ")";
+        return "Vector2(" + SAFE_TO_STRING(x) + ", " + SAFE_TO_STRING(y) + ")";
     }
 };
 

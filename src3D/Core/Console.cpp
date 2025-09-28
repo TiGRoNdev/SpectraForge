@@ -52,28 +52,28 @@ bool Console::initialize() {
     bool colorSuccess = enableColorOutput();
     bool vtSuccess = enableVirtualTerminal();
 
-    std::cout << "🔧 Инициализация консоли с поддержкой UTF-8..." << std::endl;
+    SAFE_PRINT_LINE("🔧 Инициализация консоли с поддержкой UTF-8...");
 
     if (!utf8Success) {
-        std::cout << "⚠️ Предупреждение: не удалось настроить UTF-8 кодировку" << std::endl;
+        SAFE_PRINT_LINE("⚠️ Предупреждение: не удалось настроить UTF-8 кодировку");
     }
     
     if (!localeSuccess) {
-        std::cout << "⚠️ Предупреждение: не удалось настроить локаль" << std::endl;
+        SAFE_PRINT_LINE("⚠️ Предупреждение: не удалось настроить локаль");
     }
 
     if (!colorSuccess) {
-        std::cout << "⚠️ Предупреждение: цветной вывод недоступен" << std::endl;
+        SAFE_PRINT_LINE("⚠️ Предупреждение: цветной вывод недоступен");
     }
 
     if (!vtSuccess) {
-        std::cout << "⚠️ Предупреждение: виртуальный терминал недоступен" << std::endl;
+        SAFE_PRINT_LINE("⚠️ Предупреждение: виртуальный терминал недоступен");
     }
 
     initialized = true;
     
     // Выводим информацию о консоли
-    std::cout << "✅ Консоль инициализирована успешно!" << std::endl;
+    SAFE_PRINT_LINE("✅ Консоль инициализирована успешно!");
     std::cout << getConsoleInfo() << std::endl;
 
     return true;
@@ -214,23 +214,23 @@ bool Console::enableVirtualTerminal() {
 // Метод Console::print удален, используйте std::cout для вывода текста
 
 void Console::debug(const std::string& message) {
-    log(LogLevel::DEBUG, message);
+    log(LogLevel::DEBUG_LEVEL, message);
 }
 
 void Console::info(const std::string& message) {
-    log(LogLevel::INFO, message);
+    log(LogLevel::INFO_LEVEL, message);
 }
 
 void Console::warning(const std::string& message) {
-    log(LogLevel::WARNING, message);
+    log(LogLevel::WARNING_LEVEL, message);
 }
 
 void Console::error(const std::string& message) {
-    log(LogLevel::ERROR, message);
+    log(LogLevel::ERROR_LEVEL, message);
 }
 
 void Console::critical(const std::string& message) {
-    log(LogLevel::CRITICAL, message);
+    log(LogLevel::CRITICAL_LEVEL, message);
 }
 
 void Console::log(LogLevel level, const std::string& message) {
@@ -243,7 +243,18 @@ void Console::log(LogLevel level, const std::string& message) {
     }
     oss << "[" << levelStr << "] " << message;
     
-    std::cout << oss.str() << std::endl;
+    // Используем безопасный вывод с fallback
+    std::string fullMessage = oss.str();
+    std::string fallbackMessage = "[" + levelStr + "] " + message;
+    
+    if (!safePrint(fullMessage + "\n", fallbackMessage + "\n")) {
+        // Если даже fallback не сработал, выводим минимальную информацию
+        try {
+            std::cout << "[LOG] " << message << std::endl;
+        } catch (...) {
+            SAFE_PRINT_LINE("[LOG] Message output failed");
+        }
+    }
 }
 
 void Console::clear() {
@@ -288,39 +299,39 @@ std::string Console::getConsoleInfo() {
 
 void Console::testUnicodeDisplay() {
     std::cout << std::endl;
-    std::cout << "🧪 Тест отображения Unicode символов:" << std::endl;
-    std::cout << "════════════════════════════════════" << std::endl;
+    SAFE_PRINT_LINE("🧪 Тест отображения Unicode символов:");
+    SAFE_PRINT_LINE("════════════════════════════════════");
     
     // Кириллица
-    std::cout << "🔤 Кириллица: Привет, мир! АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ" << std::endl;
+    SAFE_PRINT_LINE("🔤 Кириллица: Привет, мир! АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ");
     
     // Эмодзи
-    std::cout << "😀 Эмодзи: 🚀🌟⭐🎯🎮🛠️💎🔥💯✨🎉🎊🌈🦄" << std::endl;
+    SAFE_PRINT_LINE("😀 Эмодзи: 🚀🌟⭐🎯🎮🛠️💎🔥💯✨🎉🎊🌈🦄");
     
     // Математические символы
-    std::cout << "🔢 Математика: ∑∏∫√∞±≤≥≠∈∉∀∃∄∅∆∇" << std::endl;
+    SAFE_PRINT_LINE("🔢 Математика: ∑∏∫√∞±≤≥≠∈∉∀∃∄∅∆∇");
     
     // Стрелки и символы
-    std::cout << "➡️ Стрелки: ←↑→↓↖↗↘↙⬅⬆⬇➡⭐✅❌⚠️" << std::endl;
+    SAFE_PRINT_LINE("➡️ Стрелки: ←↑→↓↖↗↘↙⬅⬆⬇➡⭐✅❌⚠️");
     
     // Рамки и линии
-    std::cout << "📦 Рамки: ┌─┬─┐│ │ │├─┼─┤│ │ │└─┴─┘" << std::endl;
+    SAFE_PRINT_LINE("📦 Рамки: ┌─┬─┐│ │ │├─┼─┤│ │ │└─┴─┘");
     
     // Дроби и специальные символы
-    std::cout << "🔣 Спецсимволы: ½¼¾⅓⅔⅛⅜⅝⅞™®©" << std::endl;
+    SAFE_PRINT_LINE("🔣 Спецсимволы: ½¼¾⅓⅔⅛⅜⅝⅞™®©");
     
-    std::cout << "════════════════════════════════════" << std::endl;
+    SAFE_PRINT_LINE("════════════════════════════════════");
     std::cout << std::endl;
 }
 
 void Console::testColorDisplay() {
     std::cout << std::endl;
-    std::cout << "🎨 Тест цветного вывода:" << std::endl;
-    std::cout << "═══════════════════════" << std::endl;
+    SAFE_PRINT_LINE("🎨 Тест цветного вывода:");
+    SAFE_PRINT_LINE("═══════════════════════");
     
     std::cout << std::endl;
     
-    std::cout << "═══════════════════════" << std::endl;
+    SAFE_PRINT_LINE("═══════════════════════");
     std::cout << std::endl;
 }
 
@@ -349,33 +360,193 @@ std::string Console::getColorCode(ConsoleColor color) {
 
 std::string Console::getLogLevelEmoji(LogLevel level) {
     switch (level) {
-        case LogLevel::DEBUG: return "🐛";
-        case LogLevel::INFO: return "ℹ️";
-        case LogLevel::WARNING: return "⚠️";
-        case LogLevel::ERROR: return "❌";
-        case LogLevel::CRITICAL: return "🚨";
+        case LogLevel::DEBUG_LEVEL: return "🐛";
+        case LogLevel::INFO_LEVEL: return "ℹ️";
+        case LogLevel::WARNING_LEVEL: return "⚠️";
+        case LogLevel::ERROR_LEVEL: return "❌";
+        case LogLevel::CRITICAL_LEVEL: return "🚨";
         default: return "";
     }
 }
 
 ConsoleColor Console::getLogLevelColor(LogLevel level) {
     switch (level) {
-        case LogLevel::DEBUG: return ConsoleColor::CYAN;
-        case LogLevel::INFO: return ConsoleColor::GREEN;
-        case LogLevel::WARNING: return ConsoleColor::YELLOW;
-        case LogLevel::ERROR: return ConsoleColor::RED;
-        case LogLevel::CRITICAL: return ConsoleColor::BRIGHT_RED;
+        case LogLevel::DEBUG_LEVEL: return ConsoleColor::CYAN;
+        case LogLevel::INFO_LEVEL: return ConsoleColor::GREEN;
+        case LogLevel::WARNING_LEVEL: return ConsoleColor::YELLOW;
+        case LogLevel::ERROR_LEVEL: return ConsoleColor::RED;
+        case LogLevel::CRITICAL_LEVEL: return ConsoleColor::BRIGHT_RED;
         default: return ConsoleColor::DEFAULT;
     }
 }
 
 std::string Console::getLogLevelString(LogLevel level) {
     switch (level) {
-        case LogLevel::DEBUG: return "DEBUG";
-        case LogLevel::INFO: return "INFO";
-        case LogLevel::WARNING: return "WARNING";
-        case LogLevel::ERROR: return "ERROR";
-        case LogLevel::CRITICAL: return "CRITICAL";
+        case LogLevel::DEBUG_LEVEL: return "DEBUG";
+        case LogLevel::INFO_LEVEL: return "INFO";
+        case LogLevel::WARNING_LEVEL: return "WARNING";
+        case LogLevel::ERROR_LEVEL: return "ERROR";
+        case LogLevel::CRITICAL_LEVEL: return "CRITICAL";
         default: return "UNKNOWN";
     }
+}
+
+bool Console::safePrint(const std::string& text, const std::string& fallbackText) {
+    try {
+        // Проверяем, безопасен ли текст для вывода
+        if (isTextSafe(text)) {
+            std::cout << text;
+            std::cout.flush();
+            return true;
+        } else {
+            // Используем очищенную версию или fallback
+            std::string safeText = fallbackText.empty() ? sanitizeText(text) : fallbackText;
+            std::cout << safeText;
+            std::cout.flush();
+            return false;
+        }
+    } catch (const std::exception&) {
+        // В случае ошибки выводим fallback или базовое сообщение
+        try {
+            std::string errorMsg = fallbackText.empty() ? "[Ошибка вывода]" : fallbackText;
+            std::cout << errorMsg;
+            std::cout.flush();
+        } catch (...) {
+            // Последняя попытка - выводим только ASCII
+            std::cout << "[Output Error]";
+            std::cout.flush();
+        }
+        return false;
+    }
+}
+
+bool Console::isTextSafe(const std::string& text) {
+    try {
+        // Проверяем каждый символ на корректность
+        for (size_t i = 0; i < text.length(); ++i) {
+            unsigned char c = static_cast<unsigned char>(text[i]);
+            
+            // Проверяем ASCII символы (всегда безопасны)
+            if (c < 128) {
+                continue;
+            }
+            
+            // Проверяем UTF-8 последовательности
+            if ((c & 0xE0) == 0xC0) { // 2-байтовая последовательность
+                if (i + 1 >= text.length()) return false;
+                unsigned char c2 = static_cast<unsigned char>(text[i + 1]);
+                if ((c2 & 0xC0) != 0x80) return false;
+                i += 1;
+            } else if ((c & 0xF0) == 0xE0) { // 3-байтовая последовательность
+                if (i + 2 >= text.length()) return false;
+                unsigned char c2 = static_cast<unsigned char>(text[i + 1]);
+                unsigned char c3 = static_cast<unsigned char>(text[i + 2]);
+                if ((c2 & 0xC0) != 0x80 || (c3 & 0xC0) != 0x80) return false;
+                i += 2;
+            } else if ((c & 0xF8) == 0xF0) { // 4-байтовая последовательность (эмодзи)
+                if (i + 3 >= text.length()) return false;
+                unsigned char c2 = static_cast<unsigned char>(text[i + 1]);
+                unsigned char c3 = static_cast<unsigned char>(text[i + 2]);
+                unsigned char c4 = static_cast<unsigned char>(text[i + 3]);
+                if ((c2 & 0xC0) != 0x80 || (c3 & 0xC0) != 0x80 || (c4 & 0xC0) != 0x80) return false;
+                
+                // Если эмодзи не поддерживаются, считаем небезопасным
+                if (!emojiSupported) return false;
+                i += 3;
+            } else {
+                // Некорректная UTF-8 последовательность
+                return false;
+            }
+        }
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+std::string Console::sanitizeText(const std::string& text) {
+    std::string result;
+    result.reserve(text.length());
+    
+    try {
+        for (size_t i = 0; i < text.length(); ++i) {
+            unsigned char c = static_cast<unsigned char>(text[i]);
+            
+            // Оставляем ASCII символы как есть
+            if (c < 128) {
+                result += text[i];
+                continue;
+            }
+            
+            // Обрабатываем UTF-8 последовательности
+            if ((c & 0xE0) == 0xC0 && i + 1 < text.length()) { // 2-байтовая
+                unsigned char c2 = static_cast<unsigned char>(text[i + 1]);
+                if ((c2 & 0xC0) == 0x80) {
+                    result += text[i];
+                    result += text[i + 1];
+                    i += 1;
+                    continue;
+                }
+            } else if ((c & 0xF0) == 0xE0 && i + 2 < text.length()) { // 3-байтовая
+                unsigned char c2 = static_cast<unsigned char>(text[i + 1]);
+                unsigned char c3 = static_cast<unsigned char>(text[i + 2]);
+                if ((c2 & 0xC0) == 0x80 && (c3 & 0xC0) == 0x80) {
+                    result += text[i];
+                    result += text[i + 1];
+                    result += text[i + 2];
+                    i += 2;
+                    continue;
+                }
+            } else if ((c & 0xF8) == 0xF0 && i + 3 < text.length()) { // 4-байтовая (эмодзи)
+                unsigned char c2 = static_cast<unsigned char>(text[i + 1]);
+                unsigned char c3 = static_cast<unsigned char>(text[i + 2]);
+                unsigned char c4 = static_cast<unsigned char>(text[i + 3]);
+                if ((c2 & 0xC0) == 0x80 && (c3 & 0xC0) == 0x80 && (c4 & 0xC0) == 0x80) {
+                    if (emojiSupported) {
+                        result += text[i];
+                        result += text[i + 1];
+                        result += text[i + 2];
+                        result += text[i + 3];
+                    } else {
+                        result += "?"; // Заменяем эмодзи на знак вопроса
+                    }
+                    i += 3;
+                    continue;
+                }
+            }
+            
+            // Если символ не удалось распознать, заменяем на знак вопроса
+            result += "?";
+        }
+    } catch (...) {
+        return "[Текст поврежден]";
+    }
+    
+    return result;
+}
+
+void Console::safePrintLine(const std::string& message) {
+    if (!safePrint(message + "\n", sanitizeText(message) + "\n")) {
+        // Если даже sanitized версия не работает, выводим базовое сообщение
+        try {
+            SAFE_PRINT_LINE("[Message]");
+        } catch (...) {
+            // Ничего не делаем, если даже это не работает
+        }
+    }
+}
+
+void Console::safeInfo(const std::string& message) {
+    std::string prefix = emojiSupported ? "ℹ️ " : "[INFO] ";
+    safePrintLine(prefix + message);
+}
+
+void Console::safeWarning(const std::string& message) {
+    std::string prefix = emojiSupported ? "⚠️ " : "[WARNING] ";
+    safePrintLine(prefix + message);
+}
+
+void Console::safeError(const std::string& message) {
+    std::string prefix = emojiSupported ? "❌ " : "[ERROR] ";
+    safePrintLine(prefix + message);
 }

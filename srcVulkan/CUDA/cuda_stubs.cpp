@@ -7,6 +7,7 @@
  */
 
 #include <iostream>
+#include "Engine3D/Core/Console.h"
 
 // Определяем базовые CUDA типы если не доступны
 #ifndef __CUDA_RUNTIME_H__
@@ -32,7 +33,7 @@ void launchGaussianInitialization(
     float* scales,
     int* activeMask
 ) {
-    std::cout << "[CUDA Stub] launchGaussianInitialization called (CUDA not available)" << std::endl;
+    SAFE_PRINT_LINE("[CUDA Stub] launchGaussianInitialization called (CUDA not available)");
     (void)positions; (void)numPoints; (void)gaussians; (void)colors;
     (void)opacities; (void)scales; (void)activeMask;
 }
@@ -46,7 +47,7 @@ void launchGradientComputation(
     float* scaleGrads,
     int numGaussians
 ) {
-    std::cout << "[CUDA Stub] launchGradientComputation called (CUDA not available)" << std::endl;
+    SAFE_PRINT_LINE("[CUDA Stub] launchGradientComputation called (CUDA not available)");
     (void)positions; (void)colors; (void)positionGrads; (void)colorGrads;
     (void)opacityGrads; (void)scaleGrads; (void)numGaussians;
 }
@@ -63,7 +64,7 @@ void launchParameterUpdate(
     float learningRate,
     int numGaussians
 ) {
-    std::cout << "[CUDA Stub] launchParameterUpdate called (CUDA not available)" << std::endl;
+    SAFE_PRINT_LINE("[CUDA Stub] launchParameterUpdate called (CUDA not available)");
     (void)positions; (void)colors; (void)opacities; (void)scales;
     (void)positionGrads; (void)colorGrads; (void)opacityGrads; (void)scaleGrads;
     (void)learningRate; (void)numGaussians;
@@ -81,7 +82,7 @@ void launchGaussianProjection(
     int screenWidth,
     int screenHeight
 ) {
-    std::cout << "[CUDA Stub] launchGaussianProjection called (CUDA not available)" << std::endl;
+    SAFE_PRINT_LINE("[CUDA Stub] launchGaussianProjection called (CUDA not available)");
     (void)gaussians; (void)scales; (void)viewMatrix; (void)projMatrix;
     (void)projectedGaussians; (void)depths; (void)tileAssignments;
     (void)numGaussians; (void)screenWidth; (void)screenHeight;
@@ -95,7 +96,7 @@ void launchTileAssignment(
     int numGaussians,
     int numTiles
 ) {
-    std::cout << "[CUDA Stub] launchTileAssignment called (CUDA not available)" << std::endl;
+    SAFE_PRINT_LINE("[CUDA Stub] launchTileAssignment called (CUDA not available)");
     (void)projectedGaussians; (void)depths; (void)tileAssignments;
     (void)gaussianIndices; (void)numGaussians; (void)numTiles;
 }
@@ -113,7 +114,7 @@ void launchTileRasterization(
     int screenWidth,
     int screenHeight
 ) {
-    std::cout << "[CUDA Stub] launchTileRasterization called (CUDA not available)" << std::endl;
+    SAFE_PRINT_LINE("[CUDA Stub] launchTileRasterization called (CUDA not available)");
     (void)projectedGaussians; (void)colors; (void)opacities; (void)gaussianIndices;
     (void)tileAssignments; (void)outputBuffer; (void)depthBuffer;
     (void)numTiles; (void)tileSize; (void)screenWidth; (void)screenHeight;
@@ -126,7 +127,7 @@ void launchCubRadixSort(
     void* tempStorage,
     size_t tempStorageSize
 ) {
-    std::cout << "[CUDA Stub] launchCubRadixSort called (CUDA not available)" << std::endl;
+    SAFE_PRINT_LINE("[CUDA Stub] launchCubRadixSort called (CUDA not available)");
     (void)keys; (void)values; (void)numElements; (void)tempStorage; (void)tempStorageSize;
 }
 

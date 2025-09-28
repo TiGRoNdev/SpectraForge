@@ -7,6 +7,7 @@
 #ifdef ENGINE3D_ENABLE_VULKAN
 // #include "Engine3D/Vulkan/VulkanEngine.h"
 // #include "Engine3D/Vulkan/HardwareDetector.h"
+#include "Engine3D/Core/Console.h"
 // Пока не включаем, так как Vulkan компоненты не собираются с Engine3D
 #endif
 
@@ -49,7 +50,7 @@ bool RendererAdapter::setBackend(RenderBackend backend) {
         switch (backend) {
             case RenderBackend::OPENGL:
                 if (!checkOpenGLAvailability()) {
-                    std::cerr << "[RendererAdapter] OpenGL недоступен" << std::endl;
+                    SAFE_ERROR("[RendererAdapter] OpenGL недоступен");
                     return false;
                 }
                 currentAdapter = createOpenGLAdapter();
@@ -57,7 +58,7 @@ bool RendererAdapter::setBackend(RenderBackend backend) {
                 
             case RenderBackend::VULKAN:
                 if (!checkVulkanAvailability()) {
-                    std::cerr << "[RendererAdapter] Vulkan недоступен" << std::endl;
+                    SAFE_ERROR("[RendererAdapter] Vulkan недоступен");
                     return false;
                 }
                 currentAdapter = createVulkanAdapter();
@@ -102,23 +103,23 @@ RenderBackend RendererAdapter::selectOptimalBackend() const {
     RenderBackend defaultBackend = DEFAULT_RENDER_BACKEND;
     
     if (defaultBackend == RenderBackend::VULKAN && checkVulkanAvailability()) {
-        std::cout << "[RendererAdapter] Выбран дефолтный backend: Vulkan" << std::endl;
+        SAFE_PRINT_LINE("[RendererAdapter] Выбран дефолтный backend: Vulkan");
         return RenderBackend::VULKAN;
     }
     
     if (defaultBackend == RenderBackend::OPENGL && checkOpenGLAvailability()) {
-        std::cout << "[RendererAdapter] Выбран дефолтный backend: OpenGL" << std::endl;
+        SAFE_PRINT_LINE("[RendererAdapter] Выбран дефолтный backend: OpenGL");
         return RenderBackend::OPENGL;
     }
     
     // Fallback: пробуем альтернативные backend'ы
     if (checkVulkanAvailability()) {
-        std::cout << "[RendererAdapter] Fallback на Vulkan backend" << std::endl;
+        SAFE_PRINT_LINE("[RendererAdapter] Fallback на Vulkan backend");
         return RenderBackend::VULKAN;
     }
     
     if (checkOpenGLAvailability()) {
-        std::cout << "[RendererAdapter] Fallback на OpenGL backend" << std::endl;
+        SAFE_PRINT_LINE("[RendererAdapter] Fallback на OpenGL backend");
         return RenderBackend::OPENGL;
     }
     
@@ -211,11 +212,11 @@ bool RendererAdapter::supportsFeature(const std::string& feature) const {
 }
 
 void RendererAdapter::printBackendInfo() const {
-    std::cout << "\n=== Информация о рендерере ===" << std::endl;
+    SAFE_PRINT_LINE("\n=== Информация о рендерере ===");
     std::cout << "Текущий backend: " << getBackendName() << std::endl;
     std::cout << "Инициализирован: " << (isInitialized() ? "Да" : "Нет") << std::endl;
     
-    std::cout << "\nДоступные backend'ы:" << std::endl;
+    SAFE_PRINT_LINE("\nДоступные backend'ы:");
     for (auto backend : getAvailableBackends()) {
         const char* name = "";
         switch (backend) {
@@ -227,7 +228,7 @@ void RendererAdapter::printBackendInfo() const {
     }
     
     if (currentAdapter) {
-        std::cout << "\nПоддерживаемые функции:" << std::endl;
+        SAFE_PRINT_LINE("\nПоддерживаемые функции:");
         std::vector<std::string> features = {
             "ray_tracing", "gaussian_splatting", "compute_shaders", 
             "tessellation", "geometry_shaders", "multi_draw_indirect"
@@ -238,7 +239,7 @@ void RendererAdapter::printBackendInfo() const {
                       << (supportsFeature(feature) ? "Да" : "Нет") << std::endl;
         }
     }
-    std::cout << "==============================\n" << std::endl;
+    SAFE_PRINT_LINE("==============================\n");
 }
 
 std::vector<RenderBackend> RendererAdapter::getAvailableBackends() const {
@@ -418,7 +419,7 @@ bool VulkanRendererAdapter::initialize(int width, int height) {
         mainCamera->lookAt(Vector3(0, 0, 5), Vector3(0, 0, 0), Vector3(0, 1, 0));
         
         initialized = true;
-        std::cout << "[VulkanRendererAdapter] Инициализация завершена (заглушка)" << std::endl;
+        SAFE_PRINT_LINE("[VulkanRendererAdapter] Инициализация завершена (заглушка)");
         return true;
         
     } catch (const std::exception& e) {
@@ -426,7 +427,7 @@ bool VulkanRendererAdapter::initialize(int width, int height) {
         return false;
     }
 #else
-    std::cerr << "[VulkanRendererAdapter] Vulkan поддержка не скомпилирована" << std::endl;
+    SAFE_ERROR("[VulkanRendererAdapter] Vulkan поддержка не скомпилирована");
     return false;
 #endif
 }
@@ -451,21 +452,21 @@ void VulkanRendererAdapter::beginFrame() {
     if (!initialized) return;
     
     // TODO: Вызов vulkanEngine->beginFrame()
-    std::cout << "[VulkanRendererAdapter] Begin frame (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[VulkanRendererAdapter] Begin frame (заглушка)");
 }
 
 void VulkanRendererAdapter::endFrame() {
     if (!initialized) return;
     
     // TODO: Вызов vulkanEngine->endFrame()
-    std::cout << "[VulkanRendererAdapter] End frame (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[VulkanRendererAdapter] End frame (заглушка)");
 }
 
 void VulkanRendererAdapter::clear() {
     if (!initialized) return;
     
     // TODO: Очистка Vulkan framebuffer
-    std::cout << "[VulkanRendererAdapter] Clear (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[VulkanRendererAdapter] Clear (заглушка)");
 }
 
 void VulkanRendererAdapter::setClearColor(float r, float g, float b, float a) {

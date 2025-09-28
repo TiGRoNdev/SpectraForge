@@ -58,7 +58,7 @@ std::vector<float4> generateTestPointCloud(int numPoints) {
     std::uniform_real_distribution<float> posDist(-5.0f, 5.0f);
     std::uniform_real_distribution<float> intensityDist(0.2f, 1.0f);
     
-    std::cout << "🎲 Генерация " << std::to_string(numPoints) << " случайных точек..." << std::endl;
+    std::cout << "🎲 Генерация " << SAFE_TO_STRING(numPoints) << " случайных точек..." << std::endl;
     
     for (int i = 0; i < numPoints; i++) {
         float4 point;
@@ -70,7 +70,7 @@ std::vector<float4> generateTestPointCloud(int numPoints) {
         points.push_back(point);
     }
     
-    std::cout << "✅ Точечное облако создано: " << std::to_string(points.size()) << " точек" << std::endl;
+    std::cout << "✅ Точечное облако создано: " << SAFE_TO_STRING(points.size()) << " точек" << std::endl;
     return points;
 }
 
@@ -90,7 +90,7 @@ std::vector<float4> generateSpherePointCloud(int numPoints, float radius = 2.0f)
     std::uniform_real_distribution<float> uDist(-1.0f, 1.0f);
     std::uniform_real_distribution<float> intensityDist(0.5f, 1.0f);
     
-    std::cout << "🌐 Генерация сферы из " << std::to_string(numPoints) << " точек (радиус " << std::to_string(radius) << ")..." << std::endl;
+    std::cout << "🌐 Генерация сферы из " << SAFE_TO_STRING(numPoints) << " точек (радиус " << SAFE_TO_STRING(radius) << ")..." << std::endl;
     
     for (int i = 0; i < numPoints; i++) {
         // Равномерное распределение точек на сфере
@@ -107,7 +107,7 @@ std::vector<float4> generateSpherePointCloud(int numPoints, float radius = 2.0f)
         points.push_back(point);
     }
     
-    std::cout << "✅ Сфера создана: " << std::to_string(points.size()) << " точек" << std::endl;
+    std::cout << "✅ Сфера создана: " << SAFE_TO_STRING(points.size()) << " точек" << std::endl;
     return points;
 }
 
@@ -117,7 +117,7 @@ std::vector<float4> generateSpherePointCloud(int numPoints, float radius = 2.0f)
  * @param points Точечное облако
  */
 void performanceTest(FlashGSSplatter& splatter, const std::vector<float4>& points) {
-    std::cout << "\n📊 === ТЕСТ ПРОИЗВОДИТЕЛЬНОСТИ ===" << std::endl;
+    SAFE_PRINT_LINE("\n📊 === ТЕСТ ПРОИЗВОДИТЕЛЬНОСТИ ===");
     
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
     // Инициализация гауссианов из точечного облака
@@ -128,10 +128,10 @@ void performanceTest(FlashGSSplatter& splatter, const std::vector<float4>& point
     auto end = std::chrono::high_resolution_clock::now();
     auto initTime = std::chrono::duration<float, std::milli>(end - start).count();
     
-    std::cout << "⏱️  Инициализация гауссианов: " << std::to_string(initTime) << " мс" << std::endl;
+    std::cout << "⏱️  Инициализация гауссианов: " << SAFE_TO_STRING(initTime) << " мс" << std::endl;
     
     // Тест оптимизации
-    std::cout << "🔄 Запуск оптимизации (50 итераций)..." << std::endl;
+    SAFE_PRINT_LINE("🔄 Запуск оптимизации (50 итераций)...");
     
     Engine3D::Vulkan::MultiViewImages testImages;
     testImages.viewCount = 4;
@@ -141,10 +141,10 @@ void performanceTest(FlashGSSplatter& splatter, const std::vector<float4>& point
     end = std::chrono::high_resolution_clock::now();
     
     auto optimTime = std::chrono::duration<float, std::milli>(end - start).count();
-    std::cout << "⏱️  Оптимизация (50 итераций): " << std::to_string(optimTime) << " мс" << std::endl;
+    std::cout << "⏱️  Оптимизация (50 итераций): " << SAFE_TO_STRING(optimTime) << " мс" << std::endl;
     
     // Тест растеризации
-    std::cout << "🎨 Тест растеризации..." << std::endl;
+    SAFE_PRINT_LINE("🎨 Тест растеризации...");
     
     CameraMatrix camera = {};
     // Инициализация матриц камеры (упрощенная)
@@ -155,8 +155,8 @@ void performanceTest(FlashGSSplatter& splatter, const std::vector<float4>& point
     }
     camera.width = 1920;
     camera.height = 1080;
-    camera.near = 0.1f;
-    camera.far = 100.0f;
+    camera.nearPlane = 0.1f;
+    camera.farPlane = 100.0f;
     
     start = std::chrono::high_resolution_clock::now();
     splatter.rasterizeGaussiansCUDA(camera, nullptr, nullptr, 1920, 1080);
@@ -164,21 +164,21 @@ void performanceTest(FlashGSSplatter& splatter, const std::vector<float4>& point
     end = std::chrono::high_resolution_clock::now();
     
     auto rasterTime = std::chrono::duration<float, std::milli>(end - start).count();
-    std::cout << "⏱️  Растеризация (1920x1080): " << std::to_string(rasterTime) << " мс" << std::endl;
+    std::cout << "⏱️  Растеризация (1920x1080): " << SAFE_TO_STRING(rasterTime) << " мс" << std::endl;
     
     // Итоговая статистика
-    std::cout << "\n📈 === СТАТИСТИКА ПРОИЗВОДИТЕЛЬНОСТИ ===" << std::endl;
-    std::cout << "🔹 Активных гауссианов: " << std::to_string(splatter.getActiveGaussianCount()) << std::endl;
-    std::cout << "🔹 Время последнего рендера: " << std::to_string(splatter.getLastRenderTime()) << " мс" << std::endl;
-    std::cout << "🔹 FPS (приблизительно): " << std::to_string(1000.0f / splatter.getLastRenderTime()) << std::endl;
+    SAFE_PRINT_LINE("\n📈 === СТАТИСТИКА ПРОИЗВОДИТЕЛЬНОСТИ ===");
+    std::cout << "🔹 Активных гауссианов: " << SAFE_TO_STRING(splatter.getActiveGaussianCount()) << std::endl;
+    std::cout << "🔹 Время последнего рендера: " << SAFE_TO_STRING(splatter.getLastRenderTime()) << " мс" << std::endl;
+    std::cout << "🔹 FPS (приблизительно): " << SAFE_TO_STRING(1000.0f / splatter.getLastRenderTime()) << std::endl;
     
     // Вычисляем производительность
     float totalTime = initTime + optimTime + rasterTime;
-    std::cout << "🔹 Общее время: " << std::to_string(totalTime) << " мс" << std::endl;
-    std::cout << "🔹 Точек в секунду: " << std::to_string(points.size() * 1000.0f / totalTime) << std::endl;
+    std::cout << "🔹 Общее время: " << SAFE_TO_STRING(totalTime) << " мс" << std::endl;
+    std::cout << "🔹 Точек в секунду: " << SAFE_TO_STRING(points.size() * 1000.0f / totalTime) << std::endl;
     
 #else
-    std::cout << "⚠️  CUDA interop не поддерживается - пропускаем тест производительности" << std::endl;
+    SAFE_PRINT_LINE("⚠️  CUDA interop не поддерживается - пропускаем тест производительности");
 #endif
 }
 
@@ -186,14 +186,14 @@ void performanceTest(FlashGSSplatter& splatter, const std::vector<float4>& point
  * @brief Демонстрация возможностей FlashGS
  */
 void demonstrateFlashGSCapabilities() {
-    std::cout << "\n🚀 === ДЕМОНСТРАЦИЯ ВОЗМОЖНОСТЕЙ FLASHGS ===" << std::endl;
+    SAFE_PRINT_LINE("\n🚀 === ДЕМОНСТРАЦИЯ ВОЗМОЖНОСТЕЙ FLASHGS ===");
     
     // Показываем различные режимы работы
-    std::cout << "🔹 Tile-based растеризация с 16x16 тайлами" << std::endl;
-    std::cout << "🔹 CUDA-ускоренная оптимизация параметров" << std::endl;
-    std::cout << "🔹 Адаптивный контроль плотности гауссианов" << std::endl;
-    std::cout << "🔹 Высокопроизводительная сортировка по глубине" << std::endl;
-    std::cout << "🔹 Zero-copy интеграция с Vulkan через interop" << std::endl;
+    SAFE_PRINT_LINE("🔹 Tile-based растеризация с 16x16 тайлами");
+    SAFE_PRINT_LINE("🔹 CUDA-ускоренная оптимизация параметров");
+    SAFE_PRINT_LINE("🔹 Адаптивный контроль плотности гауссианов");
+    SAFE_PRINT_LINE("🔹 Высокопроизводительная сортировка по глубине");
+    SAFE_PRINT_LINE("🔹 Zero-copy интеграция с Vulkan через interop");
     
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
     // Информация о CUDA устройстве
@@ -205,10 +205,10 @@ void demonstrateFlashGSCapabilities() {
         cudaGetDeviceProperties(&props, 0);
         
         std::cout << "\n💻 CUDA Устройство: " << props.name << std::endl;
-        std::cout << "🔹 Compute Capability: " << std::to_string(props.major) << "." << std::to_string(props.minor) << std::endl;
-        std::cout << "🔹 Глобальная память: " << std::to_string(props.totalGlobalMem / 1024 / 1024) << " МБ" << std::endl;
-        std::cout << "🔹 Мультипроцессоры: " << std::to_string(props.multiProcessorCount) << std::endl;
-        std::cout << "🔹 Максимальных потоков на блок: " << std::to_string(props.maxThreadsPerBlock) << std::endl;
+        std::cout << "🔹 Compute Capability: " << SAFE_TO_STRING(props.major) << "." << SAFE_TO_STRING(props.minor) << std::endl;
+        std::cout << "🔹 Глобальная память: " << SAFE_TO_STRING(props.totalGlobalMem / 1024 / 1024) << " МБ" << std::endl;
+        std::cout << "🔹 Мультипроцессоры: " << SAFE_TO_STRING(props.multiProcessorCount) << std::endl;
+        std::cout << "🔹 Максимальных потоков на блок: " << SAFE_TO_STRING(props.maxThreadsPerBlock) << std::endl;
     }
 #endif
 }
@@ -222,27 +222,27 @@ int main() {
     console.initialize();
 
     
-    std::cout << "🎮 FlashGS Demo - CUDA-ускоренный 3D Gaussian Splatting" << std::endl;
-    std::cout << "========================================================" << std::endl;
+    SAFE_PRINT_LINE("🎮 FlashGS Demo - CUDA-ускоренный 3D Gaussian Splatting");
+    SAFE_PRINT_LINE("========================================================");
     
     try {
         // Проверка поддержки CUDA
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
         if (!CudaInterop::isInteropSupported()) {
-            std::cout << "⚠️  CUDA-Vulkan interop не поддерживается на этой системе" << std::endl;
-            std::cout << "📝 Демо будет работать в ограниченном режиме" << std::endl;
+            SAFE_PRINT_LINE("⚠️  CUDA-Vulkan interop не поддерживается на этой системе");
+            SAFE_PRINT_LINE("📝 Демо будет работать в ограниченном режиме");
         } else {
-            std::cout << "✅ CUDA-Vulkan interop поддерживается" << std::endl;
+            SAFE_PRINT_LINE("✅ CUDA-Vulkan interop поддерживается");
         }
 #else
-        std::cout << "⚠️  Демо скомпилировано без поддержки CUDA" << std::endl;
+        SAFE_PRINT_LINE("⚠️  Демо скомпилировано без поддержки CUDA");
 #endif
         
         // Демонстрация возможностей
         demonstrateFlashGSCapabilities();
         
         // Создание FlashGS splatter
-        std::cout << "\n🔧 Инициализация FlashGSSplatter..." << std::endl;
+        SAFE_PRINT_LINE("\n🔧 Инициализация FlashGSSplatter...");
         
         auto splatter = std::make_unique<FlashGSSplatter>();
         
@@ -253,17 +253,17 @@ int main() {
         if (CudaInterop::isInteropSupported()) {
             interop = std::make_shared<CudaInterop>();
             // В полной версии здесь будет инициализация с Vulkan устройством
-            std::cout << "🔗 CUDA interop создан" << std::endl;
+            SAFE_PRINT_LINE("🔗 CUDA interop создан");
         }
 #endif
         
         // Инициализация splatter
         if (!splatter->init(interop)) {
-            std::cerr << "❌ Ошибка инициализации FlashGSSplatter" << std::endl;
+            SAFE_ERROR("❌ Ошибка инициализации FlashGSSplatter");
             return -1;
         }
         
-        std::cout << "✅ FlashGSSplatter инициализирован успешно" << std::endl;
+        SAFE_PRINT_LINE("✅ FlashGSSplatter инициализирован успешно");
         
         // Настройка параметров оптимизации
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
@@ -275,32 +275,32 @@ int main() {
         params.iterationCount = 100;
         
         splatter->setOptimizationParams(params);
-        std::cout << "⚙️  Параметры оптимизации установлены" << std::endl;
+        SAFE_PRINT_LINE("⚙️  Параметры оптимизации установлены");
 #endif
         
         // Тест с различными сценариями
-        std::cout << "\n🧪 === ТЕСТОВЫЕ СЦЕНАРИИ ===" << std::endl;
+        SAFE_PRINT_LINE("\n🧪 === ТЕСТОВЫЕ СЦЕНАРИИ ===");
         
         // Сценарий 1: Небольшое случайное облако
-        std::cout << "\n🔸 Сценарий 1: Случайное облако (1000 точек)" << std::endl;
+        SAFE_PRINT_LINE("\n🔸 Сценарий 1: Случайное облако (1000 точек)");
         auto randomCloud = generateTestPointCloud(1000);
         performanceTest(*splatter, randomCloud);
         
         // Сценарий 2: Сфера
-        std::cout << "\n🔸 Сценарий 2: Сфера (5000 точек)" << std::endl;
+        SAFE_PRINT_LINE("\n🔸 Сценарий 2: Сфера (5000 точек)");
         auto sphereCloud = generateSpherePointCloud(5000, 3.0f);
         performanceTest(*splatter, sphereCloud);
         
         // Сценарий 3: Большое облако (если хватает памяти)
-        std::cout << "\n🔸 Сценарий 3: Большое случайное облако (20000 точек)" << std::endl;
+        SAFE_PRINT_LINE("\n🔸 Сценарий 3: Большое случайное облако (20000 точек)");
         auto largeCloud = generateTestPointCloud(20000);
         performanceTest(*splatter, largeCloud);
         
         // Завершение
-        std::cout << "\n✅ === ДЕМО ЗАВЕРШЕНО УСПЕШНО ===" << std::endl;
-        std::cout << "🎯 FlashGS показал высокую производительность CUDA-ускоренного рендеринга" << std::endl;
-        std::cout << "📈 Tile-based подход обеспечивает эффективную растеризацию больших сцен" << std::endl;
-        std::cout << "🚀 Готов к интеграции в полнофункциональный рендеринг pipeline" << std::endl;
+        SAFE_PRINT_LINE("\n✅ === ДЕМО ЗАВЕРШЕНО УСПЕШНО ===");
+        SAFE_PRINT_LINE("🎯 FlashGS показал высокую производительность CUDA-ускоренного рендеринга");
+        SAFE_PRINT_LINE("📈 Tile-based подход обеспечивает эффективную растеризацию больших сцен");
+        SAFE_PRINT_LINE("🚀 Готов к интеграции в полнофункциональный рендеринг pipeline");
         
     } catch (const std::exception& e) {
         std::cerr << "❌ Критическая ошибка: " << e.what() << std::endl;

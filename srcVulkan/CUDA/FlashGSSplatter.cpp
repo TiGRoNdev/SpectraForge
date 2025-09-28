@@ -13,6 +13,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <algorithm>
+#include "Engine3D/Core/Console.h"
 
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
 // Объявления внешних CUDA kernel функций с C linkage
@@ -106,8 +107,8 @@ bool TileBasedRasterizer::init(uint32_t w, uint32_t h, uint32_t tSize) {
     this->height = h;
     this->tileSize = tSize;
     
-    std::cout << "[TileBasedRasterizer] Инициализация " << std::to_string(w) << "x" << std::to_string(h) 
-              << " с размером тайла " << std::to_string(tSize) << std::endl;
+    SAFE_PRINT_LINE("[TileBasedRasterizer] Инициализация " + SAFE_TO_STRING(w) + "x" + SAFE_TO_STRING(h) 
+              + " с размером тайла " + SAFE_TO_STRING(tSize));
     
     initialized = true;
     return true;
@@ -118,17 +119,17 @@ void TileBasedRasterizer::shutdown() {
         return;
     }
     
-    std::cout << "[TileBasedRasterizer] Завершение работы" << std::endl;
+    SAFE_PRINT_LINE("[TileBasedRasterizer] Завершение работы");
     initialized = false;
 }
 
 void TileBasedRasterizer::rasterize(const GaussianParams& params, const CameraParams& /* camera */) {
     if (!initialized) {
-        std::cerr << "[TileBasedRasterizer] Ошибка: Растеризатор не инициализирован" << std::endl;
+        SAFE_ERROR("[TileBasedRasterizer] Ошибка: Растеризатор не инициализирован");
         return;
     }
     
-    std::cout << "[TileBasedRasterizer] Растеризация " << std::to_string(params.count) << " гауссианов (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[TileBasedRasterizer] Растеризация " + SAFE_TO_STRING(params.count) + " гауссианов (заглушка)");
     // TODO: Реальная растеризация на этапе 3
 }
 
@@ -153,7 +154,7 @@ FlashGSSplatter::~FlashGSSplatter() {
 
 bool FlashGSSplatter::init(std::shared_ptr<CudaInterop> interop) {
     try {
-        std::cout << "[FlashGSSplatter] Инициализация CUDA Gaussian Splatter..." << std::endl;
+        SAFE_PRINT_LINE("[FlashGSSplatter] Инициализация CUDA Gaussian Splatter...");
         
         // Сохраняем interop объект
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
@@ -173,22 +174,22 @@ bool FlashGSSplatter::init(std::shared_ptr<CudaInterop> interop) {
         // Создаем растеризатор (legacy)
         rasterizer = std::make_unique<TileBasedRasterizer>();
         if (!rasterizer->init(1920, 1080, 16)) {
-            std::cerr << "[FlashGSSplatter] Ошибка инициализации растеризатора" << std::endl;
+            SAFE_ERROR("[FlashGSSplatter] Ошибка инициализации растеризатора");
             return false;
         }
         
         // Инициализируем CUDA ресурсы
         if (!initCUDA()) {
-            std::cerr << "[FlashGSSplatter] Ошибка инициализации CUDA" << std::endl;
+            SAFE_ERROR("[FlashGSSplatter] Ошибка инициализации CUDA");
             return false;
         }
         
         initialized = true;
-        std::cout << "[FlashGSSplatter] Инициализация завершена успешно" << std::endl;
+        SAFE_PRINT_LINE("[FlashGSSplatter] Инициализация завершена успешно");
         return true;
         
     } catch (const std::exception& e) {
-        std::cerr << "[FlashGSSplatter] Ошибка инициализации: " << e.what() << std::endl;
+        SAFE_ERROR( "[FlashGSSplatter] Ошибка инициализации: " + std::string(e.what()));
         return false;
     }
 }
@@ -198,7 +199,7 @@ void FlashGSSplatter::shutdown() {
         return;
     }
     
-    std::cout << "[FlashGSSplatter] Завершение работы..." << std::endl;
+    SAFE_PRINT_LINE("[FlashGSSplatter] Завершение работы...");
     
     // Освобождаем CUDA ресурсы
     cleanupCUDA();
@@ -217,22 +218,22 @@ void FlashGSSplatter::shutdown() {
 #endif
     
     initialized = false;
-    std::cout << "[FlashGSSplatter] Завершение работы завершено" << std::endl;
+    SAFE_PRINT_LINE("[FlashGSSplatter] Завершение работы завершено");
 }
 
 void FlashGSSplatter::optimizeGaussians(const Vulkan::MultiViewImages& images, int iterations) {
     if (!initialized) {
-        std::cerr << "[FlashGSSplatter] Ошибка: Splatter не инициализирован" << std::endl;
+        SAFE_ERROR("[FlashGSSplatter] Ошибка: Splatter не инициализирован");
         return;
     }
     
-    std::cout << "[FlashGSSplatter] Оптимизация гауссианов из " << std::to_string(images.viewCount) 
-              << " изображений..." << std::endl;
+    SAFE_PRINT_LINE("[FlashGSSplatter] Оптимизация гауссианов из " + SAFE_TO_STRING(images.viewCount) 
+              + " изображений...");
     
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
     if (cudaStream && activeGaussianCount > 0) {
-        std::cout << "[FlashGSSplatter] CUDA-ускоренная оптимизация " << std::to_string(activeGaussianCount) 
-                  << " гауссианов за " << std::to_string(iterations) << " итераций" << std::endl;
+        SAFE_PRINT_LINE("[FlashGSSplatter] CUDA-ускоренная оптимизация " + SAFE_TO_STRING(activeGaussianCount) 
+                  + " гауссианов за " + SAFE_TO_STRING(iterations) + " итераций");
         
         // Запускаем таймер производительности
         if (startEvent) cudaEventRecord(startEvent, cudaStream);
@@ -275,7 +276,7 @@ void FlashGSSplatter::optimizeGaussians(const Vulkan::MultiViewImages& images, i
             // Синхронизация потока каждые 50 итераций для проверки прогресса
             if (iter % 50 == 0) {
                 cudaStreamSynchronize(cudaStream);
-                std::cout << "[FlashGSSplatter] Итерация " << std::to_string(iter) << "/" << std::to_string(iterations) << std::endl;
+                SAFE_PRINT_LINE("[FlashGSSplatter] Итерация " + SAFE_TO_STRING(iter) + "/" + SAFE_TO_STRING(iterations));
             }
         }
         
@@ -286,13 +287,12 @@ void FlashGSSplatter::optimizeGaussians(const Vulkan::MultiViewImages& images, i
             cudaEventElapsedTime(&lastRenderTime, startEvent, stopEvent);
         }
         
-        std::cout << "[FlashGSSplatter] Оптимизация завершена за " << std::to_string(lastRenderTime) 
-                  << " мс" << std::endl;
+        SAFE_PRINT_LINE("[FlashGSSplatter] Оптимизация завершена за " + SAFE_TO_STRING(lastRenderTime) 
+                  + " мс");
     } else {
 #endif
         // Fallback к legacy режиму
-        std::cout << "[FlashGSSplatter] Оптимизация в legacy режиме (заглушка) - " 
-                  << iterations << " итераций" << std::endl;
+        SAFE_PRINT_LINE("[FlashGSSplatter] Оптимизация в legacy режиме (заглушка) - " + SAFE_TO_STRING(iterations) + " итераций");
         
         // Устанавливаем тестовые параметры
         legacyParams.count = 10000; // Примерное количество гауссианов
@@ -304,11 +304,11 @@ void FlashGSSplatter::optimizeGaussians(const Vulkan::MultiViewImages& images, i
 
 Vulkan::PrimaryImage FlashGSSplatter::rasterizeGaussians(const CameraParams& camera) {
     if (!initialized) {
-        std::cerr << "[FlashGSSplatter] Ошибка: Splatter не инициализирован" << std::endl;
+        SAFE_ERROR("[FlashGSSplatter] Ошибка: Splatter не инициализирован");
         return Vulkan::PrimaryImage{};
     }
     
-    std::cout << "[FlashGSSplatter] Растеризация " << std::to_string(legacyParams.count) << " гауссианов" << std::endl;
+    SAFE_PRINT_LINE("[FlashGSSplatter] Растеризация " + SAFE_TO_STRING(legacyParams.count) + " гауссианов");
     
     // Используем растеризатор
     if (rasterizer) {
@@ -327,22 +327,22 @@ Vulkan::PrimaryImage FlashGSSplatter::rasterizeGaussians(const CameraParams& cam
     result.width = 1920;
     result.height = 1080;
     
-    std::cout << "[FlashGSSplatter] Растеризация завершена (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[FlashGSSplatter] Растеризация завершена (заглушка)");
     return result;
 }
 
 // Приватные методы
 
 bool FlashGSSplatter::initCUDA() {
-    std::cout << "[FlashGSSplatter] Инициализация CUDA ресурсов..." << std::endl;
+    SAFE_PRINT_LINE("[FlashGSSplatter] Инициализация CUDA ресурсов...");
     
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
     try {
         // Создание CUDA stream
         cudaError_t result = cudaStreamCreate(&cudaStream);
         if (result != cudaSuccess) {
-            std::cerr << "[FlashGSSplatter] Ошибка создания CUDA stream: " 
-                     << cudaGetErrorString(result) << std::endl;
+            SAFE_ERROR( "[FlashGSSplatter] Ошибка создания CUDA stream: " 
+                     + std::string(cudaGetErrorString(result)));
             return false;
         }
         
@@ -352,27 +352,27 @@ bool FlashGSSplatter::initCUDA() {
         
         // Выделяем базовые GPU буферы (будут расширены по необходимости)
         if (!allocateGPUBuffers(1920, 1080)) {
-            std::cerr << "[FlashGSSplatter] Ошибка выделения GPU буферов" << std::endl;
+            SAFE_ERROR("[FlashGSSplatter] Ошибка выделения GPU буферов");
             return false;
         }
         
-        std::cout << "[FlashGSSplatter] CUDA ресурсы инициализированы успешно" << std::endl;
+        SAFE_PRINT_LINE("[FlashGSSplatter] CUDA ресурсы инициализированы успешно");
     return true;
         
     } catch (const std::exception& e) {
-        std::cerr << "[FlashGSSplatter] Исключение при инициализации CUDA: " 
-                 << e.what() << std::endl;
+        SAFE_ERROR( "[FlashGSSplatter] Исключение при инициализации CUDA: " 
+                 + std::string(e.what()));
         return false;
     }
 #else
-    std::cout << "[FlashGSSplatter] CUDA interop не поддерживается" << std::endl;
+    SAFE_PRINT_LINE("[FlashGSSplatter] CUDA interop не поддерживается");
     cudaStream = nullptr;
     return true; // Не ошибка, просто нет поддержки
 #endif
 }
 
 void FlashGSSplatter::cleanupCUDA() {
-    std::cout << "[FlashGSSplatter] Освобождение CUDA ресурсов..." << std::endl;
+    SAFE_PRINT_LINE("[FlashGSSplatter] Освобождение CUDA ресурсов...");
     
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
     // Освобождаем GPU буферы
@@ -394,7 +394,7 @@ void FlashGSSplatter::cleanupCUDA() {
         cudaStream = nullptr;
     }
     
-    std::cout << "[FlashGSSplatter] CUDA ресурсы освобождены" << std::endl;
+    SAFE_PRINT_LINE("[FlashGSSplatter] CUDA ресурсы освобождены");
 #else
     cudaStream = nullptr;
 #endif
@@ -411,30 +411,30 @@ bool FlashGSSplatter::allocateGPUBuffers(int width, int height) {
         size_t gaussianSize = maxGaussians * sizeof(GPUGaussian);
         cudaError_t result = cudaMalloc(&d_gaussians, gaussianSize);
         if (result != cudaSuccess) {
-            std::cerr << "[FlashGSSplatter] Ошибка выделения d_gaussians: " 
-                     << cudaGetErrorString(result) << std::endl;
+            SAFE_ERROR( "[FlashGSSplatter] Ошибка выделения d_gaussians: " 
+                     + std::string(cudaGetErrorString(result)));
             return false;
         }
         
         // Буферы для проекции и сортировки
         result = cudaMalloc(&d_projectedGaussians, maxGaussians * sizeof(ProjectedGaussian));
         if (result != cudaSuccess) {
-            std::cerr << "[FlashGSSplatter] Ошибка выделения d_projectedGaussians: " 
-                     << cudaGetErrorString(result) << std::endl;
+            SAFE_ERROR( "[FlashGSSplatter] Ошибка выделения d_projectedGaussians: " 
+                     + std::string(cudaGetErrorString(result)));
             return false;
         }
         
         result = cudaMalloc(&d_sortedIndices, maxGaussians * sizeof(uint32_t));
         if (result != cudaSuccess) {
-            std::cerr << "[FlashGSSplatter] Ошибка выделения d_sortedIndices: " 
-                     << cudaGetErrorString(result) << std::endl;
+            SAFE_ERROR( "[FlashGSSplatter] Ошибка выделения d_sortedIndices: " 
+                     + std::string(cudaGetErrorString(result)));
             return false;
         }
         
         result = cudaMalloc(&d_tileAssignments, maxGaussians * sizeof(uint32_t));
         if (result != cudaSuccess) {
-            std::cerr << "[FlashGSSplatter] Ошибка выделения d_tileAssignments: " 
-                     << cudaGetErrorString(result) << std::endl;
+            SAFE_ERROR( "[FlashGSSplatter] Ошибка выделения d_tileAssignments: " 
+                     + std::string(cudaGetErrorString(result)));
             return false;
         }
         
@@ -442,16 +442,16 @@ bool FlashGSSplatter::allocateGPUBuffers(int width, int height) {
         int numTiles = ((width + 15) / 16) * ((height + 15) / 16); // 16x16 tiles
         result = cudaMalloc(&d_tileOffsets, (numTiles + 1) * sizeof(uint32_t));
         if (result != cudaSuccess) {
-            std::cerr << "[FlashGSSplatter] Ошибка выделения d_tileOffsets: " 
-                     << cudaGetErrorString(result) << std::endl;
+            SAFE_ERROR( "[FlashGSSplatter] Ошибка выделения d_tileOffsets: " 
+                     + std::string(cudaGetErrorString(result)));
             return false;
         }
         
         // Буферы для оптимизации
         result = cudaMalloc(&d_gradients, maxGaussians * sizeof(float4));
         if (result != cudaSuccess) {
-            std::cerr << "[FlashGSSplatter] Ошибка выделения d_gradients: " 
-                     << cudaGetErrorString(result) << std::endl;
+            SAFE_ERROR( "[FlashGSSplatter] Ошибка выделения d_gradients: " 
+                     + std::string(cudaGetErrorString(result)));
             return false;
         }
         
@@ -459,40 +459,37 @@ bool FlashGSSplatter::allocateGPUBuffers(int width, int height) {
         size_t pixelCount = width * height;
         result = cudaMalloc(&d_framebuffer, pixelCount * sizeof(float4));
         if (result != cudaSuccess) {
-            std::cerr << "[FlashGSSplatter] Ошибка выделения d_framebuffer: " 
-                     << cudaGetErrorString(result) << std::endl;
+            SAFE_ERROR( "[FlashGSSplatter] Ошибка выделения d_framebuffer: " 
+                     + std::string(cudaGetErrorString(result)));
             return false;
         }
         
         result = cudaMalloc(&d_depthBuffer, pixelCount * sizeof(float));
         if (result != cudaSuccess) {
-            std::cerr << "[FlashGSSplatter] Ошибка выделения d_depthBuffer: " 
-                     << cudaGetErrorString(result) << std::endl;
+            SAFE_ERROR("[FlashGSSplatter] Ошибка выделения d_depthBuffer: " + std::string(cudaGetErrorString(result)));
             return false;
         }
         
         // Инициализируем буферы нулями
         result = cudaMemset(d_framebuffer, 0, pixelCount * sizeof(float4));
         if (result != cudaSuccess) {
-            std::cerr << "[FlashGSSplatter] Ошибка инициализации d_framebuffer: " 
-                     << cudaGetErrorString(result) << std::endl;
+            SAFE_ERROR("[FlashGSSplatter] Ошибка инициализации d_framebuffer: " + std::string(cudaGetErrorString(result)));
             return false;
         }
         
         result = cudaMemset(d_depthBuffer, 0, pixelCount * sizeof(float));
         if (result != cudaSuccess) {
-            std::cerr << "[FlashGSSplatter] Ошибка инициализации d_depthBuffer: " 
-                     << cudaGetErrorString(result) << std::endl;
+            SAFE_ERROR("[FlashGSSplatter] Ошибка инициализации d_depthBuffer: " + std::string(cudaGetErrorString(result)));
             return false;
         }
         
-        std::cout << "[FlashGSSplatter] GPU буферы выделены: " << std::to_string(width) << "x" << std::to_string(height) 
-                  << ", " << std::to_string(maxGaussians) << " гауссианов" << std::endl;
+        SAFE_PRINT_LINE("[FlashGSSplatter] GPU буферы выделены: " + SAFE_TO_STRING(width) + "x" + SAFE_TO_STRING(height) 
+                  + ", " + SAFE_TO_STRING(maxGaussians) + " гауссианов");
         
         return true;
         
     } catch (const std::exception& e) {
-        std::cerr << "[FlashGSSplatter] Ошибка выделения GPU буферов: " << e.what() << std::endl;
+        SAFE_ERROR( "[FlashGSSplatter] Ошибка выделения GPU буферов: " + std::string(e.what()));
         freeGPUBuffers(); // Очищаем частично выделенные ресурсы
         return false;
     }
@@ -514,14 +511,14 @@ void FlashGSSplatter::freeGPUBuffers() {
 
 void FlashGSSplatter::initializeFromPointCloud(const float4* points, int numPoints, float baseScale) {
     if (!initialized || !d_gaussians) {
-        std::cerr << "[FlashGSSplatter] Не инициализирован для инициализации из точечного облака" << std::endl;
+        SAFE_ERROR("[FlashGSSplatter] Не инициализирован для инициализации из точечного облака");
         return;
     }
     
-    activeGaussianCount = std::min(numPoints, maxGaussians);
+    activeGaussianCount = (numPoints < maxGaussians) ? numPoints : maxGaussians;
     
-    std::cout << "[FlashGSSplatter] Инициализация " << std::to_string(activeGaussianCount) 
-              << " гауссианов из точечного облака" << std::endl;
+    SAFE_PRINT_LINE("[FlashGSSplatter] Инициализация " + SAFE_TO_STRING(activeGaussianCount) 
+              + " гауссианов из точечного облака");
     
     // Копируем точки на GPU и инициализируем гауссианы
     float4* d_points;
@@ -537,14 +534,14 @@ void FlashGSSplatter::initializeFromPointCloud(const float4* points, int numPoin
     // Синхронизируем stream
     cudaStreamSynchronize(cudaStream);
     
-    std::cout << "[FlashGSSplatter] Инициализация гауссианов завершена" << std::endl;
+    SAFE_PRINT_LINE("[FlashGSSplatter] Инициализация гауссианов завершена");
 }
 
 void FlashGSSplatter::rasterizeGaussiansCUDA(const CameraMatrix& camera, 
                                            float4* framebuffer, float* depthBuffer,
                                            int width, int height) {
     if (!initialized || !d_gaussians || activeGaussianCount == 0) {
-        std::cerr << "[FlashGSSplatter] Не готов к CUDA растеризации" << std::endl;
+        SAFE_ERROR("[FlashGSSplatter] Не готов к CUDA растеризации");
         return;
     }
     
@@ -565,6 +562,7 @@ void FlashGSSplatter::rasterizeGaussiansCUDA(const CameraMatrix& camera,
     
     // Шаг 4: Растеризация тайлов
     int numTiles = ((width + 15) / 16) * ((height + 15) / 16);
+    (void)numTiles; // Подавляем предупреждение о неиспользуемой переменной
     launchTileRasterization(d_projectedGaussians, d_sortedIndices, d_tileOffsets,
                            framebuffer ? framebuffer : d_framebuffer,
                            depthBuffer ? depthBuffer : d_depthBuffer,
@@ -608,17 +606,17 @@ void FlashGSSplatter::adaptiveDensityControl() {
     // Упрощенная версия адаптивного контроля плотности
     // В полной реализации здесь будет сложная логика разделения и удаления гауссианов
     
-    std::cout << "[FlashGSSplatter] Адаптивный контроль плотности (упрощенная версия)" << std::endl;
+    SAFE_PRINT_LINE("[FlashGSSplatter] Адаптивный контроль плотности (упрощенная версия)");
     
     // Пока просто ограничиваем количество гауссианов
     if (activeGaussianCount > maxGaussians * 0.9f) {
-        std::cout << "[FlashGSSplatter] Достигнут лимит гауссианов: " << activeGaussianCount << std::endl;
+        SAFE_PRINT_LINE("[FlashGSSplatter] Достигнут лимит гауссианов: " + SAFE_TO_STRING(activeGaussianCount));
     }
 }
 
 std::shared_ptr<SharedResource> FlashGSSplatter::createSharedBuffer(size_t size, vk::BufferUsageFlags usage) {
     if (!cudaInterop || !cudaInterop->isInitialized()) {
-        std::cerr << "[FlashGSSplatter] CudaInterop не инициализирован для создания shared буфера" << std::endl;
+        SAFE_ERROR("[FlashGSSplatter] CudaInterop не инициализирован для создания shared буфера");
         return nullptr;
     }
     
@@ -627,27 +625,27 @@ std::shared_ptr<SharedResource> FlashGSSplatter::createSharedBuffer(size_t size,
         auto sharedResource = cudaInterop->createSharedBuffer(size, usage);
         
         if (sharedResource && sharedResource->isValid) {
-            std::cout << "[FlashGSSplatter] Создан shared буфер размером " << size << " байт" << std::endl;
+            SAFE_PRINT_LINE("[FlashGSSplatter] Создан shared буфер размером " + SAFE_TO_STRING(size) + " байт");
             return sharedResource;
         } else {
-            std::cerr << "[FlashGSSplatter] Ошибка создания shared буфера" << std::endl;
+            SAFE_ERROR("[FlashGSSplatter] Ошибка создания shared буфера");
             return nullptr;
         }
         
     } catch (const std::exception& e) {
-        std::cerr << "[FlashGSSplatter] Исключение при создании shared буфера: " << e.what() << std::endl;
+        SAFE_ERROR( "[FlashGSSplatter] Исключение при создании shared буфера: " + std::string(e.what()));
         return nullptr;
     }
 }
 
 std::shared_ptr<SharedResource> FlashGSSplatter::exportFramebufferToVulkan() {
     if (!d_framebuffer || framebufferWidth == 0 || framebufferHeight == 0) {
-        std::cerr << "[FlashGSSplatter] Framebuffer не готов к экспорту" << std::endl;
+        SAFE_ERROR("[FlashGSSplatter] Framebuffer не готов к экспорту");
         return nullptr;
     }
     
     if (!cudaInterop || !cudaInterop->isInitialized()) {
-        std::cerr << "[FlashGSSplatter] CudaInterop не доступен для экспорта" << std::endl;
+        SAFE_ERROR("[FlashGSSplatter] CudaInterop не доступен для экспорта");
         return nullptr;
     }
     
@@ -669,22 +667,24 @@ std::shared_ptr<SharedResource> FlashGSSplatter::exportFramebufferToVulkan() {
                 cudaStreamSynchronize(cudaStream);
             }
             
-            std::cout << "[FlashGSSplatter] Framebuffer экспортирован в Vulkan ("
-                     << framebufferWidth << "x" << framebufferHeight << ")" << std::endl;
+            SAFE_PRINT_LINE("[FlashGSSplatter] Framebuffer экспортирован в Vulkan (" + SAFE_TO_STRING(framebufferWidth) + "x" + SAFE_TO_STRING(framebufferHeight) + ")");
             
             return sharedResource;
         }
         
     } catch (const std::exception& e) {
-        std::cerr << "[FlashGSSplatter] Ошибка экспорта framebuffer: " << e.what() << std::endl;
+        SAFE_ERROR( "[FlashGSSplatter] Ошибка экспорта framebuffer: " + std::string(e.what()));
     }
     
     return nullptr;
 }
 
 bool FlashGSSplatter::importVulkanImage(vk::Image vulkanImage) {
+    // Подавляем предупреждение о неиспользуемом параметре
+    (void)vulkanImage;
+    
     if (!cudaInterop || !cudaInterop->isInitialized()) {
-        std::cerr << "[FlashGSSplatter] CudaInterop не доступен для импорта" << std::endl;
+        SAFE_ERROR("[FlashGSSplatter] CudaInterop не доступен для импорта");
         return false;
     }
     
@@ -692,7 +692,7 @@ bool FlashGSSplatter::importVulkanImage(vk::Image vulkanImage) {
         // В полной реализации здесь будет импорт Vulkan изображения
         // через external memory API и создание CUDA surface/texture
         
-        std::cout << "[FlashGSSplatter] Импорт Vulkan изображения (заглушка)" << std::endl;
+        SAFE_PRINT_LINE("[FlashGSSplatter] Импорт Vulkan изображения (заглушка)");
         
         // Пока просто логируем что импорт запрошен
         // В реальной реализации:
@@ -704,7 +704,7 @@ bool FlashGSSplatter::importVulkanImage(vk::Image vulkanImage) {
         return true;
         
     } catch (const std::exception& e) {
-        std::cerr << "[FlashGSSplatter] Ошибка импорта Vulkan изображения: " << e.what() << std::endl;
+        SAFE_ERROR( "[FlashGSSplatter] Ошибка импорта Vulkan изображения: " + std::string(e.what()));
         return false;
     }
 }
@@ -716,8 +716,7 @@ int FlashGSSplatter::getActiveGaussianCount() const {
 
 void FlashGSSplatter::setOptimizationParams(const OptimizationParams& params) {
     this->optimParams = params;
-    std::cout << "[FlashGSSplatter] Параметры оптимизации обновлены: lr=" 
-              << params.learningRate << ", threshold=" << params.densificationThreshold << std::endl;
+    SAFE_PRINT_LINE("[FlashGSSplatter] Параметры оптимизации обновлены: lr=" + SAFE_TO_STRING(params.learningRate) + ", threshold=" + SAFE_TO_STRING(params.densificationThreshold));
 }
 
 float FlashGSSplatter::getLastRenderTime() const {

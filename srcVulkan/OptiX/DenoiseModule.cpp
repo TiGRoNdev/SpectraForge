@@ -8,6 +8,7 @@
 #include "Engine3D/OptiX/DenoiseModule.h"
 #include "Engine3D/Vulkan/VulkanRenderer.h"
 #include <iostream>
+#include "Engine3D/Core/Console.h"
 
 using namespace Engine3D::OptiX;
 
@@ -37,7 +38,7 @@ bool AutoencoderModel::loadModel(const std::string& modelPath) {
 
 void AutoencoderModel::processImage(const float* input, float* output, uint32_t width, uint32_t height) {
     if (!initialized) {
-        std::cerr << "[AutoencoderModel] Ошибка: Модель не загружена" << std::endl;
+        SAFE_ERROR("[AutoencoderModel] Ошибка: Модель не загружена");
         return;
     }
     
@@ -66,23 +67,23 @@ DenoiseModule::~DenoiseModule() {
 
 bool DenoiseModule::init() {
     try {
-        std::cout << "[DenoiseModule] Инициализация модуля деноизинга..." << std::endl;
+        SAFE_PRINT_LINE("[DenoiseModule] Инициализация модуля деноизинга...");
         
         // Инициализируем OptiX denoiser (заглушка)
         if (!initOptiXDenoiser()) {
-            std::cerr << "[DenoiseModule] Ошибка инициализации OptiX denoiser" << std::endl;
+            SAFE_ERROR("[DenoiseModule] Ошибка инициализации OptiX denoiser");
             return false;
         }
         
         // Создаем модель автоэнкодера
         model = std::make_unique<AutoencoderModel>();
         if (!model->loadModel("denoiser_model.onnx")) {
-            std::cerr << "[DenoiseModule] Ошибка загрузки модели деноизинга" << std::endl;
+            SAFE_ERROR("[DenoiseModule] Ошибка загрузки модели деноизинга");
             return false;
         }
         
         initialized = true;
-        std::cout << "[DenoiseModule] Инициализация завершена успешно" << std::endl;
+        SAFE_PRINT_LINE("[DenoiseModule] Инициализация завершена успешно");
         return true;
         
     } catch (const std::exception& e) {
@@ -96,19 +97,19 @@ void DenoiseModule::shutdown() {
         return;
     }
     
-    std::cout << "[DenoiseModule] Завершение работы модуля..." << std::endl;
+    SAFE_PRINT_LINE("[DenoiseModule] Завершение работы модуля...");
     
     // Освобождаем ресурсы
     model.reset();
     cleanupOptiX();
     
     initialized = false;
-    std::cout << "[DenoiseModule] Завершение работы завершено" << std::endl;
+    SAFE_PRINT_LINE("[DenoiseModule] Завершение работы завершено");
 }
 
 Vulkan::DenoisedImage DenoiseModule::denoise(const Vulkan::RawEffects& effects, const AuxBuffers& buffers) {
     if (!initialized) {
-        std::cerr << "[DenoiseModule] Ошибка: Модуль не инициализирован" << std::endl;
+        SAFE_ERROR("[DenoiseModule] Ошибка: Модуль не инициализирован");
         return Vulkan::DenoisedImage{};
     }
     
@@ -125,17 +126,17 @@ Vulkan::DenoisedImage DenoiseModule::denoise(const Vulkan::RawEffects& effects, 
     // Пока возвращаем заглушку
     Vulkan::DenoisedImage result{};
     
-    std::cout << "[DenoiseModule] Деноизинг завершен (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[DenoiseModule] Деноизинг завершен (заглушка)");
     return result;
 }
 
 Vulkan::DenoisedImage DenoiseModule::denoise(const Vulkan::RawEffects& effects) {
     if (!initialized) {
-        std::cerr << "[DenoiseModule] Ошибка: Модуль не инициализирован" << std::endl;
+        SAFE_ERROR("[DenoiseModule] Ошибка: Модуль не инициализирован");
         return Vulkan::DenoisedImage{};
     }
     
-    std::cout << "[DenoiseModule] Простой деноизинг без auxiliary buffers" << std::endl;
+    SAFE_PRINT_LINE("[DenoiseModule] Простой деноизинг без auxiliary buffers");
     
     // TODO: Реальный деноизинг на этапе 5
     // В полной реализации здесь будет:
@@ -146,14 +147,14 @@ Vulkan::DenoisedImage DenoiseModule::denoise(const Vulkan::RawEffects& effects) 
     // Пока возвращаем заглушку
     Vulkan::DenoisedImage result{};
     
-    std::cout << "[DenoiseModule] Простой деноизинг завершен (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[DenoiseModule] Простой деноизинг завершен (заглушка)");
     return result;
 }
 
 // Приватные методы
 
 bool DenoiseModule::initOptiXDenoiser() {
-    std::cout << "[DenoiseModule] Инициализация OptiX denoiser (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[DenoiseModule] Инициализация OptiX denoiser (заглушка)");
     
     // TODO: Реальная инициализация OptiX на этапе 5
     // В полной реализации здесь будет:
@@ -167,7 +168,7 @@ bool DenoiseModule::initOptiXDenoiser() {
 }
 
 void DenoiseModule::cleanupOptiX() {
-    std::cout << "[DenoiseModule] Освобождение OptiX ресурсов (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[DenoiseModule] Освобождение OptiX ресурсов (заглушка)");
     
     // TODO: Реальная очистка OptiX на этапе 5
     denoiser = nullptr;

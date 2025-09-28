@@ -2,6 +2,7 @@
 #include "Engine3D/Math/Matrix4.h"
 #include <iostream>
 #include <chrono>
+#include "Engine3D/Core/Console.h"
 
 using namespace Engine3D::Math;
 using namespace Engine3D::Rendering;
@@ -18,7 +19,7 @@ Renderer3D& Renderer3D::getInstance() {
 // Инициализация и очистка
 bool Renderer3D::initialize(int width, int height) {
     if (initialized) {
-        std::cout << "Renderer3D already initialized" << std::endl;
+        SAFE_PRINT_LINE("Renderer3D already initialized");
         return true;
     }
     
@@ -26,7 +27,7 @@ bool Renderer3D::initialize(int width, int height) {
     screenHeight = height;
     
     // Инициализация графического API (заглушка)
-    std::cout << "Initializing Renderer3D with resolution " << std::to_string(width) << "x" << std::to_string(height) << std::endl;
+    SAFE_PRINT_LINE("Initializing Renderer3D with resolution " + SAFE_TO_STRING(width) + "x" + SAFE_TO_STRING(height));
     
     // Настройки по умолчанию
     setClearColor(0.1f, 0.1f, 0.2f, 1.0f);
@@ -46,7 +47,7 @@ bool Renderer3D::initialize(int width, int height) {
     initialized = true;
     resetRenderStats();
     
-    std::cout << "Renderer3D initialized successfully" << std::endl;
+    SAFE_PRINT_LINE("Renderer3D initialized successfully");
     return true;
 }
 
@@ -55,7 +56,7 @@ void Renderer3D::cleanup() {
         return;
     }
     
-    std::cout << "Cleaning up Renderer3D..." << std::endl;
+    SAFE_PRINT_LINE("Cleaning up Renderer3D...");
     
     clearLights();
     mainCamera.reset();
@@ -63,20 +64,20 @@ void Renderer3D::cleanup() {
     // TODO: Очистка ресурсов графического API
     
     initialized = false;
-    std::cout << "Renderer3D cleaned up" << std::endl;
+    SAFE_PRINT_LINE("Renderer3D cleaned up");
 }
 
 // Управление кадром
 void Renderer3D::beginFrame() {
     if (!initialized) {
-        std::cerr << "Renderer3D not initialized!" << std::endl;
+        SAFE_ERROR("Renderer3D not initialized!");
         return;
     }
     
     resetRenderStats();
     
     // TODO: Начало кадра для конкретного API
-    std::cout << "Beginning frame..." << std::endl;
+    SAFE_PRINT_LINE("Beginning frame...");
     
     clear();
     setupRenderState();
@@ -136,14 +137,14 @@ void Renderer3D::setMainCamera(std::shared_ptr<Camera3D> camera) {
     mainCamera = camera;
     if (camera) {
         camera->setAspectRatio((float)screenWidth / screenHeight);
-        std::cout << "Set main camera" << std::endl;
+        SAFE_PRINT_LINE("Set main camera");
     }
 }
 
 // Рендеринг объектов
 void Renderer3D::renderMesh(const Mesh3D& mesh, const Math::Matrix4& transform, const Shader3D& shader) {
     if (!initialized || !mainCamera) {
-        std::cerr << "Renderer3D not properly initialized!" << std::endl;
+        SAFE_ERROR("Renderer3D not properly initialized!");
         return;
     }
     
@@ -195,7 +196,7 @@ void Renderer3D::removeLight(size_t index) {
 
 void Renderer3D::clearLights() {
     lights.clear();
-    std::cout << "Cleared all lights" << std::endl;
+    SAFE_PRINT_LINE("Cleared all lights");
 }
 
 // Обработка изменения размера окна
@@ -214,7 +215,7 @@ void Renderer3D::onWindowResize(int width, int height) {
 // Вспомогательные методы
 void Renderer3D::setupRenderState() {
     // TODO: Настройка состояния рендеринга для конкретного API
-    std::cout << "Setting up render state..." << std::endl;
+    SAFE_PRINT_LINE("Setting up render state...");
 }
 
 void Renderer3D::setupLighting(const Shader3D& shader) {
@@ -227,7 +228,7 @@ void Renderer3D::setupLighting(const Shader3D& shader) {
     // Устанавливаем параметры каждого источника света
     for (size_t i = 0; i < lights.size() && i < 8; ++i) { // Ограничиваем до 8 источников
         const Light& light = lights[i];
-        std::string prefix = "uLights[" + std::to_string(i) + "].";
+        std::string prefix = "uLights[" + SAFE_TO_STRING(i) + "].";
         
         shader.setInt(prefix + "type", static_cast<int>(light.type));
         shader.setVector3(prefix + "position", light.position);

@@ -6,8 +6,10 @@
 // GLFW headers
 #ifdef _WIN32
     #include <GLFW/glfw3.h>
+#include "Engine3D/Core/Console.h"
 #else
     #include <GLFW/glfw3.h>
+#include "Engine3D/Core/Console.h"
 #endif
 
 using namespace Engine3D::Math;
@@ -134,7 +136,7 @@ InputManager3D& InputManager3D::getInstance() {
 
 bool InputManager3D::initialize(GLFWwindow* windowPtr) {
     if (initialized) {
-        std::cout << "InputManager3D already initialized" << std::endl;
+        SAFE_PRINT_LINE("InputManager3D already initialized");
         return true;
     }
     
@@ -154,7 +156,7 @@ bool InputManager3D::initialize(GLFWwindow* windowPtr) {
     glfwSetScrollCallback(window, scrollCallback);
     
     initialized = true;
-    std::cout << "InputManager3D initialized successfully" << std::endl;
+    SAFE_PRINT_LINE("InputManager3D initialized successfully");
     return true;
 }
 
@@ -177,7 +179,7 @@ void InputManager3D::cleanup() {
     previousInputState = InputState3D();
     
     initialized = false;
-    std::cout << "InputManager3D cleaned up" << std::endl;
+    SAFE_PRINT_LINE("InputManager3D cleaned up");
 }
 
 void InputManager3D::update() {

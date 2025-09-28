@@ -13,6 +13,13 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <cstring>
+
+#ifdef _WIN32
+#include <windows.h>
+#include <vulkan/vulkan_win32.h>
+#include "Engine3D/Core/Console.h"
+#endif
 
 using namespace Engine3D::Vulkan;
 
@@ -28,25 +35,34 @@ VulkanEngine::~VulkanEngine() {
     }
 }
 
-bool VulkanEngine::init(vk::Instance instance) {
+bool VulkanEngine::init(vk::Instance vulkanInstance) {
     try {
-        std::cout << "[VulkanEngine] Инициализация движка..." << std::endl;
+        SAFE_PRINT_LINE("[VulkanEngine] Инициализация движка...");
+        
+        // Сохраняем instance
+        this->instance = vulkanInstance;
         
         // 1. Создаем детектор железа
         hardwareDetector = std::make_unique<HardwareDetector>();
         
+        // Проверяем валидность instance
+        if (!instance) {
+            SAFE_ERROR("[VulkanEngine] Ошибка: Передан невалидный Vulkan instance");
+            return false;
+        }
+        
         // Получаем физические устройства
         auto physicalDevices = instance.enumeratePhysicalDevices();
         if (physicalDevices.empty()) {
-            std::cerr << "[VulkanEngine] Ошибка: Не найдено Vulkan-совместимых устройств" << std::endl;
+            SAFE_ERROR("[VulkanEngine] Ошибка: Не найдено Vulkan-совместимых устройств");
             return false;
         }
         
         // Выбираем первое подходящее устройство (можно улучшить логику выбора)
-        vk::PhysicalDevice selectedDevice = physicalDevices[0];
+        physicalDevice = physicalDevices[0];
         
-        if (!hardwareDetector->init(selectedDevice)) {
-            std::cerr << "[VulkanEngine] Ошибка инициализации детектора железа" << std::endl;
+        if (!hardwareDetector->init(physicalDevice)) {
+            SAFE_ERROR("[VulkanEngine] Ошибка инициализации детектора железа");
             return false;
         }
         
@@ -65,16 +81,19 @@ bool VulkanEngine::init(vk::Instance instance) {
         std::cout << "[VulkanEngine] CUDA: " << (hardwareDetector->supportsCUDA() ? "Поддерживается" : "Не поддерживается") << std::endl;
         
         // 2. Создаем логическое устройство (упрощенная версия)
-        // В полной реализации здесь будет создание device с нужными расширениями
+        device = createLogicalDevice();
         
         // 3. Создаем менеджер ресурсов
         resourceManager = std::make_unique<ResourceManager>();
-        // Пока не инициализируем, так как нужно логическое устройство
+        if (!resourceManager->init(physicalDevice, device, instance)) {
+            SAFE_ERROR("[VulkanEngine] Ошибка инициализации ResourceManager");
+            return false;
+        }
         
         // 4. Создаем менеджер сцены
         sceneManager = std::make_unique<SceneManager>();
         if (!sceneManager->init()) {
-            std::cerr << "[VulkanEngine] Ошибка инициализации SceneManager" << std::endl;
+            SAFE_ERROR("[VulkanEngine] Ошибка инициализации SceneManager");
             return false;
         }
         
@@ -82,7 +101,7 @@ bool VulkanEngine::init(vk::Instance instance) {
         renderer = std::make_unique<VulkanRenderer>();
         
         initialized = true;
-        std::cout << "[VulkanEngine] Инициализация завершена успешно" << std::endl;
+        SAFE_PRINT_LINE("[VulkanEngine] Инициализация завершена успешно");
         return true;
         
     } catch (const std::exception& e) {
@@ -93,7 +112,7 @@ bool VulkanEngine::init(vk::Instance instance) {
 
 void VulkanEngine::renderFrame(const CameraParams& params) {
     if (!initialized) {
-        std::cerr << "[VulkanEngine] Ошибка: Движок не инициализирован" << std::endl;
+        SAFE_ERROR("[VulkanEngine] Ошибка: Движок не инициализирован");
         return;
     }
     
@@ -128,7 +147,7 @@ void VulkanEngine::shutdown() {
         return;
     }
     
-    std::cout << "[VulkanEngine] Завершение работы движка..." << std::endl;
+    SAFE_PRINT_LINE("[VulkanEngine] Завершение работы движка...");
     
     // Освобождаем ресурсы в обратном порядке создания
     renderer.reset();
@@ -136,8 +155,93 @@ void VulkanEngine::shutdown() {
     resourceManager.reset();
     hardwareDetector.reset();
     
+    // Освобождаем Vulkan ресурсы
+    if (device) {
+        device.destroy();
+        device = vk::Device{};
+    }
+    
     initialized = false;
-    std::cout << "[VulkanEngine] Завершение работы завершено" << std::endl;
+    SAFE_PRINT_LINE("[VulkanEngine] Завершение работы завершено");
+}
+
+vk::Device VulkanEngine::createLogicalDevice() {
+    try {
+        // Получаем семейства очередей
+        auto queueFamilies = physicalDevice.getQueueFamilyProperties();
+        
+        // Ищем семейство очередей с поддержкой графики
+        uint32_t graphicsQueueFamily = UINT32_MAX;
+        for (uint32_t i = 0; i < queueFamilies.size(); ++i) {
+            if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics) {
+                graphicsQueueFamily = i;
+                break;
+            }
+        }
+        
+        if (graphicsQueueFamily == UINT32_MAX) {
+            throw std::runtime_error("Не найдено семейство очередей с поддержкой графики");
+        }
+        
+        // Создаем очередь
+        float queuePriority = 1.0f;
+        vk::DeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.queueFamilyIndex = graphicsQueueFamily;
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+        
+        // Создаем логическое устройство
+        vk::DeviceCreateInfo deviceCreateInfo{};
+        deviceCreateInfo.queueCreateInfoCount = 1;
+        deviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;
+        
+        // Включаем базовые расширения
+        std::vector<const char*> deviceExtensions;
+        
+        // Проверяем доступность external memory расширений для CUDA interop
+        auto availableExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+        bool hasExternalMemory = false;
+        bool hasExternalSemaphore = false;
+        
+        for (const auto& ext : availableExtensions) {
+            if (strcmp(ext.extensionName, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME) == 0) {
+                hasExternalMemory = true;
+            }
+            if (strcmp(ext.extensionName, VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME) == 0) {
+                hasExternalSemaphore = true;
+            }
+        }
+        
+        if (hasExternalMemory) {
+            deviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+            #ifdef _WIN32
+            deviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+            #endif
+            SAFE_PRINT_LINE("[VulkanEngine] External memory расширения включены");
+        }
+        
+        if (hasExternalSemaphore) {
+            deviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
+            #ifdef _WIN32
+            deviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+            #endif
+            SAFE_PRINT_LINE("[VulkanEngine] External semaphore расширения включены");
+        }
+        
+        if (!deviceExtensions.empty()) {
+            deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+            deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
+        }
+        
+        vk::Device logicalDevice = physicalDevice.createDevice(deviceCreateInfo);
+        SAFE_PRINT_LINE("[VulkanEngine] Логическое устройство создано успешно");
+        
+        return logicalDevice;
+        
+    } catch (const std::exception& e) {
+        std::cerr << "[VulkanEngine] Ошибка создания логического устройства: " << e.what() << std::endl;
+        return vk::Device{};
+    }
 }
 
 } // namespace Engine3D::Vulkan

@@ -13,6 +13,7 @@
 
 #ifdef _WIN32
     #include <windows.h>
+#include "Engine3D/Core/Console.h"
     #define VK_USE_PLATFORM_WIN32_KHR
 #endif
 
@@ -36,26 +37,25 @@ bool ResourceManager::init(vk::PhysicalDevice physDevice, vk::Device logDevice, 
         this->device = logDevice;
         this->instance = inst;
         
-        std::cout << "[ResourceManager] Инициализация менеджера ресурсов..." << std::endl;
+        SAFE_PRINT_LINE("[ResourceManager] Инициализация менеджера ресурсов...");
         
         // Создаем VMA аллокатор
         if (!createAllocator()) {
-            std::cerr << "[ResourceManager] Ошибка создания VMA аллокатора" << std::endl;
+            SAFE_ERROR("[ResourceManager] Ошибка создания VMA аллокатора");
             return false;
         }
         
         initialized = true;
-        std::cout << "[ResourceManager] Инициализация завершена успешно" << std::endl;
+        SAFE_PRINT_LINE("[ResourceManager] Инициализация завершена успешно");
         
         // Выводим статистику памяти
         auto stats = getMemoryStatistics();
-        std::cout << "[ResourceManager] Доступная память: " 
-                  << (stats.total.statistics.allocationBytes / (1024 * 1024)) << " MB" << std::endl;
+        SAFE_PRINT_LINE("[ResourceManager] Доступная память: " + SAFE_TO_STRING(stats.total.statistics.allocationBytes / (1024 * 1024)) + " MB");
         
         return true;
         
     } catch (const std::exception& e) {
-        std::cerr << "[ResourceManager] Ошибка инициализации: " << e.what() << std::endl;
+        SAFE_ERROR( "[ResourceManager] Ошибка инициализации: " + std::string(e.what()));
         return false;
     }
 }
@@ -65,23 +65,23 @@ void ResourceManager::shutdown() {
         return;
     }
     
-    std::cout << "[ResourceManager] Завершение работы менеджера ресурсов..." << std::endl;
+    SAFE_PRINT_LINE("[ResourceManager] Завершение работы менеджера ресурсов...");
     
     // Освобождаем все оставшиеся ресурсы (заглушка)
-    std::cout << "[ResourceManager] Освобождение " << bufferAllocations.size() << " буферов (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[ResourceManager] Освобождение " + SAFE_TO_STRING(bufferAllocations.size()) + " буферов (заглушка)");
     bufferAllocations.clear();
     
-    std::cout << "[ResourceManager] Освобождение " << imageAllocations.size() << " изображений (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[ResourceManager] Освобождение " + SAFE_TO_STRING(imageAllocations.size()) + " изображений (заглушка)");
     imageAllocations.clear();
     
     // Уничтожаем аллокатор (заглушка)
     if (allocator != VK_NULL_HANDLE) {
-        std::cout << "[ResourceManager] Уничтожение VMA аллокатора (заглушка)" << std::endl;
+        SAFE_PRINT_LINE("[ResourceManager] Уничтожение VMA аллокатора (заглушка)");
         allocator = VK_NULL_HANDLE;
     }
     
     initialized = false;
-    std::cout << "[ResourceManager] Завершение работы завершено" << std::endl;
+    SAFE_PRINT_LINE("[ResourceManager] Завершение работы завершено");
 }
 
 vk::Buffer ResourceManager::allocateBuffer(size_t size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage) {
@@ -89,7 +89,7 @@ vk::Buffer ResourceManager::allocateBuffer(size_t size, vk::BufferUsageFlags usa
         throw std::runtime_error("ResourceManager не инициализирован");
     }
     
-    std::cout << "[ResourceManager] Создание буфера размером " << std::to_string(size / 1024) << " KB (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[ResourceManager] Создание буфера размером " + SAFE_TO_STRING(size / 1024) + " KB (заглушка)");
     
     // TODO: Реальное создание буфера через VMA на следующих этапах
     // Пока возвращаем фиктивный буфер
@@ -110,7 +110,7 @@ vk::Image ResourceManager::createTexture(const ImageData& data) {
         throw std::runtime_error("ResourceManager не инициализирован");
     }
     
-    std::cout << "[ResourceManager] Создание изображения " << data.width << "x" << data.height << " (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[ResourceManager] Создание изображения " + SAFE_TO_STRING(data.width) + "x" + SAFE_TO_STRING(data.height) + " (заглушка)");
     
     // TODO: Реальное создание изображения через VMA на следующих этапах
     // Пока возвращаем фиктивное изображение
@@ -136,7 +136,7 @@ void ResourceManager::freeBuffer(vk::Buffer buffer) {
     
     if (it != bufferAllocations.end()) {
         bufferAllocations.erase(it);
-        std::cout << "[ResourceManager] Буфер освобожден (заглушка)" << std::endl;
+        SAFE_PRINT_LINE("[ResourceManager] Буфер освобожден (заглушка)");
     }
 }
 
@@ -150,7 +150,7 @@ void ResourceManager::freeImage(vk::Image image) {
     
     if (it != imageAllocations.end()) {
         imageAllocations.erase(it);
-        std::cout << "[ResourceManager] Изображение освобождено (заглушка)" << std::endl;
+        SAFE_PRINT_LINE("[ResourceManager] Изображение освобождено (заглушка)");
     }
 }
 
@@ -159,7 +159,7 @@ void* ResourceManager::mapBuffer(vk::Buffer buffer) {
         return nullptr;
     }
     
-    std::cout << "[ResourceManager] Отображение буфера (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[ResourceManager] Отображение буфера (заглушка)");
     
     // TODO: Реальное отображение памяти через VMA на следующих этапах
     // Пока возвращаем фиктивный указатель
@@ -171,7 +171,7 @@ void ResourceManager::unmapBuffer(vk::Buffer buffer) {
         return;
     }
     
-    std::cout << "[ResourceManager] Отмена отображения буфера (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[ResourceManager] Отмена отображения буфера (заглушка)");
     
     // TODO: Реальная отмена отображения через VMA на следующих этапах
 }
@@ -191,7 +191,7 @@ void ResourceManager::updateBuffer(vk::Buffer buffer, const void* data, size_t s
 #ifdef VULKAN_RENDERER_CUDA_SUPPORT
 vk::DeviceMemory ResourceManager::manageInterop(const CUDAResource& cudaRes) {
     try {
-        std::cout << "[ResourceManager] Создание external memory для CUDA interop" << std::endl;
+        SAFE_PRINT_LINE("[ResourceManager] Создание external memory для CUDA interop");
         
         // Создаем external memory из CUDA ресурса
         vk::MemoryAllocateInfo allocInfo{};
@@ -213,18 +213,18 @@ vk::DeviceMemory ResourceManager::manageInterop(const CUDAResource& cudaRes) {
         
         auto memory = device.allocateMemory(allocInfo);
         
-        std::cout << "[ResourceManager] External memory создана успешно" << std::endl;
+        SAFE_PRINT_LINE("[ResourceManager] External memory создана успешно");
         return memory;
         
     } catch (const std::exception& e) {
-        std::cerr << "[ResourceManager] Ошибка создания external memory: " << e.what() << std::endl;
+        SAFE_ERROR( "[ResourceManager] Ошибка создания external memory: " + std::string(e.what()));
         return vk::DeviceMemory{};
     }
 }
 
 vk::Buffer ResourceManager::createSharedBuffer(size_t size, vk::BufferUsageFlags usage) {
     try {
-        std::cout << "[ResourceManager] Создание shared буфера размером " << size << " байт" << std::endl;
+        SAFE_PRINT_LINE("[ResourceManager] Создание shared буфера размером " + SAFE_TO_STRING(size) + " байт");
         
         // Создаем буфер с external memory support
         vk::BufferCreateInfo bufferInfo{};
@@ -264,18 +264,18 @@ vk::Buffer ResourceManager::createSharedBuffer(size_t size, vk::BufferUsageFlags
         allocInfo_cache.size = size;
         bufferAllocations[buffer] = allocInfo_cache;
         
-        std::cout << "[ResourceManager] Shared буфер создан успешно" << std::endl;
+        SAFE_PRINT_LINE("[ResourceManager] Shared буфер создан успешно");
         return buffer;
         
     } catch (const std::exception& e) {
-        std::cerr << "[ResourceManager] Ошибка создания shared буфера: " << e.what() << std::endl;
+        SAFE_ERROR( "[ResourceManager] Ошибка создания shared буфера: " + std::string(e.what()));
         return vk::Buffer{};
     }
 }
 
 cudaExternalMemory_t ResourceManager::exportMemoryToCUDA(vk::DeviceMemory memory) {
     try {
-        std::cout << "[ResourceManager] Экспорт Vulkan памяти в CUDA" << std::endl;
+        SAFE_PRINT_LINE("[ResourceManager] Экспорт Vulkan памяти в CUDA");
         
         // Получаем Windows handle от Vulkan memory (только Windows)
 #ifdef _WIN32
@@ -286,10 +286,10 @@ cudaExternalMemory_t ResourceManager::exportMemoryToCUDA(vk::DeviceMemory memory
         // 
         // HANDLE handle = device.getMemoryWin32HandleKHR(handleInfo);
         
-        std::cout << "[ResourceManager] Windows CUDA interop не поддерживается (требуется VK_KHR_external_memory_win32)" << std::endl;
+        SAFE_PRINT_LINE("[ResourceManager] Windows CUDA interop не поддерживается (требуется VK_KHR_external_memory_win32)");
         return cudaExternalMemory_t{};
 #else
-        std::cout << "[ResourceManager] CUDA interop не поддерживается на данной платформе" << std::endl;
+        SAFE_PRINT_LINE("[ResourceManager] CUDA interop не поддерживается на данной платформе");
         return cudaExternalMemory_t{};
 #endif
         
@@ -305,16 +305,16 @@ cudaExternalMemory_t ResourceManager::exportMemoryToCUDA(vk::DeviceMemory memory
         // cudaError_t result = cudaImportExternalMemory(&extMem, &memHandleDesc);
         // 
         // if (result != cudaSuccess) {
-        //     std::cerr << "[ResourceManager] Ошибка импорта памяти в CUDA: " 
-        //               << cudaGetErrorString(result) << std::endl;
+        //     SAFE_ERROR( "[ResourceManager] Ошибка импорта памяти в CUDA: " 
+        //               << cudaGetErrorString(result));
         //     return nullptr;
         // }
         // 
-        // std::cout << "[ResourceManager] Память успешно экспортирована в CUDA" << std::endl;
+        // SAFE_PRINT_LINE("[ResourceManager] Память успешно экспортирована в CUDA");
         // return extMem;
         
     } catch (const std::exception& e) {
-        std::cerr << "[ResourceManager] Ошибка экспорта памяти в CUDA: " << e.what() << std::endl;
+        SAFE_ERROR( "[ResourceManager] Ошибка экспорта памяти в CUDA: " + std::string(e.what()));
         return nullptr;
     }
 }
@@ -323,7 +323,7 @@ cudaExternalMemory_t ResourceManager::exportMemoryToCUDA(vk::DeviceMemory memory
 VmaTotalStatistics ResourceManager::getMemoryStatistics() const {
     VmaTotalStatistics stats{};
     
-    std::cout << "[ResourceManager] Получение статистики памяти (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[ResourceManager] Получение статистики памяти (заглушка)");
     
     // TODO: Реальная статистика через VMA на следующих этапах
     // Пока возвращаем пустую статистику
@@ -334,7 +334,7 @@ VmaTotalStatistics ResourceManager::getMemoryStatistics() const {
 // Приватные методы
 
 bool ResourceManager::createAllocator() {
-    std::cout << "[ResourceManager] VMA аллокатор создан (заглушка для этапа 2.1)" << std::endl;
+    SAFE_PRINT_LINE("[ResourceManager] VMA аллокатор создан (заглушка для этапа 2.1)");
     
     // TODO: Реальная инициализация VMA на следующих этапах
     // Пока просто возвращаем успех

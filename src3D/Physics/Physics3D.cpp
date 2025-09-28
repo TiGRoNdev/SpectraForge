@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include "Engine3D/Core/Console.h"
 
 using namespace Engine3D::Math;
 using namespace Engine3D::Physics;
@@ -39,7 +40,7 @@ bool SphereCollider3D::intersects(const Collider3D& other) const {
         case Type::Box:
             return intersectsBox(static_cast<const BoxCollider3D&>(other));
         default:
-            std::cout << "SphereCollider3D::intersects - unsupported collider type" << std::endl;
+            SAFE_PRINT_LINE("SphereCollider3D::intersects - unsupported collider type");
             return false;
     }
 }
@@ -165,7 +166,7 @@ bool BoxCollider3D::intersects(const Collider3D& other) const {
         case Type::Sphere:
             return intersectsSphere(static_cast<const SphereCollider3D&>(other));
         default:
-            std::cout << "BoxCollider3D::intersects - unsupported collider type" << std::endl;
+            SAFE_PRINT_LINE("BoxCollider3D::intersects - unsupported collider type");
             return false;
     }
 }
@@ -729,7 +730,7 @@ void PhysicsWorld3D::removeCollider(std::shared_ptr<Collider3D> collider) {
 void PhysicsWorld3D::clear() {
     rigidBodies.clear();
     colliders.clear();
-    std::cout << "Cleared physics world" << std::endl;
+    SAFE_PRINT_LINE("Cleared physics world");
 }
 
 void PhysicsWorld3D::update(float deltaTime) {

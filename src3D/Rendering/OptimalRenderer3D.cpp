@@ -7,6 +7,7 @@
 #include <fstream>
 #include <cmath>
 #include <functional>
+#include "Engine3D/Core/Console.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -21,7 +22,7 @@ namespace Rendering {
 // === HardwareConfig Implementation ===
 
 void OptimalRenderer3D::HardwareConfig::autoDetect() {
-    std::cout << "Автоматическое определение конфигурации оборудования..." << std::endl;
+    SAFE_PRINT_LINE("Автоматическое определение конфигурации оборудования...");
     
     // TODO: Реальное определение возможностей GPU
     // Сейчас используем примерные значения для демонстрации
@@ -114,7 +115,7 @@ void OptimalRenderer3D::SceneData::calculateBounds() {
 }
 
 void OptimalRenderer3D::SceneData::optimizeForHardware(const HardwareConfig& config) {
-    std::cout << "Оптимизация сцены для конфигурации оборудования..." << std::endl;
+    SAFE_PRINT_LINE("Оптимизация сцены для конфигурации оборудования...");
     
     // Определяем уровень сложности на основе количества объектов
     size_t totalGaussians = 0;
@@ -189,7 +190,7 @@ OptimalRenderer3D::OptimalRenderer3D()
     metrics.reset();
     optimizationCache.invalidate();
     
-    std::cout << "Создан оптимальный рендерер 3D" << std::endl;
+    SAFE_PRINT_LINE("Создан оптимальный рендерер 3D");
 }
 
 OptimalRenderer3D::~OptimalRenderer3D() {
@@ -198,7 +199,7 @@ OptimalRenderer3D::~OptimalRenderer3D() {
 
 bool OptimalRenderer3D::initialize(int width, int height, const HardwareConfig& hwConfig) {
     if (initialized) {
-        std::cout << "Оптимальный рендерер уже инициализирован" << std::endl;
+        SAFE_PRINT_LINE("Оптимальный рендерер уже инициализирован");
         return true;
     }
     
@@ -209,16 +210,16 @@ bool OptimalRenderer3D::initialize(int width, int height, const HardwareConfig& 
     targetHeight = height;
     
     // Адаптируем разрешение рендеринга под железо
-    std::cout << "Вызов adaptToHardware()..." << std::endl;
+    SAFE_PRINT_LINE("Вызов adaptToHardware()...");
     adaptToHardware();
-    std::cout << "adaptToHardware() завершен" << std::endl;
+    SAFE_PRINT_LINE("adaptToHardware() завершен");
     
     // Создаем гибридный рендерер
-    std::cout << "Создание HybridRenderer3D..." << std::endl;
+    SAFE_PRINT_LINE("Создание HybridRenderer3D...");
     hybridRenderer = std::make_unique<HybridRenderer3D>();
-    std::cout << "HybridRenderer3D создан, вызов initialize..." << std::endl;
+    SAFE_PRINT_LINE("HybridRenderer3D создан, вызов initialize...");
     if (!hybridRenderer->initialize(renderWidth, renderHeight)) {
-        std::cerr << "Ошибка инициализации гибридного рендерера!" << std::endl;
+        SAFE_ERROR("Ошибка инициализации гибридного рендерера!");
         return false;
     }
     
@@ -255,7 +256,7 @@ bool OptimalRenderer3D::initialize(int width, int height, const HardwareConfig& 
 void OptimalRenderer3D::cleanup() {
     if (!initialized) return;
     
-    std::cout << "Очистка оптимального рендерера..." << std::endl;
+    SAFE_PRINT_LINE("Очистка оптимального рендерера...");
     
     // Очищаем компоненты
     if (upscaler) {
@@ -281,19 +282,19 @@ void OptimalRenderer3D::cleanup() {
     optimizationCache.invalidate();
     initialized = false;
     
-    std::cout << "Оптимальный рендерер очищен" << std::endl;
+    SAFE_PRINT_LINE("Оптимальный рендерер очищен");
 }
 
 void OptimalRenderer3D::renderOptimal3D(const SceneData& sceneData, 
                                        const CameraParams& cameraParams, 
                                        const HardwareConfig& hardwareConfig) {
     if (!initialized) {
-        std::cerr << "Оптимальный рендерер не инициализирован!" << std::endl;
+        SAFE_ERROR("Оптимальный рендерер не инициализирован!");
         return;
     }
     
     if (profilingEnabled) {
-        std::cout << "\n=== НАЧАЛО ОПТИМАЛЬНОГО РЕНДЕРИНГА ===" << std::endl;
+        SAFE_PRINT_LINE("\n=== НАЧАЛО ОПТИМАЛЬНОГО РЕНДЕРИНГА ===");
     }
     
     auto frameStartTime = std::chrono::high_resolution_clock::now();
@@ -348,7 +349,7 @@ void OptimalRenderer3D::renderOptimal3D(const SceneData& sceneData,
     
     if (profilingEnabled) {
         metrics.print();
-        std::cout << "=== КОНЕЦ ОПТИМАЛЬНОГО РЕНДЕРИНГА ===\n" << std::endl;
+        SAFE_PRINT_LINE("=== КОНЕЦ ОПТИМАЛЬНОГО РЕНДЕРИНГА ===\n");
     }
 }
 
@@ -487,7 +488,7 @@ void OptimalRenderer3D::enableUpscaling(bool enable, float factor) {
 // Protected методы - этапы псевдо-алгоритма
 
 void OptimalRenderer3D::optimizeSceneRepresentation(SceneData& sceneData, const HardwareConfig& hwConfig) {
-    std::cout << "Этап 1: Оптимизация представления сцены..." << std::endl;
+    SAFE_PRINT_LINE("Этап 1: Оптимизация представления сцены...");
     
     // Проверяем кэш оптимизации
     bool cacheValid = optimizationCache.cacheValid && 
@@ -504,7 +505,7 @@ void OptimalRenderer3D::optimizeSceneRepresentation(SceneData& sceneData, const 
     }
     
     if (!cacheValid) {
-        std::cout << "Обновление кэша оптимизации..." << std::endl;
+        SAFE_PRINT_LINE("Обновление кэша оптимизации...");
         
         // Оптимизируем гауссианы для текущих точек обзора
         for (auto& field : sceneData.gaussianFields) {
@@ -533,22 +534,22 @@ void OptimalRenderer3D::optimizeSceneRepresentation(SceneData& sceneData, const 
 void OptimalRenderer3D::integrateNeRFVariants(SceneData& sceneData) {
     if (!currentHardware.supportsNeural) return;
     
-    std::cout << "Интеграция NeRF вариантов..." << std::endl;
+    SAFE_PRINT_LINE("Интеграция NeRF вариантов...");
     
     // TODO: Реализация интеграции NeRF для улучшения качества view synthesis
     // В сложных сценах с большим количеством точек обзора
     
     if (sceneData.complexityLevel >= 4 && sceneData.multiViewImages.size() >= 6) {
-        std::cout << "Применение NeRF оптимизации для сложной сцены..." << std::endl;
+        SAFE_PRINT_LINE("Применение NeRF оптимизации для сложной сцены...");
         // Гибридный подход: NeRF для областей с недостаточной плотностью гауссианов
     }
 }
 
 void OptimalRenderer3D::executeGeometryAndVisibility(const SceneData& sceneData, const CameraParams& cameraParams) {
-    std::cout << "Этап 2: Быстрая растеризация для первичной геометрии и видимости..." << std::endl;
+    SAFE_PRINT_LINE("Этап 2: Быстрая растеризация для первичной геометрии и видимости...");
     
     if (!hybridRenderer) {
-        std::cerr << "Гибридный рендерер не инициализирован!" << std::endl;
+        SAFE_ERROR("Гибридный рендерер не инициализирован!");
         return;
     }
     
@@ -571,10 +572,10 @@ void OptimalRenderer3D::executeGeometryAndVisibility(const SceneData& sceneData,
 }
 
 void OptimalRenderer3D::executeAdvancedLighting(const SceneData& sceneData) {
-    std::cout << "Этап 3: Селективная трассировка лучей для продвинутого освещения..." << std::endl;
+    SAFE_PRINT_LINE("Этап 3: Селективная трассировка лучей для продвинутого освещения...");
     
     if (!globalIlluminationEnabled && !reflectionsEnabled && !shadowsEnabled) {
-        std::cout << "Все эффекты трассировки лучей отключены, пропускаем этап" << std::endl;
+        SAFE_PRINT_LINE("Все эффекты трассировки лучей отключены, пропускаем этап");
         return;
     }
     
@@ -601,10 +602,10 @@ void OptimalRenderer3D::executeAdvancedLighting(const SceneData& sceneData) {
 }
 
 void OptimalRenderer3D::executeDenoisingAndRefinement() {
-    std::cout << "Этап 4: AI деноизинг и уточнение..." << std::endl;
+    SAFE_PRINT_LINE("Этап 4: AI деноизинг и уточнение...");
     
     if (!denoiser || !denoisingEnabled) {
-        std::cout << "Деноизинг отключен или недоступен" << std::endl;
+        SAFE_PRINT_LINE("Деноизинг отключен или недоступен");
         return;
     }
     
@@ -619,7 +620,7 @@ void OptimalRenderer3D::executeDenoisingAndRefinement() {
 }
 
 void OptimalRenderer3D::executePostProcessingAndOutput(int outputWidth, int outputHeight) {
-    std::cout << "Этап 5: Пост-обработка и нейронное масштабирование..." << std::endl;
+    SAFE_PRINT_LINE("Этап 5: Пост-обработка и нейронное масштабирование...");
     
     // Нейронное масштабирование если включено
     if (upscaler && upscalingEnabled && upscalingFactor > 1.0f) {
@@ -840,26 +841,26 @@ void OptimalRenderer3D::runBenchmark(const SceneData& testScene, int frames) {
     float averageTime = totalTime / benchmarkTimes.size();
     float averageFPS = 1000.0f / averageTime;
     
-    std::cout << "\n=== РЕЗУЛЬТАТЫ БЕНЧМАРКА ===" << std::endl;
-    std::cout << "Общее время: " << totalDuration.count() << "мс" << std::endl;
-    std::cout << "Средний frametime: " << averageTime << "мс" << std::endl;
-    std::cout << "Средний FPS: " << std::to_string(averageFPS) << std::endl;
-    std::cout << "Минимальный frametime: " << std::to_string(minTime) << "мс (" << std::to_string(1000.0f/minTime) << " FPS)" << std::endl;
-    std::cout << "Максимальный frametime: " << std::to_string(maxTime) << "мс (" << std::to_string(1000.0f/maxTime) << " FPS)" << std::endl;
-    std::cout << "Ускорение рендеринга: " << std::to_string(metrics.renderingSpeedup) << "x" << std::endl;
-    std::cout << "Эффективность памяти: " << std::to_string(metrics.memoryEfficiency * 100) << "%" << std::endl;
-    std::cout << "Визуальное качество: " << std::to_string(metrics.visualQuality * 100) << "%" << std::endl;
-    std::cout << "===========================" << std::endl;
+    SAFE_PRINT_LINE("\n=== РЕЗУЛЬТАТЫ БЕНЧМАРКА ===");
+    SAFE_PRINT_LINE("Общее время: " + SAFE_TO_STRING(totalDuration.count()) + "мс");
+    SAFE_PRINT_LINE("Средний frametime: " + SAFE_TO_STRING(averageTime) + "мс");
+    SAFE_PRINT_LINE("Средний FPS: " + SAFE_TO_STRING(averageFPS));
+    SAFE_PRINT_LINE("Минимальный frametime: " + SAFE_TO_STRING(minTime) + "мс (" + SAFE_TO_STRING(1000.0f/minTime) + " FPS)");
+    SAFE_PRINT_LINE("Максимальный frametime: " + SAFE_TO_STRING(maxTime) + "мс (" + SAFE_TO_STRING(1000.0f/maxTime) + " FPS)");
+    SAFE_PRINT_LINE("Ускорение рендеринга: " + SAFE_TO_STRING(metrics.renderingSpeedup) + "x");
+    SAFE_PRINT_LINE("Эффективность памяти: " + SAFE_TO_STRING(metrics.memoryEfficiency * 100) + "%");
+    SAFE_PRINT_LINE("Визуальное качество: " + SAFE_TO_STRING(metrics.visualQuality * 100) + "%");
+    SAFE_PRINT_LINE("===========================");
 }
 
 void OptimalRenderer3D::startProfiling() {
     profilingEnabled = true;
-    std::cout << "Профилирование включено" << std::endl;
+    SAFE_PRINT_LINE("Профилирование включено");
 }
 
 void OptimalRenderer3D::endProfiling() {
     profilingEnabled = false;
-    std::cout << "Профилирование отключено" << std::endl;
+    SAFE_PRINT_LINE("Профилирование отключено");
 }
 
 // Сохранение/загрузка профилей
@@ -946,7 +947,7 @@ float OptimalRenderer3D::PerformanceMetrics::getTotalTime() const {
 }
 
 void OptimalRenderer3D::PerformanceMetrics::print() const {
-    std::cout << "\n--- МЕТРИКИ ПРОИЗВОДИТЕЛЬНОСТИ ---" << std::endl;
+    SAFE_PRINT_LINE("\n--- МЕТРИКИ ПРОИЗВОДИТЕЛЬНОСТИ ---");
     std::cout << "Оптимизация сцены: " << sceneOptimizationTime << "мс" << std::endl;
     std::cout << "Растеризация: " << rasterizationTime << "мс" << std::endl;
     std::cout << "Трассировка лучей: " << rayTracingTime << "мс" << std::endl;
@@ -956,12 +957,12 @@ void OptimalRenderer3D::PerformanceMetrics::print() const {
     std::cout << "Общее время кадра: " << totalFrameTime << "мс" << std::endl;
     std::cout << "Обработано гауссианов: " << gaussiansProcessed << std::endl;
     std::cout << "Обработано треугольников: " << trianglesRendered << std::endl;
-    std::cout << "Трассировано лучей: " << raysTraced << std::endl;
-    std::cout << "Ускорение рендеринга: " << std::to_string(renderingSpeedup) << "x" << std::endl;
-    std::cout << "Эффективность памяти: " << std::to_string(memoryEfficiency * 100) << "%" << std::endl;
-    std::cout << "Визуальное качество: " << std::to_string(visualQuality * 100) << "%" << std::endl;
-    std::cout << "Временная стабильность: " << std::to_string(temporalStability * 100) << "%" << std::endl;
-    std::cout << "--------------------------------" << std::endl;
+    SAFE_PRINT_LINE("Трассировано лучей: " + SAFE_TO_STRING(raysTraced));
+    SAFE_PRINT_LINE("Ускорение рендеринга: " + SAFE_TO_STRING(renderingSpeedup) + "x");
+    SAFE_PRINT_LINE("Эффективность памяти: " + SAFE_TO_STRING(memoryEfficiency * 100) + "%");
+    SAFE_PRINT_LINE("Визуальное качество: " + SAFE_TO_STRING(visualQuality * 100) + "%");
+    SAFE_PRINT_LINE("Временная стабильность: " + SAFE_TO_STRING(temporalStability * 100) + "%");
+    SAFE_PRINT_LINE("--------------------------------");
 }
 
 // === OptimalRendererFactory Implementation ===
@@ -979,7 +980,7 @@ std::unique_ptr<OptimalRenderer3D> OptimalRendererFactory::createOptimalRenderer
     auto renderer = std::make_unique<OptimalRenderer3D>();
     
     if (!renderer->initialize(params.width, params.height, hwConfig)) {
-        std::cerr << "Ошибка инициализации оптимального рендерера!" << std::endl;
+        SAFE_ERROR("Ошибка инициализации оптимального рендерера!");
         return nullptr;
     }
     
@@ -996,14 +997,14 @@ std::unique_ptr<OptimalRenderer3D> OptimalRendererFactory::createOptimalRenderer
         renderer->enableUpscaling(hwConfig.supportsNeural && hwConfig.performanceRating < 1.0f, 2.0f);
     }
     
-    std::cout << "Оптимальный рендерер успешно создан" << std::endl;
+    SAFE_PRINT_LINE("Оптимальный рендерер успешно создан");
     return renderer;
 }
 
 OptimalRenderer3D::HardwareConfig OptimalRendererFactory::detectHardware() {
     OptimalRenderer3D::HardwareConfig config;
     
-    std::cout << "Определение конфигурации аппаратного обеспечения..." << std::endl;
+    SAFE_PRINT_LINE("Определение конфигурации аппаратного обеспечения...");
     
     // TODO: Реальное определение характеристик GPU
     // Сейчас используем примерные значения
@@ -1057,7 +1058,7 @@ OptimalRendererFactory::CreationParams OptimalRendererFactory::recommendSettings
 }
 
 void OptimalRendererFactory::benchmarkSystem(OptimalRenderer3D::HardwareConfig& hw, CreationParams& params) {
-    std::cout << "Бенчмаркинг системы для определения оптимальных настроек..." << std::endl;
+    SAFE_PRINT_LINE("Бенчмаркинг системы для определения оптимальных настроек...");
     
     // TODO: Реализация быстрого бенчмарка для определения производительности
     // Создание простой тестовой сцены и измерение производительности
@@ -1065,7 +1066,7 @@ void OptimalRendererFactory::benchmarkSystem(OptimalRenderer3D::HardwareConfig& 
     // Пока используем значения по умолчанию
     params = recommendSettings(hw);
     
-    std::cout << "Бенчмарк завершен" << std::endl;
+    SAFE_PRINT_LINE("Бенчмарк завершен");
 }
 
 // === AdaptiveLOD Implementation ===
@@ -1079,7 +1080,7 @@ AdaptiveLOD::AdaptiveLOD()
 
 void AdaptiveLOD::setSettings(const LODSettings& newSettings) {
     settings = newSettings;
-    std::cout << "Обновлены настройки адаптивного LOD" << std::endl;
+    SAFE_PRINT_LINE("Обновлены настройки адаптивного LOD");
 }
 
 void AdaptiveLOD::computeLOD(GaussianField3D& field, 
@@ -1184,7 +1185,7 @@ void AdaptiveLOD::applySpatialLOD(GaussianField3D& field, const Vector3& cameraP
 void AdaptiveLOD::applyTemporalStabilization(GaussianField3D& field) {
     // TODO: Реализация стабилизации LOD во времени
     // Предотвращение резких изменений LOD между кадрами
-    std::cout << "Применение временной стабилизации LOD..." << std::endl;
+    SAFE_PRINT_LINE("Применение временной стабилизации LOD...");
 }
 
 void AdaptiveLOD::applyMotionBasedLOD(GaussianField3D& field, const Vector3& velocity) {

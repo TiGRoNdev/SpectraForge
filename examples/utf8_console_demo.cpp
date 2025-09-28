@@ -46,45 +46,45 @@ private:
         Console::clear();
         
         std::cout << std::endl;
-        std::cout << "🌟═══════════════════════════════════════════════════════════════🌟" << std::endl;
-        std::cout << "                  🚀 HYPERENGINE UTF-8 ДЕМОНСТРАЦИЯ 🚀" << std::endl;
-        std::cout << "🌟═══════════════════════════════════════════════════════════════🌟" << std::endl;
+        SAFE_PRINT_LINE("🌟═══════════════════════════════════════════════════════════════🌟");
+        SAFE_PRINT_LINE("                  🚀 HYPERENGINE UTF-8 ДЕМОНСТРАЦИЯ 🚀");
+        SAFE_PRINT_LINE("🌟═══════════════════════════════════════════════════════════════🌟");
         std::cout << std::endl;
         
-        std::cout << "Добро пожаловать в демонстрацию поддержки Unicode!" << std::endl;
-        std::cout << "Этот пример покажет возможности отображения UTF-8 символов." << std::endl;
+        SAFE_PRINT_LINE("Добро пожаловать в демонстрацию поддержки Unicode!");
+        SAFE_PRINT_LINE("Этот пример покажет возможности отображения UTF-8 символов.");
         std::cout << std::endl;
         
         waitForUser();
     }
 
     void demonstrateBasicUTF8() {
-        std::cout << "📝 1. БАЗОВАЯ ПОДДЕРЖКА UTF-8" << std::endl;
-        std::cout << "═══════════════════════════════" << std::endl;
+        SAFE_PRINT_LINE("📝 1. БАЗОВАЯ ПОДДЕРЖКА UTF-8");
+        SAFE_PRINT_LINE("═══════════════════════════════");
         
         // Кириллица
-        std::cout << "🔤 Кириллические символы:" << std::endl;
-        std::cout << "   Строчные: абвгдежзийклмнопрстуфхцчшщъыьэюя" << std::endl;
-        std::cout << "   Заглавные: АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ" << std::endl;
-        std::cout << "   Ё и ё тоже работают!" << std::endl;
+        SAFE_PRINT_LINE("🔤 Кириллические символы:");
+        SAFE_PRINT_LINE("   Строчные: абвгдежзийклмнопрстуфхцчшщъыьэюя");
+        SAFE_PRINT_LINE("   Заглавные: АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ");
+        SAFE_PRINT_LINE("   Ё и ё тоже работают!");
         
         // Латиница с диакритиками
         std::cout << std::endl << "🌍 Диакритические знаки:" << std::endl;
-        std::cout << "   Français: café, naïve, résumé" << std::endl;
-        std::cout << "   Deutsch: Müller, Größe, Weiß" << std::endl;
-        std::cout << "   Español: niño, piña, señor" << std::endl;
+        SAFE_PRINT_LINE("   Français: café, naïve, résumé");
+        SAFE_PRINT_LINE("   Deutsch: Müller, Größe, Weiß");
+        SAFE_PRINT_LINE("   Español: niño, piña, señor");
         
         // Символы валют
         std::cout << std::endl << "💰 Валютные символы:" << std::endl;
-        std::cout << "   $ € £ ¥ ₽ ₴ ₸ ₹ ₩ ₪" << std::endl;
+        SAFE_PRINT_LINE("   $ € £ ¥ ₽ ₴ ₸ ₹ ₩ ₪");
         
         std::cout << std::endl;
         waitForUser();
     }
 
     void demonstrateLogging() {
-        std::cout << "📋 2. СИСТЕМА ЛОГИРОВАНИЯ С ЭМОДЗИ" << std::endl;
-        std::cout << "═══════════════════════════════════════" << std::endl;
+        SAFE_PRINT_LINE("📋 2. СИСТЕМА ЛОГИРОВАНИЯ С ЭМОДЗИ");
+        SAFE_PRINT_LINE("═══════════════════════════════════════");
         
         Console::debug("Это отладочное сообщение для разработчиков");
         Console::info("Информационное сообщение о состоянии системы");
@@ -93,15 +93,15 @@ private:
         Console::critical("Критическая ошибка требующая немедленного внимания!");
         
         std::cout << std::endl;
-        std::cout << "Логирование автоматически добавляет эмодзи и цвета!" << std::endl;
+        SAFE_PRINT_LINE("Логирование автоматически добавляет эмодзи и цвета!");
         
         std::cout << std::endl;
         waitForUser();
     }
 
     void demonstrateRussianSupport() {
-        std::cout << "🇷🇺 3. ПОЛНАЯ ПОДДЕРЖКА РУССКОГО ЯЗЫКА" << std::endl;
-        std::cout << "═══════════════════════════════════════════" << std::endl;
+        SAFE_PRINT_LINE("🇷🇺 3. ПОЛНАЯ ПОДДЕРЖКА РУССКОГО ЯЗЫКА");
+        SAFE_PRINT_LINE("═══════════════════════════════════════════");
         
         Console::info("Инициализация игрового движка...");
         Console::info("Загрузка ресурсов и текстур...");
@@ -110,56 +110,56 @@ private:
         Console::info("Подключение к серверу установлено");
         
         std::cout << std::endl;
-        std::cout << "💡 Все сообщения движка теперь на русском языке!" << std::endl;
-        std::cout << "🎮 Интерфейс полностью локализован" << std::endl;
+        SAFE_PRINT_LINE("💡 Все сообщения движка теперь на русском языке!");
+        SAFE_PRINT_LINE("🎮 Интерфейс полностью локализован");
         
         std::cout << std::endl;
         waitForUser();
     }
 
     void demonstrateEmoji() {
-        std::cout << "😀 4. ШИРОКАЯ ПОДДЕРЖКА ЭМОДЗИ" << std::endl;
-        std::cout << "═══════════════════════════════════" << std::endl;
+        SAFE_PRINT_LINE("😀 4. ШИРОКАЯ ПОДДЕРЖКА ЭМОДЗИ");
+        SAFE_PRINT_LINE("═══════════════════════════════════");
         
         // Игровые эмодзи
-        std::cout << "🎮 Игровые: 🕹️🎯🎲🎪🎭🎨🎬🎵🎶🎸🎹🥁🎤🎧" << std::endl;
+        SAFE_PRINT_LINE("🎮 Игровые: 🕹️🎯🎲🎪🎭🎨🎬🎵🎶🎸🎹🥁🎤🎧");
         
         // Технические эмодзи
-        std::cout << "💻 Технические: ⚙️🔧🔨🛠️💡🔋🔌💾💿📀🖥️⌨️🖱️🖨️📱" << std::endl;
+        SAFE_PRINT_LINE("💻 Технические: ⚙️🔧🔨🛠️💡🔋🔌💾💿📀🖥️⌨️🖱️🖨️📱");
         
         // Состояния
-        std::cout << "📊 Состояния: ✅❌⚠️🚀🔥💯⭐✨🌟💎🏆🎉🎊" << std::endl;
+        SAFE_PRINT_LINE("📊 Состояния: ✅❌⚠️🚀🔥💯⭐✨🌟💎🏆🎉🎊");
         
         // Стрелки и направления
-        std::cout << "➡️ Навигация: ⬅️⬆️⬇️➡️↖️↗️↘️↙️🔄🔃🔁🔂⏪⏩⏮️⏭️" << std::endl;
+        SAFE_PRINT_LINE("➡️ Навигация: ⬅️⬆️⬇️➡️↖️↗️↘️↙️🔄🔃🔁🔂⏪⏩⏮️⏭️");
         
         // Разработческие
-        std::cout << "👨‍💻 Разработка: 🐛🔍🧪🔬📝📋📊📈📉🗂️📁📂🗃️🗄️" << std::endl;
+        SAFE_PRINT_LINE("👨‍💻 Разработка: 🐛🔍🧪🔬📝📋📊📈📉🗂️📁📂🗃️🗄️");
         
         std::cout << std::endl;
         waitForUser();
     }
 
     void demonstrateColors() {
-        std::cout << "🎨 5. ЦВЕТНОЙ ВЫВОД В КОНСОЛЬ" << std::endl;
-        std::cout << "═══════════════════════════════════" << std::endl;
+        SAFE_PRINT_LINE("🎨 5. ЦВЕТНОЙ ВЫВОД В КОНСОЛЬ");
+        SAFE_PRINT_LINE("═══════════════════════════════════");
         
         Console::testColorDisplay();
         
         // Демонстрация использования в игровом контексте
-        std::cout << "🎮 Игровые сообщения:" << std::endl;
-        std::cout << "   Игрок получил опыт +100" << std::endl;
-        std::cout << "   Найден редкий предмет!" << std::endl;
-        std::cout << "   Здоровье критически низкое!" << std::endl;
-        std::cout << "   Уровень повышен!" << std::endl;
+        SAFE_PRINT_LINE("🎮 Игровые сообщения:");
+        SAFE_PRINT_LINE("   Игрок получил опыт +100");
+        SAFE_PRINT_LINE("   Найден редкий предмет!");
+        SAFE_PRINT_LINE("   Здоровье критически низкое!");
+        SAFE_PRINT_LINE("   Уровень повышен!");
         
         std::cout << std::endl;
         waitForUser();
     }
 
     void demonstrateEngineIntegration() {
-        std::cout << "⚙️ 6. ИНТЕГРАЦИЯ С ДВИЖКОМ" << std::endl;
-        std::cout << "═══════════════════════════════" << std::endl;
+        SAFE_PRINT_LINE("⚙️ 6. ИНТЕГРАЦИЯ С ДВИЖКОМ");
+        SAFE_PRINT_LINE("═══════════════════════════════");
         
         // Имитация инициализации движка
         Console::info("🔧 Инициализация HyperEngine 3D...");
@@ -189,7 +189,7 @@ private:
         Console::info("✅ Все системы инициализированы успешно!");
         
         std::cout << std::endl;
-        std::cout << "🌟 Движок готов к работе с Unicode!" << std::endl;
+        SAFE_PRINT_LINE("🌟 Движок готов к работе с Unicode!");
         
         std::cout << std::endl;
         waitForUser();
@@ -197,29 +197,29 @@ private:
 
     void showFinalMessage() {
         std::cout << std::endl;
-        std::cout << "🎉═══════════════════════════════════════════════════════════════🎉" << std::endl;
-        std::cout << "                    ✨ ДЕМОНСТРАЦИЯ ЗАВЕРШЕНА ✨" << std::endl;
-        std::cout << "🎉═══════════════════════════════════════════════════════════════🎉" << std::endl;
+        SAFE_PRINT_LINE("🎉═══════════════════════════════════════════════════════════════🎉");
+        SAFE_PRINT_LINE("                    ✨ ДЕМОНСТРАЦИЯ ЗАВЕРШЕНА ✨");
+        SAFE_PRINT_LINE("🎉═══════════════════════════════════════════════════════════════🎉");
         std::cout << std::endl;
         
-        std::cout << "🚀 HyperEngine теперь полностью поддерживает:" << std::endl;
-        std::cout << "   ✅ Отображение всех Unicode UTF-8 символов" << std::endl;
-        std::cout << "   ✅ Эмодзи в консольном выводе" << std::endl;
-        std::cout << "   ✅ Цветной текст для лучшей читаемости" << std::endl;
-        std::cout << "   ✅ Полная локализация на русский язык" << std::endl;
-        std::cout << "   ✅ Кроссплатформенная совместимость" << std::endl;
+        SAFE_PRINT_LINE("🚀 HyperEngine теперь полностью поддерживает:");
+        SAFE_PRINT_LINE("   ✅ Отображение всех Unicode UTF-8 символов");
+        SAFE_PRINT_LINE("   ✅ Эмодзи в консольном выводе");
+        SAFE_PRINT_LINE("   ✅ Цветной текст для лучшей читаемости");
+        SAFE_PRINT_LINE("   ✅ Полная локализация на русский язык");
+        SAFE_PRINT_LINE("   ✅ Кроссплатформенная совместимость");
         
         std::cout << std::endl;
-        std::cout << "💡 Теперь вы можете использовать любые символы в своих проектах!" << std::endl;
-        std::cout << "🔗 Спасибо за использование HyperEngine!" << std::endl;
+        SAFE_PRINT_LINE("💡 Теперь вы можете использовать любые символы в своих проектах!");
+        SAFE_PRINT_LINE("🔗 Спасибо за использование HyperEngine!");
         
         std::cout << std::endl;
-        std::cout << "Нажмите Enter для выхода..." << std::endl;
+        SAFE_PRINT_LINE("Нажмите Enter для выхода...");
         std::cin.get();
     }
 
     void waitForUser() {
-        std::cout << "📍 Нажмите Enter для продолжения..." << std::endl;
+        SAFE_PRINT_LINE("📍 Нажмите Enter для продолжения...");
         std::cin.ignore();
     }
 };

@@ -2,6 +2,7 @@
 // Временная заглушка для этапа 1.2 настройки SDK
 
 #include <iostream>
+#include "Engine3D/Core/Console.h"
 
 namespace Engine3D {
 namespace Upscaling {
@@ -11,7 +12,7 @@ public:
     virtual ~Upscaler() = default;
     
     virtual bool initialize() {
-        std::cout << "Upscaler::initialize() - заглушка" << std::endl;
+        SAFE_PRINT_LINE("Upscaler::initialize() - заглушка");
         return true;
     }
     
@@ -20,14 +21,14 @@ public:
     }
     
     virtual void cleanup() {
-        std::cout << "Upscaler::cleanup() - заглушка" << std::endl;
+        SAFE_PRINT_LINE("Upscaler::cleanup() - заглушка");
     }
 };
 
 class DLSSUpscaler : public Upscaler {
 public:
     bool initialize() override {
-        std::cout << "DLSSUpscaler::initialize() - заглушка" << std::endl;
+        SAFE_PRINT_LINE("DLSSUpscaler::initialize() - заглушка");
         return true;
     }
 };
@@ -35,7 +36,7 @@ public:
 class FSRUpscaler : public Upscaler {
 public:
     bool initialize() override {
-        std::cout << "FSRUpscaler::initialize() - заглушка" << std::endl;
+        SAFE_PRINT_LINE("FSRUpscaler::initialize() - заглушка");
         return true;
     }
 };

@@ -9,6 +9,35 @@
 #include <vector>
 #include <glm/glm.hpp>
 
+// Макросы для проверки ошибок OptiX и CUDA
+#define OPTIX_CHECK(call) \
+    do { \
+        OptixResult res = call; \
+        if (res != OPTIX_SUCCESS) { \
+            std::cerr << "OptiX error " << res << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+            throw std::runtime_error("OptiX error"); \
+        } \
+    } while (0)
+
+#define OPTIX_CHECK_LOG(call) \
+    do { \
+        OptixResult res = call; \
+        if (res != OPTIX_SUCCESS) { \
+            std::cerr << "OptiX error " << res << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+            std::cerr << "Log: " << log << std::endl; \
+            throw std::runtime_error("OptiX error"); \
+        } \
+    } while (0)
+
+#define CUDA_CHECK(call) \
+    do { \
+        cudaError_t err = call; \
+        if (err != cudaSuccess) { \
+            std::cerr << "CUDA error " << cudaGetErrorString(err) << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+            throw std::runtime_error("CUDA error"); \
+        } \
+    } while (0)
+
 namespace Engine3D::OptiX {
 
 /**
@@ -70,7 +99,7 @@ public:
     ShaderBindingTable();
     ~ShaderBindingTable();
     
-    bool init(OptixPipeline pipeline);
+    bool create(OptixPipeline pipeline);
     void shutdown();
     
     OptixShaderBindingTable getSBT() const { return sbt; }
@@ -92,18 +121,17 @@ public:
     AccelerationStructure();
     ~AccelerationStructure();
     
-    bool buildBLAS(const SceneGeometry& geometry);
-    bool buildTLAS(const std::vector<OptixInstance>& instances);
-    void rebuild();
+    bool init(OptixDeviceContext context);
+    bool build(const SceneGeometry& geometry);
+    void shutdown();
     
     OptixTraversableHandle getHandle() const { return traversableHandle; }
 
 private:
+    OptixDeviceContext context = nullptr;
     OptixTraversableHandle traversableHandle = 0;
-    CUdeviceptr blasBuffer = 0;
-    CUdeviceptr tlasBuffer = 0;
-    size_t blasBufferSize = 0;
-    size_t tlasBufferSize = 0;
+    CUdeviceptr gasBuffer = 0;
+    size_t gasBufferSize = 0;
     
     bool initialized = false;
 };
@@ -236,9 +264,12 @@ private:
 #else // !VULKAN_RENDERER_OPTIX_SUPPORT
 
 // Заглушка для случая, когда OptiX не поддерживается
+#include <cstdint>
+
 namespace Engine3D::OptiX {
 
 // Forward declarations для заглушек
+typedef void* CUcontext;
 struct SceneGeometry {};
 struct LaunchParams {};
 struct CoherencyHints {};
@@ -252,16 +283,23 @@ public:
     OptiXRayTracer() = default;
     ~OptiXRayTracer() = default;
     
-    bool init() { return false; }
+    bool init(CUcontext) { return false; }
     void shutdown() {}
     
     void buildAccelerationStructures(const SceneGeometry&) {}
     RawEffects traceRays(const LaunchParams&) { return RawEffects{}; }
     void applySER(const CoherencyHints&) {}
+    void setMaxTraceDepth(uint32_t) {}
     
     bool isInitialized() const { return false; }
     
 private:
+    bool createModule() { return false; }
+    bool createPipeline() { return false; }
+    bool allocateBuffers() { return false; }
+    void freeBuffers() {}
+    static void logCallback(unsigned int, const char*, const char*, void*) {}
+    
     OptiXRayTracer(const OptiXRayTracer&) = delete;
     OptiXRayTracer& operator=(const OptiXRayTracer&) = delete;
 };

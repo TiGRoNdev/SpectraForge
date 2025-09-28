@@ -11,6 +11,7 @@
 #include <iostream>
 #include <algorithm>
 #include <stdexcept>
+#include "Engine3D/Core/Console.h"
 
 using namespace Engine3D::Vulkan;
 
@@ -28,7 +29,7 @@ SceneManager::~SceneManager() {
 
 bool SceneManager::init() {
     try {
-        std::cout << "[SceneManager] Инициализация менеджера сцены..." << std::endl;
+        SAFE_PRINT_LINE("[SceneManager] Инициализация менеджера сцены...");
         
         // Инициализируем структуры данных
         images = MultiViewImages{};
@@ -40,7 +41,7 @@ bool SceneManager::init() {
         sceneLoaded = false;
         
         initialized = true;
-        std::cout << "[SceneManager] Инициализация завершена успешно" << std::endl;
+        SAFE_PRINT_LINE("[SceneManager] Инициализация завершена успешно");
         return true;
         
     } catch (const std::exception& e) {
@@ -54,7 +55,7 @@ void SceneManager::shutdown() {
         return;
     }
     
-    std::cout << "[SceneManager] Завершение работы менеджера сцены..." << std::endl;
+    SAFE_PRINT_LINE("[SceneManager] Завершение работы менеджера сцены...");
     
     // Очищаем сцену
     clearScene();
@@ -63,12 +64,12 @@ void SceneManager::shutdown() {
     sceneObjects.clear();
     
     initialized = false;
-    std::cout << "[SceneManager] Завершение работы завершено" << std::endl;
+    SAFE_PRINT_LINE("[SceneManager] Завершение работы завершено");
 }
 
 bool SceneManager::loadScene(const SceneData& data) {
     if (!initialized) {
-        std::cerr << "[SceneManager] Ошибка: Менеджер не инициализирован" << std::endl;
+        SAFE_ERROR("[SceneManager] Ошибка: Менеджер не инициализирован");
         return false;
     }
     
@@ -80,13 +81,13 @@ bool SceneManager::loadScene(const SceneData& data) {
         
         // Загружаем меши
         if (!loadMeshes(data.meshPaths)) {
-            std::cerr << "[SceneManager] Ошибка загрузки мешей" << std::endl;
+            SAFE_ERROR("[SceneManager] Ошибка загрузки мешей");
             return false;
         }
         
         // Загружаем текстуры
         if (!loadTextures(data.texturePaths)) {
-            std::cerr << "[SceneManager] Ошибка загрузки текстур" << std::endl;
+            SAFE_ERROR("[SceneManager] Ошибка загрузки текстур");
             return false;
         }
         
@@ -144,7 +145,7 @@ void SceneManager::clearScene() {
         return;
     }
     
-    std::cout << "[SceneManager] Очистка сцены..." << std::endl;
+    SAFE_PRINT_LINE("[SceneManager] Очистка сцены...");
     
     // Очищаем объекты
     sceneObjects.clear();
@@ -158,12 +159,12 @@ void SceneManager::clearScene() {
     elements = DynamicElements{};
     
     sceneLoaded = false;
-    std::cout << "[SceneManager] Сцена очищена" << std::endl;
+    SAFE_PRINT_LINE("[SceneManager] Сцена очищена");
 }
 
 uint32_t SceneManager::addObject(const std::string& objectPath) {
     if (!initialized) {
-        std::cerr << "[SceneManager] Ошибка: Менеджер не инициализирован" << std::endl;
+        SAFE_ERROR("[SceneManager] Ошибка: Менеджер не инициализирован");
         return 0;
     }
     
@@ -213,7 +214,7 @@ bool SceneManager::loadMeshes(const std::vector<std::string>& meshPaths) {
         addObject(meshPath);
     }
     
-    std::cout << "[SceneManager] Меши загружены" << std::endl;
+    SAFE_PRINT_LINE("[SceneManager] Меши загружены");
     return true;
 }
 
@@ -226,7 +227,7 @@ bool SceneManager::loadTextures(const std::vector<std::string>& texturePaths) {
         std::cout << "[SceneManager] Загружена текстура: " << texturePath << std::endl;
     }
     
-    std::cout << "[SceneManager] Текстуры загружены" << std::endl;
+    SAFE_PRINT_LINE("[SceneManager] Текстуры загружены");
     return true;
 }
 
@@ -240,7 +241,7 @@ void SceneManager::generateGaussians() {
     // 3. Оптимизация параметров гауссианов
     // 4. Создание структур данных для рендеринга
     
-    std::cout << "[SceneManager] Гауссианы сгенерированы" << std::endl;
+    SAFE_PRINT_LINE("[SceneManager] Гауссианы сгенерированы");
 }
 
 void SceneManager::updateAnimations(float deltaTime) {

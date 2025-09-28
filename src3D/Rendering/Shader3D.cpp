@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include "Engine3D/Core/Console.h"
 
 using namespace Engine3D::Math;
 using namespace Engine3D::Rendering;
@@ -22,7 +23,7 @@ bool Shader3D::loadFromFiles(const std::string& vertexPath, const std::string& f
     std::string fragmentSource = readFile(fragmentPath);
     
     if (vertexSource.empty() || fragmentSource.empty()) {
-        std::cerr << "Failed to read shader files: " << vertexPath << " or " << fragmentPath << std::endl;
+        SAFE_ERROR("Failed to read shader files: " + vertexPath + " or " + fragmentPath);
         return false;
     }
     
@@ -35,7 +36,7 @@ bool Shader3D::loadFromFiles(const std::string& vertexPath, const std::string& f
     std::string geometrySource = readFile(geometryPath);
     
     if (vertexSource.empty() || fragmentSource.empty() || geometrySource.empty()) {
-        std::cerr << "Failed to read shader files" << std::endl;
+        SAFE_ERROR("Failed to read shader files");
         return false;
     }
     
@@ -44,9 +45,9 @@ bool Shader3D::loadFromFiles(const std::string& vertexPath, const std::string& f
 
 bool Shader3D::loadFromSource(const std::string& vertexSource, const std::string& fragmentSource) {
     // TODO: Реализовать компиляцию шейдеров для конкретного API (OpenGL/Vulkan)
-    std::cout << "Shader3D::loadFromSource() - vertex and fragment shaders\n";
-    std::cout << "Vertex source length: " << std::to_string(vertexSource.length()) << std::endl;
-    std::cout << "Fragment source length: " << std::to_string(fragmentSource.length()) << std::endl;
+    SAFE_PRINT_LINE("Shader3D::loadFromSource() - vertex and fragment shaders");
+    SAFE_PRINT_LINE("Vertex source length: " + SAFE_TO_STRING(vertexSource.length()));
+    SAFE_PRINT_LINE("Fragment source length: " + SAFE_TO_STRING(fragmentSource.length()));
     
     // Заглушка - считаем что загрузка прошла успешно
     programId = 1; // Фиктивный ID
@@ -56,10 +57,10 @@ bool Shader3D::loadFromSource(const std::string& vertexSource, const std::string
 
 bool Shader3D::loadFromSource(const std::string& vertexSource, const std::string& fragmentSource, const std::string& geometrySource) {
     // TODO: Реализовать компиляцию шейдеров с геометрическим шейдером
-    std::cout << "Shader3D::loadFromSource() - vertex, fragment and geometry shaders\n";
-    std::cout << "Vertex source length: " << std::to_string(vertexSource.length()) << std::endl;
-    std::cout << "Fragment source length: " << std::to_string(fragmentSource.length()) << std::endl;
-    std::cout << "Geometry source length: " << std::to_string(geometrySource.length()) << std::endl;
+    SAFE_PRINT_LINE("Shader3D::loadFromSource() - vertex, fragment and geometry shaders");
+    SAFE_PRINT_LINE("Vertex source length: " + SAFE_TO_STRING(vertexSource.length()));
+    SAFE_PRINT_LINE("Fragment source length: " + SAFE_TO_STRING(fragmentSource.length()));
+    SAFE_PRINT_LINE("Geometry source length: " + SAFE_TO_STRING(geometrySource.length()));
     
     // Заглушка
     programId = 1;
@@ -70,18 +71,18 @@ bool Shader3D::loadFromSource(const std::string& vertexSource, const std::string
 // Использование шейдера
 void Shader3D::use() const {
     if (!loaded) {
-        std::cerr << "Warning: Trying to use unloaded shader" << std::endl;
+        SAFE_ERROR("Warning: Trying to use unloaded shader");
         return;
     }
     
     // TODO: Реализовать использование шейдера для конкретного API
-    std::cout << "Using shader program ID: " << programId << std::endl;
+    SAFE_PRINT_LINE("Using shader program ID: " + SAFE_TO_STRING(programId));
 }
 
 void Shader3D::cleanup() {
     if (programId != 0) {
         // TODO: Удаление шейдерной программы
-        std::cout << "Cleaning up shader program ID: " << programId << std::endl;
+        SAFE_PRINT_LINE("Cleaning up shader program ID: " + SAFE_TO_STRING(programId));
         programId = 0;
     }
     loaded = false;
@@ -93,7 +94,7 @@ void Shader3D::setMatrix4(const std::string& name, const Matrix4& matrix) const 
     int location = getUniformLocation(name);
     if (location != -1) {
         // TODO: Реализовать установку матрицы для конкретного API
-        std::cout << "Setting Matrix4 uniform '" << name << "' at location " << std::to_string(location) << std::endl;
+        SAFE_PRINT_LINE("Setting Matrix4 uniform '" + name + "' at location " + SAFE_TO_STRING(location));
     }
 }
 
@@ -101,8 +102,7 @@ void Shader3D::setVector3(const std::string& name, const Vector3& vector) const 
     int location = getUniformLocation(name);
     if (location != -1) {
         // TODO: Реализовать установку вектора для конкретного API
-        std::cout << "Setting Vector3 uniform '" << name << "' at location " << std::to_string(location) 
-                  << " value: (" << std::to_string(vector.x) << ", " << std::to_string(vector.y) << ", " << std::to_string(vector.z) << ")" << std::endl;
+        SAFE_PRINT_LINE("Setting Vector3 uniform '" + name + "' at location " + SAFE_TO_STRING(location) + " value: (" + SAFE_TO_STRING(vector.x) + ", " + SAFE_TO_STRING(vector.y) + ", " + SAFE_TO_STRING(vector.z) + ")");
     }
 }
 
@@ -110,7 +110,7 @@ void Shader3D::setFloat(const std::string& name, float value) const {
     int location = getUniformLocation(name);
     if (location != -1) {
         // TODO: Реализовать установку float для конкретного API
-        std::cout << "Setting float uniform '" << name << "' at location " << location << " value: " << value << std::endl;
+        SAFE_PRINT_LINE("Setting float uniform '" + name + "' at location " + SAFE_TO_STRING(location) + " value: " + SAFE_TO_STRING(value));
     }
 }
 
@@ -118,7 +118,7 @@ void Shader3D::setInt(const std::string& name, int value) const {
     int location = getUniformLocation(name);
     if (location != -1) {
         // TODO: Реализовать установку int для конкретного API
-        std::cout << "Setting int uniform '" << name << "' at location " << location << " value: " << value << std::endl;
+        SAFE_PRINT_LINE("Setting int uniform '" + name + "' at location " + SAFE_TO_STRING(location) + " value: " + SAFE_TO_STRING(value));
     }
 }
 
@@ -130,8 +130,7 @@ void Shader3D::setTexture(const std::string& name, unsigned int textureId, int u
     int location = getUniformLocation(name);
     if (location != -1) {
         // TODO: Реализовать установку текстуры для конкретного API
-        std::cout << "Setting texture uniform '" << name << "' at location " << location 
-                  << " textureId: " << textureId << " unit: " << unit << std::endl;
+        SAFE_PRINT_LINE("Setting texture uniform '" + name + "' at location " + SAFE_TO_STRING(location) + " textureId: " + SAFE_TO_STRING(textureId) + " unit: " + SAFE_TO_STRING(unit));
     }
 }
 
@@ -215,13 +214,13 @@ std::shared_ptr<Shader3D> Shader3D::createBasicShader() {
 
 std::shared_ptr<Shader3D> Shader3D::createPhongShader() {
     // TODO: Реализовать Phong шейдер
-    std::cout << "Creating Phong shader...\n";
+    SAFE_PRINT_LINE("Creating Phong shader...");
     return createBasicShader();
 }
 
 std::shared_ptr<Shader3D> Shader3D::createPBRShader() {
     // TODO: Реализовать PBR шейдер
-    std::cout << "Creating PBR shader...\n";
+    SAFE_PRINT_LINE("Creating PBR shader...");
     return createBasicShader();
 }
 
@@ -263,30 +262,30 @@ std::shared_ptr<Shader3D> Shader3D::createUnlitShader() {
 // Вспомогательные методы
 unsigned int Shader3D::compileShader(const std::string& source, unsigned int type) {
     // TODO: Реализовать компиляцию шейдера для конкретного API
-    std::cout << "Compiling shader of type: " << type << std::endl;
+    SAFE_PRINT_LINE("Compiling shader of type: " + SAFE_TO_STRING(type));
     return 1; // Фиктивный ID
 }
 
 unsigned int Shader3D::linkProgram(unsigned int vertexShader, unsigned int fragmentShader, unsigned int geometryShader) {
     // TODO: Реализовать линковку программы для конкретного API
-    std::cout << "Linking program with shaders: " << vertexShader << ", " << fragmentShader;
+    SAFE_PRINT_LINE("Linking program with shaders: " + SAFE_TO_STRING(vertexShader) + ", " + SAFE_TO_STRING(fragmentShader));
     if (geometryShader != 0) {
-        std::cout << ", " << geometryShader;
+        SAFE_PRINT_LINE(", " + SAFE_TO_STRING(geometryShader));
     }
-    std::cout << std::endl;
+    // End of linking
     return 1; // Фиктивный ID
 }
 
 bool Shader3D::checkCompileErrors(unsigned int shader, const std::string& type) {
     // TODO: Реализовать проверку ошибок компиляции
-    std::cout << "Checking compile errors for " << type << " shader ID: " << shader << std::endl;
+    SAFE_PRINT_LINE("Checking compile errors for " + type + " shader ID: " + SAFE_TO_STRING(shader));
     return true; // Предполагаем, что ошибок нет
 }
 
 std::string Shader3D::readFile(const std::string& filepath) {
     std::ifstream file(filepath);
     if (!file.is_open()) {
-        std::cerr << "Failed to open file: " << filepath << std::endl;
+        SAFE_ERROR("Failed to open file: " + filepath);
         return "";
     }
     
@@ -297,7 +296,7 @@ std::string Shader3D::readFile(const std::string& filepath) {
 
 void Shader3D::bindUniformBlock(const std::string& name, unsigned int bindingPoint) const {
     // TODO: Реализовать привязку uniform блоков
-    std::cout << "Binding uniform block '" << name << "' to binding point " << bindingPoint << std::endl;
+    SAFE_PRINT_LINE("Binding uniform block '" + name + "' to binding point " + SAFE_TO_STRING(bindingPoint));
 }
 
 // ShaderManager implementation
@@ -334,7 +333,7 @@ void ShaderManager::loadDefaultShaders() {
     shaders["pbr"] = Shader3D::createPBRShader();
     shaders["unlit"] = Shader3D::createUnlitShader();
     
-    std::cout << "Loaded " << shaders.size() << " default shaders" << std::endl;
+    SAFE_PRINT_LINE("Loaded " + SAFE_TO_STRING(shaders.size()) + " default shaders");
 }
 
 } // namespace Rendering

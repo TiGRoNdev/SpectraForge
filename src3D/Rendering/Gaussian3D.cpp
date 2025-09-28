@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <chrono>
+#include "Engine3D/Core/Console.h"
 
 using namespace Engine3D::Math;
 using namespace Engine3D::Rendering;
@@ -61,7 +62,7 @@ GaussianField3D::GaussianField3D()
     , VAO(0)
     , VBO(0) {
     renderStats.reset();
-    std::cout << "Создано поле 3D гауссианов" << std::endl;
+    SAFE_PRINT_LINE("Создано поле 3D гауссианов");
 }
 
 GaussianField3D::~GaussianField3D() {
@@ -111,7 +112,7 @@ void GaussianField3D::optimizeGaussians(const std::vector<Vector3>& viewPoints) 
                   return a.importance > b.importance;
               });
     
-    std::cout << "Оптимизация завершена. Гауссианы отсортированы по важности." << std::endl;
+    SAFE_PRINT_LINE("Оптимизация завершена. Гауссианы отсортированы по важности.");
     uploaded = false;
 }
 
@@ -288,7 +289,7 @@ void GaussianField3D::uploadToGPU() {
     updateGaussianBuffer();
     uploaded = true;
     
-    std::cout << "Гауссианы успешно загружены в GPU" << std::endl;
+    SAFE_PRINT_LINE("Гауссианы успешно загружены в GPU");
 }
 
 void GaussianField3D::render(const Matrix4& viewMatrix, const Matrix4& projMatrix) const {
@@ -309,7 +310,7 @@ void GaussianField3D::cleanup() {
     if (!uploaded) return;
     
     // TODO: Очистка GPU ресурсов
-    std::cout << "Очистка ресурсов поля гауссианов..." << std::endl;
+    SAFE_PRINT_LINE("Очистка ресурсов поля гауссианов...");
     
     uploaded = false;
 }
@@ -321,7 +322,7 @@ void GaussianField3D::buildSpatialTree() {
 
 void GaussianField3D::updateGaussianBuffer() {
     // TODO: Обновление GPU буфера с данными гауссианов
-    std::cout << "Обновление буфера гауссианов в GPU..." << std::endl;
+    SAFE_PRINT_LINE("Обновление буфера гауссианов в GPU...");
 }
 
 // === GaussianRenderer3D Implementation ===
@@ -351,7 +352,7 @@ GaussianRenderer3D::~GaussianRenderer3D() {
 bool GaussianRenderer3D::initialize() {
     if (initialized) return true;
     
-    std::cout << "Инициализация рендерера 3D гауссианов..." << std::endl;
+    SAFE_PRINT_LINE("Инициализация рендерера 3D гауссианов...");
     
     // TODO: Загрузка шейдеров для рендеринга гауссианов
     // gaussianShader = loadGaussianSplatShader();
@@ -360,14 +361,14 @@ bool GaussianRenderer3D::initialize() {
     // TODO: Создание GPU буферов для тайлового рендеринга
     
     initialized = true;
-    std::cout << "Рендерер 3D гауссианов успешно инициализирован" << std::endl;
+    SAFE_PRINT_LINE("Рендерер 3D гауссианов успешно инициализирован");
     return true;
 }
 
 void GaussianRenderer3D::cleanup() {
     if (!initialized) return;
     
-    std::cout << "Очистка рендерера 3D гауссианов..." << std::endl;
+    SAFE_PRINT_LINE("Очистка рендерера 3D гауссианов...");
     
     // TODO: Очистка шейдеров и GPU ресурсов
     
@@ -379,7 +380,7 @@ void GaussianRenderer3D::render(const GaussianField3D& field,
                                const Matrix4& projMatrix,
                                int screenWidth, int screenHeight) {
     if (!initialized) {
-        std::cerr << "GaussianRenderer3D не инициализирован!" << std::endl;
+        SAFE_ERROR("GaussianRenderer3D не инициализирован!");
         return;
     }
     

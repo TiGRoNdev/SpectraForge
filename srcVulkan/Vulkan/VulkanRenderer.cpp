@@ -13,6 +13,7 @@
 #include "Engine3D/OptiX/OptiXRayTracer.h"
 #include <iostream>
 #include <stdexcept>
+#include "Engine3D/Core/Console.h"
 
 using namespace Engine3D::Vulkan;
 
@@ -33,10 +34,10 @@ bool VulkanRenderer::init(vk::Device logDevice, ResourceManager* resMgr) {
         this->device = logDevice;
         this->resourceManager = resMgr;
         
-        std::cout << "[VulkanRenderer] Инициализация рендерера..." << std::endl;
+        SAFE_PRINT_LINE("[VulkanRenderer] Инициализация рендерера...");
         
         if (!resourceManager) {
-            std::cerr << "[VulkanRenderer] Ошибка: ResourceManager не предоставлен" << std::endl;
+            SAFE_ERROR("[VulkanRenderer] Ошибка: ResourceManager не предоставлен");
             return false;
         }
         
@@ -58,7 +59,7 @@ bool VulkanRenderer::init(vk::Device logDevice, ResourceManager* resMgr) {
         // commandPool = device.createCommandPool(poolInfo);
         
         initialized = true;
-        std::cout << "[VulkanRenderer] Инициализация завершена успешно" << std::endl;
+        SAFE_PRINT_LINE("[VulkanRenderer] Инициализация завершена успешно");
         return true;
         
     } catch (const std::exception& e) {
@@ -72,7 +73,7 @@ void VulkanRenderer::shutdown() {
         return;
     }
     
-    std::cout << "[VulkanRenderer] Завершение работы рендерера..." << std::endl;
+    SAFE_PRINT_LINE("[VulkanRenderer] Завершение работы рендерера...");
     
     // Освобождаем компоненты рендеринга
     upscaler.reset();
@@ -92,12 +93,12 @@ void VulkanRenderer::shutdown() {
     }
     
     initialized = false;
-    std::cout << "[VulkanRenderer] Завершение работы завершено" << std::endl;
+    SAFE_PRINT_LINE("[VulkanRenderer] Завершение работы завершено");
 }
 
 PrimaryImage VulkanRenderer::rasterizePrimary(const Gaussians& gaussians) {
     if (!initialized) {
-        std::cerr << "[VulkanRenderer] Ошибка: Рендерер не инициализирован" << std::endl;
+        SAFE_ERROR("[VulkanRenderer] Ошибка: Рендерер не инициализирован");
         return PrimaryImage{};
     }
     
@@ -115,13 +116,13 @@ PrimaryImage VulkanRenderer::rasterizePrimary(const Gaussians& gaussians) {
     result.width = 1920;
     result.height = 1080;
     
-    std::cout << "[VulkanRenderer] Первичная растеризация завершена (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[VulkanRenderer] Первичная растеризация завершена (заглушка)");
     return result;
 }
 
 RawEffects VulkanRenderer::rayTraceSecondary(const PrimaryImage& image) {
     if (!initialized) {
-        std::cerr << "[VulkanRenderer] Ошибка: Рендерер не инициализирован" << std::endl;
+        SAFE_ERROR("[VulkanRenderer] Ошибка: Рендерер не инициализирован");
         return RawEffects{};
     }
     
@@ -138,17 +139,17 @@ RawEffects VulkanRenderer::rayTraceSecondary(const PrimaryImage& image) {
     // Пока возвращаем заглушку
     RawEffects result{};
     
-    std::cout << "[VulkanRenderer] Вторичный ray tracing завершен (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[VulkanRenderer] Вторичный ray tracing завершен (заглушка)");
     return result;
 }
 
 DenoisedImage VulkanRenderer::denoiseAI(const RawEffects& effects) {
     if (!initialized) {
-        std::cerr << "[VulkanRenderer] Ошибка: Рендерер не инициализирован" << std::endl;
+        SAFE_ERROR("[VulkanRenderer] Ошибка: Рендерер не инициализирован");
         return DenoisedImage{};
     }
     
-    std::cout << "[VulkanRenderer] AI деноизинг эффектов" << std::endl;
+    SAFE_PRINT_LINE("[VulkanRenderer] AI деноизинг эффектов");
     
     // TODO: Реализация через DenoiseModule на этапе 5
     // В полной реализации здесь будет:
@@ -160,13 +161,13 @@ DenoisedImage VulkanRenderer::denoiseAI(const RawEffects& effects) {
     // Пока возвращаем заглушку
     DenoisedImage result{};
     
-    std::cout << "[VulkanRenderer] AI деноизинг завершен (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[VulkanRenderer] AI деноизинг завершен (заглушка)");
     return result;
 }
 
 FinalImage VulkanRenderer::upscale(const DenoisedImage& image, const ResolutionTarget& target) {
     if (!initialized) {
-        std::cerr << "[VulkanRenderer] Ошибка: Рендерер не инициализирован" << std::endl;
+        SAFE_ERROR("[VulkanRenderer] Ошибка: Рендерер не инициализирован");
         return FinalImage{};
     }
     
@@ -184,17 +185,17 @@ FinalImage VulkanRenderer::upscale(const DenoisedImage& image, const ResolutionT
     // Пока возвращаем заглушку
     FinalImage result{};
     
-    std::cout << "[VulkanRenderer] Upscaling завершен (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[VulkanRenderer] Upscaling завершен (заглушка)");
     return result;
 }
 
 void VulkanRenderer::presentFinalImage() {
     if (!initialized) {
-        std::cerr << "[VulkanRenderer] Ошибка: Рендерер не инициализирован" << std::endl;
+        SAFE_ERROR("[VulkanRenderer] Ошибка: Рендерер не инициализирован");
         return;
     }
     
-    std::cout << "[VulkanRenderer] Презентация финального изображения" << std::endl;
+    SAFE_PRINT_LINE("[VulkanRenderer] Презентация финального изображения");
     
     // TODO: Реализация презентации через swapchain
     // В полной реализации здесь будет:
@@ -203,7 +204,7 @@ void VulkanRenderer::presentFinalImage() {
     // 3. Презентация через present queue
     // 4. Синхронизация с VSync
     
-    std::cout << "[VulkanRenderer] Презентация завершена (заглушка)" << std::endl;
+    SAFE_PRINT_LINE("[VulkanRenderer] Презентация завершена (заглушка)");
 }
 
 } // namespace Engine3D::Vulkan

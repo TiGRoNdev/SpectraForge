@@ -8,6 +8,7 @@
 #include <string>
 #include <iostream>
 #include <locale>
+#include "Engine3D/Core/Console.h"
 
 namespace Engine3D {
 namespace Core {
@@ -39,11 +40,11 @@ enum class ConsoleColor {
  * @brief Уровни логирования
  */
 enum class LogLevel {
-    DEBUG = 0,
-    INFO = 1,
-    WARNING = 2,
-    ERROR = 3,
-    CRITICAL = 4
+    DEBUG_LEVEL = 0,
+    INFO_LEVEL = 1,
+    WARNING_LEVEL = 2,
+    ERROR_LEVEL = 3,
+    CRITICAL_LEVEL = 4
 };
 
 /**
@@ -165,6 +166,66 @@ public:
      */
     static void testColorDisplay();
 
+    /**
+     * @brief Безопасный вывод строки с обработкой ошибок кодировки
+     * @param text Текст для вывода
+     * @param fallbackText Резервный текст при ошибке кодировки
+     * @return true если вывод прошел успешно
+     */
+    static bool safePrint(const std::string& text, const std::string& fallbackText = "");
+
+    /**
+     * @brief Безопасный вывод числа как строки
+     * @param value Числовое значение
+     * @return Строковое представление числа
+     */
+    template<typename T>
+    static std::string safeToString(const T& value) {
+        try {
+            return std::to_string(value);
+        } catch (...) {
+            return "[число]";
+        }
+    }
+
+    /**
+     * @brief Проверяет, содержит ли строка проблемные символы
+     * @param text Текст для проверки
+     * @return true если текст безопасен для вывода
+     */
+    static bool isTextSafe(const std::string& text);
+
+    /**
+     * @brief Очищает строку от проблемных символов
+     * @param text Исходный текст
+     * @return Очищенный текст
+     */
+    static std::string sanitizeText(const std::string& text);
+
+    /**
+     * @brief Безопасный вывод с автоматической обработкой ошибок
+     * @param message Сообщение для вывода
+     */
+    static void safePrintLine(const std::string& message);
+
+    /**
+     * @brief Безопасный вывод информационного сообщения
+     * @param message Сообщение
+     */
+    static void safeInfo(const std::string& message);
+
+    /**
+     * @brief Безопасный вывод предупреждения
+     * @param message Сообщение
+     */
+    static void safeWarning(const std::string& message);
+
+    /**
+     * @brief Безопасный вывод ошибки
+     * @param message Сообщение
+     */
+    static void safeError(const std::string& message);
+
 private:
     static bool initialized;
     static bool utf8Supported;
@@ -209,4 +270,13 @@ private:
 #define LOG_WARNING(msg) Engine3D::Core::Console::warning(msg)
 #define LOG_ERROR(msg) Engine3D::Core::Console::error(msg)
 #define LOG_CRITICAL(msg) Engine3D::Core::Console::critical(msg)
+
+// Макросы для безопасного вывода
+#define SAFE_PRINT(text) Engine3D::Core::Console::safePrint(text)
+#define SAFE_PRINT_FALLBACK(text, fallback) Engine3D::Core::Console::safePrint(text, fallback)
+#define SAFE_PRINT_LINE(text) Engine3D::Core::Console::safePrintLine(text)
+#define SAFE_TO_STRING(value) Engine3D::Core::Console::safeToString(value)
+#define SAFE_INFO(msg) Engine3D::Core::Console::safeInfo(msg)
+#define SAFE_WARNING(msg) Engine3D::Core::Console::safeWarning(msg)
+#define SAFE_ERROR(msg) Engine3D::Core::Console::safeError(msg)
 

@@ -34,7 +34,7 @@ endif()
 # Опции для адаптеров рендеринга
 option(ENABLE_OPENGL_BACKEND "Enable OpenGL rendering backend" ON)
 option(ENABLE_VULKAN_BACKEND "Enable Vulkan rendering backend" ON)
-option(DEFAULT_BACKEND_VULKAN "Use Vulkan as default backend (otherwise OpenGL)" OFF)
+option(DEFAULT_BACKEND_VULKAN "Use Vulkan as default backend (otherwise OpenGL)" ON)
 
 # Создаем проект с поддерживаемыми языками
 project(HyperEngine VERSION 1.0.0 LANGUAGES ${PROJECT_LANGUAGES})
@@ -251,6 +251,12 @@ if(BUILD_ENGINE_3D)
             examples/renderer_adapter_demo.cpp
         )
         target_link_libraries(RendererAdapter_Demo PRIVATE Engine3D)
+        
+        # Демо безопасной консоли
+        add_executable(SafeConsole_Demo 
+            examples/safe_console_demo.cpp
+        )
+        target_link_libraries(SafeConsole_Demo PRIVATE Engine3D)
     endif()
 endif()
 
@@ -321,9 +327,16 @@ if(BUILD_VULKAN_RENDERER)
     # Объединяем исходники
     set(VULKAN_SOURCES ${VULKAN_CPP_SOURCES} ${VULKAN_HEADERS})
     
-    # Проверяем наличие скомпилированных CUDA объектных файлов
-    set(CUDA_OBJECT_FILES)
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/gaussian_optimization.obj")
+    # Приоритет библиотекам над объектными файлами для лучшей линковки
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/cuda_kernels_partial.lib")
+        # Если есть библиотека но нет отдельных объектных файлов
+        set(CUDA_LIBRARY_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/cuda_kernels_partial.lib")
+        list(REMOVE_ITEM VULKAN_CPP_SOURCES "${CMAKE_SOURCE_DIR}/srcVulkan/CUDA/cuda_stubs.cpp")
+        message(STATUS "Using compiled CUDA library: ${CUDA_LIBRARY_FILE}")
+        set(USING_COMPILED_CUDA_LIBRARY TRUE)
+    elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/gaussian_optimization.obj")
+        # Fallback: используем объектные файлы если нет библиотеки
+        set(CUDA_OBJECT_FILES)
         list(APPEND CUDA_OBJECT_FILES 
             "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/gaussian_optimization.obj"
             "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/tile_rasterization.obj"
@@ -334,12 +347,6 @@ if(BUILD_VULKAN_RENDERER)
         list(REMOVE_ITEM VULKAN_SOURCES "${CMAKE_SOURCE_DIR}/srcVulkan/CUDA/cuda_stubs.cpp")
         message(STATUS "Using compiled CUDA object files: ${CUDA_OBJECT_FILES}")
         set(USING_COMPILED_CUDA_OBJECTS TRUE)
-    elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/cuda_kernels_partial.lib")
-        # Если есть библиотека но нет отдельных объектных файлов
-        set(CUDA_LIBRARY_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/cuda_kernels_partial.lib")
-        list(REMOVE_ITEM VULKAN_CPP_SOURCES "${CMAKE_SOURCE_DIR}/srcVulkan/CUDA/cuda_stubs.cpp")
-        message(STATUS "Using compiled CUDA library: ${CUDA_LIBRARY_FILE}")
-        set(USING_COMPILED_CUDA_LIBRARY TRUE)
     else()
         # Fallback: Добавляем CUDA файлы или заглушки
         if(CUDA_AVAILABLE AND VULKAN_CUDA_SOURCES)
@@ -396,13 +403,12 @@ if(BUILD_VULKAN_RENDERER)
         )
         
         # Добавляем CUDA include пути для скомпилированных файлов
-        if(CUDA_FOUND)
-            find_package(CUDAToolkit REQUIRED)
-            target_include_directories(VulkanRenderer PRIVATE 
-                ${CUDAToolkit_INCLUDE_DIRS}
-            )
-            target_link_libraries(VulkanRenderer PRIVATE CUDA::cudart CUDA::cuda_driver)
-        endif()
+        # Всегда ищем CUDA toolkit для линковки runtime библиотек
+        find_package(CUDAToolkit REQUIRED)
+        target_include_directories(VulkanRenderer PRIVATE 
+            ${CUDAToolkit_INCLUDE_DIRS}
+        )
+        target_link_libraries(VulkanRenderer PUBLIC CUDA::cudart CUDA::cuda_driver)
         
         message(STATUS "VulkanRenderer: CUDA поддержка через скомпилированные файлы включена")
     elseif(CUDA_RUNTIME_ONLY)
@@ -413,7 +419,7 @@ if(BUILD_VULKAN_RENDERER)
         )
         
         # Линковка только runtime CUDA библиотек  
-        target_link_libraries(VulkanRenderer PRIVATE CUDA::cudart CUDA::cuda_driver)
+        target_link_libraries(VulkanRenderer PUBLIC CUDA::cudart CUDA::cuda_driver)
         
         message(STATUS "VulkanRenderer: Runtime CUDA поддержка включена (stubs + runtime)")
     else()
@@ -437,7 +443,7 @@ if(BUILD_VULKAN_RENDERER)
         message(STATUS "Linked CUDA object files to VulkanRenderer")
     elseif(USING_COMPILED_CUDA_LIBRARY)
         # Линкуем библиотеку
-        target_link_libraries(VulkanRenderer PRIVATE ${CUDA_LIBRARY_FILE})
+        target_link_libraries(VulkanRenderer PUBLIC ${CUDA_LIBRARY_FILE})
         message(STATUS "Linked CUDA library to VulkanRenderer")
     endif()
 
@@ -461,25 +467,25 @@ if(BUILD_VULKAN_RENDERER)
     if(BUILD_WITH_OPTIX AND OptiX_FOUND)
         target_include_directories(VulkanRenderer PRIVATE ${OptiX_INCLUDE_DIRS})
         target_link_libraries(VulkanRenderer PRIVATE ${OptiX_LIBRARIES})
-        target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_OPTIX_SUPPORT)
+        target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_OPTIX_SUPPORT CUDA_VULKAN_INTEROP_SUPPORTED)
     endif()
     
     # DLSS поддержка
     if(BUILD_WITH_DLSS AND DLSS_FOUND)
         target_include_directories(VulkanRenderer PRIVATE ${DLSS_INCLUDE_DIRS})
         target_link_libraries(VulkanRenderer PRIVATE ${DLSS_LIBRARIES})
-        target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_DLSS_SUPPORT)
+        target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_DLSS_SUPPORT CUDA_VULKAN_INTEROP_SUPPORTED)
     endif()
     
     # FSR поддержка
     if(BUILD_WITH_FSR AND FSR_FOUND)
         target_include_directories(VulkanRenderer PRIVATE ${FSR_INCLUDE_DIRS})
         target_link_libraries(VulkanRenderer PRIVATE ${FSR_LIBRARIES})
-        target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_FSR_SUPPORT)
+        target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_FSR_SUPPORT CUDA_VULKAN_INTEROP_SUPPORTED)
     endif()
     
     # Определения компилятора для Vulkan рендерера
-    target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_BUILD)
+    target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_BUILD CUDA_VULKAN_INTEROP_SUPPORTED)
     
     # Настройки CUDA для .cu файлов выполняются в configure_cuda_target()
     
@@ -495,7 +501,17 @@ if(BUILD_VULKAN_RENDERER)
         add_executable(VulkanRenderer_Demo 
             examples/vulkan_demo.cpp
         )
-        target_link_libraries(VulkanRenderer_Demo PRIVATE VulkanRenderer)
+        target_link_libraries(VulkanRenderer_Demo PRIVATE 
+            VulkanRenderer
+            Engine3D
+        )
+        
+        # Добавляем CUDA библиотеки к VulkanRenderer_Demo если CUDA доступна
+        if(CUDA_AVAILABLE OR CUDA_RUNTIME_ONLY OR USING_COMPILED_CUDA_OBJECTS OR USING_COMPILED_CUDA_LIBRARY)
+            find_package(CUDAToolkit REQUIRED)
+            target_link_libraries(VulkanRenderer_Demo PRIVATE CUDA::cudart CUDA::cuda_driver)
+            message(STATUS "VulkanRenderer_Demo: добавлены CUDA библиотеки")
+        endif()
         
         # Базовое демо новой Vulkan архитектуры (этап 2.1)
         add_executable(VulkanBasic_Demo 
@@ -505,6 +521,12 @@ if(BUILD_VULKAN_RENDERER)
             VulkanRenderer
             Engine3D
         )
+        
+        # Добавляем CUDA библиотеки к VulkanBasic_Demo если CUDA доступна
+        if(CUDA_AVAILABLE OR CUDA_RUNTIME_ONLY OR USING_COMPILED_CUDA_OBJECTS OR USING_COMPILED_CUDA_LIBRARY)
+            target_link_libraries(VulkanBasic_Demo PRIVATE CUDA::cudart CUDA::cuda_driver)
+            message(STATUS "VulkanBasic_Demo: добавлены CUDA библиотеки")
+        endif()
         
         # CUDA-Vulkan Interop Demo (требует CUDA)
         if(CUDA_AVAILABLE OR CUDA_RUNTIME_ONLY)
@@ -521,6 +543,18 @@ if(BUILD_VULKAN_RENDERER)
             # Настройка CUDA для demo
             target_compile_definitions(CudaVulkanInterop_Demo PRIVATE CUDA_VULKAN_INTEROP_SUPPORTED=1)
             
+            # External Memory Test - тест реальных external memory handles
+            add_executable(ExternalMemory_Test 
+                examples/test_external_memory.cpp
+            )
+            target_link_libraries(ExternalMemory_Test PRIVATE 
+                VulkanRenderer
+                Engine3D
+                CUDA::cudart 
+                CUDA::cuda_driver
+            )
+            target_compile_definitions(ExternalMemory_Test PRIVATE CUDA_VULKAN_INTEROP_SUPPORTED=1)
+            
             # FlashGS Demo - демонстрация 3D Gaussian Splatting
             add_executable(FlashGS_Demo 
                 examples/flashgs_demo.cpp
@@ -534,6 +568,27 @@ if(BUILD_VULKAN_RENDERER)
             
             # Настройка CUDA для FlashGS demo
             target_compile_definitions(FlashGS_Demo PRIVATE CUDA_VULKAN_INTEROP_SUPPORTED=1)
+            
+            # OptiX Ray Tracer Demo - демонстрация OptiX ray tracing
+            if(BUILD_WITH_OPTIX AND OptiX_FOUND)
+                add_executable(OptiXRayTracer_Demo 
+                    examples/optix_raytracer_demo.cpp
+                )
+                target_link_libraries(OptiXRayTracer_Demo PRIVATE 
+                    VulkanRenderer
+                    Engine3D
+                    CUDA::cudart
+                    CUDA::cuda_driver
+                )
+                target_include_directories(OptiXRayTracer_Demo PRIVATE ${OptiX_INCLUDE_DIRS})
+                target_compile_definitions(OptiXRayTracer_Demo PRIVATE 
+                    CUDA_VULKAN_INTEROP_SUPPORTED=1
+                    VULKAN_RENDERER_OPTIX_SUPPORT=1
+                )
+                message(STATUS "OptiX Ray Tracer Demo будет собран")
+            else()
+                message(STATUS "OptiX Ray Tracer Demo отключен - OptiX не доступен")
+            endif()
             
             if(CUDA_AVAILABLE)
                 message(STATUS "CUDA демо будут собраны с полной CUDA поддержкой")

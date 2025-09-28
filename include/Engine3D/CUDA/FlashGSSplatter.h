@@ -59,7 +59,7 @@ struct CameraMatrix {
     float projMatrix[16];      // Projection matrix (4x4)
     float viewProjMatrix[16];  // View-Projection matrix (4x4)
     int width, height;         // Разрешение
-    float near, far;           // Near/far planes
+    float nearPlane, farPlane; // Near/far planes
 };
 
 /**

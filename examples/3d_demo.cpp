@@ -42,9 +42,9 @@ public:
         Console::initialize();
         Console::setTitle("🚀 HyperEngine 3D Demo");
         
-        std::cout << "🌟═══════════════════════════════════════════🌟" << std::endl;
-        std::cout << "          🚀 HYPERENGINE 3D ДЕМО 🚀" << std::endl;
-        std::cout << "🌟═══════════════════════════════════════════🌟" << std::endl;
+        SAFE_PRINT_LINE("🌟═══════════════════════════════════════════🌟");
+        SAFE_PRINT_LINE("          🚀 HYPERENGINE 3D ДЕМО 🚀");
+        SAFE_PRINT_LINE("🌟═══════════════════════════════════════════🌟");
         
         // Инициализация GLFW
         if (!glfwInit()) {
@@ -118,11 +118,11 @@ public:
             
             frameCount++;
             if (frameCount % 300 == 0) { // Каждые 5 секунд при 60 FPS
-                Console::info("🖼️ Кадров отрендерено: " + std::to_string(frameCount));
+                Console::info("🖼️ Кадров отрендерено: " + SAFE_TO_STRING(frameCount));
             }
         }
         
-        Console::info("🏁 Демо завершено (всего кадров: " + std::to_string(frameCount) + ")");
+        Console::info("🏁 Демо завершено (всего кадров: " + SAFE_TO_STRING(frameCount) + ")");
     }
     
     void cleanup() {
@@ -241,7 +241,7 @@ private:
         // Добавление освещения
         setupLighting();
         
-        Console::info("✅ Сцена создана с " + std::to_string(GameObject3D::getAllObjects().size()) + " объектами");
+        Console::info("✅ Сцена создана с " + SAFE_TO_STRING(GameObject3D::getAllObjects().size()) + " объектами");
         Console::info("ℹ️ Используется упрощенная сцена без сложных компонентов");
     }
     

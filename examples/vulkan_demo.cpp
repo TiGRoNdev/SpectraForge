@@ -27,12 +27,14 @@
 #include <Engine3D/Upscaling/DLSSUpscaler.h>
 #endif
 
+#include <Engine3D/Core/Console.h>
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 using namespace Engine3D;
+using namespace Engine3D::Core;
 
 /**
  * @brief Класс демо-приложения
@@ -47,11 +49,11 @@ public:
      * @return true если инициализация успешна
      */
     bool init() {
-        std::cout << "=== Vulkan Hybrid Renderer Demo ===" << std::endl;
+        SAFE_PRINT_LINE("=== Vulkan Hybrid Renderer Demo ===");
         
         // Инициализация GLFW
         if (!glfwInit()) {
-            std::cerr << "Ошибка инициализации GLFW" << std::endl;
+            SAFE_ERROR("Ошибка инициализации GLFW");
             return false;
         }
         
@@ -61,7 +63,7 @@ public:
         
         window = glfwCreateWindow(1920, 1080, "Vulkan Hybrid Renderer Demo", nullptr, nullptr);
         if (!window) {
-            std::cerr << "Ошибка создания окна" << std::endl;
+            SAFE_ERROR("Ошибка создания окна");
             glfwTerminate();
             return false;
         }
@@ -75,7 +77,7 @@ public:
         // Инициализация движка
         engine = std::make_unique<Vulkan::VulkanEngine>();
         if (!engine->init(instance)) {
-            std::cerr << "Ошибка инициализации Vulkan Engine" << std::endl;
+            SAFE_ERROR("Ошибка инициализации Vulkan Engine");
             return false;
         }
         
@@ -86,7 +88,7 @@ public:
         setupScene();
 #endif
         
-        std::cout << "Демо инициализировано успешно!" << std::endl;
+        SAFE_PRINT_LINE("Демо инициализировано успешно!");
         return true;
     }
     
@@ -98,11 +100,11 @@ public:
         uint32_t frameCount = 0;
         float totalTime = 0.0f;
         
-        std::cout << "Запуск главного цикла..." << std::endl;
-        std::cout << "Управление:" << std::endl;
-        std::cout << "  ESC - выход" << std::endl;
-        std::cout << "  WASD - движение камеры" << std::endl;
-        std::cout << "  Mouse - поворот камеры" << std::endl;
+        SAFE_PRINT_LINE("Запуск главного цикла...");
+        SAFE_PRINT_LINE("Управление:");
+        SAFE_PRINT_LINE("  ESC - выход");
+        SAFE_PRINT_LINE("  WASD - движение камеры");
+        SAFE_PRINT_LINE("  Mouse - поворот камеры");
         
         while (!glfwWindowShouldClose(window)) {
             auto currentTime = std::chrono::high_resolution_clock::now();
@@ -132,7 +134,7 @@ public:
             if (totalTime >= 1.0f) {
                 float fps = frameCount / totalTime;
                 std::string title = "Vulkan Hybrid Renderer Demo - FPS: " + 
-                                  std::to_string(static_cast<int>(fps));
+                                  SAFE_TO_STRING(static_cast<int>(fps));
                 glfwSetWindowTitle(window, title.c_str());
                 
                 frameCount = 0;
@@ -145,7 +147,7 @@ public:
      * @brief Завершение работы демо
      */
     void shutdown() {
-        std::cout << "Завершение работы демо..." << std::endl;
+        SAFE_PRINT_LINE("Завершение работы демо...");
         
 #ifdef VULKAN_RENDERER_BUILD
         if (engine) {
@@ -168,7 +170,7 @@ public:
         
         glfwTerminate();
         
-        std::cout << "Демо завершено." << std::endl;
+        SAFE_PRINT_LINE("Демо завершено.");
     }
 
 private:
@@ -218,7 +220,7 @@ private:
             
             instance = vk::createInstance(createInfo);
             
-            std::cout << "Vulkan instance создан успешно" << std::endl;
+            SAFE_PRINT_LINE("Vulkan instance создан успешно");
             return true;
             
         } catch (const vk::SystemError& err) {
@@ -238,7 +240,7 @@ private:
         
         auto detector = engine->getHardwareDetector();
         
-        std::cout << "\n=== Информация о железе ===" << std::endl;
+        SAFE_PRINT_LINE("\n=== Информация о железе ===");
         std::cout << "GPU: " << detector->getDeviceName() << std::endl;
         
         auto vendor = detector->detectVendor();
@@ -251,7 +253,7 @@ private:
         }
         std::cout << "Вендор: " << vendorName << std::endl;
         
-        std::cout << "VRAM: " << std::to_string(detector->getVRAMSize() / 1024 / 1024) << " MB" << std::endl;
+        std::cout << "VRAM: " << SAFE_TO_STRING(detector->getVRAMSize() / 1024 / 1024) << " MB" << std::endl;
         std::cout << "Ray Tracing: " << (detector->supportsRayTracing() ? "Да" : "Нет") << std::endl;
         std::cout << "CUDA: " << (detector->supportsCUDA() ? "Да" : "Нет") << std::endl;
         std::cout << "OptiX: " << (detector->supportsOptiX() ? "Да" : "Нет") << std::endl;
@@ -264,19 +266,19 @@ private:
             default: upscalerName = "None"; break;
         }
         std::cout << "Upscaler: " << upscalerName << std::endl;
-        std::cout << "=========================" << std::endl;
+        SAFE_PRINT_LINE("=========================");
     }
     
     /**
      * @brief Настройка сцены
      */
     void setupScene() {
-        std::cout << "Настройка демо-сцены..." << std::endl;
+        SAFE_PRINT_LINE("Настройка демо-сцены...");
         
         // Здесь будет код для настройки тестовой сцены
         // с гауссианами, геометрией для ray tracing и т.д.
         
-        std::cout << "Сцена настроена." << std::endl;
+        SAFE_PRINT_LINE("Сцена настроена.");
     }
 #endif
     
@@ -308,6 +310,8 @@ private:
      * @brief Обновление камеры
      */
     void updateCamera(float deltaTime) {
+        (void)deltaTime; // Подавляем предупреждение о неиспользуемом параметре
+        
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
         
@@ -360,12 +364,14 @@ private:
  * @brief Главная функция
  */
 int main() {
-    std::cout << "Запуск Vulkan Hybrid Renderer Demo..." << std::endl;
+    Console::initialize();
+    Console::setTitle("🚀 Vulkan Hybrid Renderer Demo");
+    SAFE_PRINT_LINE("Запуск Vulkan Hybrid Renderer Demo...");
     
     VulkanDemo demo;
     
     if (!demo.init()) {
-        std::cerr << "Ошибка инициализации демо" << std::endl;
+        SAFE_ERROR("Ошибка инициализации демо");
         return -1;
     }
     

@@ -8,6 +8,22 @@
 #include <cuda_runtime.h>
 #include <cuda.h>
 
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#define VK_USE_PLATFORM_WIN32_KHR
+#include <vulkan/vulkan_win32.h>
+// Дополнительные определения для external memory/semaphore
+#ifndef VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME
+#define VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME "VK_KHR_external_memory_win32"
+#endif
+#ifndef VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME
+#define VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME "VK_KHR_external_semaphore_win32"
+#endif
+#endif
+
 // Для Vulkan interop нам не нужен OpenGL
 // OpenGL заголовки убраны для избежания конфликтов
 // #if CUDA_VERSION >= 10000
@@ -190,6 +206,13 @@ private:
      * @return true если найдено совпадение
      */
     bool findMatchingCudaDevice();
+    
+    /**
+     * @brief Тестирование поддержки external memory на устройстве
+     * @param device CUDA device ID
+     * @return true если external memory поддерживается
+     */
+    static bool testExternalMemorySupport(int device);
     
     // Запрет копирования
     CudaInterop(const CudaInterop&) = delete;

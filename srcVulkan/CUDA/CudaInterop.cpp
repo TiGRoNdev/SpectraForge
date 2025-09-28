@@ -317,8 +317,12 @@ void CudaInterop::waitCudaFromVulkan(std::shared_ptr<SyncObject> syncObj, vk::Co
         return;
     }
     
+    // Подавляем предупреждение о неиспользуемом параметре
+    (void)commandBuffer;
+    
     // Вставляем wait в command buffer
     vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eAllCommands;
+    (void)waitStage; // Подавляем предупреждение
     
     // TODO: Реализовать правильную вставку wait operation в command buffer
     // Это требует более сложной логики с submission
@@ -327,6 +331,9 @@ void CudaInterop::waitCudaFromVulkan(std::shared_ptr<SyncObject> syncObj, vk::Co
 
 cudaExternalMemory_t CudaInterop::importVulkanMemory(vk::DeviceMemory vulkanMemory, size_t size) {
     try {
+        // Подавляем предупреждение о неиспользуемом параметре
+        (void)vulkanMemory;
+        
         // Получаем Windows handle из Vulkan memory
         // TODO: Временная заглушка до полной поддержки VK_KHR_external_memory_win32
 #ifdef _WIN32
@@ -367,6 +374,10 @@ cudaExternalMemory_t CudaInterop::importVulkanMemory(vk::DeviceMemory vulkanMemo
 }
 
 vk::DeviceMemory CudaInterop::exportCudaMemory(CUdeviceptr cudaPtr, size_t size) {
+    // Подавляем предупреждения о неиспользуемых параметрах
+    (void)cudaPtr;
+    (void)size;
+    
     // TODO: Реализация экспорта CUDA памяти в Vulkan
     // Это более сложная операция, требующая создания CUDA external memory
     std::cout << "[CudaInterop] Экспорт CUDA памяти в Vulkan (пока не реализован)" << std::endl;
