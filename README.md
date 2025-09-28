@@ -78,8 +78,8 @@
 
 ```bash
 # 1. Клонирование репозитория
-git clone https://github.com/yourusername/hyperengine.git
-cd hyperengine
+git clone https://github.com/TiGRoNdev/HyperEngine.git
+cd HyperEngine
 
 # 2. Автоматическая сборка с vcpkg
 .\build_with_vcpkg.bat
@@ -96,8 +96,8 @@ sudo apt update
 sudo apt install build-essential cmake libglfw3-dev libglm-dev
 
 # 2. Сборка
-git clone https://github.com/yourusername/hyperengine.git
-cd hyperengine
+git clone https://github.com/TiGRoNdev/HyperEngine.git
+cd HyperEngine
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(nproc)
