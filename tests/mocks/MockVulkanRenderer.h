@@ -259,4 +259,3 @@ class VulkanMockFactory {
 };
 
 }  // namespace HyperEngine::Testing::Mocks
-

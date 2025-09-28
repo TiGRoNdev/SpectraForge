@@ -64,7 +64,8 @@ TEST_F(VulkanRendererTest, SuccessfulInitialization) {
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
-            bool result = mockRenderer->init(mockDevice, mockResourceManager.get());
+            bool result = mockRenderer->init(
+                mockDevice, reinterpret_cast<ResourceManager*>(mockResourceManager.get()));
             EXPECT_TRUE(result);
             EXPECT_TRUE(mockRenderer->isInitialized());
         },
@@ -75,7 +76,8 @@ TEST_F(VulkanRendererTest, FailedInitialization) {
     auto failingRenderer = VulkanMockFactory::createFailingRenderer();
     vk::Device mockDevice;
 
-    EXPECT_FALSE(failingRenderer->init(mockDevice, mockResourceManager.get()));
+    EXPECT_FALSE(failingRenderer->init(
+        mockDevice, reinterpret_cast<ResourceManager*>(mockResourceManager.get())));
     EXPECT_FALSE(failingRenderer->isInitialized());
 }
 
@@ -362,4 +364,3 @@ INSTANTIATE_TEST_SUITE_P(ResolutionTests,
                                            std::make_tuple(2560, 1440, 1.5f),
                                            std::make_tuple(3840, 2160, 1.0f),
                                            std::make_tuple(3840, 2160, 2.0f)));
-

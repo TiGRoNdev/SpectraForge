@@ -1,14 +1,14 @@
 /**
  * @file IEventHandler.h
  * @brief Интерфейс для обработки событий
- * 
+ *
  * Следует принципу ISP - разделяет обязанности обработки событий
  */
 
 #pragma once
 
-#include <memory>
 #include <functional>
+#include <memory>
 
 namespace HyperEngine {
 namespace Core {
@@ -18,18 +18,18 @@ namespace Interfaces {
  * @brief Базовый класс события
  */
 class IEvent {
-public:
+  public:
     virtual ~IEvent() = default;
     virtual const char* getEventType() const = 0;
 };
 
 /**
  * @brief Интерфейс для обработчиков событий
- * 
+ *
  * Применяет принцип ISP - клиенты зависят только от методов обработки событий
  */
 class IEventHandler {
-public:
+  public:
     virtual ~IEventHandler() = default;
 
     /**
@@ -51,7 +51,7 @@ public:
  * @brief Интерфейс для диспетчера событий
  */
 class IEventDispatcher {
-public:
+  public:
     virtual ~IEventDispatcher() = default;
 
     /**

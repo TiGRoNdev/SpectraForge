@@ -5,23 +5,23 @@
 
 #pragma once
 
-#include "EngineCore.h"
-#include "LogLevel.h"
-#include <string>
 #include <fstream>
 #include <memory>
 #include <mutex>
+#include <string>
+#include "EngineCore.h"
+#include "LogLevel.h"
 
 namespace HyperEngine {
 namespace Core {
 
 /**
  * @brief Конкретная реализация логгера
- * 
+ *
  * Следует принципу SRP - отвечает только за логирование
  */
 class Logger : public ILogger {
-public:
+  public:
     /**
      * @brief Конструктор
      * @param logFile Путь к файлу лога (опционально)
@@ -64,7 +64,7 @@ public:
      */
     void setFileOutput(bool enable) { fileOutput = enable; }
 
-private:
+  private:
     LogLevel currentLevel;
     std::string logFilePath;
     std::ofstream logFileStream;

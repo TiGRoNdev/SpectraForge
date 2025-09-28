@@ -224,4 +224,3 @@ class GaussianRenderer3D {
 
 }  // namespace Rendering
 }  // namespace HyperEngine
-

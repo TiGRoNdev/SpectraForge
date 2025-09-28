@@ -1,7 +1,7 @@
 /**
  * @file ModernRenderer3D.h
  * @brief Рефакторенный рендерер согласно SOLID принципам
- * 
+ *
  * Применяет все SOLID принципы:
  * - SRP: Разделение обязанностей на отдельные компоненты
  * - OCP: Открыт для расширения через стратегии и фабрики
@@ -12,14 +12,14 @@
 
 #pragma once
 
-#include "Common/IRenderer.h"
-#include "../Core/Interfaces/IInitializable.h"
-#include "../Core/Interfaces/IConfigurable.h"
-#include "../Core/EngineCore.h"
-#include "../Math/Matrix4.h"
-#include "../Math/Vector3.h"
 #include <memory>
 #include <vector>
+#include "../Core/EngineCore.h"
+#include "../Core/Interfaces/IConfigurable.h"
+#include "../Core/Interfaces/IInitializable.h"
+#include "../Math/Matrix4.h"
+#include "../Math/Vector3.h"
+#include "Common/IRenderer.h"
 
 namespace HyperEngine {
 namespace Rendering {
@@ -32,19 +32,17 @@ class IRenderStatistics;
 
 /**
  * @brief Современный рендерер, следующий SOLID принципам
- * 
+ *
  * SRP: Отвечает только за координацию рендеринга
  * OCP: Открыт для расширения через стратегии
  * LSP: Все стратегии взаимозаменяемы
  * ISP: Использует специализированные интерфейсы
  * DIP: Зависит от абстракций (стратегий), а не от конкретных реализаций
  */
-class ModernRenderer3D : 
-    public IRenderer,
-    public Core::Interfaces::IInitializable,
-    public Core::Interfaces::IConfigurable {
-
-public:
+class ModernRenderer3D : public IRenderer,
+                         public Core::Interfaces::IInitializable,
+                         public Core::Interfaces::IConfigurable {
+  public:
     /**
      * @brief Конструктор с dependency injection
      * @param renderStrategy Стратегия рендеринга (DIP)
@@ -53,13 +51,11 @@ public:
      * @param statistics Система статистики (DIP)
      * @param logger Логгер (DIP)
      */
-    ModernRenderer3D(
-        std::shared_ptr<IRenderStrategy> renderStrategy,
-        std::shared_ptr<ILightingSystem> lightingSystem,
-        std::shared_ptr<ICameraSystem> cameraSystem,
-        std::shared_ptr<IRenderStatistics> statistics,
-        std::shared_ptr<Core::ILogger> logger
-    );
+    ModernRenderer3D(std::shared_ptr<IRenderStrategy> renderStrategy,
+                     std::shared_ptr<ILightingSystem> lightingSystem,
+                     std::shared_ptr<ICameraSystem> cameraSystem,
+                     std::shared_ptr<IRenderStatistics> statistics,
+                     std::shared_ptr<Core::ILogger> logger);
 
     /**
      * @brief Деструктор
@@ -111,7 +107,7 @@ public:
      */
     void removePostProcessEffect(std::shared_ptr<class IPostProcessEffect> effect);
 
-private:
+  private:
     // Dependency injection (DIP)
     std::shared_ptr<IRenderStrategy> renderStrategy;
     std::shared_ptr<ILightingSystem> lightingSystem;
@@ -147,7 +143,7 @@ private:
  * @brief Интерфейс стратегии рендеринга (Strategy Pattern + ISP)
  */
 class IRenderStrategy {
-public:
+  public:
     virtual ~IRenderStrategy() = default;
 
     /**
@@ -185,7 +181,7 @@ public:
  * @brief Интерфейс системы освещения (ISP)
  */
 class ILightingSystem {
-public:
+  public:
     virtual ~ILightingSystem() = default;
 
     /**
@@ -222,7 +218,7 @@ public:
  * @brief Интерфейс системы камер (ISP)
  */
 class ICameraSystem {
-public:
+  public:
     virtual ~ICameraSystem() = default;
 
     /**
@@ -259,7 +255,7 @@ public:
  * @brief Интерфейс системы статистики (ISP)
  */
 class IRenderStatistics {
-public:
+  public:
     virtual ~IRenderStatistics() = default;
 
     /**
@@ -294,7 +290,7 @@ public:
  * @brief Интерфейс пост-процессинг эффекта (ISP)
  */
 class IPostProcessEffect {
-public:
+  public:
     virtual ~IPostProcessEffect() = default;
 
     /**

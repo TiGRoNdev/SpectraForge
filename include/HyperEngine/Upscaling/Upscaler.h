@@ -166,4 +166,3 @@ class UpscalerFactory {
 };
 
 }  // namespace HyperEngine::Upscaling
-

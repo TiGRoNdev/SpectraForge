@@ -189,4 +189,3 @@ class SceneManager {
 };
 
 }  // namespace HyperEngine::Vulkan
-

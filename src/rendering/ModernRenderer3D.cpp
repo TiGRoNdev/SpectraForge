@@ -4,9 +4,9 @@
  */
 
 #include "HyperEngine/Rendering/ModernRenderer3D.h"
-#include "HyperEngine/Core/SafeConsole.h"
 #include <algorithm>
 #include <stdexcept>
+#include "HyperEngine/Core/SafeConsole.h"
 
 using namespace HyperEngine::Rendering;
 using namespace HyperEngine::Core;
@@ -15,18 +15,16 @@ namespace HyperEngine {
 namespace Rendering {
 
 // Конструктор с dependency injection (DIP)
-ModernRenderer3D::ModernRenderer3D(
-    std::shared_ptr<IRenderStrategy> renderStrategy,
-    std::shared_ptr<ILightingSystem> lightingSystem,
-    std::shared_ptr<ICameraSystem> cameraSystem,
-    std::shared_ptr<IRenderStatistics> statistics,
-    std::shared_ptr<Core::ILogger> logger)
-    : renderStrategy(renderStrategy), 
+ModernRenderer3D::ModernRenderer3D(std::shared_ptr<IRenderStrategy> renderStrategy,
+                                   std::shared_ptr<ILightingSystem> lightingSystem,
+                                   std::shared_ptr<ICameraSystem> cameraSystem,
+                                   std::shared_ptr<IRenderStatistics> statistics,
+                                   std::shared_ptr<Core::ILogger> logger)
+    : renderStrategy(renderStrategy),
       lightingSystem(lightingSystem),
       cameraSystem(cameraSystem),
       statistics(statistics),
       logger(logger) {
-    
     if (!renderStrategy) {
         throw std::invalid_argument("RenderStrategy не может быть nullptr");
     }
@@ -73,7 +71,8 @@ bool ModernRenderer3D::initialize() {
 
         // Инициализация стратегии рендеринга
         if (!renderStrategy->initialize()) {
-            logger->logError("Ошибка инициализации стратегии рендеринга: " + renderStrategy->getName());
+            logger->logError("Ошибка инициализации стратегии рендеринга: "
+                             + renderStrategy->getName());
             return false;
         }
 
@@ -166,7 +165,7 @@ void ModernRenderer3D::shutdown() {
 
 RendererType ModernRenderer3D::getType() const {
     // Тип определяется стратегией рендеринга
-    return RendererType::OpenGL; // TODO: Получать от стратегии
+    return RendererType::OpenGL;  // TODO: Получать от стратегии
 }
 
 bool ModernRenderer3D::supportsFeature(RenderingFeature feature) const {
@@ -239,7 +238,7 @@ bool ModernRenderer3D::hasConfigParameter(const std::string& key) const {
 
 bool ModernRenderer3D::loadConfig(const std::string& configPath) {
     logger->logInfo("Загрузка конфигурации рендерера из: " + configPath);
-    
+
     // TODO: Реализовать загрузку конфигурации из файла
     // Пока используем значения по умолчанию
     setConfigParameter("width", config.width);
@@ -253,7 +252,7 @@ bool ModernRenderer3D::loadConfig(const std::string& configPath) {
 
 bool ModernRenderer3D::saveConfig(const std::string& configPath) const {
     logger->logInfo("Сохранение конфигурации рендерера в: " + configPath);
-    
+
     // TODO: Реализовать сохранение конфигурации в файл
     return true;
 }
@@ -265,9 +264,9 @@ void ModernRenderer3D::setRenderStrategy(std::shared_ptr<IRenderStrategy> newStr
         return;
     }
 
-    logger->logInfo("Смена стратегии рендеринга с '" + 
-                    (renderStrategy ? renderStrategy->getName() : "none") + 
-                    "' на '" + newStrategy->getName() + "'");
+    logger->logInfo("Смена стратегии рендеринга с '"
+                    + (renderStrategy ? renderStrategy->getName() : "none") + "' на '"
+                    + newStrategy->getName() + "'");
 
     // Завершаем работу старой стратегии
     if (renderStrategy && initialized) {
@@ -279,7 +278,8 @@ void ModernRenderer3D::setRenderStrategy(std::shared_ptr<IRenderStrategy> newStr
 
     // Инициализируем новую стратегию, если рендерер уже инициализирован
     if (initialized && !renderStrategy->initialize()) {
-        logger->logError("Ошибка инициализации новой стратегии рендеринга: " + newStrategy->getName());
+        logger->logError("Ошибка инициализации новой стратегии рендеринга: "
+                         + newStrategy->getName());
     }
 }
 
@@ -322,10 +322,10 @@ void ModernRenderer3D::removePostProcessEffect(std::shared_ptr<IPostProcessEffec
 // Приватные методы
 bool ModernRenderer3D::initializeGraphicsAPI() {
     logger->logInfo("Инициализация графического API...");
-    
+
     // TODO: Реализовать инициализацию конкретного графического API
     // Это может быть OpenGL, Vulkan, DirectX12 и т.д.
-    
+
     logger->logInfo("Графический API инициализирован");
     return true;
 }

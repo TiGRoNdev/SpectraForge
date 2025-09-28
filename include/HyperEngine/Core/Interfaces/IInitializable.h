@@ -1,7 +1,7 @@
 /**
  * @file IInitializable.h
  * @brief Интерфейс для инициализируемых компонентов
- * 
+ *
  * Следует принципу ISP - разделяет обязанности инициализации
  */
 
@@ -13,11 +13,11 @@ namespace Interfaces {
 
 /**
  * @brief Интерфейс для компонентов, требующих инициализации
- * 
+ *
  * Применяет принцип ISP - клиенты зависят только от методов инициализации
  */
 class IInitializable {
-public:
+  public:
     virtual ~IInitializable() = default;
 
     /**

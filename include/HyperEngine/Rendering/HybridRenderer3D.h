@@ -419,4 +419,3 @@ class NeuralUpscaler {
 
 }  // namespace Rendering
 }  // namespace HyperEngine
-

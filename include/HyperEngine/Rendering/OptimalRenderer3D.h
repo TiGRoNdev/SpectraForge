@@ -356,4 +356,3 @@ class AdaptiveLOD {
 
 }  // namespace Rendering
 }  // namespace HyperEngine
-

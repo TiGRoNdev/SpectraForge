@@ -160,4 +160,3 @@ class VulkanRenderer {
 };
 
 }  // namespace HyperEngine::Vulkan
-

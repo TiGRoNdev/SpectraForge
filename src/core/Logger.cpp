@@ -4,11 +4,11 @@
  */
 
 #include "HyperEngine/Core/Logger.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#include <iostream>
 #include <chrono>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
+#include "HyperEngine/Core/SafeConsole.h"
 
 using namespace HyperEngine::Core;
 
@@ -17,7 +17,6 @@ namespace Core {
 
 Logger::Logger(const std::string& logFile, LogLevel level)
     : currentLevel(level), logFilePath(logFile) {
-    
     if (!logFilePath.empty()) {
         logFileStream.open(logFilePath, std::ios::app);
         if (logFileStream.is_open()) {
@@ -63,7 +62,7 @@ void Logger::log(LogLevel level, const std::string& message) {
     }
 
     std::lock_guard<std::mutex> lock(logMutex);
-    
+
     std::string timestamp = getCurrentTime();
     std::string levelStr = levelToString(level);
     std::string fullMessage = "[" + timestamp + "] [" + levelStr + "] " + message;
@@ -95,24 +94,28 @@ void Logger::log(LogLevel level, const std::string& message) {
 
 std::string Logger::levelToString(LogLevel level) const {
     switch (level) {
-        case LogLevel::DEBUG_LEVEL:   return "DEBUG";
-        case LogLevel::INFO_LEVEL:    return "INFO";
-        case LogLevel::WARNING_LEVEL: return "WARN";
-        case LogLevel::ERROR_LEVEL:   return "ERROR";
-        default:                return "UNKNOWN";
+        case LogLevel::DEBUG_LEVEL:
+            return "DEBUG";
+        case LogLevel::INFO_LEVEL:
+            return "INFO";
+        case LogLevel::WARNING_LEVEL:
+            return "WARN";
+        case LogLevel::ERROR_LEVEL:
+            return "ERROR";
+        default:
+            return "UNKNOWN";
     }
 }
 
 std::string Logger::getCurrentTime() const {
     auto now = std::chrono::system_clock::now();
     auto time_t = std::chrono::system_clock::to_time_t(now);
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-        now.time_since_epoch()) % 1000;
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
     std::stringstream ss;
     ss << std::put_time(std::localtime(&time_t), "%Y-%m-%d %H:%M:%S");
     ss << '.' << std::setfill('0') << std::setw(3) << ms.count();
-    
+
     return ss.str();
 }
 

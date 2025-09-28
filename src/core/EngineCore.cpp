@@ -4,11 +4,11 @@
  */
 
 #include "HyperEngine/Core/EngineCore.h"
-#include "HyperEngine/Core/SafeConsole.h"
 #include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <stdexcept>
+#include "HyperEngine/Core/SafeConsole.h"
 
 using namespace HyperEngine::Core;
 using namespace HyperEngine::Core::Interfaces;
@@ -17,12 +17,10 @@ namespace HyperEngine {
 namespace Core {
 
 // Конструктор с dependency injection (DIP)
-EngineCore::EngineCore(
-    std::shared_ptr<Rendering::IRenderer> renderer,
-    std::shared_ptr<Rendering::IResourceManager> resourceManager,
-    std::shared_ptr<ILogger> logger)
+EngineCore::EngineCore(std::shared_ptr<Rendering::IRenderer> renderer,
+                       std::shared_ptr<Rendering::IResourceManager> resourceManager,
+                       std::shared_ptr<ILogger> logger)
     : renderer(renderer), resourceManager(resourceManager), logger(logger) {
-    
     if (!renderer) {
         throw std::invalid_argument("Renderer не может быть nullptr");
     }
@@ -132,7 +130,7 @@ bool EngineCore::hasConfigParameter(const std::string& key) const {
 bool EngineCore::loadConfig(const std::string& configPath) {
     try {
         logger->logInfo("Загрузка конфигурации из: " + configPath);
-        
+
         std::ifstream file(configPath);
         if (!file.is_open()) {
             logger->logWarning("Файл конфигурации не найден: " + configPath);
@@ -160,7 +158,7 @@ bool EngineCore::loadConfig(const std::string& configPath) {
 bool EngineCore::saveConfig(const std::string& configPath) const {
     try {
         logger->logInfo("Сохранение конфигурации в: " + configPath);
-        
+
         std::ofstream file(configPath);
         if (!file.is_open()) {
             logger->logError("Не удалось создать файл конфигурации: " + configPath);
@@ -187,7 +185,7 @@ bool EngineCore::handleEvent(const std::shared_ptr<IEvent>& event) {
     }
 
     logger->logDebug("Обработка события: " + std::string(event->getEventType()));
-    
+
     // TODO: Реализовать обработку специфичных событий движка
     return false;
 }
@@ -212,19 +210,21 @@ void EngineCore::registerSubsystem(std::shared_ptr<ISubsystem> subsystem) {
     }
 
     subsystems.push_back(subsystem);
-    
+
     // Сортируем по приоритету
-    std::sort(subsystems.begin(), subsystems.end(), 
-        [](const std::shared_ptr<ISubsystem>& a, const std::shared_ptr<ISubsystem>& b) {
-            return a->getUpdatePriority() < b->getUpdatePriority();
-        });
+    std::sort(subsystems.begin(),
+              subsystems.end(),
+              [](const std::shared_ptr<ISubsystem>& a, const std::shared_ptr<ISubsystem>& b) {
+                  return a->getUpdatePriority() < b->getUpdatePriority();
+              });
 
     logger->logInfo("Зарегистрирована подсистема: " + std::string(subsystem->getName()));
 
     // Если движок уже инициализирован, инициализируем новую подсистему
     if (initialized && !subsystem->isInitialized()) {
         if (!subsystem->initialize()) {
-            logger->logError("Ошибка инициализации подсистемы: " + std::string(subsystem->getName()));
+            logger->logError("Ошибка инициализации подсистемы: "
+                             + std::string(subsystem->getName()));
         }
     }
 }
@@ -292,7 +292,8 @@ bool EngineCore::initializeSubsystems() {
 
     for (auto& subsystem : subsystems) {
         if (!subsystem->initialize()) {
-            logger->logError("Ошибка инициализации подсистемы: " + std::string(subsystem->getName()));
+            logger->logError("Ошибка инициализации подсистемы: "
+                             + std::string(subsystem->getName()));
             return false;
         }
         logger->logInfo("Подсистема инициализирована: " + std::string(subsystem->getName()));

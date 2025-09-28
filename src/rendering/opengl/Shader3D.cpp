@@ -1,6 +1,6 @@
 #include "HyperEngine/Rendering/Shader3D.h"
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include "HyperEngine/Core/Console.h"
 #include "HyperEngine/Core/SafeConsole.h"
@@ -23,25 +23,27 @@ Shader3D::~Shader3D() {
 bool Shader3D::loadFromFiles(const std::string& vertexPath, const std::string& fragmentPath) {
     std::string vertexSource = readFile(vertexPath);
     std::string fragmentSource = readFile(fragmentPath);
-    
+
     if (vertexSource.empty() || fragmentSource.empty()) {
         SAFE_ERROR("Failed to read shader files: " + vertexPath + " or " + fragmentPath);
         return false;
     }
-    
+
     return loadFromSource(vertexSource, fragmentSource);
 }
 
-bool Shader3D::loadFromFiles(const std::string& vertexPath, const std::string& fragmentPath, const std::string& geometryPath) {
+bool Shader3D::loadFromFiles(const std::string& vertexPath,
+                             const std::string& fragmentPath,
+                             const std::string& geometryPath) {
     std::string vertexSource = readFile(vertexPath);
     std::string fragmentSource = readFile(fragmentPath);
     std::string geometrySource = readFile(geometryPath);
-    
+
     if (vertexSource.empty() || fragmentSource.empty() || geometrySource.empty()) {
         SAFE_ERROR("Failed to read shader files");
         return false;
     }
-    
+
     return loadFromSource(vertexSource, fragmentSource, geometrySource);
 }
 
@@ -50,20 +52,22 @@ bool Shader3D::loadFromSource(const std::string& vertexSource, const std::string
     SAFE_PRINT_LINE("Shader3D::loadFromSource() - vertex and fragment shaders");
     SAFE_PRINT_LINE("Vertex source length: " + SAFE_TO_STRING(vertexSource.length()));
     SAFE_PRINT_LINE("Fragment source length: " + SAFE_TO_STRING(fragmentSource.length()));
-    
+
     // Заглушка - считаем что загрузка прошла успешно
-    programId = 1; // Фиктивный ID
+    programId = 1;  // Фиктивный ID
     loaded = true;
     return true;
 }
 
-bool Shader3D::loadFromSource(const std::string& vertexSource, const std::string& fragmentSource, const std::string& geometrySource) {
+bool Shader3D::loadFromSource(const std::string& vertexSource,
+                              const std::string& fragmentSource,
+                              const std::string& geometrySource) {
     // TODO: Реализовать компиляцию шейдеров с геометрическим шейдером
     SAFE_PRINT_LINE("Shader3D::loadFromSource() - vertex, fragment and geometry shaders");
     SAFE_PRINT_LINE("Vertex source length: " + SAFE_TO_STRING(vertexSource.length()));
     SAFE_PRINT_LINE("Fragment source length: " + SAFE_TO_STRING(fragmentSource.length()));
     SAFE_PRINT_LINE("Geometry source length: " + SAFE_TO_STRING(geometrySource.length()));
-    
+
     // Заглушка
     programId = 1;
     loaded = true;
@@ -76,7 +80,7 @@ void Shader3D::use() const {
         SAFE_ERROR("Warning: Trying to use unloaded shader");
         return;
     }
-    
+
     // TODO: Реализовать использование шейдера для конкретного API
     SAFE_PRINT_LINE("Using shader program ID: " + SAFE_TO_STRING(programId));
 }
@@ -96,7 +100,8 @@ void Shader3D::setMatrix4(const std::string& name, const Matrix4& matrix) const 
     int location = getUniformLocation(name);
     if (location != -1) {
         // TODO: Реализовать установку матрицы для конкретного API
-        SAFE_PRINT_LINE("Setting Matrix4 uniform '" + name + "' at location " + SAFE_TO_STRING(location));
+        SAFE_PRINT_LINE("Setting Matrix4 uniform '" + name + "' at location "
+                        + SAFE_TO_STRING(location));
     }
 }
 
@@ -104,7 +109,9 @@ void Shader3D::setVector3(const std::string& name, const Vector3& vector) const 
     int location = getUniformLocation(name);
     if (location != -1) {
         // TODO: Реализовать установку вектора для конкретного API
-        SAFE_PRINT_LINE("Setting Vector3 uniform '" + name + "' at location " + SAFE_TO_STRING(location) + " value: (" + SAFE_TO_STRING(vector.x) + ", " + SAFE_TO_STRING(vector.y) + ", " + SAFE_TO_STRING(vector.z) + ")");
+        SAFE_PRINT_LINE("Setting Vector3 uniform '" + name + "' at location "
+                        + SAFE_TO_STRING(location) + " value: (" + SAFE_TO_STRING(vector.x) + ", "
+                        + SAFE_TO_STRING(vector.y) + ", " + SAFE_TO_STRING(vector.z) + ")");
     }
 }
 
@@ -112,7 +119,8 @@ void Shader3D::setFloat(const std::string& name, float value) const {
     int location = getUniformLocation(name);
     if (location != -1) {
         // TODO: Реализовать установку float для конкретного API
-        SAFE_PRINT_LINE("Setting float uniform '" + name + "' at location " + SAFE_TO_STRING(location) + " value: " + SAFE_TO_STRING(value));
+        SAFE_PRINT_LINE("Setting float uniform '" + name + "' at location "
+                        + SAFE_TO_STRING(location) + " value: " + SAFE_TO_STRING(value));
     }
 }
 
@@ -120,7 +128,8 @@ void Shader3D::setInt(const std::string& name, int value) const {
     int location = getUniformLocation(name);
     if (location != -1) {
         // TODO: Реализовать установку int для конкретного API
-        SAFE_PRINT_LINE("Setting int uniform '" + name + "' at location " + SAFE_TO_STRING(location) + " value: " + SAFE_TO_STRING(value));
+        SAFE_PRINT_LINE("Setting int uniform '" + name + "' at location " + SAFE_TO_STRING(location)
+                        + " value: " + SAFE_TO_STRING(value));
     }
 }
 
@@ -132,7 +141,9 @@ void Shader3D::setTexture(const std::string& name, unsigned int textureId, int u
     int location = getUniformLocation(name);
     if (location != -1) {
         // TODO: Реализовать установку текстуры для конкретного API
-        SAFE_PRINT_LINE("Setting texture uniform '" + name + "' at location " + SAFE_TO_STRING(location) + " textureId: " + SAFE_TO_STRING(textureId) + " unit: " + SAFE_TO_STRING(unit));
+        SAFE_PRINT_LINE("Setting texture uniform '" + name + "' at location "
+                        + SAFE_TO_STRING(location) + " textureId: " + SAFE_TO_STRING(textureId)
+                        + " unit: " + SAFE_TO_STRING(unit));
     }
 }
 
@@ -143,18 +154,18 @@ int Shader3D::getUniformLocation(const std::string& name) const {
     if (it != uniformLocations.end()) {
         return it->second;
     }
-    
+
     // TODO: Получить локацию из API
-    int location = static_cast<int>(uniformLocations.size()); // Фиктивная локация
+    int location = static_cast<int>(uniformLocations.size());  // Фиктивная локация
     uniformLocations[name] = location;
-    
+
     return location;
 }
 
 // Предустановленные шейдеры
 std::shared_ptr<Shader3D> Shader3D::createBasicShader() {
     auto shader = std::make_shared<Shader3D>();
-    
+
     std::string vertexSource = R"(
         #version 330 core
         layout (location = 0) in vec3 aPos;
@@ -180,7 +191,7 @@ std::shared_ptr<Shader3D> Shader3D::createBasicShader() {
             gl_Position = uProjection * uView * vec4(FragPos, 1.0);
         }
     )";
-    
+
     std::string fragmentSource = R"(
         #version 330 core
         out vec4 FragColor;
@@ -209,7 +220,7 @@ std::shared_ptr<Shader3D> Shader3D::createBasicShader() {
             FragColor = vec4(result, 1.0);
         }
     )";
-    
+
     shader->loadFromSource(vertexSource, fragmentSource);
     return shader;
 }
@@ -228,7 +239,7 @@ std::shared_ptr<Shader3D> Shader3D::createPBRShader() {
 
 std::shared_ptr<Shader3D> Shader3D::createUnlitShader() {
     auto shader = std::make_shared<Shader3D>();
-    
+
     std::string vertexSource = R"(
         #version 330 core
         layout (location = 0) in vec3 aPos;
@@ -245,7 +256,7 @@ std::shared_ptr<Shader3D> Shader3D::createUnlitShader() {
             gl_Position = uProjection * uView * uModel * vec4(aPos, 1.0);
         }
     )";
-    
+
     std::string fragmentSource = R"(
         #version 330 core
         out vec4 FragColor;
@@ -256,7 +267,7 @@ std::shared_ptr<Shader3D> Shader3D::createUnlitShader() {
             FragColor = vec4(Color, 1.0);
         }
     )";
-    
+
     shader->loadFromSource(vertexSource, fragmentSource);
     return shader;
 }
@@ -265,23 +276,27 @@ std::shared_ptr<Shader3D> Shader3D::createUnlitShader() {
 unsigned int Shader3D::compileShader(const std::string& source, unsigned int type) {
     // TODO: Реализовать компиляцию шейдера для конкретного API
     SAFE_PRINT_LINE("Compiling shader of type: " + SAFE_TO_STRING(type));
-    return 1; // Фиктивный ID
+    return 1;  // Фиктивный ID
 }
 
-unsigned int Shader3D::linkProgram(unsigned int vertexShader, unsigned int fragmentShader, unsigned int geometryShader) {
+unsigned int Shader3D::linkProgram(unsigned int vertexShader,
+                                   unsigned int fragmentShader,
+                                   unsigned int geometryShader) {
     // TODO: Реализовать линковку программы для конкретного API
-    SAFE_PRINT_LINE("Linking program with shaders: " + SAFE_TO_STRING(vertexShader) + ", " + SAFE_TO_STRING(fragmentShader));
+    SAFE_PRINT_LINE("Linking program with shaders: " + SAFE_TO_STRING(vertexShader) + ", "
+                    + SAFE_TO_STRING(fragmentShader));
     if (geometryShader != 0) {
         SAFE_PRINT_LINE(", " + SAFE_TO_STRING(geometryShader));
     }
     // End of linking
-    return 1; // Фиктивный ID
+    return 1;  // Фиктивный ID
 }
 
 bool Shader3D::checkCompileErrors(unsigned int shader, const std::string& type) {
     // TODO: Реализовать проверку ошибок компиляции
-    SAFE_PRINT_LINE("Checking compile errors for " + type + " shader ID: " + SAFE_TO_STRING(shader));
-    return true; // Предполагаем, что ошибок нет
+    SAFE_PRINT_LINE("Checking compile errors for " + type
+                    + " shader ID: " + SAFE_TO_STRING(shader));
+    return true;  // Предполагаем, что ошибок нет
 }
 
 std::string Shader3D::readFile(const std::string& filepath) {
@@ -290,7 +305,7 @@ std::string Shader3D::readFile(const std::string& filepath) {
         SAFE_ERROR("Failed to open file: " + filepath);
         return "";
     }
-    
+
     std::stringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();
@@ -298,7 +313,8 @@ std::string Shader3D::readFile(const std::string& filepath) {
 
 void Shader3D::bindUniformBlock(const std::string& name, unsigned int bindingPoint) const {
     // TODO: Реализовать привязку uniform блоков
-    SAFE_PRINT_LINE("Binding uniform block '" + name + "' to binding point " + SAFE_TO_STRING(bindingPoint));
+    SAFE_PRINT_LINE("Binding uniform block '" + name + "' to binding point "
+                    + SAFE_TO_STRING(bindingPoint));
 }
 
 // ShaderManager implementation
@@ -307,7 +323,9 @@ ShaderManager& ShaderManager::getInstance() {
     return instance;
 }
 
-std::shared_ptr<Shader3D> ShaderManager::loadShader(const std::string& name, const std::string& vertexPath, const std::string& fragmentPath) {
+std::shared_ptr<Shader3D> ShaderManager::loadShader(const std::string& name,
+                                                    const std::string& vertexPath,
+                                                    const std::string& fragmentPath) {
     auto shader = std::make_shared<Shader3D>();
     if (shader->loadFromFiles(vertexPath, fragmentPath)) {
         shaders[name] = shader;
@@ -334,10 +352,9 @@ void ShaderManager::loadDefaultShaders() {
     shaders["phong"] = Shader3D::createPhongShader();
     shaders["pbr"] = Shader3D::createPBRShader();
     shaders["unlit"] = Shader3D::createUnlitShader();
-    
+
     SAFE_PRINT_LINE("Loaded " + SAFE_TO_STRING(shaders.size()) + " default shaders");
 }
 
-} // namespace Rendering
-} // namespace HyperEngine
-
+}  // namespace Rendering
+}  // namespace HyperEngine

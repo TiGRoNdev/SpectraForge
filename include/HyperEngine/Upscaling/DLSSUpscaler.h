@@ -206,4 +206,3 @@ class DLSSUpscaler : public Upscaler {
 }  // namespace HyperEngine::Upscaling
 
 #endif  // VULKAN_RENDERER_DLSS_SUPPORT
-

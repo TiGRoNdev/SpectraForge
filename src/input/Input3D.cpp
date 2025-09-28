@@ -1,15 +1,15 @@
 #include "HyperEngine/Input/Input3D.h"
-#include "HyperEngine/Math/MathConstants.h"
-#include <iostream>
 #include <cmath>
+#include <iostream>
+#include "HyperEngine/Math/MathConstants.h"
 
 // GLFW headers
 #ifdef _WIN32
-    #include <GLFW/glfw3.h>
+#include <GLFW/glfw3.h>
 #include "HyperEngine/Core/Console.h"
 #include "HyperEngine/Core/SafeConsole.h"
 #else
-    #include <GLFW/glfw3.h>
+#include <GLFW/glfw3.h>
 #include "HyperEngine/Core/Console.h"
 #include "HyperEngine/Core/SafeConsole.h"
 #endif
@@ -22,9 +22,7 @@ namespace HyperEngine {
 namespace Input {
 
 // InputAction3D implementation
-InputAction3D::InputAction3D(const std::string& name)
-    : name(name), enabled(true) {
-}
+InputAction3D::InputAction3D(const std::string& name) : name(name), enabled(true) {}
 
 void InputAction3D::addKey(Key3D key) {
     keys.push_back(key);
@@ -47,8 +45,9 @@ void InputAction3D::setOnHeld(std::function<void()> callback) {
 }
 
 bool InputAction3D::isTriggered(const InputState3D& inputState) const {
-    if (!enabled) return false;
-    
+    if (!enabled)
+        return false;
+
     // Проверяем клавиши
     for (Key3D key : keys) {
         auto it = inputState.keyStates.find(key);
@@ -56,7 +55,7 @@ bool InputAction3D::isTriggered(const InputState3D& inputState) const {
             return true;
         }
     }
-    
+
     // Проверяем кнопки мыши
     for (MouseButton3D button : mouseButtons) {
         auto it = inputState.mouseStates.find(button);
@@ -64,13 +63,14 @@ bool InputAction3D::isTriggered(const InputState3D& inputState) const {
             return true;
         }
     }
-    
+
     return false;
 }
 
 bool InputAction3D::wasJustPressed(const InputState3D& inputState) const {
-    if (!enabled) return false;
-    
+    if (!enabled)
+        return false;
+
     // Проверяем клавиши
     for (Key3D key : keys) {
         auto it = inputState.keyJustPressed.find(key);
@@ -78,7 +78,7 @@ bool InputAction3D::wasJustPressed(const InputState3D& inputState) const {
             return true;
         }
     }
-    
+
     // Проверяем кнопки мыши
     for (MouseButton3D button : mouseButtons) {
         auto it = inputState.mouseJustPressed.find(button);
@@ -86,13 +86,14 @@ bool InputAction3D::wasJustPressed(const InputState3D& inputState) const {
             return true;
         }
     }
-    
+
     return false;
 }
 
 bool InputAction3D::wasJustReleased(const InputState3D& inputState) const {
-    if (!enabled) return false;
-    
+    if (!enabled)
+        return false;
+
     // Проверяем клавиши
     for (Key3D key : keys) {
         auto it = inputState.keyJustReleased.find(key);
@@ -100,7 +101,7 @@ bool InputAction3D::wasJustReleased(const InputState3D& inputState) const {
             return true;
         }
     }
-    
+
     // Проверяем кнопки мыши
     for (MouseButton3D button : mouseButtons) {
         auto it = inputState.mouseJustReleased.find(button);
@@ -108,7 +109,7 @@ bool InputAction3D::wasJustReleased(const InputState3D& inputState) const {
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -141,22 +142,22 @@ bool InputManager3D::initialize(GLFWwindow* windowPtr) {
         SAFE_PRINT_LINE("InputManager3D already initialized");
         return true;
     }
-    
+
     this->window = windowPtr;
     firstMouse = true;
     lastMouseX = 0.0;
     lastMouseY = 0.0;
     cursorLocked = false;
-    
+
     // Устанавливаем пользовательский указатель для callbacks
     glfwSetWindowUserPointer(window, this);
-    
+
     // Устанавливаем GLFW callbacks
     glfwSetKeyCallback(window, keyCallback);
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetCursorPosCallback(window, cursorPositionCallback);
     glfwSetScrollCallback(window, scrollCallback);
-    
+
     initialized = true;
     SAFE_PRINT_LINE("InputManager3D initialized successfully");
     return true;
@@ -166,7 +167,7 @@ void InputManager3D::cleanup() {
     if (!initialized) {
         return;
     }
-    
+
     // Сброс callbacks
     if (window) {
         glfwSetKeyCallback(window, nullptr);
@@ -175,11 +176,11 @@ void InputManager3D::cleanup() {
         glfwSetScrollCallback(window, nullptr);
         glfwSetWindowUserPointer(window, nullptr);
     }
-    
+
     actions.clear();
     inputState = InputState3D();
     previousInputState = InputState3D();
-    
+
     initialized = false;
     SAFE_PRINT_LINE("InputManager3D cleaned up");
 }
@@ -188,10 +189,10 @@ void InputManager3D::update() {
     if (!initialized) {
         return;
     }
-    
+
     // Сохраняем предыдущее состояние
     previousInputState = inputState;
-    
+
     // Очищаем события текущего кадра
     inputState.keyJustPressed.clear();
     inputState.keyJustReleased.clear();
@@ -199,10 +200,10 @@ void InputManager3D::update() {
     inputState.mouseJustReleased.clear();
     inputState.mouseDelta = Vector3::zero();
     inputState.scrollDelta = Vector3::zero();
-    
+
     // Обрабатываем GLFW события
     glfwPollEvents();
-    
+
     // Обрабатываем действия
     processActions();
 }
@@ -275,7 +276,7 @@ void InputManager3D::setCursorLocked(bool locked) {
     if (window) {
         glfwSetInputMode(window, GLFW_CURSOR, locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
         if (locked) {
-            firstMouse = true; // Сбрасываем для предотвращения скачка
+            firstMouse = true;  // Сбрасываем для предотвращения скачка
         }
     }
 }
@@ -319,7 +320,7 @@ void InputManager3D::scrollCallback(GLFWwindow* window, double xoffset, double y
 
 void InputManager3D::processKeyInput(int key, int action) {
     Key3D key3D = glfwKeyToKey3D(key);
-    
+
     if (action == GLFW_PRESS) {
         inputState.keyStates[key3D] = true;
         inputState.keyJustPressed[key3D] = true;
@@ -331,7 +332,7 @@ void InputManager3D::processKeyInput(int key, int action) {
 
 void InputManager3D::processMouseButtonInput(int button, int action) {
     MouseButton3D button3D = glfwButtonToMouseButton3D(button);
-    
+
     if (action == GLFW_PRESS) {
         inputState.mouseStates[button3D] = true;
         inputState.mouseJustPressed[button3D] = true;
@@ -343,38 +344,39 @@ void InputManager3D::processMouseButtonInput(int button, int action) {
 
 void InputManager3D::processMouseMovement(double xpos, double ypos) {
     inputState.mousePosition = Vector3(static_cast<float>(xpos), static_cast<float>(ypos), 0.0f);
-    
+
     if (firstMouse) {
         lastMouseX = xpos;
         lastMouseY = ypos;
         firstMouse = false;
     }
-    
+
     double deltaX = xpos - lastMouseX;
-    double deltaY = lastMouseY - ypos; // Инвертируем Y для стандартной 3D навигации
-    
+    double deltaY = lastMouseY - ypos;  // Инвертируем Y для стандартной 3D навигации
+
     inputState.mouseDelta = Vector3(static_cast<float>(deltaX), static_cast<float>(deltaY), 0.0f);
-    
+
     lastMouseX = xpos;
     lastMouseY = ypos;
 }
 
 void InputManager3D::processScroll(double xoffset, double yoffset) {
-    inputState.scrollDelta = Vector3(static_cast<float>(xoffset), static_cast<float>(yoffset), 0.0f);
+    inputState.scrollDelta =
+        Vector3(static_cast<float>(xoffset), static_cast<float>(yoffset), 0.0f);
 }
 
 void InputManager3D::processActions() {
     for (auto& pair : actions) {
         InputAction3D& action = pair.second;
-        
+
         if (action.wasJustPressed(inputState)) {
             action.executePressed();
         }
-        
+
         if (action.wasJustReleased(inputState)) {
             action.executeReleased();
         }
-        
+
         if (action.isTriggered(inputState)) {
             action.executeHeld();
         }
@@ -393,11 +395,17 @@ MouseButton3D InputManager3D::glfwButtonToMouseButton3D(int glfwButton) {
 
 // Controller3D implementation
 Controller3D::Controller3D()
-    : position(0, 0, 0), rotation(Quaternion::identity()), velocity(0, 0, 0),
-      moveSpeed(5.0f), rotationSpeed(90.0f), mouseSensitivity(0.1f),
-      mouseLookEnabled(true), movementEnabled(true), rotationEnabled(true),
-      inputVector(0, 0, 0), rotationInput(0, 0, 0) {
-}
+    : position(0, 0, 0),
+      rotation(Quaternion::identity()),
+      velocity(0, 0, 0),
+      moveSpeed(5.0f),
+      rotationSpeed(90.0f),
+      mouseSensitivity(0.1f),
+      mouseLookEnabled(true),
+      movementEnabled(true),
+      rotationEnabled(true),
+      inputVector(0, 0, 0),
+      rotationInput(0, 0, 0) {}
 
 void Controller3D::update(float deltaTime) {
     updateMovement(deltaTime);
@@ -447,7 +455,7 @@ void Controller3D::rotate(float pitch, float yaw, float roll) {
     Quaternion pitchQuat = Quaternion::fromAxisAngle(Vector3::right(), pitch);
     Quaternion yawQuat = Quaternion::fromAxisAngle(Vector3::up(), yaw);
     Quaternion rollQuat = Quaternion::fromAxisAngle(Vector3::forward(), roll);
-    
+
     rotation = yawQuat * rotation * pitchQuat * rollQuat;
     rotation.normalize();
 }
@@ -491,13 +499,13 @@ void Controller3D::updateMovement(float deltaTime) {
     if (!movementEnabled) {
         return;
     }
-    
+
     Vector3 movement = inputVector * moveSpeed * deltaTime;
     move(movement);
-    
+
     // Применяем velocity
     position += velocity * deltaTime;
-    
+
     // Затухание input vector
     inputVector *= 0.9f;
 }
@@ -506,23 +514,21 @@ void Controller3D::updateRotation(float deltaTime) {
     if (!rotationEnabled) {
         return;
     }
-    
+
     if (rotationInput.magnitudeSquared() > 0.0f) {
         float rotationAmount = rotationSpeed * deltaTime;
-        rotate(
-            rotationInput.x * rotationAmount,
-            rotationInput.y * rotationAmount,
-            rotationInput.z * rotationAmount
-        );
+        rotate(rotationInput.x * rotationAmount,
+               rotationInput.y * rotationAmount,
+               rotationInput.z * rotationAmount);
     }
-    
+
     // Затухание rotation input
     rotationInput *= 0.9f;
 }
 
 void Controller3D::processMovementInput(const InputState3D& inputState) {
     Vector3 movement = Vector3::zero();
-    
+
     // WASD движение
     if (inputState.keyStates.count(Key3D::W) && inputState.keyStates.at(Key3D::W)) {
         movement += getForward();
@@ -536,7 +542,7 @@ void Controller3D::processMovementInput(const InputState3D& inputState) {
     if (inputState.keyStates.count(Key3D::D) && inputState.keyStates.at(Key3D::D)) {
         movement += getRight();
     }
-    
+
     // Вертикальное движение
     if (inputState.keyStates.count(Key3D::Space) && inputState.keyStates.at(Key3D::Space)) {
         movement += Vector3::up();
@@ -544,17 +550,17 @@ void Controller3D::processMovementInput(const InputState3D& inputState) {
     if (inputState.keyStates.count(Key3D::LeftShift) && inputState.keyStates.at(Key3D::LeftShift)) {
         movement -= Vector3::up();
     }
-    
+
     inputVector = movement.normalized();
 }
 
 void Controller3D::processRotationInput(const InputState3D& inputState) {
     if (mouseLookEnabled) {
         Vector3 mouseDelta = inputState.mouseDelta;
-        rotationInput.x = -mouseDelta.y * mouseSensitivity; // Pitch
-        rotationInput.y = -mouseDelta.x * mouseSensitivity; // Yaw
+        rotationInput.x = -mouseDelta.y * mouseSensitivity;  // Pitch
+        rotationInput.y = -mouseDelta.x * mouseSensitivity;  // Yaw
     }
-    
+
     // Клавиатурное вращение стрелками
     if (inputState.keyStates.count(Key3D::Up) && inputState.keyStates.at(Key3D::Up)) {
         rotationInput.x += 1.0f;
@@ -572,15 +578,21 @@ void Controller3D::processRotationInput(const InputState3D& inputState) {
 
 // FirstPersonController implementation
 FirstPersonController::FirstPersonController()
-    : Controller3D(), minPitch(-89.0f), maxPitch(89.0f), currentPitch(0.0f),
-      currentYaw(0.0f), jumpHeight(5.0f), gravity(-9.81f), grounded(true) {
-}
+    : Controller3D(),
+      minPitch(-89.0f),
+      maxPitch(89.0f),
+      currentPitch(0.0f),
+      currentYaw(0.0f),
+      jumpHeight(5.0f),
+      gravity(-9.81f),
+      grounded(true) {}
 
 void FirstPersonController::handleInput(const InputState3D& inputState) {
     Controller3D::handleInput(inputState);
-    
+
     // Прыжок
-    if (grounded && inputState.keyJustPressed.count(Key3D::Space) && inputState.keyJustPressed.at(Key3D::Space)) {
+    if (grounded && inputState.keyJustPressed.count(Key3D::Space)
+        && inputState.keyJustPressed.at(Key3D::Space)) {
         jump();
     }
 }
@@ -600,31 +612,40 @@ void FirstPersonController::jump() {
 void FirstPersonController::updatePitchYaw() {
     // Ограничиваем pitch
     currentPitch = std::max(minPitch, std::min(maxPitch, currentPitch));
-    
+
     // Создаем кватернион из углов Эйлера
-    rotation = Quaternion::fromEulerAngles(currentPitch * M_PI / 180.0f, currentYaw * M_PI / 180.0f, 0.0f);
+    rotation =
+        Quaternion::fromEulerAngles(currentPitch * M_PI / 180.0f, currentYaw * M_PI / 180.0f, 0.0f);
 }
 
 // OrbitController implementation
 OrbitController::OrbitController()
-    : Controller3D(), target(0, 0, 0), distance(5.0f), minDistance(1.0f),
-      maxDistance(20.0f), minPitch(-89.0f), maxPitch(89.0f), currentPitch(0.0f),
-      currentYaw(0.0f), zoomSpeed(2.0f), orbitSpeed(100.0f) {
-}
+    : Controller3D(),
+      target(0, 0, 0),
+      distance(5.0f),
+      minDistance(1.0f),
+      maxDistance(20.0f),
+      minPitch(-89.0f),
+      maxPitch(89.0f),
+      currentPitch(0.0f),
+      currentYaw(0.0f),
+      zoomSpeed(2.0f),
+      orbitSpeed(100.0f) {}
 
 void OrbitController::handleInput(const InputState3D& inputState) {
     // Орбитальное вращение мышью
-    if (inputState.mouseStates.count(MouseButton3D::Left) && inputState.mouseStates.at(MouseButton3D::Left)) {
+    if (inputState.mouseStates.count(MouseButton3D::Left)
+        && inputState.mouseStates.at(MouseButton3D::Left)) {
         Vector3 mouseDelta = inputState.mouseDelta;
         currentYaw -= mouseDelta.x * mouseSensitivity;
         currentPitch -= mouseDelta.y * mouseSensitivity;
-        
+
         // Ограничиваем pitch
         currentPitch = std::max(minPitch, std::min(maxPitch, currentPitch));
-        
+
         updateOrbitPosition();
     }
-    
+
     // Зум колесиком мыши
     Vector3 scrollDelta = inputState.scrollDelta;
     if (scrollDelta.y != 0.0f) {
@@ -659,18 +680,17 @@ void OrbitController::setPitchRange(float minPitchDeg, float maxPitchDeg) {
 void OrbitController::updateOrbitPosition() {
     float pitchRad = currentPitch * M_PI / 180.0f;
     float yawRad = currentYaw * M_PI / 180.0f;
-    
+
     // Вычисляем позицию камеры в сферических координатах
     float x = distance * std::cos(pitchRad) * std::cos(yawRad);
     float y = distance * std::sin(pitchRad);
     float z = distance * std::cos(pitchRad) * std::sin(yawRad);
-    
+
     position = target + Vector3(x, y, z);
-    
+
     // Направляем камеру на цель
     lookAt(target);
 }
 
-} // namespace Input
-} // namespace HyperEngine
-
+}  // namespace Input
+}  // namespace HyperEngine

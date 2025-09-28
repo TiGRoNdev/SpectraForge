@@ -4,10 +4,10 @@
  */
 
 #include <gtest/gtest.h>
+#include <memory>
 #include "HyperEngine/Core/EngineCore.h"
 #include "HyperEngine/Core/Logger.h"
 #include "HyperEngine/Rendering/ModernRenderer3D.h"
-#include <memory>
 
 using namespace HyperEngine::Core;
 using namespace HyperEngine::Rendering;
@@ -16,7 +16,7 @@ using namespace HyperEngine::Rendering;
  * @brief Мок-реализации для тестирования
  */
 class MockRenderStrategy : public IRenderStrategy {
-public:
+  public:
     bool initialize() override { return true; }
     void render(const FrameData& frameData) override {}
     void shutdown() override {}
@@ -25,7 +25,7 @@ public:
 };
 
 class MockLightingSystem : public ILightingSystem {
-public:
+  public:
     bool initialize() override { return true; }
     void updateLighting(const FrameData& frameData) override {}
     void shutdown() override {}
@@ -34,7 +34,7 @@ public:
 };
 
 class MockCameraSystem : public ICameraSystem {
-public:
+  public:
     bool initialize() override { return true; }
     void updateCamera(const FrameData& frameData) override {}
     void shutdown() override {}
@@ -43,7 +43,7 @@ public:
 };
 
 class MockRenderStatistics : public IRenderStatistics {
-public:
+  public:
     void beginFrame() override {}
     void endFrame() override {}
     void recordDrawCall(uint32_t primitiveCount) override {}
@@ -52,7 +52,7 @@ public:
 };
 
 class MockResourceManager : public IResourceManager {
-public:
+  public:
     bool initialize() override { return true; }
     void shutdown() override {}
     bool isInitialized() const override { return true; }
@@ -73,18 +73,15 @@ TEST(SOLIDPrinciplesTest, DependencyInversionPrinciple) {
     // Тест: рендерер должен принимать зависимости через конструктор (DIP)
     EXPECT_NO_THROW({
         auto renderer = std::make_shared<ModernRenderer3D>(
-            renderStrategy, lightingSystem, cameraSystem, statistics, logger
-        );
+            renderStrategy, lightingSystem, cameraSystem, statistics, logger);
     });
 
     // Тест: движок должен принимать зависимости через конструктор (DIP)
     auto renderer = std::make_shared<ModernRenderer3D>(
-        renderStrategy, lightingSystem, cameraSystem, statistics, logger
-    );
-    
-    EXPECT_NO_THROW({
-        auto engine = std::make_unique<EngineCore>(renderer, resourceManager, logger);
-    });
+        renderStrategy, lightingSystem, cameraSystem, statistics, logger);
+
+    EXPECT_NO_THROW(
+        { auto engine = std::make_unique<EngineCore>(renderer, resourceManager, logger); });
 }
 
 /**
@@ -92,11 +89,11 @@ TEST(SOLIDPrinciplesTest, DependencyInversionPrinciple) {
  */
 TEST(SOLIDPrinciplesTest, SingleResponsibilityPrinciple) {
     auto logger = std::make_shared<Logger>("", LogLevel::ERROR);
-    
+
     // Тест: Logger отвечает только за логирование
     EXPECT_NO_THROW(logger->logInfo("Test message"));
     EXPECT_NO_THROW(logger->logError("Test error"));
-    
+
     // Тест: каждый компонент имеет четко определенную ответственность
     auto renderStrategy = std::make_shared<MockRenderStrategy>();
     EXPECT_EQ(renderStrategy->getName(), "MockRenderStrategy");
@@ -115,18 +112,17 @@ TEST(SOLIDPrinciplesTest, OpenClosedPrinciple) {
     auto resourceManager = std::make_shared<MockResourceManager>();
 
     auto renderer = std::make_shared<ModernRenderer3D>(
-        renderStrategy, lightingSystem, cameraSystem, statistics, logger
-    );
-    
+        renderStrategy, lightingSystem, cameraSystem, statistics, logger);
+
     auto engine = std::make_unique<EngineCore>(renderer, resourceManager, logger);
 
     // Тест: можно добавлять новые стратегии рендеринга без изменения существующего кода
     auto newStrategy = std::make_shared<MockRenderStrategy>();
     EXPECT_NO_THROW(renderer->setRenderStrategy(newStrategy));
-    
+
     // Тест: можно добавлять новые подсистемы без изменения движка
     class TestSubsystem : public ISubsystem {
-    public:
+      public:
         bool initialize() override { return true; }
         void shutdown() override {}
         bool isInitialized() const override { return true; }
@@ -134,7 +130,7 @@ TEST(SOLIDPrinciplesTest, OpenClosedPrinciple) {
         const char* getName() const override { return "TestSubsystem"; }
         int getUpdatePriority() const override { return 0; }
     };
-    
+
     auto subsystem = std::make_shared<TestSubsystem>();
     EXPECT_NO_THROW(engine->registerSubsystem(subsystem));
 }
@@ -144,25 +140,24 @@ TEST(SOLIDPrinciplesTest, OpenClosedPrinciple) {
  */
 TEST(SOLIDPrinciplesTest, InterfaceSegregationPrinciple) {
     // Тест: интерфейсы разделены по функциональности
-    
+
     // IInitializable - только для инициализации
     auto logger = std::make_shared<Logger>("", LogLevel::ERROR);
     Interfaces::IInitializable* initializable = logger.get();
     EXPECT_TRUE(initializable != nullptr);
-    
+
     // IConfigurable - только для конфигурации
     auto renderStrategy = std::make_shared<MockRenderStrategy>();
     auto lightingSystem = std::make_shared<MockLightingSystem>();
     auto cameraSystem = std::make_shared<MockCameraSystem>();
     auto statistics = std::make_shared<MockRenderStatistics>();
-    
+
     auto renderer = std::make_shared<ModernRenderer3D>(
-        renderStrategy, lightingSystem, cameraSystem, statistics, logger
-    );
-    
+        renderStrategy, lightingSystem, cameraSystem, statistics, logger);
+
     Interfaces::IConfigurable* configurable = renderer.get();
     EXPECT_TRUE(configurable != nullptr);
-    
+
     // Тест: можно использовать только нужные методы интерфейса
     EXPECT_NO_THROW(configurable->setConfigParameter("test", 42));
 }
@@ -174,18 +169,18 @@ TEST(SOLIDPrinciplesTest, LiskovSubstitutionPrinciple) {
     // Тест: все реализации стратегий рендеринга взаимозаменяемы
     std::shared_ptr<IRenderStrategy> strategy1 = std::make_shared<MockRenderStrategy>();
     std::shared_ptr<IRenderStrategy> strategy2 = std::make_shared<MockRenderStrategy>();
-    
+
     // Обе стратегии должны работать одинаково через базовый интерфейс
     EXPECT_TRUE(strategy1->initialize());
     EXPECT_TRUE(strategy2->initialize());
-    
+
     EXPECT_NO_THROW(strategy1->render(FrameData{}));
     EXPECT_NO_THROW(strategy2->render(FrameData{}));
-    
+
     // Тест: все логгеры взаимозаменяемы
     std::shared_ptr<ILogger> logger1 = std::make_shared<Logger>("", LogLevel::INFO);
     std::shared_ptr<ILogger> logger2 = std::make_shared<Logger>("", LogLevel::DEBUG);
-    
+
     EXPECT_NO_THROW(logger1->logInfo("Test"));
     EXPECT_NO_THROW(logger2->logInfo("Test"));
 }
@@ -202,15 +197,14 @@ TEST(SOLIDPrinciplesTest, ConfigurabilityTest) {
     auto resourceManager = std::make_shared<MockResourceManager>();
 
     auto renderer = std::make_shared<ModernRenderer3D>(
-        renderStrategy, lightingSystem, cameraSystem, statistics, logger
-    );
-    
+        renderStrategy, lightingSystem, cameraSystem, statistics, logger);
+
     auto engine = std::make_unique<EngineCore>(renderer, resourceManager, logger);
 
     // Тест конфигурации движка
     EXPECT_NO_THROW(engine->setConfigParameter("test_param", 123));
     EXPECT_TRUE(engine->hasConfigParameter("test_param"));
-    
+
     // Тест конфигурации рендерера
     EXPECT_NO_THROW(renderer->setConfigParameter("width", 1920));
     EXPECT_TRUE(renderer->hasConfigParameter("width"));
@@ -228,15 +222,14 @@ TEST(SOLIDPrinciplesTest, InitializationTest) {
     auto resourceManager = std::make_shared<MockResourceManager>();
 
     auto renderer = std::make_shared<ModernRenderer3D>(
-        renderStrategy, lightingSystem, cameraSystem, statistics, logger
-    );
-    
+        renderStrategy, lightingSystem, cameraSystem, statistics, logger);
+
     auto engine = std::make_unique<EngineCore>(renderer, resourceManager, logger);
 
     // Тест инициализации
     EXPECT_TRUE(engine->initialize());
     EXPECT_TRUE(engine->isInitialized());
-    
+
     // Тест завершения работы
     EXPECT_NO_THROW(engine->shutdown());
     EXPECT_FALSE(engine->isInitialized());

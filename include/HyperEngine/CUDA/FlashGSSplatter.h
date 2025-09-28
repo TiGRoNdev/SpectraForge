@@ -228,17 +228,13 @@ class FlashGSSplatter {
      * @brief Получение текущих параметров гауссианов (legacy API)
      * @return Параметры гауссианов
      */
-    const GaussianParams& getGaussianParams() const {
-        return legacyParams;
-    }
+    const GaussianParams& getGaussianParams() const { return legacyParams; }
 
     /**
      * @brief Проверка инициализации
      * @return true если инициализирован
      */
-    bool isInitialized() const {
-        return initialized;
-    }
+    bool isInitialized() const { return initialized; }
 
   private:
     // Legacy API

@@ -3,8 +3,7 @@
 
 using namespace HyperEngine::Core;
 
-Component3D::Component3D()
-    : gameObject(nullptr), enabled(true) {}
+Component3D::Component3D() : gameObject(nullptr), enabled(true) {}
 
 void Component3D::setEnabled(bool isEnabled) {
     this->enabled = isEnabled;
@@ -13,4 +12,3 @@ void Component3D::setEnabled(bool isEnabled) {
 void Component3D::setGameObject(GameObject3D* gameObj) {
     this->gameObject = gameObj;
 }
-

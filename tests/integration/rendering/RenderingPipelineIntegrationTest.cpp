@@ -192,8 +192,9 @@ TEST_F(RenderingPipelineIntegrationTest, FullPipelinePerformance) {
 
                 // Рендерим несколько объектов для реалистичной нагрузки
                 for (int obj = 0; obj < 10; ++obj) {
-                    HyperEngine::Math::Matrix4 objTransform = HyperEngine::Math::Matrix4::translation(
-                        static_cast<float>(obj - 5), 0.0f, 0.0f);
+                    HyperEngine::Math::Matrix4 objTransform =
+                        HyperEngine::Math::Matrix4::translation(
+                            static_cast<float>(obj - 5), 0.0f, 0.0f);
                     rendererAdapter->renderMesh(testMesh, objTransform, testShader);
                 }
 
@@ -334,8 +335,9 @@ TEST_F(RenderingPipelineIntegrationTest, StabilityStressTest) {
                     // Варьируем нагрузку
                     int objectCount = (frame % 20) + 1;
                     for (int obj = 0; obj < objectCount; ++obj) {
-                        HyperEngine::Math::Matrix4 transform = HyperEngine::Math::Matrix4::translation(
-                            std::sin(frame * 0.01f + obj), std::cos(frame * 0.01f + obj), 0.0f);
+                        HyperEngine::Math::Matrix4 transform =
+                            HyperEngine::Math::Matrix4::translation(
+                                std::sin(frame * 0.01f + obj), std::cos(frame * 0.01f + obj), 0.0f);
                         rendererAdapter->renderMesh(testMesh, transform, testShader);
                     }
 
@@ -392,4 +394,3 @@ INSTANTIATE_TEST_SUITE_P(ConfigurationTests,
                                            std::make_tuple(RenderBackend::AUTO, 1920, 1080),
                                            std::make_tuple(RenderBackend::VULKAN, 1920, 1080),
                                            std::make_tuple(RenderBackend::VULKAN, 3840, 2160)));
-

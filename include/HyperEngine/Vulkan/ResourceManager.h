@@ -155,9 +155,7 @@ class ResourceManager {
      * @brief Получение VMA аллокатора
      * @return VMA аллокатор
      */
-    VmaAllocator getAllocator() const {
-        return allocator;
-    }
+    VmaAllocator getAllocator() const { return allocator; }
 
     /**
      * @brief Поиск подходящего типа памяти
@@ -209,4 +207,3 @@ class ResourceManager {
 };
 
 }  // namespace HyperEngine::Vulkan
-

@@ -135,4 +135,3 @@ class HardwareDetector {
 };
 
 }  // namespace HyperEngine::Vulkan
-

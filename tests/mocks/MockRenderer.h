@@ -1,5 +1,6 @@
 #pragma once
 #include <gmock/gmock.h>
+#include "HyperEngine/Core/GameObject3D.h"
 #include "HyperEngine/Core/Interfaces.h"
 #include "HyperEngine/Rendering/RendererAdapter.h"
 
@@ -36,6 +37,9 @@ class MockRendererAdapter : public IRendererAdapter {
     // Управление камерой
     MOCK_METHOD(void, setMainCamera, (std::shared_ptr<Camera3D> camera), (override));
     MOCK_METHOD(std::shared_ptr<Camera3D>, getMainCamera, (), (const override));
+
+    // Поддержка функций
+    MOCK_METHOD(bool, supportsFeature, (const std::string& feature), (const override));
 
     // Рендеринг объектов
     MOCK_METHOD(void,
@@ -110,7 +114,7 @@ class MockDrawable : public IDrawable {
  */
 class MockPrimitiveFactory : public IPrimitiveFactory {
   public:
-    MOCK_METHOD(std::shared_ptr<HyperEngine::GameObject3D>,
+    MOCK_METHOD(std::shared_ptr<GameObject3D>,
                 createPrimitive,
                 (const std::string& type),
                 (override));
@@ -186,4 +190,3 @@ class MockFactory {
 };
 
 }  // namespace HyperEngine::Testing::Mocks
-

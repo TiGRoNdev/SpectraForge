@@ -241,4 +241,3 @@ class UpscalingMockFactory {
 };
 
 }  // namespace HyperEngine::Testing::Mocks
-

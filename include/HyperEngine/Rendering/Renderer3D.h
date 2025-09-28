@@ -142,4 +142,3 @@ class Renderer3D {
 
 }  // namespace Rendering
 }  // namespace HyperEngine
-

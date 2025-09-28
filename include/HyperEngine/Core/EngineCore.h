@@ -1,7 +1,7 @@
 /**
  * @file EngineCore.h
  * @brief Рефакторенный основной класс движка согласно SOLID принципам
- * 
+ *
  * Применяет все SOLID принципы:
  * - SRP: Разделение обязанностей на отдельные компоненты
  * - OCP: Открыт для расширения через интерфейсы
@@ -12,14 +12,14 @@
 
 #pragma once
 
-#include "Interfaces/IInitializable.h"
-#include "Interfaces/IConfigurable.h"
-#include "Interfaces/IEventHandler.h"
+#include <memory>
+#include <string>
+#include <vector>
 #include "../Rendering/Common/IRenderer.h"
 #include "../Rendering/Common/IResourceManager.h"
-#include <memory>
-#include <vector>
-#include <string>
+#include "Interfaces/IConfigurable.h"
+#include "Interfaces/IEventHandler.h"
+#include "Interfaces/IInitializable.h"
 
 namespace HyperEngine {
 namespace Core {
@@ -55,30 +55,26 @@ struct EngineConfig {
 
 /**
  * @brief Основной класс движка, следующий SOLID принципам
- * 
+ *
  * SRP: Отвечает только за координацию подсистем
  * OCP: Открыт для расширения через добавление новых подсистем
  * LSP: Все подсистемы взаимозаменяемы через интерфейсы
  * ISP: Использует специализированные интерфейсы для разных аспектов
  * DIP: Зависит от абстракций (интерфейсов), а не от конкретных классов
  */
-class EngineCore : 
-    public Interfaces::IInitializable,
-    public Interfaces::IConfigurable,
-    public Interfaces::IEventHandler {
-
-public:
+class EngineCore : public Interfaces::IInitializable,
+                   public Interfaces::IConfigurable,
+                   public Interfaces::IEventHandler {
+  public:
     /**
      * @brief Конструктор с dependency injection
      * @param renderer Рендерер (DIP - зависимость от абстракции)
      * @param resourceManager Менеджер ресурсов (DIP)
      * @param logger Логгер (DIP)
      */
-    EngineCore(
-        std::shared_ptr<Rendering::IRenderer> renderer,
-        std::shared_ptr<Rendering::IResourceManager> resourceManager,
-        std::shared_ptr<ILogger> logger
-    );
+    EngineCore(std::shared_ptr<Rendering::IRenderer> renderer,
+               std::shared_ptr<Rendering::IResourceManager> resourceManager,
+               std::shared_ptr<ILogger> logger);
 
     /**
      * @brief Деструктор
@@ -139,9 +135,11 @@ public:
      * @brief Получение менеджера ресурсов
      * @return Указатель на менеджер ресурсов
      */
-    std::shared_ptr<Rendering::IResourceManager> getResourceManager() const { return resourceManager; }
+    std::shared_ptr<Rendering::IResourceManager> getResourceManager() const {
+        return resourceManager;
+    }
 
-private:
+  private:
     // Dependency injection (DIP)
     std::shared_ptr<Rendering::IRenderer> renderer;
     std::shared_ptr<Rendering::IResourceManager> resourceManager;
@@ -190,7 +188,7 @@ private:
  * @brief Интерфейс для подсистем движка (ISP)
  */
 class ISubsystem : public Interfaces::IInitializable {
-public:
+  public:
     virtual ~ISubsystem() = default;
 
     /**
@@ -216,7 +214,7 @@ public:
  * @brief Интерфейс для логгера (DIP)
  */
 class ILogger {
-public:
+  public:
     virtual ~ILogger() = default;
 
     virtual void logInfo(const std::string& message) = 0;

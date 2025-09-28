@@ -115,4 +115,3 @@ class Camera3D {
 
 }  // namespace Rendering
 }  // namespace HyperEngine
-

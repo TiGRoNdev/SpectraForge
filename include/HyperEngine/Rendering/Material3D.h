@@ -279,4 +279,3 @@ class Material3D {
 
 }  // namespace Rendering
 }  // namespace HyperEngine
-

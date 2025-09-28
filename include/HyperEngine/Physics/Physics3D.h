@@ -1,9 +1,9 @@
 #pragma once
 
-#include <memory>
-#include <vector>
-#include <unordered_map>
 #include <functional>
+#include <memory>
+#include <unordered_map>
+#include <vector>
 #include "../Math/Matrix4.h"
 #include "../Math/Quaternion.h"
 #include "../Math/Vector3.h"
@@ -55,20 +55,17 @@ struct RaycastHit3D {
  * @brief Базовый класс для 3D коллайдеров
  */
 class Collider3D {
-public:
-    enum Type {
-        Sphere,
-        Box,
-        Plane
-    };
+  public:
+    enum Type { Sphere, Box, Plane };
 
     struct AABB {
         Math::Vector3 min;
         Math::Vector3 max;
-        
+
         AABB() : min(0, 0, 0), max(0, 0, 0) {}
-        AABB(const Math::Vector3& minPoint, const Math::Vector3& maxPoint) : min(minPoint), max(maxPoint) {}
-        
+        AABB(const Math::Vector3& minPoint, const Math::Vector3& maxPoint)
+            : min(minPoint), max(maxPoint) {}
+
         bool intersects(const AABB& other) const;
     };
 
@@ -80,10 +77,10 @@ public:
     void setTrigger(bool isTrigger) { trigger = isTrigger; }
     bool isEnabled() const { return enabled; }
     void setEnabled(bool isEnabled) { enabled = isEnabled; }
-    
+
     const Math::Vector3& getCenter() const { return center; }
     void setCenter(const Math::Vector3& newCenter) { center = newCenter; }
-    
+
     const Math::Matrix4& getTransform() const { return transform; }
     void setTransform(const Math::Matrix4& newTransform) { transform = newTransform; }
 
@@ -92,10 +89,12 @@ public:
     virtual Math::Vector3 getClosestPoint(const Math::Vector3& point) const = 0;
     virtual Math::Vector3 getNormal(const Math::Vector3& point) const = 0;
     virtual float getVolume() const = 0;
-    virtual RaycastHit3D raycast(const Math::Vector3& origin, const Math::Vector3& direction, float maxDistance) const = 0;
+    virtual RaycastHit3D raycast(const Math::Vector3& origin,
+                                 const Math::Vector3& direction,
+                                 float maxDistance) const = 0;
     virtual AABB getBoundingBox() const = 0;
 
-protected:
+  protected:
     Type type;
     Math::Vector3 center;
     Math::Matrix4 transform;
@@ -107,9 +106,9 @@ protected:
  * @brief Sphere коллайдер
  */
 class SphereCollider3D : public Collider3D {
-public:
+  public:
     SphereCollider3D(float radius = 1.0f);
-    
+
     float getRadius() const { return radius; }
     void setRadius(float newRadius) { radius = newRadius; }
 
@@ -118,14 +117,16 @@ public:
     Math::Vector3 getClosestPoint(const Math::Vector3& point) const override;
     Math::Vector3 getNormal(const Math::Vector3& point) const override;
     float getVolume() const override;
-    RaycastHit3D raycast(const Math::Vector3& origin, const Math::Vector3& direction, float maxDistance) const override;
+    RaycastHit3D raycast(const Math::Vector3& origin,
+                         const Math::Vector3& direction,
+                         float maxDistance) const override;
     AABB getBoundingBox() const override;
 
-public:
+  public:
     bool intersectsSphere(const SphereCollider3D& other) const;
     bool intersectsBox(const BoxCollider3D& other) const;
 
-private:
+  private:
     float radius;
 };
 
@@ -133,12 +134,12 @@ private:
  * @brief Box коллайдер
  */
 class BoxCollider3D : public Collider3D {
-public:
+  public:
     BoxCollider3D(const Math::Vector3& size = Math::Vector3(1, 1, 1));
-    
+
     const Math::Vector3& getSize() const { return size; }
     void setSize(const Math::Vector3& newSize) { size = newSize; }
-    
+
     Math::Vector3 getMin() const;
     Math::Vector3 getMax() const;
 
@@ -147,14 +148,16 @@ public:
     Math::Vector3 getClosestPoint(const Math::Vector3& point) const override;
     Math::Vector3 getNormal(const Math::Vector3& point) const override;
     float getVolume() const override;
-    RaycastHit3D raycast(const Math::Vector3& origin, const Math::Vector3& direction, float maxDistance) const override;
+    RaycastHit3D raycast(const Math::Vector3& origin,
+                         const Math::Vector3& direction,
+                         float maxDistance) const override;
     AABB getBoundingBox() const override;
 
-public:
+  public:
     bool intersectsBox(const BoxCollider3D& other) const;
     bool intersectsSphere(const SphereCollider3D& other) const;
 
-private:
+  private:
     Math::Vector3 size;
 };
 
@@ -162,13 +165,13 @@ private:
  * @brief Plane коллайдер
  */
 class PlaneCollider3D : public Collider3D {
-public:
+  public:
     PlaneCollider3D(const Math::Vector3& normal = Math::Vector3(0, 1, 0), float distance = 0.0f);
-    
+
     const Math::Vector3& getNormalVector() const { return normal; }
     float getDistance() const { return distance; }
     void setPlane(const Math::Vector3& newNormal, float newDistance);
-    
+
     float distanceToPoint(const Math::Vector3& point) const;
     bool isPointAbove(const Math::Vector3& point) const;
 
@@ -177,10 +180,12 @@ public:
     Math::Vector3 getClosestPoint(const Math::Vector3& point) const override;
     Math::Vector3 getNormal(const Math::Vector3& point) const override;
     float getVolume() const override;
-    RaycastHit3D raycast(const Math::Vector3& origin, const Math::Vector3& direction, float maxDistance) const override;
+    RaycastHit3D raycast(const Math::Vector3& origin,
+                         const Math::Vector3& direction,
+                         float maxDistance) const override;
     AABB getBoundingBox() const override;
 
-private:
+  private:
     Math::Vector3 normal;
     float distance;
 };
@@ -189,7 +194,7 @@ private:
  * @brief Физическое тело в 3D
  */
 class RigidBody3D {
-public:
+  public:
     RigidBody3D();
     virtual ~RigidBody3D() = default;
 
@@ -210,9 +215,9 @@ public:
     // Массовые свойства
     float getMass() const { return mass; }
     void setMass(float m);
-    
+
     float getInverseMass() const { return inverseMass; }
-    
+
     const Math::Vector3& getInertia() const { return inertia; }
     void setInertia(const Math::Vector3& newInertia);
     Math::Vector3 getInverseInertia() const;
@@ -251,10 +256,10 @@ public:
     // Физическое обновление
     void update(float deltaTime);
     void clearForces();
-    
+
     Math::Matrix4 getTransformMatrix() const;
 
-private:
+  private:
     // Трансформация
     Math::Vector3 position;
     Math::Quaternion rotation;
@@ -290,7 +295,7 @@ private:
  * @brief Система частиц для 3D
  */
 class ParticleSystem3D {
-public:
+  public:
     struct Particle {
         Math::Vector3 position;
         Math::Vector3 velocity;
@@ -299,9 +304,15 @@ public:
         float life;
         float size;
         bool active;
-        
-        Particle() : position(0, 0, 0), velocity(0, 0, 0), acceleration(0, 0, 0), 
-                    color(1, 1, 1), life(0.0f), size(1.0f), active(false) {}
+
+        Particle()
+            : position(0, 0, 0),
+              velocity(0, 0, 0),
+              acceleration(0, 0, 0),
+              color(1, 1, 1),
+              life(0.0f),
+              size(1.0f),
+              active(false) {}
     };
 
     ParticleSystem3D(size_t maxParticles = 1000);
@@ -321,14 +332,20 @@ public:
     void setColorRange(const Math::Vector3& start, const Math::Vector3& end);
 
     // Управление
-    void play() { playing = true; paused = false; }
+    void play() {
+        playing = true;
+        paused = false;
+    }
     void pause() { paused = true; }
-    void stop() { playing = false; paused = false; }
+    void stop() {
+        playing = false;
+        paused = false;
+    }
 
     const std::vector<Particle>& getParticles() const { return particles; }
     int getActiveParticleCount() const;
 
-private:
+  private:
     std::vector<Particle> particles;
     Math::Vector3 emitterPosition;
     Math::Vector3 emitterVelocity;
@@ -350,7 +367,7 @@ private:
  * @brief Физический мир для 3D
  */
 class PhysicsWorld3D {
-public:
+  public:
     PhysicsWorld3D();
     ~PhysicsWorld3D() = default;
 
@@ -370,8 +387,12 @@ public:
     CollisionResult3D checkCollision(const Collider3D& a, const Collider3D& b);
 
     // Raycast
-    RaycastHit3D raycast(const Math::Vector3& origin, const Math::Vector3& direction, float maxDistance = 1000.0f);
-    std::vector<RaycastHit3D> raycastAll(const Math::Vector3& origin, const Math::Vector3& direction, float maxDistance = 1000.0f);
+    RaycastHit3D raycast(const Math::Vector3& origin,
+                         const Math::Vector3& direction,
+                         float maxDistance = 1000.0f);
+    std::vector<RaycastHit3D> raycastAll(const Math::Vector3& origin,
+                                         const Math::Vector3& direction,
+                                         float maxDistance = 1000.0f);
 
     // Настройки мира
     const Math::Vector3& getGravity() const { return gravity; }
@@ -387,7 +408,7 @@ public:
     int getRigidBodyCount() const { return static_cast<int>(rigidBodies.size()); }
     int getColliderCount() const { return static_cast<int>(colliders.size()); }
 
-private:
+  private:
     std::vector<std::shared_ptr<RigidBody3D>> rigidBodies;
     std::vector<std::shared_ptr<Collider3D>> colliders;
     Math::Vector3 gravity;

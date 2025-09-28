@@ -1,15 +1,15 @@
 /**
  * @file IConfigurable.h
  * @brief Интерфейс для конфигурируемых компонентов
- * 
+ *
  * Следует принципу ISP - разделяет обязанности конфигурации
  */
 
 #pragma once
 
+#include <any>
 #include <string>
 #include <unordered_map>
-#include <any>
 
 namespace HyperEngine {
 namespace Core {
@@ -17,11 +17,11 @@ namespace Interfaces {
 
 /**
  * @brief Интерфейс для компонентов, которые могут быть сконфигурированы
- * 
+ *
  * Применяет принцип ISP - клиенты зависят только от методов конфигурации
  */
 class IConfigurable {
-public:
+  public:
     virtual ~IConfigurable() = default;
 
     /**

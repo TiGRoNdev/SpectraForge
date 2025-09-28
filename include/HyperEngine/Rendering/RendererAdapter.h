@@ -251,4 +251,3 @@ class VulkanRendererAdapter : public IRendererAdapter {
 
 }  // namespace Rendering
 }  // namespace HyperEngine
-

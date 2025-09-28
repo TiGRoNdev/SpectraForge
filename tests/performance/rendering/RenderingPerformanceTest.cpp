@@ -326,10 +326,10 @@ static void BM_LongRunningRendering(benchmark::State& state) {
         renderer->beginFrame();
 
         for (int i = 0; i < objectsPerFrame; ++i) {
-            HyperEngine::Math::Matrix4 transform =
-                HyperEngine::Math::Matrix4::translation(std::sin(static_cast<float>(i) * 0.1f) * 5.0f,
-                                                     std::cos(static_cast<float>(i) * 0.1f) * 5.0f,
-                                                     0.0f);
+            HyperEngine::Math::Matrix4 transform = HyperEngine::Math::Matrix4::translation(
+                std::sin(static_cast<float>(i) * 0.1f) * 5.0f,
+                std::cos(static_cast<float>(i) * 0.1f) * 5.0f,
+                0.0f);
             renderer->renderMesh(testMesh, transform, testShader);
         }
 
@@ -408,4 +408,3 @@ int main(int argc, char** argv) {
 
     return 0;
 }
-

@@ -7,8 +7,11 @@ namespace HyperEngine {
 namespace Core {
 
 Transform3D::Transform3D()
-    : position(Vector3::zero()), rotation(Quaternion::identity()), scale(Vector3::one()),
-      parent(nullptr), worldMatrixDirty(true) {}
+    : position(Vector3::zero()),
+      rotation(Quaternion::identity()),
+      scale(Vector3::one()),
+      parent(nullptr),
+      worldMatrixDirty(true) {}
 
 Transform3D::~Transform3D() {
     cleanup();
@@ -26,7 +29,7 @@ void Transform3D::cleanup() {
     if (parent) {
         parent->removeChild(this);
     }
-    
+
     // Удаляем всех детей
     for (auto* child : children) {
         if (child) {
@@ -62,11 +65,7 @@ void Transform3D::rotate(const Quaternion& rot) {
 }
 
 void Transform3D::scaleBy(const Vector3& scl) {
-    scale = Vector3(
-        scale.x * scl.x,
-        scale.y * scl.y,
-        scale.z * scl.z
-    );
+    scale = Vector3(scale.x * scl.x, scale.y * scl.y, scale.z * scl.z);
     markWorldMatrixDirty();
 }
 
@@ -74,7 +73,7 @@ Matrix4 Transform3D::getLocalMatrix() const {
     Matrix4 translationMatrix = Matrix4::translation(position);
     Matrix4 rotationMatrix = rotation.toMatrix();
     Matrix4 scaleMatrix = Matrix4::scaling(scale);
-    
+
     return translationMatrix * rotationMatrix * scaleMatrix;
 }
 
@@ -102,11 +101,7 @@ Quaternion Transform3D::getWorldRotation() const {
 Vector3 Transform3D::getWorldScale() const {
     if (parent) {
         Vector3 parentScale = parent->getWorldScale();
-        return Vector3(
-            parentScale.x * scale.x,
-            parentScale.y * scale.y,
-            parentScale.z * scale.z
-        );
+        return Vector3(parentScale.x * scale.x, parentScale.y * scale.y, parentScale.z * scale.z);
     }
     return scale;
 }
@@ -127,12 +122,12 @@ void Transform3D::setParent(Transform3D* newParent) {
     if (this->parent) {
         this->parent->removeChild(this);
     }
-    
+
     this->parent = newParent;
     if (newParent) {
         newParent->addChild(this);
     }
-    
+
     markWorldMatrixDirty();
 }
 
@@ -155,7 +150,7 @@ void Transform3D::removeChild(Transform3D* child) {
 
 void Transform3D::markWorldMatrixDirty() {
     worldMatrixDirty = true;
-    
+
     // Помечаем всех детей как грязных
     for (auto* child : children) {
         if (child) {
@@ -173,6 +168,5 @@ void Transform3D::updateWorldMatrix() const {
     worldMatrixDirty = false;
 }
 
-} // namespace Core
-} // namespace HyperEngine
-
+}  // namespace Core
+}  // namespace HyperEngine

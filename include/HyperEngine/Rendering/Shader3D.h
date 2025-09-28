@@ -99,4 +99,3 @@ class ShaderManager {
 
 }  // namespace Rendering
 }  // namespace HyperEngine
-
