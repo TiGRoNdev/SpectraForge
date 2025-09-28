@@ -1,7 +1,45 @@
 ---
+description: Rules for safe console output in HyperEngine projects using Cursor IDE.
+globs: ["**/*.cpp", "**/*.h"]
 alwaysApply: true
 ---
-1. Always wrap a variable in the SAFE_TO_STRING macro before outputting it to the console.
-1. Always use SAFE_TO_STRING instead of std::to_string().
-2. Initialize the console at the beginning of the program.
-3. Use SAFE_* macros for brevity.
+
+# Console Output Rules
+
+@context {
+  "type": "console_guidelines",
+  "purpose": "Ensure safe and consistent console output practices.",
+  "format_version": "1.0",
+  "applies_to": "All files using console output",
+  "supported_macros": ["SAFE_TO_STRING", "SAFE_*"]
+}
+
+## 1. Console Output Standards
+Follow these for safe printing.
+
+@console_rules [
+  {
+    "id": "safe_string",
+    "rule": "Always wrap variables in SAFE_TO_STRING before outputting.",
+    "severity": "high"
+  },
+  {
+    "id": "avoid_std_to_string",
+    "rule": "Use SAFE_TO_STRING instead of std::to_string().",
+    "severity": "high"
+  },
+  {
+    "id": "initialize_console",
+    "rule": "Initialize the console at program start.",
+    "severity": "high"
+  },
+  {
+    "id": "use_safe_macros",
+    "rule": "Use SAFE_* macros for brevity.",
+    "severity": "medium"
+  }
+]
+
+## 2. Best Practices and Enforcement
+- Prevent crashes from invalid conversions.
+- Enforce via static analysis.
