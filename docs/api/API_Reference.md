@@ -9,6 +9,9 @@
 5. [Система объектов](#система-объектов)
 6. [Консольная система](#консольная-система)
 7. [Vulkan подсистема](#vulkan-подсистема)
+8. [CUDA интеграция](#cuda-интеграция)
+9. [Система ресурсов](#система-ресурсов)
+10. [Профилирование](#профилирование)
 
 ---
 
@@ -872,10 +875,341 @@ void PlayerController::update(float deltaTime) {
 
 ---
 
+## CUDA интеграция
+
+### CudaVulkanInterop
+
+Интеграция CUDA с Vulkan для высокопроизводительных вычислений.
+
+#### Инициализация
+
+```cpp
+CudaVulkanInterop();
+bool initialize();
+void cleanup();
+```
+
+#### Управление памятью
+
+```cpp
+bool createExternalMemory(VkDeviceMemory vulkanMemory, size_t size);
+void* mapCudaMemory();
+void unmapCudaMemory();
+```
+
+#### Синхронизация
+
+```cpp
+bool createSemaphore();
+void signalFromCuda();
+void waitFromVulkan();
+```
+
+#### Обработка данных
+
+```cpp
+void processVertexData(const std::vector<Vertex>& vertices);
+void processGaussianData(const GaussianData& data);
+```
+
+### CudaKernels
+
+CUDA ядра для обработки данных.
+
+#### Гауссовы сплаты
+
+```cpp
+void rasterizeGaussians(
+    const GaussianData* gaussians,
+    int numGaussians,
+    const CameraParams& camera,
+    float* outputBuffer,
+    int width, int height
+);
+```
+
+#### Сортировка по глубине
+
+```cpp
+void depthSort(
+    GaussianData* gaussians,
+    int numGaussians,
+    const Vector3& cameraPos
+);
+```
+
+#### Оптимизация тайлов
+
+```cpp
+void optimizeTileRasterization(
+    const TileData* tiles,
+    int numTiles,
+    float* outputBuffer
+);
+```
+
+---
+
+## Система ресурсов
+
+### ResourceManager
+
+Управление ресурсами движка.
+
+#### Инициализация
+
+```cpp
+ResourceManager();
+bool initialize();
+void cleanup();
+```
+
+#### Загрузка ресурсов
+
+```cpp
+template<typename T>
+std::shared_ptr<T> loadResource(const std::string& path);
+
+std::shared_ptr<Texture> loadTexture(const std::string& path);
+std::shared_ptr<Mesh3D> loadMesh(const std::string& path);
+std::shared_ptr<Shader3D> loadShader(const std::string& vertexPath, const std::string& fragmentPath);
+```
+
+#### Управление кэшем
+
+```cpp
+void unloadResource(const std::string& path);
+void clearCache();
+size_t getCacheSize() const;
+```
+
+#### Асинхронная загрузка
+
+```cpp
+std::future<std::shared_ptr<Resource>> loadResourceAsync(const std::string& path);
+bool isResourceLoaded(const std::string& path) const;
+```
+
+### TextureManager
+
+Специализированный менеджер текстур.
+
+#### Создание текстур
+
+```cpp
+std::shared_ptr<Texture> createTexture2D(int width, int height, TextureFormat format);
+std::shared_ptr<Texture> createCubemap(const std::array<std::string, 6>& faces);
+std::shared_ptr<Texture> createRenderTarget(int width, int height);
+```
+
+#### Настройки текстур
+
+```cpp
+void setTextureFiltering(TextureID id, FilterMode mode);
+void setTextureWrapping(TextureID id, WrapMode mode);
+void generateMipmaps(TextureID id);
+```
+
+---
+
+## Профилирование
+
+### Profiler
+
+Встроенная система профилирования.
+
+#### Макросы профилирования
+
+```cpp
+PROFILE_SCOPE(name);                    // Профилирование области видимости
+PROFILE_FUNCTION();                     // Профилирование функции
+PROFILE_BLOCK_START(name);              // Начало блока
+PROFILE_BLOCK_END(name);                // Конец блока
+```
+
+#### Управление профайлером
+
+```cpp
+static void initialize();
+static void cleanup();
+static void beginFrame();
+static void endFrame();
+```
+
+#### Сбор данных
+
+```cpp
+static ProfileData getFrameData();
+static void saveToFile(const std::string& filename);
+static void clearData();
+```
+
+#### Настройки
+
+```cpp
+static void setEnabled(bool enabled);
+static void setMaxFrames(int maxFrames);
+static void setOutputFormat(OutputFormat format);
+```
+
+### PerformanceMonitor
+
+Мониторинг производительности в реальном времени.
+
+#### Метрики
+
+```cpp
+float getFPS() const;
+float getFrameTime() const;
+float getCPUUsage() const;
+float getGPUUsage() const;
+size_t getMemoryUsage() const;
+```
+
+#### Статистика рендеринга
+
+```cpp
+int getDrawCalls() const;
+int getTriangleCount() const;
+int getVertexCount() const;
+```
+
+#### Уведомления
+
+```cpp
+void setFPSThreshold(float minFPS);
+void setMemoryThreshold(size_t maxMemory);
+void onPerformanceAlert(std::function<void(AlertType)> callback);
+```
+
+---
+
+## Безопасный вывод в консоль
+
+### SafeConsole
+
+Система безопасного вывода с поддержкой различных типов данных.
+
+#### Макросы безопасного вывода
+
+```cpp
+SAFE_TO_STRING(value);                  // Безопасное преобразование в строку
+SAFE_COUT(value);                       // Безопасный вывод в cout
+SAFE_CERR(value);                       // Безопасный вывод в cerr
+```
+
+#### Поддерживаемые типы
+
+```cpp
+// Базовые типы
+int, float, double, bool, char
+std::string, const char*
+
+// Математические типы
+Vector3, Vector4, Matrix4, Quaternion
+
+// Контейнеры
+std::vector<T>, std::array<T, N>
+```
+
+#### Настройки форматирования
+
+```cpp
+void setFloatPrecision(int precision);
+void setBoolFormat(const std::string& trueStr, const std::string& falseStr);
+void setVectorFormat(const std::string& format);
+```
+
+---
+
+## Примеры интеграции
+
+### CUDA-Vulkan рендеринг
+
+```cpp
+#include <Engine3D/CudaVulkanInterop.h>
+
+// Инициализация интеграции
+CudaVulkanInterop interop;
+if (!interop.initialize()) {
+    Console::error("Не удалось инициализировать CUDA-Vulkan интеграцию");
+    return false;
+}
+
+// Обработка данных на CUDA
+std::vector<GaussianData> gaussians = loadGaussianData("scene.gs");
+interop.processGaussianData(gaussians);
+
+// Синхронизация с Vulkan
+interop.signalFromCuda();
+vulkanRenderer.waitForCuda();
+vulkanRenderer.renderFrame();
+```
+
+### Профилирование производительности
+
+```cpp
+void renderLoop() {
+    PROFILE_FUNCTION();
+    
+    while (running) {
+        PROFILE_SCOPE("Frame");
+        
+        {
+            PROFILE_SCOPE("Update");
+            updateScene(deltaTime);
+        }
+        
+        {
+            PROFILE_SCOPE("Render");
+            renderScene();
+        }
+        
+        // Вывод статистики каждые 60 кадров
+        if (frameCount % 60 == 0) {
+            auto data = Profiler::getFrameData();
+            Console::info("FPS: " + SAFE_TO_STRING(data.fps));
+            Console::info("Frame Time: " + SAFE_TO_STRING(data.frameTime) + "ms");
+        }
+    }
+}
+```
+
+### Безопасный вывод отладочной информации
+
+```cpp
+void debugRenderState() {
+    Vector3 cameraPos = camera->getPosition();
+    Matrix4 viewMatrix = camera->getViewMatrix();
+    int triangleCount = scene->getTriangleCount();
+    
+    // Безопасный вывод различных типов
+    Console::debug("Camera Position: " + SAFE_TO_STRING(cameraPos));
+    Console::debug("Triangle Count: " + SAFE_TO_STRING(triangleCount));
+    Console::debug("View Matrix: " + SAFE_TO_STRING(viewMatrix));
+    
+    // Вывод массивов
+    std::vector<float> timings = profiler->getFrameTimings();
+    Console::debug("Frame Timings: " + SAFE_TO_STRING(timings));
+}
+```
+
+---
+
 ## Версия API
 
 **Версия**: 1.0.0  
-**Дата**: 27 сентября 2025  
+**Дата**: 28 сентября 2025  
 **Совместимость**: C++17 или новее  
+**CUDA**: 11.0+  
+**Vulkan**: 1.2+  
+
+### Изменения в версии 1.0.0
+
+- Добавлена CUDA-Vulkan интеграция
+- Реализована система безопасного вывода в консоль
+- Добавлена встроенная система профилирования
+- Улучшена система управления ресурсами
+- Добавлена поддержка асинхронной загрузки ресурсов
 
 Для получения последней версии документации посетите официальный репозиторий проекта.

@@ -11,6 +11,10 @@
 7. [Оптимизация производительности](#оптимизация-производительности)
 8. [UTF-8 консоль](#utf-8-консоль)
 9. [Vulkan рендеринг](#vulkan-рендеринг)
+10. [CUDA-Vulkan интеграция](#cuda-vulkan-интеграция)
+11. [AI-Enhanced рендеринг](#ai-enhanced-рендеринг)
+12. [Профилирование и отладка](#профилирование-и-отладка)
+13. [Безопасный вывод в консоль](#безопасный-вывод-в-консоль)
 
 ---
 
@@ -1014,21 +1018,739 @@ private:
 
 ---
 
+## CUDA-Vulkan интеграция
+
+### FlashGS Gaussian Splatting
+
+```cpp
+#include "HyperEngine/Rendering/CudaVulkanInterop.h"
+#include "HyperEngine/Rendering/FlashGSSplatter.h"
+
+class GaussianSplattingDemo {
+public:
+    void initialize() {
+        // Инициализация CUDA-Vulkan интеграции
+        if (!setupCudaVulkanInterop()) {
+            Console::error("❌ Не удалось инициализировать CUDA-Vulkan интеграцию");
+            return;
+        }
+        
+        // Загрузка данных Gaussian Splatting
+        loadGaussianData();
+        
+        Console::success("✅ FlashGS инициализирован (4x ускорение)");
+    }
+    
+    void render(const CameraParams& cameraParams) {
+        PROFILE_SCOPE("Gaussian Splatting Render");
+        
+        // Подготовка данных на GPU
+        {
+            PROFILE_SCOPE("Data Upload");
+            interop->uploadGaussianDataAsync(gaussianData, copyStream);
+        }
+        
+        // CUDA обработка (4x быстрее CPU)
+        {
+            PROFILE_SCOPE("CUDA Processing");
+            
+            // Сортировка по глубине для правильного блендинга
+            flashGS->depthSortGaussians(gaussianData, cameraParams.position);
+            
+            // Оптимизация тайлов для эффективного рендеринга
+            flashGS->optimizeTileRasterization(tileData, screenWidth, screenHeight);
+            
+            // Основная растеризация Gaussian Splatting
+            flashGS->rasterizeGaussians(gaussianData, cameraParams, 
+                                       outputBuffer, screenWidth, screenHeight);
+        }
+        
+        // Синхронизация с Vulkan
+        {
+            PROFILE_SCOPE("Vulkan Sync");
+            interop->signalFromCuda();
+            vulkanRenderer->waitForCuda();
+            vulkanRenderer->presentFrame(outputBuffer);
+        }
+        
+        // Вывод статистики производительности
+        displayPerformanceStats();
+    }
+
+private:
+    std::unique_ptr<CudaVulkanInterop> interop;
+    std::unique_ptr<FlashGSSplatter> flashGS;
+    std::vector<GaussianData> gaussianData;
+    cudaStream_t copyStream;
+    TileData tileData;
+    
+    bool setupCudaVulkanInterop() {
+        interop = std::make_unique<CudaVulkanInterop>();
+        if (!interop->initialize()) {
+            return false;
+        }
+        
+        flashGS = std::make_unique<FlashGSSplatter>();
+        if (!flashGS->initialize(interop.get())) {
+            return false;
+        }
+        
+        // Создание CUDA потоков для асинхронной работы
+        CUDA_CHECK(cudaStreamCreate(&copyStream));
+        
+        return true;
+    }
+    
+    void loadGaussianData() {
+        // Загрузка данных из файла или генерация процедурно
+        gaussianData = loadGaussianDataFromFile("assets/scene.gs");
+        
+        Console::info("📊 Загружено " + SAFE_TO_STRING(gaussianData.size()) + " гауссианов");
+        
+        // Предварительная обработка данных
+        flashGS->preprocessGaussians(gaussianData);
+    }
+    
+    void displayPerformanceStats() {
+        static int frameCount = 0;
+        static float totalTime = 0;
+        
+        frameCount++;
+        auto stats = flashGS->getPerformanceStats();
+        totalTime += stats.totalFrameTime;
+        
+        if (frameCount % 60 == 0) {
+            float avgFPS = 60000.0f / totalTime; // 60 кадров в мс
+            Console::info("🚀 FlashGS Performance:");
+            Console::info("  FPS: " + SAFE_TO_STRING(avgFPS));
+            Console::info("  Depth Sort: " + SAFE_TO_STRING(stats.depthSortTime) + "ms");
+            Console::info("  Rasterization: " + SAFE_TO_STRING(stats.rasterizationTime) + "ms");
+            Console::info("  Total: " + SAFE_TO_STRING(stats.totalFrameTime) + "ms");
+            
+            totalTime = 0;
+        }
+    }
+};
+```
+
+### Внешняя память и синхронизация
+
+```cpp
+class ExternalMemoryManager {
+public:
+    bool initializeSharedMemory(VkDevice device, size_t size) {
+        // Создание Vulkan буфера с внешней памятью
+        VkExternalMemoryBufferCreateInfo externalInfo{};
+        externalInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO;
+        externalInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+        
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.pNext = &externalInfo;
+        bufferInfo.size = size;
+        bufferInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        
+        VK_CHECK(vkCreateBuffer(device, &bufferInfo, nullptr, &vulkanBuffer));
+        
+        // Выделение памяти с внешним дескриптором
+        VkMemoryRequirements memReqs;
+        vkGetBufferMemoryRequirements(device, vulkanBuffer, &memReqs);
+        
+        VkExportMemoryAllocateInfo exportInfo{};
+        exportInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
+        exportInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+        
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.pNext = &exportInfo;
+        allocInfo.allocationSize = memReqs.size;
+        allocInfo.memoryTypeIndex = findMemoryType(memReqs.memoryTypeBits);
+        
+        VK_CHECK(vkAllocateMemory(device, &allocInfo, nullptr, &vulkanMemory));
+        VK_CHECK(vkBindBufferMemory(device, vulkanBuffer, vulkanMemory, 0));
+        
+        // Получение дескриптора для CUDA
+        VkMemoryGetWin32HandleInfoKHR handleInfo{};
+        handleInfo.sType = VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR;
+        handleInfo.memory = vulkanMemory;
+        handleInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+        
+        HANDLE memoryHandle;
+        VK_CHECK(vkGetMemoryWin32HandleKHR(device, &handleInfo, &memoryHandle));
+        
+        // Импорт в CUDA
+        cudaExternalMemoryHandleDesc cudaExtMemHandleDesc{};
+        cudaExtMemHandleDesc.type = cudaExternalMemoryHandleTypeOpaqueWin32;
+        cudaExtMemHandleDesc.handle.win32.handle = memoryHandle;
+        cudaExtMemHandleDesc.size = size;
+        
+        CUDA_CHECK(cudaImportExternalMemory(&cudaExtMemory, &cudaExtMemHandleDesc));
+        
+        // Маппинг буфера в CUDA
+        cudaExternalMemoryBufferDesc cudaExtBufferDesc{};
+        cudaExtBufferDesc.offset = 0;
+        cudaExtBufferDesc.size = size;
+        
+        CUDA_CHECK(cudaExternalMemoryGetMappedBuffer(&cudaBuffer, cudaExtMemory, &cudaExtBufferDesc));
+        
+        Console::success("✅ Внешняя память настроена: " + SAFE_TO_STRING(size / (1024*1024)) + " MB");
+        return true;
+    }
+    
+    void* getCudaBuffer() { return cudaBuffer; }
+    VkBuffer getVulkanBuffer() { return vulkanBuffer; }
+
+private:
+    VkBuffer vulkanBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory vulkanMemory = VK_NULL_HANDLE;
+    cudaExternalMemory_t cudaExtMemory;
+    void* cudaBuffer = nullptr;
+};
+```
+
+---
+
+## AI-Enhanced рендеринг
+
+### DLSS интеграция
+
+```cpp
+#include "HyperEngine/Rendering/DLSSUpscaler.h"
+
+class DLSSDemo {
+public:
+    void initialize() {
+        // Проверка поддержки DLSS
+        if (!HardwareDetector::supportsDLSS()) {
+            Console::warning("⚠️ DLSS не поддерживается на данном GPU");
+            return;
+        }
+        
+        // Инициализация DLSS
+        dlssUpscaler = std::make_unique<DLSSUpscaler>();
+        
+        DLSSConfig config;
+        config.inputWidth = 1280;      // Рендеринг в 67% разрешения
+        config.inputHeight = 720;
+        config.outputWidth = 1920;     // Апскейл до Full HD
+        config.outputHeight = 1080;
+        config.quality = DLSSQuality::Quality; // Максимальное качество
+        
+        if (!dlssUpscaler->initialize(config)) {
+            Console::error("❌ Ошибка инициализации DLSS");
+            return;
+        }
+        
+        Console::success("🚀 DLSS инициализирован (до 8x прирост производительности)");
+    }
+    
+    void render() {
+        // Рендеринг в пониженном разрешении
+        VkImage lowResImage = renderLowResolution(1280, 720);
+        
+        // Генерация motion vectors для временной стабильности
+        VkImage motionVectors = generateMotionVectors();
+        
+        // DLSS апскейлинг
+        DLSSInput input;
+        input.colorBuffer = lowResImage;
+        input.motionVectors = motionVectors;
+        input.depthBuffer = getDepthBuffer();
+        input.jitterOffset = getCurrentJitterOffset();
+        input.frameTimeDelta = getDeltaTime();
+        
+        VkImage upscaledImage = dlssUpscaler->upscale(input);
+        
+        // Презентация результата
+        presentFrame(upscaledImage);
+        
+        // Статистика
+        displayDLSSStats();
+    }
+
+private:
+    std::unique_ptr<DLSSUpscaler> dlssUpscaler;
+    
+    void displayDLSSStats() {
+        auto stats = dlssUpscaler->getStats();
+        
+        Console::debug("📊 DLSS Stats:");
+        Console::debug("  Input: " + SAFE_TO_STRING(stats.inputWidth) + "x" + SAFE_TO_STRING(stats.inputHeight));
+        Console::debug("  Output: " + SAFE_TO_STRING(stats.outputWidth) + "x" + SAFE_TO_STRING(stats.outputHeight));
+        Console::debug("  Upscale Time: " + SAFE_TO_STRING(stats.upscaleTime) + "ms");
+        Console::debug("  Performance Gain: " + SAFE_TO_STRING(stats.performanceGain) + "x");
+    }
+};
+```
+
+### FSR интеграция (универсальная)
+
+```cpp
+#include "HyperEngine/Rendering/FSRUpscaler.h"
+
+class FSRDemo {
+public:
+    void initialize() {
+        fsrUpscaler = std::make_unique<FSRUpscaler>();
+        
+        FSRConfig config;
+        config.inputWidth = 1536;      // Рендеринг в 80% разрешения
+        config.inputHeight = 864;
+        config.outputWidth = 1920;
+        config.outputHeight = 1080;
+        config.quality = FSRQuality::Quality;
+        config.sharpness = 0.8f;       // Настройка резкости
+        
+        if (!fsrUpscaler->initialize(config)) {
+            Console::error("❌ Ошибка инициализации FSR");
+            return;
+        }
+        
+        Console::success("🚀 FSR инициализирован (до 2x прирост производительности)");
+    }
+    
+    void render() {
+        // Рендеринг в пониженном разрешении
+        VkImage lowResImage = renderLowResolution(1536, 864);
+        
+        // FSR апскейлинг (работает на всех GPU)
+        FSRInput input;
+        input.colorBuffer = lowResImage;
+        input.depthBuffer = getDepthBuffer();
+        
+        VkImage upscaledImage = fsrUpscaler->upscale(input);
+        
+        // Применение дополнительной резкости
+        VkImage sharpenedImage = fsrUpscaler->applySharpen(upscaledImage);
+        
+        presentFrame(sharpenedImage);
+    }
+
+private:
+    std::unique_ptr<FSRUpscaler> fsrUpscaler;
+};
+```
+
+### OptiX Ray Tracing и Denoising
+
+```cpp
+#include "HyperEngine/Rendering/OptiXRayTracer.h"
+
+class OptiXDemo {
+public:
+    void initialize() {
+        if (!HardwareDetector::supportsOptiX()) {
+            Console::warning("⚠️ OptiX не поддерживается");
+            return;
+        }
+        
+        rayTracer = std::make_unique<OptiXRayTracer>();
+        if (!rayTracer->initialize()) {
+            Console::error("❌ Ошибка инициализации OptiX");
+            return;
+        }
+        
+        // Настройка denoiser
+        denoiser = std::make_unique<OptixDenoiser>();
+        denoiser->initialize(1920, 1080);
+        
+        Console::success("🌟 OptiX Ray Tracing инициализирован");
+    }
+    
+    void render() {
+        // Первичная растеризация (быстро)
+        VkImage primaryImage = rasterizePrimaryGeometry();
+        
+        // Селективная трассировка лучей (только для отражений и GI)
+        {
+            PROFILE_SCOPE("Ray Tracing");
+            
+            RayTracingParams params;
+            params.maxBounces = 3;
+            params.samplesPerPixel = 1; // Минимум для real-time
+            params.enableGI = true;
+            params.enableReflections = true;
+            params.enableShadows = true;
+            
+            VkImage rayTracedImage = rayTracer->traceRays(primaryImage, sceneData, params);
+            
+            // AI denoising для качественного результата при 1 sample
+            DenoiseInput denoiseInput;
+            denoiseInput.noisyImage = rayTracedImage;
+            denoiseInput.albedo = getAlbedoBuffer();
+            denoiseInput.normal = getNormalBuffer();
+            denoiseInput.motionVectors = getMotionVectors();
+            
+            VkImage denoisedImage = denoiser->denoise(denoiseInput);
+            
+            // Композитинг с первичным изображением
+            VkImage finalImage = compositeImages(primaryImage, denoisedImage);
+            
+            presentFrame(finalImage);
+        }
+        
+        displayRayTracingStats();
+    }
+
+private:
+    std::unique_ptr<OptiXRayTracer> rayTracer;
+    std::unique_ptr<OptixDenoiser> denoiser;
+    
+    void displayRayTracingStats() {
+        auto stats = rayTracer->getStats();
+        
+        Console::debug("🌟 Ray Tracing Stats:");
+        Console::debug("  Rays Cast: " + SAFE_TO_STRING(stats.raysCast));
+        Console::debug("  Intersections: " + SAFE_TO_STRING(stats.intersections));
+        Console::debug("  RT Time: " + SAFE_TO_STRING(stats.rayTracingTime) + "ms");
+        Console::debug("  Denoise Time: " + SAFE_TO_STRING(stats.denoiseTime) + "ms");
+    }
+};
+```
+
+---
+
+## Профилирование и отладка
+
+### Встроенная система профилирования
+
+```cpp
+#include "HyperEngine/Core/Profiler.h"
+
+class ProfilingDemo {
+public:
+    void gameLoop() {
+        // Инициализация профайлера
+        Profiler::initialize();
+        Profiler::setEnabled(true);
+        
+        while (running) {
+            PROFILE_FUNCTION(); // Автоматическое профилирование функции
+            
+            Profiler::beginFrame();
+            
+            // Профилирование отдельных систем
+            updateSystems();
+            renderFrame();
+            
+            Profiler::endFrame();
+            
+            // Вывод статистики каждые 60 кадров
+            if (frameCount % 60 == 0) {
+                displayProfilingResults();
+            }
+            
+            frameCount++;
+        }
+        
+        // Сохранение результатов в файл
+        Profiler::saveToFile("profiling_results.json");
+        Profiler::cleanup();
+    }
+
+private:
+    int frameCount = 0;
+    bool running = true;
+    
+    void updateSystems() {
+        PROFILE_SCOPE("Update Systems");
+        
+        {
+            PROFILE_SCOPE("Physics Update");
+            physicsWorld->update(deltaTime);
+        }
+        
+        {
+            PROFILE_SCOPE("Game Logic");
+            updateGameLogic(deltaTime);
+        }
+        
+        {
+            PROFILE_SCOPE("Input Processing");
+            processInput();
+        }
+    }
+    
+    void renderFrame() {
+        PROFILE_SCOPE("Render Frame");
+        
+        {
+            PROFILE_SCOPE("Scene Preparation");
+            prepareSceneData();
+        }
+        
+        {
+            PROFILE_SCOPE("CUDA Processing");
+            processCudaKernels();
+        }
+        
+        {
+            PROFILE_SCOPE("Vulkan Rendering");
+            vulkanRenderer->renderFrame();
+        }
+        
+        {
+            PROFILE_SCOPE("AI Upscaling");
+            if (dlssEnabled) {
+                dlssUpscaler->upscale();
+            }
+        }
+    }
+    
+    void displayProfilingResults() {
+        auto frameData = Profiler::getFrameData();
+        
+        Console::info("📊 Профилирование (среднее за 60 кадров):");
+        Console::info("  🕒 Total Frame: " + SAFE_TO_STRING(frameData.totalTime) + "ms");
+        Console::info("  🔄 Update: " + SAFE_TO_STRING(frameData.updateTime) + "ms");
+        Console::info("  🎨 Render: " + SAFE_TO_STRING(frameData.renderTime) + "ms");
+        Console::info("  ⚡ CUDA: " + SAFE_TO_STRING(frameData.cudaTime) + "ms");
+        Console::info("  🖥️ Vulkan: " + SAFE_TO_STRING(frameData.vulkanTime) + "ms");
+        Console::info("  🧠 AI: " + SAFE_TO_STRING(frameData.aiTime) + "ms");
+        Console::info("  📈 FPS: " + SAFE_TO_STRING(1000.0f / frameData.totalTime));
+        
+        // Предупреждения о производительности
+        if (frameData.totalTime > 16.67f) {
+            Console::warning("⚠️ Время кадра превышает 16.67ms (60 FPS)");
+        }
+        
+        if (frameData.cudaTime > frameData.totalTime * 0.5f) {
+            Console::warning("⚠️ CUDA занимает более 50% времени кадра");
+        }
+    }
+};
+```
+
+### GPU профилирование
+
+```cpp
+class GPUProfiler {
+public:
+    void initialize(VkDevice device) {
+        // Создание query pool для GPU timestamps
+        VkQueryPoolCreateInfo poolInfo{};
+        poolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+        poolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
+        poolInfo.queryCount = 64; // 32 пары begin/end
+        
+        VK_CHECK(vkCreateQueryPool(device, &poolInfo, nullptr, &queryPool));
+        
+        // Получение свойств устройства для конвертации timestamps
+        VkPhysicalDeviceProperties props;
+        vkGetPhysicalDeviceProperties(physicalDevice, &props);
+        timestampPeriod = props.limits.timestampPeriod;
+        
+        Console::success("🔍 GPU Profiler инициализирован");
+    }
+    
+    void beginGPUTimer(VkCommandBuffer cmd, const std::string& name) {
+        uint32_t queryIndex = currentQueryIndex++;
+        timerNames[queryIndex] = name;
+        
+        vkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 
+                           queryPool, queryIndex * 2);
+    }
+    
+    void endGPUTimer(VkCommandBuffer cmd, const std::string& name) {
+        // Найти соответствующий begin timer
+        uint32_t queryIndex = 0;
+        for (const auto& [index, timerName] : timerNames) {
+            if (timerName == name) {
+                queryIndex = index;
+                break;
+            }
+        }
+        
+        vkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 
+                           queryPool, queryIndex * 2 + 1);
+    }
+    
+    void collectResults() {
+        std::vector<uint64_t> timestamps(currentQueryIndex * 2);
+        
+        VkResult result = vkGetQueryPoolResults(
+            device, queryPool, 0, currentQueryIndex * 2,
+            timestamps.size() * sizeof(uint64_t),
+            timestamps.data(), sizeof(uint64_t),
+            VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT
+        );
+        
+        if (result == VK_SUCCESS) {
+            Console::info("🖥️ GPU Timing Results:");
+            
+            for (const auto& [index, name] : timerNames) {
+                uint64_t startTime = timestamps[index * 2];
+                uint64_t endTime = timestamps[index * 2 + 1];
+                
+                float timeMs = (endTime - startTime) * timestampPeriod / 1000000.0f;
+                Console::info("  " + name + ": " + SAFE_TO_STRING(timeMs) + "ms");
+            }
+        }
+        
+        // Сброс для следующего кадра
+        currentQueryIndex = 0;
+        timerNames.clear();
+    }
+
+private:
+    VkDevice device;
+    VkPhysicalDevice physicalDevice;
+    VkQueryPool queryPool;
+    float timestampPeriod;
+    uint32_t currentQueryIndex = 0;
+    std::unordered_map<uint32_t, std::string> timerNames;
+};
+```
+
+---
+
+## Безопасный вывод в консоль
+
+### Использование SAFE_TO_STRING
+
+```cpp
+#include "HyperEngine/Core/SafeConsole.h"
+
+class SafeConsoleDemo {
+public:
+    void demonstrateSafeOutput() {
+        // Базовые типы
+        int intValue = 42;
+        float floatValue = 3.14159f;
+        bool boolValue = true;
+        
+        Console::info("Integer: " + SAFE_TO_STRING(intValue));
+        Console::info("Float: " + SAFE_TO_STRING(floatValue));
+        Console::info("Boolean: " + SAFE_TO_STRING(boolValue));
+        
+        // Математические типы
+        Math::Vector3 position(1.5f, 2.7f, -3.2f);
+        Math::Matrix4 transform = Math::Matrix4::translation(position);
+        Math::Quaternion rotation = Math::Quaternion::fromEulerAngles(0, 45, 0);
+        
+        Console::info("Position: " + SAFE_TO_STRING(position));
+        Console::info("Transform: " + SAFE_TO_STRING(transform));
+        Console::info("Rotation: " + SAFE_TO_STRING(rotation));
+        
+        // Контейнеры
+        std::vector<float> frameTimings = {16.7f, 15.2f, 18.1f, 16.9f};
+        std::array<int, 4> indices = {0, 1, 2, 3};
+        
+        Console::info("Frame Timings: " + SAFE_TO_STRING(frameTimings));
+        Console::info("Indices: " + SAFE_TO_STRING(indices));
+        
+        // Пользовательские типы (с специализацией)
+        RenderStats stats = getRenderStats();
+        Console::info("Render Stats: " + SAFE_TO_STRING(stats));
+        
+        // Демонстрация проблемы без SAFE_TO_STRING
+        demonstrateUnsafeOutput();
+    }
+
+private:
+    struct RenderStats {
+        int drawCalls;
+        int triangles;
+        float frameTime;
+    };
+    
+    RenderStats getRenderStats() {
+        return {150, 50000, 16.7f};
+    }
+    
+    void demonstrateUnsafeOutput() {
+        Console::warning("⚠️ Демонстрация небезопасного вывода:");
+        
+        // Это может вызвать крах программы!
+        Math::Vector3 vector(1, 2, 3);
+        
+        try {
+            // ❌ ОПАСНО: прямой вывод без SAFE_TO_STRING
+            // std::cout << "Vector: " << vector << std::endl;  // Может крашнуть!
+            
+            Console::error("❌ Небезопасный вывод закомментирован для предотвращения краха");
+        } catch (const std::exception& e) {
+            Console::error("💥 Исключение при небезопасном выводе: " + std::string(e.what()));
+        }
+        
+        // ✅ БЕЗОПАСНО: всегда используйте SAFE_TO_STRING
+        Console::success("✅ Безопасный вывод: " + SAFE_TO_STRING(vector));
+    }
+};
+
+// Специализация SAFE_TO_STRING для пользовательского типа
+namespace HyperEngine::Core {
+    template<>
+    std::string SafeConsole::toString(const SafeConsoleDemo::RenderStats& stats) {
+        return "RenderStats{drawCalls: " + std::to_string(stats.drawCalls) +
+               ", triangles: " + std::to_string(stats.triangles) +
+               ", frameTime: " + std::to_string(stats.frameTime) + "ms}";
+    }
+}
+```
+
+### Настройка форматирования
+
+```cpp
+class SafeConsoleConfig {
+public:
+    static void setupFormatting() {
+        // Настройка точности для float
+        SafeConsole::setFloatPrecision(2);
+        
+        // Настройка формата для boolean
+        SafeConsole::setBoolFormat("Да", "Нет");
+        
+        // Настройка формата для векторов
+        SafeConsole::setVectorFormat("({x}, {y}, {z})");
+        
+        Console::info("🎨 Форматирование настроено");
+        
+        // Демонстрация настроенного форматирования
+        demonstrateCustomFormatting();
+    }
+
+private:
+    static void demonstrateCustomFormatting() {
+        float pi = 3.14159265359f;
+        bool isReady = true;
+        Math::Vector3 position(1.23456f, 2.34567f, 3.45678f);
+        
+        Console::info("Pi (2 знака): " + SAFE_TO_STRING(pi));
+        Console::info("Ready: " + SAFE_TO_STRING(isReady));
+        Console::info("Position: " + SAFE_TO_STRING(position));
+    }
+};
+```
+
+---
+
 ## Заключение
 
-Это руководство демонстрирует основные возможности HyperEngine и показывает, как эффективно использовать его компоненты для создания современных 3D приложений. 
+Это расширенное руководство демонстрирует современные возможности HyperEngine v1.0.0 и показывает, как эффективно использовать передовые технологии для создания высокопроизводительных 3D приложений.
 
-### Ключевые принципы:
+### Ключевые возможности v1.0.0:
 
-1. **Модульность**: Используйте компонентную архитектуру для гибкости
-2. **Производительность**: Применяйте оптимизации и профилирование
-3. **Современность**: Используйте продвинутые техники рендеринга
-4. **Удобство**: Используйте UTF-8 консоль для лучшего опыта разработки
+1. **CUDA-Vulkan интеграция**: 4x ускорение Gaussian Splatting
+2. **AI-Enhanced рендеринг**: DLSS/FSR для повышения производительности
+3. **OptiX Ray Tracing**: Real-time глобальное освещение и отражения
+4. **Встроенное профилирование**: Детальный анализ производительности
+5. **Безопасный вывод**: Предотвращение крашей при отладке
+
+### Принципы современной разработки:
+
+1. **Производительность**: Максимальное использование GPU возможностей
+2. **Безопасность**: Надежная обработка ошибок и безопасный вывод
+3. **Профилирование**: Постоянный мониторинг производительности
+4. **Адаптивность**: Автоматическая настройка под аппаратные возможности
+5. **Современность**: Использование новейших технологий рендеринга
 
 ### Дальнейшее изучение:
 
 - [API Reference](../api/API_Reference.md) - Полная справочная документация
 - [Architecture](../architecture/ARCHITECTURE.md) - Детальное описание архитектуры
-- [Examples](../../examples/) - Дополнительные примеры кода
+- [Performance Guide](PERFORMANCE.md) - Руководство по оптимизации
+- [Coding Standards](CODING_STANDARDS.md) - Стандарты разработки
+- [Developer Guide](../DEVELOPER_GUIDE.md) - Руководство разработчика
 
-**HyperEngine** предоставляет все инструменты для создания современных игр и интерактивных 3D приложений с высокой производительностью и качеством.
+**HyperEngine v1.0.0** предоставляет все инструменты для создания современных игр и интерактивных 3D приложений с использованием передовых технологий GPU computing, AI-ускорения и высокопроизводительного рендеринга.

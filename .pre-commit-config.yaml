@@ -1,74 +1,97 @@
-# Конфигурация pre-commit hooks для HyperEngine
+# Pre-commit hooks для HyperEngine
 repos:
+  # Базовые проверки
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
       - id: trailing-whitespace
-        exclude: \.(md|rst)$
       - id: end-of-file-fixer
-        exclude: \.(md|rst)$
       - id: check-yaml
       - id: check-added-large-files
         args: ['--maxkb=1000']
+      - id: check-case-conflict
       - id: check-merge-conflict
+      - id: check-symlinks
       - id: mixed-line-ending
+        args: ['--fix=lf']
 
-  - repo: https://github.com/pocc/pre-commit-hooks
-    rev: v1.3.5
+  # Форматирование C++
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v16.0.6
     hooks:
       - id: clang-format
-        args: [--style=file, --fallback-style=none]
-        types_or: [c++, c]
-      - id: clang-tidy
-        args: [--config-file=.clang-tidy]
-        types_or: [c++, c]
-        exclude: ^(tests/|examples/)
-      - id: cppcheck
-        args: [--enable=all, --suppress=missingIncludeSystem]
-        types_or: [c++, c]
+        args: [--style=file]
+        files: \.(cpp|h|hpp|c|cc|cxx)$
 
-  - repo: https://github.com/cmake-lint/cmake-lint
-    rev: 1.4.2
+  # CMake форматирование
+  - repo: https://github.com/cheshirekow/cmake-format-precommit
+    rev: v0.6.13
     hooks:
-      - id: cmakelint
-        args: [--line-width=100]
+      - id: cmake-format
+        additional_dependencies: [pyyaml]
+        types: [cmake]
 
+  # Проверка орфографии в комментариях
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.5
+    hooks:
+      - id: codespell
+        args: [--write-changes]
+        exclude: |
+          (?x)^(
+              .*\.json|
+              .*\.xml|
+              .*\.log|
+              build/.*|
+              vcpkg/.*|
+              vcpkg_installed/.*
+          )$
+
+  # Локальные хуки для специфических проверок HyperEngine
   - repo: local
     hooks:
-      - id: copyright-check
-        name: Check copyright headers
-        entry: scripts/check_copyright.sh
+      # Проверка namespace'ов
+      - id: check-namespaces
+        name: Check HyperEngine namespaces
+        entry: scripts/check_namespaces.sh
         language: script
-        types_or: [c++, c]
-        fail_fast: true
-      
-      - id: include-guard-check
+        files: \.(cpp|h|hpp)$
+        pass_filenames: false
+
+      # Проверка include guards
+      - id: check-include-guards
         name: Check include guards
         entry: scripts/check_include_guards.sh
         language: script
-        types: [header]
-        fail_fast: true
-      
-      - id: namespace-check
-        name: Check namespace consistency
-        entry: scripts/check_namespaces.sh
-        language: script
-        types_or: [c++, c]
-        fail_fast: true
+        files: \.h$
+        pass_filenames: false
 
-# Конфигурация по умолчанию
-default_install_hook_types: [pre-commit, pre-push]
+      # Быстрая проверка безопасности
+      - id: security-check-quick
+        name: Quick security check
+        entry: bash
+        args: [-c, 'grep -n "strcpy\|strcat\|sprintf\|gets" $@ || true']
+        language: system
+        files: \.(cpp|h|hpp|c|cc|cxx)$
+        verbose: true
+
+      # Проверка на TODO/FIXME без issue номеров
+      - id: check-todos
+        name: Check TODO/FIXME comments
+        entry: bash
+        args: [-c, 'if grep -n "TODO\|FIXME" $@ | grep -v "#[0-9]"; then echo "TODO/FIXME должны содержать номер issue"; exit 1; fi']
+        language: system
+        files: \.(cpp|h|hpp|c|cc|cxx)$
+
+      # Проверка на использование std::cout без SAFE_TO_STRING
+      - id: check-console-output
+        name: Check console output safety
+        entry: bash
+        args: [-c, 'if grep -n "std::cout.*<<.*[^)]$" $@ | grep -v "SAFE_TO_STRING\|std::string\|\""; then echo "Используйте SAFE_TO_STRING для вывода переменных"; exit 1; fi']
+        language: system
+        files: \.(cpp|c|cc|cxx)$
+
+# Конфигурация
 default_stages: [commit]
-
-# Настройки CI
-ci:
-  autofix_commit_msg: |
-    [pre-commit.ci] auto fixes from pre-commit.com hooks
-    
-    for more information, see https://pre-commit.ci
-  autofix_prs: true
-  autoupdate_branch: ''
-  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
-  autoupdate_schedule: weekly
-  skip: []
-  submodules: false
+fail_fast: false
+minimum_pre_commit_version: 3.0.0

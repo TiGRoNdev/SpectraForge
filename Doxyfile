@@ -1,20 +1,27 @@
-# Doxyfile для 4D Game Engine
+# Настройки Doxygen для HyperEngine
 
-PROJECT_NAME           = "4D Game Engine"
-PROJECT_NUMBER         = "1.0.0"
-PROJECT_BRIEF          = "Experimental game engine for 4D space"
-PROJECT_LOGO           = 
+PROJECT_NAME           = "HyperEngine"
+PROJECT_NUMBER         = "v1.0.0"
+PROJECT_BRIEF          = "Современный игровой движок с поддержкой 3D и экспериментального 4D рендеринга"
 
-OUTPUT_DIRECTORY       = docs/html
-INPUT                  = include/ src/ examples/
-FILE_PATTERNS          = *.h *.hpp *.cpp *.c
+# Входные файлы
+INPUT                  = include/ src/ docs/
+FILE_PATTERNS          = *.h *.hpp *.cpp *.md
 RECURSIVE              = YES
+EXCLUDE                = build*/ vcpkg*/ tests/ examples/
 
+# Выходная документация
+OUTPUT_DIRECTORY       = docs/generated/
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+HTML_OUTPUT            = html
+HTML_THEME             = Doxygen
+
+# Настройки обработки
 EXTRACT_ALL            = YES
-EXTRACT_PRIVATE        = YES
+EXTRACT_PRIVATE        = NO
 EXTRACT_STATIC         = YES
 EXTRACT_LOCAL_CLASSES  = YES
-EXTRACT_LOCAL_METHODS  = YES
 
 GENERATE_HTML          = YES
 GENERATE_LATEX         = NO
@@ -76,13 +83,27 @@ SIP_SUPPORT            = NO
 IDL_PROPERTY_SUPPORT   = YES
 DISTRIBUTE_GROUP_DOC   = NO
 GROUP_GRAPHS           = YES
-UML_LOOK               = NO
+# Диаграммы и графики
+HAVE_DOT               = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+CLASS_DIAGRAMS         = YES
+UML_LOOK               = YES
+COLLABORATION_GRAPH    = YES
+
+# Markdown поддержка
+MARKDOWN_SUPPORT       = YES
+AUTOLINK_SUPPORT       = YES
+
+# Настройки качества
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = YES
+
 UML_LIMIT_NUM_FIELDS   = 10
 TEMPLATE_RELATIONS     = NO
 INCLUDE_GRAPH          = YES
 INCLUDED_BY_GRAPH      = YES
-CALL_GRAPH             = YES
-CALLER_GRAPH           = YES
 GRAPHICAL_HIERARCHY    = YES
 DIRECTORY_GRAPH        = YES
 DOT_IMAGE_FORMAT       = png

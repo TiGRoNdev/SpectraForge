@@ -1,8 +1,8 @@
-# Архитектура HyperEngine v0.1.0
+# Архитектура HyperEngine v1.0.0
 
 ## Обзор
 
-HyperEngine - современный игровой движок с двойной архитектурой, поддерживающий как классический 3D рендеринг через OpenGL, так и инновационный 4D рендеринг через Vulkan. Архитектура основана на принципах SOLID и обеспечивает максимальную гибкость и производительность.
+HyperEngine - современный игровой движок с гибридной архитектурой, поддерживающий высокопроизводительный 3D рендеринг через Vulkan с интеграцией CUDA, а также экспериментальный 4D рендеринг. Архитектура основана на принципах SOLID, включает передовые технологии рендеринга (Gaussian Splatting, Ray Tracing, AI Upscaling) и обеспечивает максимальную производительность и расширяемость.
 
 ## Ключевые архитектурные принципы
 
@@ -31,7 +31,7 @@ HyperEngine - современный игровой движок с двойно
 ## Структура системы
 
 ```
-HyperEngine Architecture
+HyperEngine Architecture v1.0.0
 ├── 🎯 Core Engine
 │   ├── Math Library
 │   │   ├── Vector3/Vector4
@@ -39,34 +39,56 @@ HyperEngine Architecture
 │   │   ├── Quaternion
 │   │   └── MathConstants
 │   ├── Core System
+│   │   ├── Engine3D (Main Engine)
 │   │   ├── GameObject3D
 │   │   ├── Transform3D
-│   │   ├── Component
-│   │   └── Console (UTF-8)
-│   └── Input System
-│       ├── Input3D
-│       └── Controller3D
-├── 🎨 Rendering Subsystem
-│   ├── Classical 3D (OpenGL)
-│   │   ├── Renderer3D
-│   │   ├── OptimalRenderer3D
-│   │   ├── Camera3D
-│   │   ├── Mesh3D
-│   │   └── Shader3D
-│   ├── Hybrid Rendering
-│   │   ├── HybridRenderer3D
-│   │   ├── Gaussian3D
-│   │   └── RendererAdapter
-│   └── Advanced 4D (Vulkan)
-│       ├── VulkanRenderer
-│       ├── VulkanEngine
-│       ├── CUDA Integration
-│       ├── OptiX Ray Tracing
-│       └── DLSS/FSR Upscaling
-└── ⚡ Physics Subsystem
-    ├── RigidBody3D
-    ├── Collider3D
-    └── PhysicsWorld3D
+│   │   ├── Component System
+│   │   ├── SafeConsole (UTF-8)
+│   │   └── Profiler
+│   ├── Input System
+│   │   ├── Input3D
+│   │   └── Controller3D
+│   └── Resource Management
+│       ├── ResourceManager
+│       ├── TextureManager
+│       └── AssetLoader
+├── 🎨 Advanced Rendering Subsystem
+│   ├── Vulkan Core
+│   │   ├── VulkanRenderer
+│   │   ├── VulkanContext
+│   │   ├── VulkanBuffer
+│   │   └── VulkanPipeline
+│   ├── CUDA Integration
+│   │   ├── CudaVulkanInterop
+│   │   ├── CudaKernels
+│   │   ├── FlashGSSplatter
+│   │   └── ExternalMemory
+│   ├── Ray Tracing (OptiX)
+│   │   ├── OptiXRayTracer
+│   │   ├── OptixDenoiser
+│   │   └── RayTracingPipeline
+│   ├── AI Upscaling
+│   │   ├── DLSSUpscaler (NVIDIA)
+│   │   ├── FSRUpscaler (AMD)
+│   │   └── UpscalerAdapter
+│   ├── Hardware Detection
+│   │   ├── HardwareDetector
+│   │   ├── VendorDetection
+│   │   └── CapabilityQuery
+│   └── Scene Management
+│       ├── SceneManager
+│       ├── Camera3D
+│       ├── Mesh3D
+│       └── Shader3D
+├── ⚡ Physics Subsystem
+│   ├── RigidBody3D
+│   ├── Collider3D
+│   └── PhysicsWorld3D
+└── 🔧 Development Tools
+    ├── Performance Monitor
+    ├── Debug Console
+    ├── Memory Profiler
+    └── GPU Profiler
 ```
 
 ## Основные компоненты
@@ -151,40 +173,64 @@ class Component {
 Input Geometry → Vertex Processing → Rasterization → Fragment Processing → Output
 ```
 
+### Современный Vulkan-CUDA Pipeline
+
+```
+Scene Data → Hardware Detection → Rendering Path Selection → Hybrid Rendering → AI Enhancement → Output
+```
+
+#### Этапы рендеринга кадра:
+
+1. **Hardware Detection & Path Selection**
+   ```
+   VendorType vendor = HardwareDetector::detectGPUVendor();
+   bool rtSupport = HardwareDetector::supportsRayTracing();
+   UpscalerType upscaler = HardwareDetector::selectBestUpscaler();
+   ```
+
+2. **Scene Preparation & Resource Management**
+   ```
+   SceneData scene = SceneManager::prepareFrame();
+   ResourceManager::allocateBuffers(scene);
+   CudaVulkanInterop::synchronizeMemory();
+   ```
+
+3. **Primary Rasterization (FlashGS)**
+   ```
+   // CUDA-accelerated Gaussian Splatting (4x faster)
+   FlashGSSplatter::rasterizeGaussians(scene.gaussians, cameraParams);
+   ```
+
+4. **Secondary Effects (OptiX Ray Tracing)**
+   ```
+   // Selective ray tracing for reflections, shadows, GI
+   OptiXRayTracer::traceSecondaryRays(primaryImage, scene);
+   ```
+
+5. **AI Denoising**
+   ```
+   OptixDenoiser::denoise(rayTracedImage, motionVectors, albedo);
+   ```
+
+6. **AI Super Resolution**
+   ```
+   if (vendor == NVIDIA && dlssAvailable) {
+       DLSSUpscaler::upscale(denoisedImage, targetResolution);
+   } else {
+       FSRUpscaler::upscale(denoisedImage, targetResolution);
+   }
+   ```
+
+7. **Final Presentation**
+   ```
+   VulkanRenderer::present(finalImage);
+   ```
+
 ### 4D Vulkan Pipeline (Экспериментальный)
 
 ```
 4D Geometry → Hyperspatial Transform → 4D→3D Projection → Advanced Rendering → Output
 ```
-
-### Optimal Rendering Algorithm (5 этапов)
-
-1. **Scene Representation Optimization**
-   ```
-   Gaussians = OptimizeGaussians(SceneData.MultiViewImages)
-   ```
-
-2. **Geometry and Primary Visibility**
-   ```
-   PrimaryImage = RasterizeGaussians(Gaussians, CameraParams)
-   ```
-
-3. **Advanced Lighting Computation**
-   ```
-   LightingEffects = RayTraceSelective(Gaussians, PrimaryImage)
-   ApplyRealTimeGI(LightingEffects)
-   ```
-
-4. **Denoising and Refinement**
-   ```
-   DenoisedImage = AIDenoise(LightingEffects + PrimaryImage)
-   ```
-
-5. **Post-Processing and Output**
-   ```
-   FinalImage = NeuralUpscale(DenoisedImage, ResolutionTarget)
-   ApplyPostEffects(FinalImage)
-   ```
 
 ## Модульность и расширяемость
 
@@ -234,11 +280,21 @@ class HybridRenderStrategy : public RenderStrategy { ... };
 
 ### Внешние библиотеки
 
+#### Основные зависимости
+- **Vulkan SDK**: Современный графический API (обязательно)
 - **GLFW**: Оконная система и ввод
 - **GLM**: Математические операции
-- **Vulkan SDK**: Современный графический API
-- **CUDA Toolkit**: GPU вычисления (опционально)
-- **OptiX SDK**: Ray tracing (опционально)
+
+#### GPU Computing (опционально)
+- **CUDA Toolkit 11.0+**: GPU вычисления и CUDA-Vulkan интеграция
+- **OptiX SDK 7.0+**: Ray tracing и AI denoising
+- **NVIDIA Streamline**: DLSS интеграция
+- **AMD FidelityFX**: FSR интеграция
+
+#### Утилиты разработки
+- **vcpkg**: Менеджер зависимостей
+- **Doxygen**: Генерация документации
+- **Google Test**: Unit testing framework
 
 ### Система сборки
 
@@ -278,14 +334,208 @@ class HybridRenderStrategy : public RenderStrategy { ... };
 - **Doxygen**: Генерация документации
 - **GitHub Actions**: CI/CD pipeline
 
+## Безопасность и надежность
+
+### Система безопасного вывода
+
+```cpp
+// Проблема: небезопасный вывод может вызвать крах
+std::cout << someVariable << std::endl;  // ОПАСНО!
+
+// Решение: безопасные макросы
+std::cout << SAFE_TO_STRING(someVariable) << std::endl;  // БЕЗОПАСНО!
+```
+
+#### Поддерживаемые типы для безопасного вывода:
+- Базовые типы: `int`, `float`, `double`, `bool`
+- Математические типы: `Vector3`, `Matrix4`, `Quaternion`
+- Контейнеры: `std::vector<T>`, `std::array<T, N>`
+- Пользовательские типы через специализацию
+
+### Управление памятью
+
+#### RAII принципы
+```cpp
+class VulkanBuffer {
+public:
+    VulkanBuffer(VkDevice device, size_t size);
+    ~VulkanBuffer() { cleanup(); }  // Автоматическая очистка
+    
+    // Запрет копирования, разрешение перемещения
+    VulkanBuffer(const VulkanBuffer&) = delete;
+    VulkanBuffer(VulkanBuffer&& other) noexcept;
+};
+```
+
+#### Smart Pointers
+```cpp
+// Предпочтительно использовать умные указатели
+std::unique_ptr<VulkanRenderer> renderer;
+std::shared_ptr<ResourceManager> resourceManager;
+```
+
+### Обработка ошибок
+
+#### Vulkan Error Handling
+```cpp
+#define VK_CHECK(call) \
+    do { \
+        VkResult result = call; \
+        if (result != VK_SUCCESS) { \
+            throw VulkanException(result, #call, __FILE__, __LINE__); \
+        } \
+    } while(0)
+```
+
+#### CUDA Error Handling
+```cpp
+#define CUDA_CHECK(call) \
+    do { \
+        cudaError_t error = call; \
+        if (error != cudaSuccess) { \
+            throw CudaException(error, #call, __FILE__, __LINE__); \
+        } \
+    } while(0)
+```
+
+## Профилирование и мониторинг
+
+### Встроенная система профилирования
+
+```cpp
+void renderFrame() {
+    PROFILE_FUNCTION();  // Автоматическое профилирование функции
+    
+    {
+        PROFILE_SCOPE("Scene Update");
+        updateScene(deltaTime);
+    }
+    
+    {
+        PROFILE_SCOPE("Vulkan Render");
+        vulkanRenderer->renderFrame();
+    }
+    
+    {
+        PROFILE_SCOPE("CUDA Processing");
+        cudaProcessor->processFrame();
+    }
+}
+```
+
+### Метрики производительности
+
+#### Целевые показатели v1.0.0:
+- **FPS**: 60+ стабильно при 1080p, 30+ при 4K
+- **Latency**: <16ms время кадра (1080p), <33ms (4K)
+- **Memory**: <200MB для базовых сцен, <1GB для сложных
+- **GPU Utilization**: >90% при интенсивном рендеринге
+
+#### Адаптивное качество:
+```cpp
+class AdaptiveQualityManager {
+public:
+    void adjustQuality(float currentFPS, float targetFPS) {
+        if (currentFPS < targetFPS * 0.9f) {
+            // Снижение качества
+            reduceRenderScale();
+            disableExpensiveEffects();
+        } else if (currentFPS > targetFPS * 1.1f) {
+            // Повышение качества
+            increaseRenderScale();
+            enableAdditionalEffects();
+        }
+    }
+};
+```
+
+## Расширенные возможности v1.0.0
+
+### CUDA-Vulkan интеграция
+
+#### Преимущества:
+- **4x ускорение** Gaussian Splatting через FlashGS
+- **Параллельная обработка** на GPU и CPU
+- **Нулевое копирование** данных между CUDA и Vulkan
+- **Асинхронные вычисления** с перекрытием рендеринга
+
+#### Архитектура интеграции:
+```cpp
+class CudaVulkanInterop {
+    VkDeviceMemory vulkanMemory;
+    cudaExternalMemory_t cudaMemory;
+    cudaStream_t computeStream;
+    VkSemaphore syncSemaphore;
+    
+public:
+    void processGaussianData(const GaussianData& data) {
+        // Обработка на CUDA
+        launchGaussianKernel<<<blocks, threads, 0, computeStream>>>(data);
+        
+        // Синхронизация с Vulkan
+        signalSemaphore();
+    }
+};
+```
+
+### AI-Enhanced Rendering
+
+#### DLSS Integration (NVIDIA):
+- **2-8x производительность** при сохранении качества
+- **Temporal Accumulation** для стабильности
+- **Motion Vector Generation** для точности
+
+#### FSR Integration (AMD/Universal):
+- **2x производительность** на широком спектре GPU
+- **Spatial Upscaling** без временной информации
+- **Sharpening Filter** для улучшения четкости
+
+### OptiX Ray Tracing
+
+#### Возможности:
+- **Real-time Global Illumination**
+- **Accurate Reflections and Shadows**
+- **AI Denoising** для качественного изображения при низком количестве лучей
+
+#### Оптимизации:
+```cpp
+class OptiXRayTracer {
+    void buildAccelerationStructure(const SceneData& scene) {
+        // Построение BVH для эффективной трассировки
+        OptixBuildInput buildInput = {};
+        // ... настройка структуры ускорения
+        
+        optixAccelBuild(context, stream, &accelOptions, 
+                       &buildInput, 1, tempBuffer, tempBufferSize,
+                       outputBuffer, outputBufferSize, &gasHandle, 
+                       nullptr, 0);
+    }
+};
+```
+
+## Будущие направления развития
+
+### Roadmap v1.1.0:
+- **Mesh Shaders** поддержка для новейших GPU
+- **Variable Rate Shading** для оптимизации производительности
+- **DirectStorage** для быстрой загрузки ресурсов
+- **Multi-GPU** рендеринг
+
+### Roadmap v2.0.0:
+- **Neural Rendering** с машинным обучением
+- **Procedural Generation** на GPU
+- **Advanced 4D Rendering** с полной поддержкой
+- **Cloud Rendering** интеграция
+
 ## Заключение
 
-Архитектура HyperEngine обеспечивает:
+Архитектура HyperEngine v1.0.0 обеспечивает:
 
-1. **Гибкость**: Модульный дизайн для легкого расширения
-2. **Производительность**: Оптимизированные алгоритмы рендеринга
-3. **Масштабируемость**: Поддержка от простых до сложных сцен
-4. **Инновации**: Экспериментальные возможности 4D
-5. **Качество**: Строгие стандарты кода и тестирования
+1. **Современность**: Использование новейших технологий (Vulkan, CUDA, OptiX, AI)
+2. **Производительность**: Оптимизированные алгоритмы с GPU-ускорением
+3. **Безопасность**: Надежная обработка ошибок и управление памятью
+4. **Масштабируемость**: От простых сцен до AAA-проектов
+5. **Инновации**: Передовые техники рендеринга и экспериментальные возможности
+6. **Качество**: Строгие стандарты кода, тестирование и профилирование
 
-Эта архитектура создает надежную основу для развития игрового движка и обеспечивает возможности для будущих инноваций в области графики и игровых технологий.
+Эта архитектура создает прочную основу для современного игрового движка и обеспечивает возможности для будущих инноваций в области графики, искусственного интеллекта и игровых технологий.
