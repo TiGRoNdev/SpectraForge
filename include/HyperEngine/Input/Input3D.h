@@ -3,9 +3,9 @@
 #include <functional>
 #include <string>
 #include <unordered_map>
+#include <vector>
 #include "../Math/Matrix4.h"
 #include "../Math/Quaternion.h"
-#include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 
 // Forward declaration for GLFW
@@ -69,175 +69,281 @@ enum class KeyState3D {
 };
 
 /**
- * @brief Система ввода для 3D движка
+ * @brief Состояние ввода
  */
-class Input3D {
-  public:
-    /**
-     * @brief Инициализация системы ввода
-     * @param window GLFW окно
-     * @return true если инициализация успешна
-     */
-    static bool initialize(GLFWwindow* window);
+struct InputState3D {
+    std::unordered_map<Key3D, bool> keyStates;
+    std::unordered_map<Key3D, bool> keyJustPressed;
+    std::unordered_map<Key3D, bool> keyJustReleased;
+    
+    std::unordered_map<MouseButton3D, bool> mouseStates;
+    std::unordered_map<MouseButton3D, bool> mouseJustPressed;
+    std::unordered_map<MouseButton3D, bool> mouseJustReleased;
+    
+    Math::Vector3 mousePosition;
+    Math::Vector3 mouseDelta;
+    Math::Vector3 scrollDelta;
+};
 
-    /**
-     * @brief Завершение работы системы ввода
-     */
-    static void shutdown();
+/**
+ * @brief Действие ввода
+ */
+class InputAction3D {
+public:
+    InputAction3D(const std::string& name);
+    
+    const std::string& getName() const { return name; }
+    
+    void addKey(Key3D key);
+    void addMouseButton(MouseButton3D button);
+    
+    void setOnPressed(std::function<void()> callback);
+    void setOnReleased(std::function<void()> callback);
+    void setOnHeld(std::function<void()> callback);
+    
+    void setEnabled(bool enabled) { this->enabled = enabled; }
+    bool isEnabled() const { return enabled; }
+    
+    bool isTriggered(const InputState3D& inputState) const;
+    bool wasJustPressed(const InputState3D& inputState) const;
+    bool wasJustReleased(const InputState3D& inputState) const;
+    
+    void executePressed();
+    void executeReleased();
+    void executeHeld();
 
-    /**
-     * @brief Обновление состояния ввода (вызывать каждый кадр)
-     */
-    static void update();
+private:
+    std::string name;
+    std::vector<Key3D> keys;
+    std::vector<MouseButton3D> mouseButtons;
+    std::function<void()> onPressed;
+    std::function<void()> onReleased;
+    std::function<void()> onHeld;
+    bool enabled;
+};
 
-    // ============================================================
-    // Клавиатура
-    // ============================================================
+/**
+ * @brief Менеджер ввода (Singleton)
+ */
+class InputManager3D {
+public:
+    static InputManager3D& getInstance();
+    
+    bool initialize(GLFWwindow* window);
+    void cleanup();
+    void update();
+    
+    // Управление действиями
+    void addAction(const InputAction3D& action);
+    void removeAction(const std::string& name);
+    InputAction3D* getAction(const std::string& name);
+    
+    // Прямой доступ к состоянию
+    bool isKeyPressed(Key3D key) const;
+    bool isKeyJustPressed(Key3D key) const;
+    bool isKeyJustReleased(Key3D key) const;
+    
+    bool isMousePressed(MouseButton3D button) const;
+    bool isMouseJustPressed(MouseButton3D button) const;
+    bool isMouseJustReleased(MouseButton3D button) const;
+    
+    Math::Vector3 getMousePosition() const;
+    Math::Vector3 getMouseDelta() const;
+    Math::Vector3 getScrollDelta() const;
+    
+    // Управление курсором
+    void setCursorVisible(bool visible);
+    void setCursorLocked(bool locked);
+    void setCursorPosition(double x, double y);
+    
+    bool isInitialized() const { return initialized; }
 
-    /**
-     * @brief Проверка нажатия клавиши (один раз за нажатие)
-     */
-    static bool isKeyPressed(Key3D key);
+private:
+    InputManager3D() = default;
+    ~InputManager3D() = default;
+    InputManager3D(const InputManager3D&) = delete;
+    InputManager3D& operator=(const InputManager3D&) = delete;
+    
+    GLFWwindow* window = nullptr;
+    bool initialized = false;
+    bool firstMouse = true;
+    double lastMouseX = 0.0;
+    double lastMouseY = 0.0;
+    bool cursorLocked = false;
+    
+    std::unordered_map<std::string, InputAction3D> actions;
+    InputState3D inputState;
+    InputState3D previousInputState;
+    
+    // GLFW callbacks
+    static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+    static void cursorPositionCallback(GLFWwindow* window, double xpos, double ypos);
+    static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+    
+    // Обработка ввода
+    void processKeyInput(int key, int action);
+    void processMouseButtonInput(int button, int action);
+    void processMouseMovement(double xpos, double ypos);
+    void processScroll(double xoffset, double yoffset);
+    void processActions();
+    
+    // Конвертация GLFW -> Engine
+    Key3D glfwKeyToKey3D(int glfwKey);
+    MouseButton3D glfwButtonToMouseButton3D(int glfwButton);
+};
 
-    /**
-     * @brief Проверка удержания клавиши
-     */
-    static bool isKeyHeld(Key3D key);
+/**
+ * @brief Базовый контроллер для 3D навигации
+ */
+class Controller3D {
+public:
+    Controller3D();
+    virtual ~Controller3D() = default;
+    
+    virtual void update(float deltaTime);
+    virtual void handleInput(const InputState3D& inputState);
+    
+    // Движение
+    void move(const Math::Vector3& direction);
+    void moveForward(float amount);
+    void moveRight(float amount);
+    void moveUp(float amount);
+    
+    // Поворот
+    void rotateX(float angle);
+    void rotateY(float angle);
+    void rotateZ(float angle);
+    void rotate(float pitch, float yaw, float roll);
+    void lookAt(const Math::Vector3& target);
+    
+    // Геттеры/сеттеры
+    const Math::Vector3& getPosition() const { return position; }
+    void setPosition(const Math::Vector3& pos);
+    
+    const Math::Quaternion& getRotation() const { return rotation; }
+    void setRotation(const Math::Quaternion& rot);
+    
+    const Math::Vector3& getVelocity() const { return velocity; }
+    void setVelocity(const Math::Vector3& vel);
+    
+    Math::Matrix4 getTransformMatrix() const;
+    
+    Math::Vector3 getForward() const;
+    Math::Vector3 getRight() const;
+    Math::Vector3 getUp() const;
+    
+    // Настройки
+    void setMoveSpeed(float speed) { moveSpeed = speed; }
+    float getMoveSpeed() const { return moveSpeed; }
+    
+    void setRotationSpeed(float speed) { rotationSpeed = speed; }
+    float getRotationSpeed() const { return rotationSpeed; }
+    
+    void setMouseSensitivity(float sensitivity) { mouseSensitivity = sensitivity; }
+    float getMouseSensitivity() const { return mouseSensitivity; }
+    
+    void setMouseLookEnabled(bool enabled) { mouseLookEnabled = enabled; }
+    bool isMouseLookEnabled() const { return mouseLookEnabled; }
+    
+    void setMovementEnabled(bool enabled) { movementEnabled = enabled; }
+    bool isMovementEnabled() const { return movementEnabled; }
+    
+    void setRotationEnabled(bool enabled) { rotationEnabled = enabled; }
+    bool isRotationEnabled() const { return rotationEnabled; }
 
-    /**
-     * @brief Проверка отпускания клавиши (один раз за отпускание)
-     */
-    static bool isKeyReleased(Key3D key);
+protected:
+    Math::Vector3 position;
+    Math::Quaternion rotation;
+    Math::Vector3 velocity;
+    
+    float moveSpeed;
+    float rotationSpeed;
+    float mouseSensitivity;
+    
+    bool mouseLookEnabled;
+    bool movementEnabled;
+    bool rotationEnabled;
+    
+    Math::Vector3 inputVector;
+    Math::Vector3 rotationInput;
+    
+    virtual void updateMovement(float deltaTime);
+    virtual void updateRotation(float deltaTime);
+    virtual void processMovementInput(const InputState3D& inputState);
+    virtual void processRotationInput(const InputState3D& inputState);
+};
 
-    /**
-     * @brief Получение состояния клавиши
-     */
-    static KeyState3D getKeyState(Key3D key);
+/**
+ * @brief Контроллер от первого лица
+ */
+class FirstPersonController : public Controller3D {
+public:
+    FirstPersonController();
+    
+    void handleInput(const InputState3D& inputState) override;
+    
+    void setPitchLimit(float minPitch, float maxPitch);
+    void jump();
+    
+    void setJumpHeight(float height) { jumpHeight = height; }
+    float getJumpHeight() const { return jumpHeight; }
+    
+    void setGravity(float grav) { gravity = grav; }
+    float getGravity() const { return gravity; }
+    
+    bool isGrounded() const { return grounded; }
+    void setGrounded(bool isGrounded) { grounded = isGrounded; }
 
-    // ============================================================
-    // Мышь
-    // ============================================================
+private:
+    float minPitch;
+    float maxPitch;
+    float currentPitch;
+    float currentYaw;
+    float jumpHeight;
+    float gravity;
+    bool grounded;
+    
+    void updatePitchYaw();
+};
 
-    /**
-     * @brief Проверка нажатия кнопки мыши (один раз за нажатие)
-     */
-    static bool isMouseButtonPressed(MouseButton3D button);
+/**
+ * @brief Орбитальный контроллер камеры
+ */
+class OrbitController : public Controller3D {
+public:
+    OrbitController();
+    
+    void handleInput(const InputState3D& inputState) override;
+    
+    void setTarget(const Math::Vector3& target);
+    const Math::Vector3& getTarget() const { return target; }
+    
+    void setDistance(float distance);
+    float getDistance() const { return distance; }
+    
+    void setDistanceRange(float minDist, float maxDist);
+    void setPitchRange(float minPitch, float maxPitch);
+    
+    void setZoomSpeed(float speed) { zoomSpeed = speed; }
+    float getZoomSpeed() const { return zoomSpeed; }
+    
+    void setOrbitSpeed(float speed) { orbitSpeed = speed; }
+    float getOrbitSpeed() const { return orbitSpeed; }
 
-    /**
-     * @brief Проверка удержания кнопки мыши
-     */
-    static bool isMouseButtonHeld(MouseButton3D button);
-
-    /**
-     * @brief Проверка отпускания кнопки мыши (один раз за отпускание)
-     */
-    static bool isMouseButtonReleased(MouseButton3D button);
-
-    /**
-     * @brief Получение позиции мыши
-     */
-    static Math::Vector2 getMousePosition();
-
-    /**
-     * @brief Получение смещения мыши с прошлого кадра
-     */
-    static Math::Vector2 getMouseDelta();
-
-    /**
-     * @brief Получение прокрутки колеса мыши
-     */
-    static Math::Vector2 getScrollDelta();
-
-    /**
-     * @brief Установка позиции мыши
-     */
-    static void setMousePosition(const Math::Vector2& position);
-
-    /**
-     * @brief Показать/скрыть курсор
-     */
-    static void setCursorVisible(bool visible);
-
-    /**
-     * @brief Заблокировать курсор в центре окна
-     */
-    static void setCursorLocked(bool locked);
-
-    // ============================================================
-    // Callback функции
-    // ============================================================
-
-    /**
-     * @brief Установить callback для клавиатуры
-     */
-    static void setKeyCallback(std::function<void(Key3D, KeyState3D)> callback);
-
-    /**
-     * @brief Установить callback для мыши
-     */
-    static void setMouseButtonCallback(std::function<void(MouseButton3D, KeyState3D)> callback);
-
-    /**
-     * @brief Установить callback для движения мыши
-     */
-    static void setMouseMoveCallback(std::function<void(Math::Vector2)> callback);
-
-    /**
-     * @brief Установить callback для прокрутки
-     */
-    static void setScrollCallback(std::function<void(Math::Vector2)> callback);
-
-    // ============================================================
-    // Утилиты
-    // ============================================================
-
-    /**
-     * @brief Получить строковое представление клавиши
-     */
-    static std::string getKeyName(Key3D key);
-
-    /**
-     * @brief Получить строковое представление кнопки мыши
-     */
-    static std::string getMouseButtonName(MouseButton3D button);
-
-    /**
-     * @brief Проверка инициализации
-     */
-    static bool isInitialized() { return initialized; }
-
-  private:
-    static GLFWwindow* window;
-    static bool initialized;
-
-    // Состояния клавиш и кнопок
-    static std::unordered_map<int, KeyState3D> keyStates;
-    static std::unordered_map<int, KeyState3D> mouseButtonStates;
-    static std::unordered_map<int, KeyState3D> previousKeyStates;
-    static std::unordered_map<int, KeyState3D> previousMouseButtonStates;
-
-    // Позиция и движение мыши
-    static Math::Vector2 mousePosition;
-    static Math::Vector2 previousMousePosition;
-    static Math::Vector2 mouseDelta;
-    static Math::Vector2 scrollDelta;
-
-    // Callback функции
-    static std::function<void(Key3D, KeyState3D)> keyCallback;
-    static std::function<void(MouseButton3D, KeyState3D)> mouseButtonCallback;
-    static std::function<void(Math::Vector2)> mouseMoveCallback;
-    static std::function<void(Math::Vector2)> scrollCallback;
-
-    // GLFW callback функции
-    static void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-    static void glfwMouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
-    static void glfwCursorPosCallback(GLFWwindow* window, double xpos, double ypos);
-    static void glfwScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
-
-    // Вспомогательные методы
-    static KeyState3D actionToKeyState(int action);
-    static void updateKeyStates();
-    static void updateMouseStates();
+private:
+    Math::Vector3 target;
+    float distance;
+    float minDistance;
+    float maxDistance;
+    float minPitch;
+    float maxPitch;
+    float currentPitch;
+    float currentYaw;
+    float zoomSpeed;
+    float orbitSpeed;
+    
+    void updateOrbitPosition();
 };
 
 }  // namespace Input

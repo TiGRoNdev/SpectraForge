@@ -2,6 +2,8 @@
 
 #include <memory>
 #include <vector>
+#include <unordered_map>
+#include <functional>
 #include "../Math/Matrix4.h"
 #include "../Math/Quaternion.h"
 #include "../Math/Vector3.h"
@@ -13,6 +15,9 @@ namespace Physics {
 class RigidBody3D;
 class Collider3D;
 class PhysicsWorld3D;
+class SphereCollider3D;
+class BoxCollider3D;
+class PlaneCollider3D;
 
 /**
  * @brief Результат столкновения в 3D
@@ -50,53 +55,59 @@ struct RaycastHit3D {
  * @brief Базовый класс для 3D коллайдеров
  */
 class Collider3D {
-  public:
+public:
     enum Type {
-        BOX,
-        SPHERE,
-        CAPSULE,
-        MESH
+        Sphere,
+        Box,
+        Plane
     };
 
-    Collider3D(Type type) : type(type), isTrigger(false) {}
+    struct AABB {
+        Math::Vector3 min;
+        Math::Vector3 max;
+        
+        AABB() : min(0, 0, 0), max(0, 0, 0) {}
+        AABB(const Math::Vector3& minPoint, const Math::Vector3& maxPoint) : min(minPoint), max(maxPoint) {}
+        
+        bool intersects(const AABB& other) const;
+    };
+
+    Collider3D(Type type);
     virtual ~Collider3D() = default;
 
     Type getType() const { return type; }
-    bool getIsTrigger() const { return isTrigger; }
-    void setIsTrigger(bool trigger) { isTrigger = trigger; }
+    bool isTrigger() const { return trigger; }
+    void setTrigger(bool isTrigger) { trigger = isTrigger; }
+    bool isEnabled() const { return enabled; }
+    void setEnabled(bool isEnabled) { enabled = isEnabled; }
+    
+    const Math::Vector3& getCenter() const { return center; }
+    void setCenter(const Math::Vector3& newCenter) { center = newCenter; }
+    
+    const Math::Matrix4& getTransform() const { return transform; }
+    void setTransform(const Math::Matrix4& newTransform) { transform = newTransform; }
 
     virtual bool intersects(const Collider3D& other) const = 0;
     virtual CollisionResult3D checkCollision(const Collider3D& other) const = 0;
     virtual Math::Vector3 getClosestPoint(const Math::Vector3& point) const = 0;
+    virtual Math::Vector3 getNormal(const Math::Vector3& point) const = 0;
+    virtual float getVolume() const = 0;
+    virtual RaycastHit3D raycast(const Math::Vector3& origin, const Math::Vector3& direction, float maxDistance) const = 0;
+    virtual AABB getBoundingBox() const = 0;
 
-  protected:
+protected:
     Type type;
-    bool isTrigger;
-};
-
-/**
- * @brief Box коллайдер
- */
-class BoxCollider3D : public Collider3D {
-  public:
-    BoxCollider3D(const Math::Vector3& size = Math::Vector3(1, 1, 1));
-    
-    const Math::Vector3& getSize() const { return size; }
-    void setSize(const Math::Vector3& newSize) { size = newSize; }
-
-    bool intersects(const Collider3D& other) const override;
-    CollisionResult3D checkCollision(const Collider3D& other) const override;
-    Math::Vector3 getClosestPoint(const Math::Vector3& point) const override;
-
-  private:
-    Math::Vector3 size;
+    Math::Vector3 center;
+    Math::Matrix4 transform;
+    bool trigger;
+    bool enabled;
 };
 
 /**
  * @brief Sphere коллайдер
  */
 class SphereCollider3D : public Collider3D {
-  public:
+public:
     SphereCollider3D(float radius = 1.0f);
     
     float getRadius() const { return radius; }
@@ -105,60 +116,117 @@ class SphereCollider3D : public Collider3D {
     bool intersects(const Collider3D& other) const override;
     CollisionResult3D checkCollision(const Collider3D& other) const override;
     Math::Vector3 getClosestPoint(const Math::Vector3& point) const override;
+    Math::Vector3 getNormal(const Math::Vector3& point) const override;
+    float getVolume() const override;
+    RaycastHit3D raycast(const Math::Vector3& origin, const Math::Vector3& direction, float maxDistance) const override;
+    AABB getBoundingBox() const override;
 
-  private:
+public:
+    bool intersectsSphere(const SphereCollider3D& other) const;
+    bool intersectsBox(const BoxCollider3D& other) const;
+
+private:
     float radius;
+};
+
+/**
+ * @brief Box коллайдер
+ */
+class BoxCollider3D : public Collider3D {
+public:
+    BoxCollider3D(const Math::Vector3& size = Math::Vector3(1, 1, 1));
+    
+    const Math::Vector3& getSize() const { return size; }
+    void setSize(const Math::Vector3& newSize) { size = newSize; }
+    
+    Math::Vector3 getMin() const;
+    Math::Vector3 getMax() const;
+
+    bool intersects(const Collider3D& other) const override;
+    CollisionResult3D checkCollision(const Collider3D& other) const override;
+    Math::Vector3 getClosestPoint(const Math::Vector3& point) const override;
+    Math::Vector3 getNormal(const Math::Vector3& point) const override;
+    float getVolume() const override;
+    RaycastHit3D raycast(const Math::Vector3& origin, const Math::Vector3& direction, float maxDistance) const override;
+    AABB getBoundingBox() const override;
+
+public:
+    bool intersectsBox(const BoxCollider3D& other) const;
+    bool intersectsSphere(const SphereCollider3D& other) const;
+
+private:
+    Math::Vector3 size;
+};
+
+/**
+ * @brief Plane коллайдер
+ */
+class PlaneCollider3D : public Collider3D {
+public:
+    PlaneCollider3D(const Math::Vector3& normal = Math::Vector3(0, 1, 0), float distance = 0.0f);
+    
+    const Math::Vector3& getNormalVector() const { return normal; }
+    float getDistance() const { return distance; }
+    void setPlane(const Math::Vector3& newNormal, float newDistance);
+    
+    float distanceToPoint(const Math::Vector3& point) const;
+    bool isPointAbove(const Math::Vector3& point) const;
+
+    bool intersects(const Collider3D& other) const override;
+    CollisionResult3D checkCollision(const Collider3D& other) const override;
+    Math::Vector3 getClosestPoint(const Math::Vector3& point) const override;
+    Math::Vector3 getNormal(const Math::Vector3& point) const override;
+    float getVolume() const override;
+    RaycastHit3D raycast(const Math::Vector3& origin, const Math::Vector3& direction, float maxDistance) const override;
+    AABB getBoundingBox() const override;
+
+private:
+    Math::Vector3 normal;
+    float distance;
 };
 
 /**
  * @brief Физическое тело в 3D
  */
 class RigidBody3D {
-  public:
-    enum BodyType {
-        STATIC,
-        KINEMATIC,
-        DYNAMIC
-    };
-
-    RigidBody3D(BodyType type = DYNAMIC);
+public:
+    RigidBody3D();
     virtual ~RigidBody3D() = default;
-
-    // Основные свойства
-    BodyType getBodyType() const { return bodyType; }
-    void setBodyType(BodyType type) { bodyType = type; }
-
-    float getMass() const { return mass; }
-    void setMass(float newMass);
 
     // Позиция и ориентация
     const Math::Vector3& getPosition() const { return position; }
-    void setPosition(const Math::Vector3& pos) { position = pos; }
+    void setPosition(const Math::Vector3& pos);
 
     const Math::Quaternion& getRotation() const { return rotation; }
-    void setRotation(const Math::Quaternion& rot) { rotation = rot; }
+    void setRotation(const Math::Quaternion& rot);
 
     // Скорости
     const Math::Vector3& getVelocity() const { return velocity; }
-    void setVelocity(const Math::Vector3& vel) { velocity = vel; }
+    void setVelocity(const Math::Vector3& vel);
 
     const Math::Vector3& getAngularVelocity() const { return angularVelocity; }
-    void setAngularVelocity(const Math::Vector3& angVel) { angularVelocity = angVel; }
+    void setAngularVelocity(const Math::Vector3& angVel);
+
+    // Массовые свойства
+    float getMass() const { return mass; }
+    void setMass(float m);
+    
+    float getInverseMass() const { return inverseMass; }
+    
+    const Math::Vector3& getInertia() const { return inertia; }
+    void setInertia(const Math::Vector3& newInertia);
+    Math::Vector3 getInverseInertia() const;
 
     // Применение сил
-    void addForce(const Math::Vector3& force);
-    void addTorque(const Math::Vector3& torque);
-    void addImpulse(const Math::Vector3& impulse);
-    void addAngularImpulse(const Math::Vector3& impulse);
+    void applyForce(const Math::Vector3& newForce);
+    void applyForceAtPosition(const Math::Vector3& newForce, const Math::Vector3& worldPosition);
+    void applyTorque(const Math::Vector3& newTorque);
+    void applyImpulse(const Math::Vector3& impulse);
+    void applyAngularImpulse(const Math::Vector3& impulse);
 
-    // Коллайдеры
-    void addCollider(std::shared_ptr<Collider3D> collider);
-    void removeCollider(std::shared_ptr<Collider3D> collider);
-    const std::vector<std::shared_ptr<Collider3D>>& getColliders() const { return colliders; }
-
-    // Физическое обновление
-    void integrate(float deltaTime);
-    void clearForces();
+    // Коллайдер
+    std::shared_ptr<Collider3D> getCollider() const { return collider; }
+    void setCollider(std::shared_ptr<Collider3D> newCollider);
 
     // Свойства материала
     float getRestitution() const { return restitution; }
@@ -173,30 +241,20 @@ class RigidBody3D {
     float getAngularDrag() const { return angularDrag; }
     void setAngularDrag(float newAngularDrag) { angularDrag = newAngularDrag; }
 
-    // Ограничения
-    bool getFreezePositionX() const { return freezePositionX; }
-    void setFreezePositionX(bool freeze) { freezePositionX = freeze; }
+    float getGravityScale() const { return gravityScale; }
+    void setGravityScale(float scale) { gravityScale = scale; }
 
-    bool getFreezePositionY() const { return freezePositionY; }
-    void setFreezePositionY(bool freeze) { freezePositionY = freeze; }
+    // Кинематическое тело
+    bool isKinematic() const { return kinematic; }
+    void setKinematic(bool isKinematic) { kinematic = isKinematic; }
 
-    bool getFreezePositionZ() const { return freezePositionZ; }
-    void setFreezePositionZ(bool freeze) { freezePositionZ = freeze; }
+    // Физическое обновление
+    void update(float deltaTime);
+    void clearForces();
+    
+    Math::Matrix4 getTransformMatrix() const;
 
-    bool getFreezeRotationX() const { return freezeRotationX; }
-    void setFreezeRotationX(bool freeze) { freezeRotationX = freeze; }
-
-    bool getFreezeRotationY() const { return freezeRotationY; }
-    void setFreezeRotationY(bool freeze) { freezeRotationY = freeze; }
-
-    bool getFreezeRotationZ() const { return freezeRotationZ; }
-    void setFreezeRotationZ(bool freeze) { freezeRotationZ = freeze; }
-
-  private:
-    BodyType bodyType;
-    float mass;
-    float invMass;
-
+private:
     // Трансформация
     Math::Vector3 position;
     Math::Quaternion rotation;
@@ -207,38 +265,46 @@ class RigidBody3D {
     Math::Vector3 force;
     Math::Vector3 torque;
 
-    // Коллайдеры
-    std::vector<std::shared_ptr<Collider3D>> colliders;
+    // Массовые свойства
+    float mass;
+    float inverseMass;
+    Math::Vector3 inertia;
+
+    // Коллайдер
+    std::shared_ptr<Collider3D> collider;
 
     // Материал
     float restitution;
     float friction;
     float drag;
     float angularDrag;
+    float gravityScale;
 
-    // Ограничения
-    bool freezePositionX, freezePositionY, freezePositionZ;
-    bool freezeRotationX, freezeRotationY, freezeRotationZ;
+    // Флаги
+    bool kinematic;
 
-    void updateInverseMass();
+    void integrate(float deltaTime);
 };
 
 /**
  * @brief Система частиц для 3D
  */
 class ParticleSystem3D {
-  public:
+public:
     struct Particle {
         Math::Vector3 position;
         Math::Vector3 velocity;
         Math::Vector3 acceleration;
-        float life;
-        float maxLife;
         Math::Vector3 color;
+        float life;
         float size;
+        bool active;
+        
+        Particle() : position(0, 0, 0), velocity(0, 0, 0), acceleration(0, 0, 0), 
+                    color(1, 1, 1), life(0.0f), size(1.0f), active(false) {}
     };
 
-    ParticleSystem3D(int maxParticles = 1000);
+    ParticleSystem3D(size_t maxParticles = 1000);
     ~ParticleSystem3D() = default;
 
     void update(float deltaTime);
@@ -246,49 +312,62 @@ class ParticleSystem3D {
     void clear();
 
     // Настройки эмиссии
+    void setEmitterPosition(const Math::Vector3& pos) { emitterPosition = pos; }
+    void setEmitterVelocity(const Math::Vector3& vel) { emitterVelocity = vel; }
+    void setGravity(const Math::Vector3& grav) { gravity = grav; }
     void setEmissionRate(float rate) { emissionRate = rate; }
-    void setLifetime(float min, float max) { minLifetime = min; maxLifetime = max; }
-    void setVelocity(const Math::Vector3& min, const Math::Vector3& max) { minVelocity = min; maxVelocity = max; }
-    void setSize(float min, float max) { minSize = min; maxSize = max; }
-    void setColor(const Math::Vector3& color) { particleColor = color; }
+    void setParticleLife(float life) { particleLife = life; }
+    void setParticleSize(float size) { particleSize = size; }
+    void setColorRange(const Math::Vector3& start, const Math::Vector3& end);
+
+    // Управление
+    void play() { playing = true; paused = false; }
+    void pause() { paused = true; }
+    void stop() { playing = false; paused = false; }
 
     const std::vector<Particle>& getParticles() const { return particles; }
-    int getActiveParticleCount() const { return activeParticles; }
+    int getActiveParticleCount() const;
 
-  private:
+private:
     std::vector<Particle> particles;
-    int maxParticles;
-    int activeParticles;
-
-    // Параметры эмиссии
+    Math::Vector3 emitterPosition;
+    Math::Vector3 emitterVelocity;
+    Math::Vector3 gravity;
     float emissionRate;
-    float minLifetime, maxLifetime;
-    Math::Vector3 minVelocity, maxVelocity;
-    float minSize, maxSize;
-    Math::Vector3 particleColor;
-
-    // Внутренние переменные
+    float particleLife;
+    float particleSize;
+    Math::Vector3 startColor;
+    Math::Vector3 endColor;
+    bool playing;
+    bool paused;
     float emissionTimer;
 
-    void createParticle(int index);
     void updateParticle(Particle& particle, float deltaTime);
+    Particle* getInactiveParticle();
 };
 
 /**
  * @brief Физический мир для 3D
  */
 class PhysicsWorld3D {
-  public:
+public:
     PhysicsWorld3D();
     ~PhysicsWorld3D() = default;
 
     // Управление миром
+    void update(float deltaTime);
     void step(float deltaTime);
     void clear();
 
-    // Управление телами
+    // Управление телами и коллайдерами
     void addRigidBody(std::shared_ptr<RigidBody3D> body);
     void removeRigidBody(std::shared_ptr<RigidBody3D> body);
+    void addCollider(std::shared_ptr<Collider3D> collider);
+    void removeCollider(std::shared_ptr<Collider3D> collider);
+
+    // Обнаружение столкновений
+    std::vector<CollisionResult3D> detectCollisions();
+    CollisionResult3D checkCollision(const Collider3D& a, const Collider3D& b);
 
     // Raycast
     RaycastHit3D raycast(const Math::Vector3& origin, const Math::Vector3& direction, float maxDistance = 1000.0f);
@@ -298,23 +377,27 @@ class PhysicsWorld3D {
     const Math::Vector3& getGravity() const { return gravity; }
     void setGravity(const Math::Vector3& grav) { gravity = grav; }
 
+    float getTimeStep() const { return timeStep; }
+    void setTimeStep(float step) { timeStep = step; }
+
     int getIterations() const { return iterations; }
     void setIterations(int iter) { iterations = iter; }
 
     // Статистика
     int getRigidBodyCount() const { return static_cast<int>(rigidBodies.size()); }
-    int getCollisionCount() const { return collisionCount; }
+    int getColliderCount() const { return static_cast<int>(colliders.size()); }
 
-  private:
+private:
     std::vector<std::shared_ptr<RigidBody3D>> rigidBodies;
+    std::vector<std::shared_ptr<Collider3D>> colliders;
     Math::Vector3 gravity;
+    float timeStep;
     int iterations;
-    int collisionCount;
 
-    void detectCollisions();
+    void applyGravity(float deltaTime);
+    void integrateVelocities(float deltaTime);
     void resolveCollisions();
-    void integrateRigidBodies(float deltaTime);
-    CollisionResult3D checkCollision(std::shared_ptr<RigidBody3D> bodyA, std::shared_ptr<RigidBody3D> bodyB);
+    void integratePositions(float deltaTime);
 };
 
 }  // namespace Physics

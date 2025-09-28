@@ -7,6 +7,7 @@
 
 using namespace HyperEngine::Math;
 using namespace HyperEngine::Rendering;
+using namespace HyperEngine::Core;
 
 namespace HyperEngine {
 namespace Rendering {

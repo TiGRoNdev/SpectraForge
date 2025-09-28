@@ -704,14 +704,14 @@ PhysicsWorld3D::PhysicsWorld3D()
 void PhysicsWorld3D::addRigidBody(std::shared_ptr<RigidBody3D> body) {
     if (body) {
         rigidBodies.push_back(body);
-        std::cout << "Added rigid body. Total: " << rigidBodies.size() << std::endl;
+        SAFE_PRINT_LINE("Added rigid body. Total: " + SAFE_TO_STRING(rigidBodies.size()));
     }
 }
 
 void PhysicsWorld3D::addCollider(std::shared_ptr<Collider3D> collider) {
     if (collider) {
         colliders.push_back(collider);
-        std::cout << "Added collider. Total: " << colliders.size() << std::endl;
+        SAFE_PRINT_LINE("Added collider. Total: " + SAFE_TO_STRING(colliders.size()));
     }
 }
 

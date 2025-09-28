@@ -210,12 +210,12 @@ void InputManager3D::update() {
 
 void InputManager3D::addAction(const InputAction3D& action) {
     actions[action.getName()] = action;
-    std::cout << "Added input action: " << action.getName() << std::endl;
+    SAFE_PRINT_LINE("Added input action: " + SAFE_TO_STRING(action.getName()));
 }
 
 void InputManager3D::removeAction(const std::string& name) {
     actions.erase(name);
-    std::cout << "Removed input action: " << name << std::endl;
+    SAFE_PRINT_LINE("Removed input action: " + SAFE_TO_STRING(name));
 }
 
 InputAction3D* InputManager3D::getAction(const std::string& name) {

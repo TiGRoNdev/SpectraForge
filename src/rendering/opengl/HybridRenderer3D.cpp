@@ -8,9 +8,11 @@
 #include <algorithm>
 #include <functional>
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 
 using namespace HyperEngine::Math;
 using namespace HyperEngine::Rendering;
+using namespace HyperEngine::Core;
 
 namespace HyperEngine {
 namespace Rendering {
