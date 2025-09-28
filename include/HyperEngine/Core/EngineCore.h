@@ -79,7 +79,7 @@ class EngineCore : public Interfaces::IInitializable,
     /**
      * @brief Деструктор
      */
-    virtual ~EngineCore();
+    ~EngineCore() override;
 
     // IInitializable interface (ISP)
     bool initialize() override;
@@ -189,7 +189,7 @@ class EngineCore : public Interfaces::IInitializable,
  */
 class ISubsystem : public Interfaces::IInitializable {
   public:
-    virtual ~ISubsystem() = default;
+    ~ISubsystem() override = default;
 
     /**
      * @brief Обновление подсистемы

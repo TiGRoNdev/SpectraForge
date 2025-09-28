@@ -139,7 +139,7 @@ struct InputState3D {
 class InputAction3D {
   public:
     InputAction3D() = default;  // Конструктор по умолчанию
-    InputAction3D(const std::string& name);
+    explicit InputAction3D(const std::string& name);
 
     const std::string& getName() const { return name; }
 

@@ -15,7 +15,7 @@ class GameObject3D;
 class Component3D : public ILifecycle {
   public:
     Component3D();
-    virtual ~Component3D() = default;
+    ~Component3D() override = default;
 
     // Реализация ILifecycle
     void start() override {}
@@ -45,7 +45,7 @@ class Component3D : public ILifecycle {
  */
 class UpdatableComponent : public Component3D, public IUpdatable {
   public:
-    virtual ~UpdatableComponent() = default;
+    ~UpdatableComponent() override = default;
     std::string getComponentType() const override { return "UpdatableComponent"; }
 };
 
@@ -54,7 +54,7 @@ class UpdatableComponent : public Component3D, public IUpdatable {
  */
 class RenderableComponent : public Component3D, public IRenderable {
   public:
-    virtual ~RenderableComponent() = default;
+    ~RenderableComponent() override = default;
     std::string getComponentType() const override { return "RenderableComponent"; }
 };
 
@@ -63,7 +63,7 @@ class RenderableComponent : public Component3D, public IRenderable {
  */
 class UpdatableRenderableComponent : public Component3D, public IUpdatable, public IRenderable {
   public:
-    virtual ~UpdatableRenderableComponent() = default;
+    ~UpdatableRenderableComponent() override = default;
     std::string getComponentType() const override { return "UpdatableRenderableComponent"; }
 };
 

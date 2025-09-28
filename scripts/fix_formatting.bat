@@ -27,7 +27,7 @@ echo 🔧 Исправляем форматирование файлов...
 for /f "delims=" %%f in (temp_files.txt) do (
     set /a TOTAL_COUNT+=1
     echo Обрабатываем: %%f
-    
+
     REM Применяем форматирование
     %CLANG_FORMAT% -i --style=file "%%f"
     if !errorlevel! equ 0 (

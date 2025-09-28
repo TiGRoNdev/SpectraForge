@@ -16,7 +16,7 @@ namespace Core {
 class Transform3D : public UpdatableComponent, public ITransformable {
   public:
     Transform3D();
-    virtual ~Transform3D();
+    ~Transform3D() override;
 
     // Интерфейс Component
     std::string getComponentType() const override { return "Transform3D"; }

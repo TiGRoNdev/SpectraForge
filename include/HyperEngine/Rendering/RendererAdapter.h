@@ -150,7 +150,7 @@ class RendererAdapter {
 class OpenGLRendererAdapter : public IRendererAdapter {
   public:
     OpenGLRendererAdapter();
-    virtual ~OpenGLRendererAdapter();
+    ~OpenGLRendererAdapter() override;
 
     // Реализация IRendererAdapter
     bool initialize(int width, int height) override;
@@ -198,7 +198,7 @@ class OpenGLRendererAdapter : public IRendererAdapter {
 class VulkanRendererAdapter : public IRendererAdapter {
   public:
     VulkanRendererAdapter();
-    virtual ~VulkanRendererAdapter();
+    ~VulkanRendererAdapter() override;
 
     // Реализация IRendererAdapter
     bool initialize(int width, int height) override;

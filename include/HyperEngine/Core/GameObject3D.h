@@ -33,7 +33,7 @@ namespace Core {
 class MeshRenderer3D : public RenderableComponent {
   public:
     MeshRenderer3D();
-    virtual ~MeshRenderer3D() = default;
+    ~MeshRenderer3D() override = default;
 
     // Интерфейс Component
     std::string getComponentType() const override { return "MeshRenderer3D"; }
@@ -63,7 +63,7 @@ class MeshRenderer3D : public RenderableComponent {
 class Collider3DComponent : public Component3D {
   public:
     Collider3DComponent();
-    virtual ~Collider3DComponent() = default;
+    ~Collider3DComponent() override = default;
 
     // Интерфейс Component
     std::string getComponentType() const override { return "Collider3DComponent"; }
@@ -90,7 +90,7 @@ class Collider3DComponent : public Component3D {
 class RigidBody3DComponent : public UpdatableComponent {
   public:
     RigidBody3DComponent();
-    virtual ~RigidBody3DComponent() = default;
+    ~RigidBody3DComponent() override = default;
 
     // Интерфейс Component
     std::string getComponentType() const override { return "RigidBody3DComponent"; }
@@ -121,7 +121,7 @@ class RigidBody3DComponent : public UpdatableComponent {
 class Camera3DComponent : public Component3D {
   public:
     Camera3DComponent();
-    virtual ~Camera3DComponent() = default;
+    ~Camera3DComponent() override = default;
 
     // Интерфейс Component
     std::string getComponentType() const override { return "Camera3DComponent"; }
@@ -156,7 +156,7 @@ class Camera3DComponent : public Component3D {
 class ParticleSystem3DComponent : public UpdatableRenderableComponent {
   public:
     ParticleSystem3DComponent();
-    virtual ~ParticleSystem3DComponent() = default;
+    ~ParticleSystem3DComponent() override = default;
 
     // Интерфейс Component
     std::string getComponentType() const override { return "ParticleSystem3DComponent"; }
@@ -191,7 +191,7 @@ class ParticleSystem3DComponent : public UpdatableRenderableComponent {
 class GameObject3D : public ILifecycle {
   public:
     explicit GameObject3D(const std::string& name = "GameObject3D");
-    virtual ~GameObject3D();
+    ~GameObject3D() override;
 
     // Реализация ILifecycle
     void start() override;

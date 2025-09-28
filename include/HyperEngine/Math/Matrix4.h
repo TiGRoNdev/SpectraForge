@@ -24,7 +24,7 @@ class Matrix4 {
     Matrix4();
     Matrix4(const Matrix4& other);
     explicit Matrix4(float diagonal);
-    Matrix4(const std::array<std::array<float, 4>, 4>& data);
+    explicit Matrix4(const std::array<std::array<float, 4>, 4>& data);
 
     // Операторы
     Matrix4& operator=(const Matrix4& other);
