@@ -4,26 +4,30 @@ cmake_minimum_required(VERSION 3.16)
 # Настройка тестирования
 enable_testing()
 
-# Поиск Google Test и Google Mock
-find_package(GTest REQUIRED)
-find_package(GMock REQUIRED)
+# Поиск Google Test и Google Mock (vcpkg style)
+find_package(GTest CONFIG REQUIRED)
 
 # Включение поддержки Google Benchmark для тестов производительности
 find_package(benchmark QUIET)
 
 # Общие настройки для всех тестов
-set(TEST_COMPILE_FLAGS
-    -Wall -Wextra -Wpedantic
-    -Wno-unused-parameter
-    -fprofile-arcs -ftest-coverage  # Для code coverage
-)
+if(MSVC)
+    set(TEST_COMPILE_FLAGS
+        /W4
+    )
+else()
+    set(TEST_COMPILE_FLAGS
+        -Wall -Wextra -Wpedantic
+        -Wno-unused-parameter
+        -fprofile-arcs -ftest-coverage  # Для code coverage
+    )
+endif()
 
 set(TEST_LINK_LIBRARIES
     GTest::gtest
     GTest::gtest_main
-    GMock::gmock
-    GMock::gmock_main
-    gcov  # Для code coverage
+    GTest::gmock
+    GTest::gmock_main
 )
 
 # Добавление include директорий

@@ -50,7 +50,6 @@ TEST_F(Vector3Test, ScalarMultiplication) {
     EXPECT_FLOAT_EQ(result.y, 4.0f);
     EXPECT_FLOAT_EQ(result.z, 6.0f);
 }
-
 TEST_F(Vector3Test, DotProduct) {
     float result = v1.dot(v2);
     EXPECT_FLOAT_EQ(result, 32.0f);  // 1*4 + 2*5 + 3*6 = 32
@@ -209,7 +208,7 @@ TEST_F(QuaternionTest, AxisAngleConstruction) {
     // Поворот точки вокруг Y на 90 градусов
     Vector3 point = Vector3::unitX();
     Vector3 rotated = q.rotate(point);
-    Vector3 expected = Vector3::unitZ();
+    Vector3 expected = -Vector3::unitZ();  // В левосторонней системе координат
 
     EXPECT_NEAR(rotated.x, expected.x, 1e-6f);
     EXPECT_NEAR(rotated.y, expected.y, 1e-6f);
@@ -262,13 +261,13 @@ TEST_F(QuaternionTest, Slerp) {
     Vector3 point = Vector3::unitX();
     Vector3 rotated = mid.rotate(point);
 
-    // Поворот на 45 градусов должен дать вектор (cos(45), 0, sin(45))
+    // Поворот на 45 градусов должен дать вектор (cos(45), 0, -sin(45)) в левосторонней системе
     float cos45 = std::cos(PI / 4.0f);
     float sin45 = std::sin(PI / 4.0f);
 
     EXPECT_NEAR(rotated.x, cos45, 1e-5f);
     EXPECT_NEAR(rotated.y, 0.0f, 1e-6f);
-    EXPECT_NEAR(rotated.z, sin45, 1e-5f);
+    EXPECT_NEAR(rotated.z, -sin45, 1e-5f);
 }
 
 // Функция main для запуска тестов
@@ -276,4 +275,5 @@ int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
+
 
