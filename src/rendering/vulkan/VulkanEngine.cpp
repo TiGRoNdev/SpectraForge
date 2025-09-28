@@ -69,18 +69,19 @@ bool VulkanEngine::init(vk::Instance vulkanInstance) {
         }
         
         // Выводим информацию о выбранном устройстве
-        std::cout << "[VulkanEngine] Выбрано устройство: " << hardwareDetector->getDeviceName() << std::endl;
-        std::cout << "[VulkanEngine] Вендор: ";
-        switch (hardwareDetector->detectVendor()) {
-            case VendorType::NVIDIA: std::cout << "NVIDIA"; break;
-            case VendorType::AMD: std::cout << "AMD"; break;
-            case VendorType::INTEL: std::cout << "Intel"; break;
-            default: std::cout << "Другой"; break;
-        }
-        std::cout << std::endl;
+        SAFE_PRINT_LINE("[VulkanEngine] Выбрано устройство: " + SAFE_TO_STRING(hardwareDetector->getDeviceName()));
         
-        std::cout << "[VulkanEngine] Ray Tracing: " << (hardwareDetector->supportsRayTracing() ? "Поддерживается" : "Не поддерживается") << std::endl;
-        std::cout << "[VulkanEngine] CUDA: " << (hardwareDetector->supportsCUDA() ? "Поддерживается" : "Не поддерживается") << std::endl;
+        std::string vendorName;
+        switch (hardwareDetector->detectVendor()) {
+            case VendorType::NVIDIA: vendorName = "NVIDIA"; break;
+            case VendorType::AMD: vendorName = "AMD"; break;
+            case VendorType::INTEL: vendorName = "Intel"; break;
+            default: vendorName = "Другой"; break;
+        }
+        SAFE_PRINT_LINE("[VulkanEngine] Вендор: " + SAFE_TO_STRING(vendorName));
+        
+        SAFE_PRINT_LINE("[VulkanEngine] Ray Tracing: " + SAFE_TO_STRING(hardwareDetector->supportsRayTracing() ? "Поддерживается" : "Не поддерживается"));
+        SAFE_PRINT_LINE("[VulkanEngine] CUDA: " + SAFE_TO_STRING(hardwareDetector->supportsCUDA() ? "Поддерживается" : "Не поддерживается"));
         
         // 2. Создаем логическое устройство (упрощенная версия)
         device = createLogicalDevice();
@@ -107,7 +108,7 @@ bool VulkanEngine::init(vk::Instance vulkanInstance) {
         return true;
         
     } catch (const std::exception& e) {
-        std::cerr << "[VulkanEngine] Ошибка инициализации: " << e.what() << std::endl;
+        SAFE_ERROR("[VulkanEngine] Ошибка инициализации: " + SAFE_TO_STRING(e.what()));
         return false;
     }
 }
@@ -140,7 +141,7 @@ void VulkanEngine::renderFrame(const CameraParams& params) {
         }
         
     } catch (const std::exception& e) {
-        std::cerr << "[VulkanEngine] Ошибка рендеринга: " << e.what() << std::endl;
+        SAFE_ERROR("[VulkanEngine] Ошибка рендеринга: " + SAFE_TO_STRING(e.what()));
     }
 }
 
@@ -241,7 +242,7 @@ vk::Device VulkanEngine::createLogicalDevice() {
         return logicalDevice;
         
     } catch (const std::exception& e) {
-        std::cerr << "[VulkanEngine] Ошибка создания логического устройства: " << e.what() << std::endl;
+        SAFE_ERROR("[VulkanEngine] Ошибка создания логического устройства: " + SAFE_TO_STRING(e.what()));
         return vk::Device{};
     }
 }
