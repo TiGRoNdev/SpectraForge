@@ -1,0 +1,13 @@
+# Пакет кастомных CodeQL запросов для HyperEngine
+
+name: hyperengine/security-queries
+version: 1.0.0
+description: "Кастомные запросы безопасности для HyperEngine"
+
+dependencies:
+  codeql/cpp-all: "*"
+
+dataExtensions:
+  - lib/**/*.qll
+
+defaultSuiteFile: security-suite.qls

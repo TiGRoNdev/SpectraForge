@@ -1,0 +1,75 @@
+# Конфигурация Dependabot для автоматического обновления зависимостей
+
+version: 2
+updates:
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    reviewers:
+      - "hyperengine-team"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # vcpkg dependencies
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "08:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "vcpkg"
+    ignore:
+      # Игнорируем бета-версии
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    reviewers:
+      - "hyperengine-team"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
+  # Docker
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "08:00"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "docker"
+    reviewers:
+      - "hyperengine-team"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
+
+  # Git submodules
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+      time: "08:00"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "submodules"
+    reviewers:
+      - "hyperengine-team"
+    commit-message:
+      prefix: "deps"
+      include: "scope"

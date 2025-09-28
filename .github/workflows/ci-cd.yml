@@ -1,0 +1,204 @@
+name: HyperEngine CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, refactoring/* ]
+  pull_request:
+    branches: [ main, develop ]
+  release:
+    types: [ published ]
+
+env:
+  BUILD_TYPE: Release
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+
+jobs:
+  # Проверка качества кода
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Setup C++ environment
+      uses: aminya/setup-cpp@v1
+      with:
+        compiler: gcc-11
+        cmake: true
+        ninja: true
+        clang-tidy: true
+        cppcheck: true
+    
+    - name: Cache vcpkg
+      uses: actions/cache@v3
+      with:
+        path: |
+          vcpkg_installed
+          vcpkg
+        key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
+    
+    - name: Run clang-format check
+      run: |
+        find src include tests -name "*.cpp" -o -name "*.h" | \
+        xargs clang-format --dry-run --Werror --style=file
+    
+    - name: Run clang-tidy
+      run: |
+        cmake -B build-lint -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        find src include -name "*.cpp" | head -20 | \
+        xargs clang-tidy --config-file=.clang-tidy -p build-lint
+    
+    - name: Run cppcheck
+      run: |
+        cppcheck --enable=all --error-exitcode=1 \
+          --suppress=missingIncludeSystem \
+          --suppress=unusedFunction \
+          src/ include/
+
+  # Сборка и тестирование на разных платформах
+  build-and-test:
+    name: Build and Test
+    needs: code-quality
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-2022, macos-12]
+        build-type: [Debug, Release]
+        include:
+          - os: ubuntu-22.04
+            triplet: x64-linux
+          - os: windows-2022
+            triplet: x64-windows
+          - os: macos-12
+            triplet: x64-osx
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: 'latest'
+    
+    - name: Configure CMake
+      run: |
+        cmake -B build \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} \
+          -DBUILD_TESTING=ON \
+          -DBUILD_BENCHMARKS=ON
+    
+    - name: Build
+      run: cmake --build build --config ${{ matrix.build-type }} --parallel
+    
+    - name: Run tests
+      working-directory: build
+      run: ctest --output-on-failure --parallel --build-config ${{ matrix.build-type }}
+    
+    - name: Generate coverage report (Linux Debug only)
+      if: matrix.os == 'ubuntu-22.04' && matrix.build-type == 'Debug'
+      run: |
+        cmake -B build-coverage \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_CXX_FLAGS="--coverage" \
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DBUILD_TESTING=ON
+        
+        cmake --build build-coverage --parallel
+        cd build-coverage
+        ctest --output-on-failure
+        
+        lcov --capture --directory . --output-file coverage.info
+        lcov --remove coverage.info '/usr/*' '*/vcpkg/*' '*/tests/*' --output-file coverage_filtered.info
+    
+    - name: Upload coverage to Codecov
+      if: matrix.os == 'ubuntu-22.04' && matrix.build-type == 'Debug'
+      uses: codecov/codecov-action@v3
+      with:
+        files: build-coverage/coverage_filtered.info
+        fail_ci_if_error: false
+
+  # Тесты производительности
+  performance-tests:
+    name: Performance Tests
+    needs: build-and-test
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: 'latest'
+    
+    - name: Build performance tests
+      run: |
+        cmake -B build-perf \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DBUILD_BENCHMARKS=ON
+        
+        cmake --build build-perf --parallel
+    
+    - name: Run benchmarks
+      run: |
+        cd build-perf
+        # Проверяем наличие бенчмарков
+        if [ -f tests/performance/math_benchmarks ]; then
+          ./tests/performance/math_benchmarks --benchmark_format=json > benchmark_results.json
+        elif [ -f tests/math_benchmarks ]; then
+          ./tests/math_benchmarks --benchmark_format=json > benchmark_results.json  
+        else
+          echo "Benchmarks not found, creating empty results"
+          echo "[]" > benchmark_results.json
+        fi
+    
+    - name: Store benchmark results
+      if: hashFiles('build-perf/benchmark_results.json') != ''
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        tool: 'googlecpp'
+        output-file-path: build-perf/benchmark_results.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: true
+        comment-on-alert: true
+        alert-threshold: '150%'
+
+  # Анализ безопасности
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'

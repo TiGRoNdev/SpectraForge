@@ -1,0 +1,315 @@
+name: Code Quality and Security Checks
+
+on:
+  push:
+    branches: [ main, develop, refactoring/* ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Запуск ежедневно в 2:00 UTC
+    - cron: '0 2 * * *'
+
+env:
+  CPPCHECK_VERSION: '2.12'
+  CLANG_VERSION: '16'
+
+jobs:
+  # Детальная проверка качества кода
+  detailed-code-analysis:
+    name: Detailed Code Analysis
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    
+    - name: Setup LLVM/Clang
+      uses: KyleMayes/install-llvm-action@v1
+      with:
+        version: ${{ env.CLANG_VERSION }}
+        directory: ${{ runner.temp }}/llvm
+    
+    - name: Cache tools
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pre-commit
+          ~/.local/bin
+        key: ${{ runner.os }}-quality-tools-v1
+    
+    - name: Install analysis tools
+      run: |
+        # cppcheck
+        wget https://github.com/danmar/cppcheck/archive/refs/tags/${{ env.CPPCHECK_VERSION }}.tar.gz
+        tar -xzf ${{ env.CPPCHECK_VERSION }}.tar.gz
+        cd cppcheck-${{ env.CPPCHECK_VERSION }}
+        make SRCDIR=build CFGDIR=/usr/share/cppcheck/cfg FILESDIR=/usr/share/cppcheck
+        sudo make install SRCDIR=build CFGDIR=/usr/share/cppcheck/cfg FILESDIR=/usr/share/cppcheck
+        cd ..
+        
+        # cpplint
+        pip install cpplint
+        
+        # include-what-you-use
+        sudo apt-get update
+        sudo apt-get install -y iwyu
+    
+    - name: Run clang-format check
+      run: |
+        find src include tests -name "*.cpp" -o -name "*.h" -o -name "*.hpp" | \
+        xargs clang-format --dry-run --Werror --style=file --verbose
+    
+    - name: Run clang-tidy
+      run: |
+        mkdir -p build-analysis
+        cmake -B build-analysis \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+          -DCMAKE_C_COMPILER=clang \
+          -DCMAKE_CXX_COMPILER=clang++
+        
+        # Анализ основных исходников
+        find src -name "*.cpp" | head -30 | \
+        xargs clang-tidy --config-file=.clang-tidy -p build-analysis --quiet
+        
+        # Анализ заголовков
+        find include -name "*.h" -o -name "*.hpp" | head -20 | \
+        xargs clang-tidy --config-file=.clang-tidy -p build-analysis --quiet
+    
+    - name: Run advanced cppcheck
+      run: |
+        cppcheck --version
+        cppcheck \
+          --enable=all \
+          --std=c++20 \
+          --platform=unix64 \
+          --inconclusive \
+          --force \
+          --error-exitcode=1 \
+          --xml \
+          --xml-version=2 \
+          --output-file=cppcheck-results.xml \
+          --suppress-xml=cppcheck.cfg \
+          --file-list=<(find src include -name "*.cpp" -o -name "*.h" -o -name "*.hpp") \
+          src/ include/ || true
+        
+        # Преобразуем XML в читаемый формат
+        if [ -f cppcheck-results.xml ]; then
+          python3 -c "
+import xml.etree.ElementTree as ET
+tree = ET.parse('cppcheck-results.xml')
+root = tree.getroot()
+for error in root.findall('.//error'):
+    severity = error.get('severity', 'unknown')
+    msg = error.get('msg', 'No message')
+    file_elem = error.find('location')
+    if file_elem is not None:
+        file_path = file_elem.get('file', 'unknown')
+        line = file_elem.get('line', '0')
+        print(f'{severity}: {file_path}:{line} - {msg}')
+    else:
+        print(f'{severity}: {msg}')
+"
+        fi
+    
+    - name: Run cpplint
+      run: |
+        cpplint --counting=detailed --filter=-legal/copyright,-build/include_subdir \
+          --recursive src/ include/ || true
+    
+    - name: Run include-what-you-use
+      run: |
+        if [ -d build-analysis ]; then
+          find src -name "*.cpp" | head -10 | while read file; do
+            echo "Analyzing $file..."
+            include-what-you-use -p build-analysis "$file" || true
+          done
+        fi
+    
+    - name: Upload analysis results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: code-analysis-results
+        path: |
+          cppcheck-results.xml
+          build-analysis/compile_commands.json
+
+  # Проверка производительности компиляции
+  compile-performance:
+    name: Compilation Performance
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        compiler: [gcc-11, clang-16]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Setup compiler
+      run: |
+        if [[ "${{ matrix.compiler }}" == gcc-* ]]; then
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.compiler }} g++-11
+        elif [[ "${{ matrix.compiler }}" == clang-* ]]; then
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 16
+        fi
+    
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: 'latest'
+    
+    - name: Measure compilation time
+      run: |
+        echo "Компиляция с ${{ matrix.compiler }}..."
+        
+        if [[ "${{ matrix.compiler }}" == gcc-* ]]; then
+          export CC=gcc-11
+          export CXX=g++-11
+        elif [[ "${{ matrix.compiler }}" == clang-* ]]; then
+          export CC=clang-16
+          export CXX=clang++-16
+        fi
+        
+        # Измерение времени конфигурации
+        time cmake -B build-perf \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DCMAKE_VERBOSE_MAKEFILE=ON
+        
+        # Измерение времени сборки
+        time cmake --build build-perf --parallel $(nproc)
+        
+        # Статистика сборки
+        echo "Статистика объектных файлов:"
+        find build-perf -name "*.o" | wc -l
+        du -sh build-perf/
+
+  # Анализ зависимостей
+  dependency-analysis:
+    name: Dependency Analysis
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Install analysis tools
+      run: |
+        pip install python-dependency-injector[yaml]
+        sudo apt-get update
+        sudo apt-get install -y graphviz
+    
+    - name: Analyze CMake dependencies
+      run: |
+        # Генерация графа зависимостей CMake
+        mkdir -p analysis/cmake
+        cmake -B build-deps --graphviz=analysis/cmake/deps.dot
+        
+        # Преобразование в PNG
+        if [ -f analysis/cmake/deps.dot ]; then
+          dot -Tpng analysis/cmake/deps.dot -o analysis/cmake/dependencies.png
+        fi
+    
+    - name: Analyze include dependencies
+      run: |
+        # Создание графа включений
+        mkdir -p analysis/includes
+        
+        python3 << 'EOF'
+import os
+import re
+from pathlib import Path
+import json
+
+def analyze_includes(root_dir):
+    include_graph = {}
+    
+    for file_path in Path(root_dir).rglob("*.h"):
+        includes = []
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                # Поиск директив #include
+                include_matches = re.findall(r'#include\s*["<]([^">]+)[">]', content)
+                includes = [inc for inc in include_matches if not inc.startswith('std')]
+        except:
+            continue
+        
+        relative_path = str(file_path.relative_to(root_dir))
+        include_graph[relative_path] = includes
+    
+    return include_graph
+
+# Анализ заголовков
+graph = analyze_includes("include")
+with open("analysis/includes/include_graph.json", "w") as f:
+    json.dump(graph, f, indent=2)
+
+print(f"Проанализировано файлов: {len(graph)}")
+print(f"Общее количество включений: {sum(len(incs) for incs in graph.values())}")
+EOF
+    
+    - name: Check circular dependencies
+      run: |
+        python3 << 'EOF'
+import json
+import sys
+from collections import defaultdict, deque
+
+def find_cycles(graph):
+    def dfs(node, path, visited, rec_stack):
+        visited.add(node)
+        rec_stack.add(node)
+        path.append(node)
+        
+        for neighbor in graph.get(node, []):
+            if neighbor in graph:  # Только если файл существует в графе
+                if neighbor in rec_stack:
+                    # Найден цикл
+                    cycle_start = path.index(neighbor)
+                    cycle = path[cycle_start:] + [neighbor]
+                    return cycle
+                elif neighbor not in visited:
+                    cycle = dfs(neighbor, path.copy(), visited, rec_stack)
+                    if cycle:
+                        return cycle
+        
+        rec_stack.remove(node)
+        return None
+    
+    # Загружаем граф
+    with open("analysis/includes/include_graph.json", "r") as f:
+        include_graph = json.load(f)
+    
+    visited = set()
+    for node in include_graph:
+        if node not in visited:
+            cycle = dfs(node, [], visited, set())
+            if cycle:
+                print(f"Найден циклический include: {' -> '.join(cycle)}")
+                return False
+    
+    print("Циклические зависимости не найдены")
+    return True
+
+if not find_cycles({}):
+    sys.exit(1)
+EOF
+    
+    - name: Upload dependency analysis
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: dependency-analysis
+        path: analysis/

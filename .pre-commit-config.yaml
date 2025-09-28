@@ -1,8 +1,74 @@
+# Конфигурация pre-commit hooks для HyperEngine
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
       - id: trailing-whitespace
+        exclude: \.(md|rst)$
       - id: end-of-file-fixer
+        exclude: \.(md|rst)$
       - id: check-yaml
       - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+
+  - repo: https://github.com/pocc/pre-commit-hooks
+    rev: v1.3.5
+    hooks:
+      - id: clang-format
+        args: [--style=file, --fallback-style=none]
+        types_or: [c++, c]
+      - id: clang-tidy
+        args: [--config-file=.clang-tidy]
+        types_or: [c++, c]
+        exclude: ^(tests/|examples/)
+      - id: cppcheck
+        args: [--enable=all, --suppress=missingIncludeSystem]
+        types_or: [c++, c]
+
+  - repo: https://github.com/cmake-lint/cmake-lint
+    rev: 1.4.2
+    hooks:
+      - id: cmakelint
+        args: [--line-width=100]
+
+  - repo: local
+    hooks:
+      - id: copyright-check
+        name: Check copyright headers
+        entry: scripts/check_copyright.sh
+        language: script
+        types_or: [c++, c]
+        fail_fast: true
+      
+      - id: include-guard-check
+        name: Check include guards
+        entry: scripts/check_include_guards.sh
+        language: script
+        types: [header]
+        fail_fast: true
+      
+      - id: namespace-check
+        name: Check namespace consistency
+        entry: scripts/check_namespaces.sh
+        language: script
+        types_or: [c++, c]
+        fail_fast: true
+
+# Конфигурация по умолчанию
+default_install_hook_types: [pre-commit, pre-push]
+default_stages: [commit]
+
+# Настройки CI
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit.com hooks
+    
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false

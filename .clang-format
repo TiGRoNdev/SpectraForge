@@ -1,29 +1,35 @@
+# Конфигурация clang-format для HyperEngine
 ---
 Language: Cpp
 BasedOnStyle: Google
-IndentWidth: 4
-TabWidth: 4
-UseTab: Never
-ColumnLimit: 100
+
+# Основные настройки
 AccessModifierOffset: -2
 AlignAfterOpenBracket: Align
-AlignConsecutiveAssignments: false
-AlignConsecutiveDeclarations: false
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
 AlignEscapedNewlines: Left
 AlignOperands: true
 AlignTrailingComments: true
-AllowAllParametersOfDeclarationOnNextLine: true
+
+# Настройки скобок
+AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
+
+# Переносы строк
+AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakAfterReturnType: None
-AlwaysBreakBeforeMultilineStrings: false
-AlwaysBreakTemplateDeclarations: Yes
-BinPackArguments: true
-BinPackParameters: true
-BreakBeforeBinaryOperators: None
+AlwaysBreakBeforeMultilineStrings: true
+AlwaysBreakTemplateDeclarations: true
+
+# Настройки отступов
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBinaryOperators: NonAssignment
 BreakBeforeBraces: Attach
 BreakBeforeInheritanceComma: false
 BreakBeforeTernaryOperators: true
@@ -31,29 +37,70 @@ BreakConstructorInitializersBeforeComma: false
 BreakConstructorInitializers: BeforeColon
 BreakAfterJavaFieldAnnotations: false
 BreakStringLiterals: true
-ConstructorInitializerAllOnOneLineOrOnePerLine: false
+
+# Длина строки
+ColumnLimit: 100
+
+# Комментарии
+CommentPragmas: '^ IWYU pragma:'
+
+# Конструкторы
+CompactNamespaces: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
 ConstructorInitializerIndentWidth: 4
+
+# Отступы
 ContinuationIndentWidth: 4
 Cpp11BracedListStyle: true
 DerivePointerAlignment: false
 DisableFormat: false
 ExperimentalAutoDetectBinPacking: false
-FixNamespaceComments: true
+
+# Настройки for_each
+ForEachMacros:
+  - foreach
+  - Q_FOREACH
+  - BOOST_FOREACH
+
+# Включения
 IncludeBlocks: Preserve
-IndentCaseLabels: false
+IncludeCategories:
+  - Regex: '^<ext/.*\.h>'
+    Priority: 2
+  - Regex: '^<.*\.h>'
+    Priority: 1
+  - Regex: '^<.*'
+    Priority: 2
+  - Regex: '.*'
+    Priority: 3
+
+# Отступы
+IndentCaseLabels: true
 IndentPPDirectives: None
+IndentWidth: 4
 IndentWrappedFunctionNames: false
+
+# Настройки Java (не используется, но оставляем для совместимости)
 JavaScriptQuotes: Leave
 JavaScriptWrapImports: true
-KeepEmptyLinesAtTheStartOfBlocks: true
+
+# Пустые строки
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+# Макросы
 MacroBlockBegin: ''
 MacroBlockEnd: ''
 MaxEmptyLinesToKeep: 1
+
+# Namespace
 NamespaceIndentation: None
-ObjCBinPackProtocolList: Auto
+
+# Настройки Objective-C (не используется)
 ObjCBlockIndentWidth: 2
 ObjCSpaceAfterProperty: false
-ObjCSpaceBeforeProtocolList: true
+ObjCSpaceBeforeProtocolList: false
+
+# Настройки наказаний за перенос
 PenaltyBreakAssignment: 2
 PenaltyBreakBeforeFirstCallParameter: 1
 PenaltyBreakComment: 300
@@ -61,10 +108,18 @@ PenaltyBreakFirstLessLess: 120
 PenaltyBreakString: 1000
 PenaltyExcessCharacter: 1000000
 PenaltyReturnTypeOnItsOwnLine: 200
+
+# Указатели и ссылки
 PointerAlignment: Left
+
+# Настройки переформатирования
 ReflowComments: true
+
+# Сортировка включений
 SortIncludes: true
 SortUsingDeclarations: true
+
+# Пробелы
 SpaceAfterCStyleCast: false
 SpaceAfterTemplateKeyword: true
 SpaceBeforeAssignmentOperators: true
@@ -76,4 +131,10 @@ SpacesInContainerLiterals: true
 SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
-Standard: Cpp11
+
+# Стандарт
+Standard: Auto
+
+# Табуляция
+TabWidth: 4
+UseTab: Never
