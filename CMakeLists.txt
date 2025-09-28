@@ -101,8 +101,8 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # Поиск пакетов
 if(BUILD_ENGINE_4D OR BUILD_VULKAN_RENDERER)
-    # Используем Vulkan из vcpkg вместо системного
-    find_package(VulkanHeaders CONFIG REQUIRED)
+    # Используем Vulkan из vcpkg
+    find_package(Vulkan REQUIRED)
     find_package(VulkanMemoryAllocator CONFIG REQUIRED)
     find_package(spirv_cross_core CONFIG REQUIRED)
     find_package(unofficial-shaderc CONFIG REQUIRED)
@@ -299,7 +299,7 @@ if(BUILD_ENGINE_4D)
         Vulkan::Headers
         glfw
         glm::glm
-        GPUOpen::VulkanMemoryAllocator
+        VulkanMemoryAllocator
     )
     
     # Определения компилятора для 4D
@@ -460,7 +460,7 @@ if(BUILD_VULKAN_RENDERER)
     # Базовые библиотеки для Vulkan рендерера
     target_link_libraries(VulkanRenderer PUBLIC 
         Vulkan::Headers
-        GPUOpen::VulkanMemoryAllocator
+        VulkanMemoryAllocator
         spirv-cross-core
         unofficial::shaderc::shaderc
         imgui::imgui

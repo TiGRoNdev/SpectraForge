@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 
 using namespace HyperEngine::Math;
 using namespace HyperEngine::Rendering;

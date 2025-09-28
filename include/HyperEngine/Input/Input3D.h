@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include "../Math/Matrix4.h"
 #include "../Math/Quaternion.h"
+#include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 
 // Forward declaration for GLFW

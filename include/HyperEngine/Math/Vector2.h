@@ -2,7 +2,7 @@
 
 #include <cmath>
 #include <string>
-#include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 
 namespace HyperEngine {
 namespace Math {

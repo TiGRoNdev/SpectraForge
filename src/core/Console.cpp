@@ -18,6 +18,7 @@
 #endif
 
 #include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -214,26 +215,26 @@ bool Console::enableVirtualTerminal() {
 // Метод Console::print удален, используйте std::cout для вывода текста
 
 void Console::debug(const std::string& message) {
-    log(LogLevel::DEBUG_LEVEL, message);
+    log(message, LogLevel::DEBUG_LEVEL);
 }
 
 void Console::info(const std::string& message) {
-    log(LogLevel::INFO_LEVEL, message);
+    log(message, LogLevel::INFO_LEVEL);
 }
 
 void Console::warning(const std::string& message) {
-    log(LogLevel::WARNING_LEVEL, message);
+    log(message, LogLevel::WARNING_LEVEL);
 }
 
 void Console::error(const std::string& message) {
-    log(LogLevel::ERROR_LEVEL, message);
+    log(message, LogLevel::ERROR_LEVEL);
 }
 
 void Console::critical(const std::string& message) {
-    log(LogLevel::CRITICAL_LEVEL, message);
+    log(message, LogLevel::CRITICAL_LEVEL);
 }
 
-void Console::log(LogLevel level, const std::string& message) {
+void Console::log(const std::string& message, LogLevel level) {
     std::string emoji = emojiSupported ? getLogLevelEmoji(level) : "";
     std::string levelStr = getLogLevelString(level);
     
@@ -247,14 +248,7 @@ void Console::log(LogLevel level, const std::string& message) {
     std::string fullMessage = oss.str();
     std::string fallbackMessage = "[" + levelStr + "] " + message;
     
-    if (!safePrint(fullMessage + "\n", fallbackMessage + "\n")) {
-        // Если даже fallback не сработал, выводим минимальную информацию
-        try {
-            std::cout << "[LOG] " << message << std::endl;
-        } catch (...) {
-            SAFE_PRINT_LINE("[LOG] Message output failed");
-        }
-    }
+    safePrint(fullMessage + "\n");
 }
 
 void Console::clear() {
@@ -337,7 +331,7 @@ void Console::testColorDisplay() {
 
 std::string Console::getColorCode(ConsoleColor color) {
     switch (color) {
-        case ConsoleColor::DEFAULT: return "\033[0m";
+        case ConsoleColor::RESET: return "\033[0m";
         case ConsoleColor::BLACK: return "\033[30m";
         case ConsoleColor::RED: return "\033[31m";
         case ConsoleColor::GREEN: return "\033[32m";
@@ -376,7 +370,7 @@ ConsoleColor Console::getLogLevelColor(LogLevel level) {
         case LogLevel::WARNING_LEVEL: return ConsoleColor::YELLOW;
         case LogLevel::ERROR_LEVEL: return ConsoleColor::RED;
         case LogLevel::CRITICAL_LEVEL: return ConsoleColor::BRIGHT_RED;
-        default: return ConsoleColor::DEFAULT;
+        default: return ConsoleColor::RESET;
     }
 }
 
@@ -391,32 +385,28 @@ std::string Console::getLogLevelString(LogLevel level) {
     }
 }
 
-bool Console::safePrint(const std::string& text, const std::string& fallbackText) {
+void Console::safePrint(const std::string& text) {
     try {
         // Проверяем, безопасен ли текст для вывода
         if (isTextSafe(text)) {
             std::cout << text;
             std::cout.flush();
-            return true;
         } else {
-            // Используем очищенную версию или fallback
-            std::string safeText = fallbackText.empty() ? sanitizeText(text) : fallbackText;
+            // Используем очищенную версию
+            std::string safeText = sanitizeText(text);
             std::cout << safeText;
             std::cout.flush();
-            return false;
         }
     } catch (const std::exception&) {
-        // В случае ошибки выводим fallback или базовое сообщение
+        // В случае ошибки выводим базовое сообщение
         try {
-            std::string errorMsg = fallbackText.empty() ? "[Ошибка вывода]" : fallbackText;
-            std::cout << errorMsg;
+            std::cout << "[Ошибка вывода]";
             std::cout.flush();
         } catch (...) {
             // Последняя попытка - выводим только ASCII
             std::cout << "[Output Error]";
             std::cout.flush();
         }
-        return false;
     }
 }
 
@@ -526,14 +516,7 @@ std::string Console::sanitizeText(const std::string& text) {
 }
 
 void Console::safePrintLine(const std::string& message) {
-    if (!safePrint(message + "\n", sanitizeText(message) + "\n")) {
-        // Если даже sanitized версия не работает, выводим базовое сообщение
-        try {
-            SAFE_PRINT_LINE("[Message]");
-        } catch (...) {
-            // Ничего не делаем, если даже это не работает
-        }
-    }
+    safePrint(message + "\n");
 }
 
 void Console::safeInfo(const std::string& message) {

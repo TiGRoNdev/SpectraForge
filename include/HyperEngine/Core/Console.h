@@ -73,6 +73,10 @@ class Console {
     static void safeWarning(const std::string& message);
     static void safeError(const std::string& message);
     
+    // Безопасность текста (публичные методы)
+    static bool isTextSafe(const std::string& text);
+    static std::string sanitizeText(const std::string& text);
+    
   private:
     // Внутренние методы
     static bool setupUTF8();
@@ -86,9 +90,6 @@ class Console {
     static ConsoleColor getLogLevelColor(LogLevel level);
     static std::string getLogLevelString(LogLevel level);
     
-    // Безопасность текста
-    static bool isTextSafe(const std::string& text);
-    static std::string sanitizeText(const std::string& text);
     
     // Статические переменные
     static bool initialized;
