@@ -47,7 +47,7 @@ class Vector3 {
     float distanceSquared(const Vector3& other) const;  // Квадрат расстояния
 
     // Утилиты
-    void set(float x, float y, float z);
+    void set(float xVal, float yVal, float zVal);
     void setZero();
     bool isZero() const;
     Vector3 lerp(const Vector3& other, float t) const;  // Линейная интерполяция

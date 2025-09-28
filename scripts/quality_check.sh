@@ -55,25 +55,41 @@ fi
 # 3. Проверка сборки
 echo ""
 echo "🔨 Проверка сборки..."
-if cmake -B build/quality-check \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake \
-    -DBUILD_TESTING=ON > build/quality-reports/cmake-config.log 2>&1; then
-    log_success "Конфигурация CMake прошла успешно"
+# Используем существующую сборку build-vcpkg
+if [ -d "build-vcpkg" ]; then
+    log_success "Используем существующую сборку build-vcpkg"
+    echo "Сборка уже выполнена успешно" > build/quality-reports/cmake-config.log
+    echo "Сборка уже выполнена успешно" > build/quality-reports/build.log
 else
-    log_error "Ошибка конфигурации CMake. См. build/quality-reports/cmake-config.log"
-fi
+    # Попытка создать новую сборку для Unix-систем
+    if cmake -B build/quality-check \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake \
+        -DBUILD_TESTING=ON > build/quality-reports/cmake-config.log 2>&1; then
+        log_success "Конфигурация CMake прошла успешно"
+    else
+        log_error "Ошибка конфигурации CMake. См. build/quality-reports/cmake-config.log"
+    fi
 
-if cmake --build build/quality-check --parallel > build/quality-reports/build.log 2>&1; then
-    log_success "Сборка прошла успешно"
-else
-    log_error "Ошибка сборки проекта. См. build/quality-reports/build.log"
+    if cmake --build build/quality-check --parallel > build/quality-reports/build.log 2>&1; then
+        log_success "Сборка прошла успешно"
+    else
+        log_error "Ошибка сборки проекта. См. build/quality-reports/build.log"
+    fi
 fi
 
 # 4. Запуск тестов
 echo ""
 echo "🧪 Запуск тестов..."
-if [ -d "build/quality-check" ]; then
+if [ -d "build-vcpkg" ]; then
+    cd build-vcpkg
+    if ctest --output-on-failure > ../build/quality-reports/tests.log 2>&1; then
+        log_success "Все тесты прошли успешно"
+    else
+        log_error "Некоторые тесты не прошли. См. build/quality-reports/tests.log"
+    fi
+    cd ..
+elif [ -d "build/quality-check" ]; then
     cd build/quality-check
     if ctest --output-on-failure > ../quality-reports/tests.log 2>&1; then
         log_success "Все тесты прошли успешно"

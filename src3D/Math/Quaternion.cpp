@@ -375,11 +375,11 @@ bool Quaternion::isZero() const {
            std::abs(z) < epsilon;
 }
 
-void Quaternion::set(float w, float x, float y, float z) {
-    this->w = w;
-    this->x = x;
-    this->y = y;
-    this->z = z;
+void Quaternion::set(float wVal, float xVal, float yVal, float zVal) {
+    this->w = wVal;
+    this->x = xVal;
+    this->y = yVal;
+    this->z = zVal;
 }
 
 float Quaternion::angle() const {

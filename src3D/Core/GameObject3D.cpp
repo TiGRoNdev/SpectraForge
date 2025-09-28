@@ -146,6 +146,7 @@ GameObject3D* GameObject3D::createPrimitive(const std::string& type) {
     
     // Добавляем MeshRenderer компонент
     auto* meshRenderer = obj->addComponent<MeshRenderer3D>();
+    (void)meshRenderer; // Подавление предупреждения о неиспользуемой переменной
     
     // TODO: Реализовать создание примитивных мешей
     if (type == "Cube") {
@@ -269,6 +270,7 @@ RigidBody3DComponent::RigidBody3DComponent()
 }
 
 void RigidBody3DComponent::update(float deltaTime) {
+    (void)deltaTime; // Подавление предупреждения о неиспользуемом параметре
     if (!rigidBody) {
         return;
     }
@@ -286,6 +288,7 @@ void RigidBody3DComponent::setUseGravity(bool use) {
 }
 
 void RigidBody3DComponent::addForce(const Vector3& force) {
+    (void)force; // Подавление предупреждения о неиспользуемом параметре
     if (rigidBody) {
         // TODO: Применение силы
         // rigidBody->applyForce(force);
@@ -293,6 +296,7 @@ void RigidBody3DComponent::addForce(const Vector3& force) {
 }
 
 void RigidBody3DComponent::addTorque(const Vector3& torque) {
+    (void)torque; // Подавление предупреждения о неиспользуемом параметре
     if (rigidBody) {
         // TODO: Применение момента силы
         // rigidBody->applyTorque(torque);
@@ -300,6 +304,7 @@ void RigidBody3DComponent::addTorque(const Vector3& torque) {
 }
 
 void RigidBody3DComponent::addImpulse(const Vector3& impulse) {
+    (void)impulse; // Подавление предупреждения о неиспользуемом параметре
     if (rigidBody) {
         // TODO: Применение импульса
         // rigidBody->applyImpulse(impulse);
@@ -307,6 +312,7 @@ void RigidBody3DComponent::addImpulse(const Vector3& impulse) {
 }
 
 void RigidBody3DComponent::addAngularImpulse(const Vector3& impulse) {
+    (void)impulse; // Подавление предупреждения о неиспользуемом параметре
     if (rigidBody) {
         // TODO: Применение углового импульса
         // rigidBody->applyAngularImpulse(impulse);
@@ -383,6 +389,7 @@ ParticleSystem3DComponent::ParticleSystem3DComponent()
 }
 
 void ParticleSystem3DComponent::update(float deltaTime) {
+    (void)deltaTime; // Подавление предупреждения о неиспользуемом параметре
     if (particleSystem && autoPlay) {
         // TODO: Обновление системы частиц
         // particleSystem->update(deltaTime);
@@ -427,6 +434,7 @@ void ParticleSystem3DComponent::stop() {
 }
 
 void ParticleSystem3DComponent::emit(int count) {
+    (void)count; // Подавление предупреждения о неиспользуемом параметре
     if (particleSystem) {
         // TODO: Эмиссия частиц
         // particleSystem->emit(count);

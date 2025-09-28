@@ -145,10 +145,10 @@ float Vector3::distanceSquared(const Vector3& other) const {
 }
 
 // Утилиты
-void Vector3::set(float x, float y, float z) {
-    this->x = x;
-    this->y = y;
-    this->z = z;
+void Vector3::set(float xVal, float yVal, float zVal) {
+    this->x = xVal;
+    this->y = yVal;
+    this->z = zVal;
 }
 
 void Vector3::setZero() {

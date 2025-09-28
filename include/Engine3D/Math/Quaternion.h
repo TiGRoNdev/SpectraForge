@@ -72,7 +72,7 @@ class Quaternion {
     void setIdentity();
     bool isIdentity() const;
     bool isZero() const;
-    void set(float w, float x, float y, float z);
+    void set(float wVal, float xVal, float yVal, float zVal);
     float angle() const;   // Угол поворота
     Vector3 axis() const;  // Ось поворота
 
