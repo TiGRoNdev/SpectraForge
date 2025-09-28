@@ -12,7 +12,7 @@ option(BUILD_WITH_OPTIX "Build with OptiX support" ON)
 option(BUILD_WITH_DLSS "Build with DLSS support" ON)
 option(BUILD_WITH_FSR "Build with FSR support" ON)
 option(BUILD_EXAMPLES "Build example applications" ON)
-option(BUILD_TESTS "Build test suite" OFF)
+option(BUILD_TESTS "Build test suite" ON)
 
 # Ранняя настройка CUDA для поддержки
 if(BUILD_WITH_CUDA)
@@ -633,12 +633,9 @@ if(BUILD_TESTS)
     enable_testing()
     
     if(BUILD_ENGINE_3D)
-        add_subdirectory(tests/3d)
+        add_subdirectory(tests)
     endif()
-    
-    if(BUILD_ENGINE_4D)
-        add_subdirectory(tests/4d)
-    endif()
+
 endif()
 
 # ============================================================

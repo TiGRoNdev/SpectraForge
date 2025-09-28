@@ -5,8 +5,7 @@ file(GLOB_RECURSE CORE_SOURCES "core/*.cpp" "core/*.h")
 add_library(HyperEngine_Core STATIC ${CORE_SOURCES})
 
 # Math модуль
-file(GLOB_RECURSE MATH_SOURCES "math/*.cpp" "math/*.h")
-add_library(HyperEngine_Math STATIC ${MATH_SOURCES})
+add_subdirectory(math)
 
 # Rendering модули
 file(GLOB_RECURSE RENDERING_COMMON_SOURCES "rendering/common/*.cpp" "rendering/common/*.h")

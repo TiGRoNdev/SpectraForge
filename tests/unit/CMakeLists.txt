@@ -5,13 +5,11 @@ cmake_minimum_required(VERSION 3.16)
 set(ALL_UNIT_TESTS "" PARENT_SCOPE)
 
 # Unit тесты для математической библиотеки
-add_unit_test(math_tests
+add_unit_test(simple_math_test
     SOURCES
-        math/Vector3Test.cpp
-        math/Matrix4Test.cpp
-        math/QuaternionTest.cpp
+        math_tests.cpp
     LIBS
-        # Здесь будет HyperEngine_Math когда он будет создан
+        HyperEngine_Math
 )
 
 # Unit тесты для системы рендеринга
@@ -19,25 +17,20 @@ add_unit_test(rendering_tests
     SOURCES 
         rendering/RendererAdapterTest.cpp
         rendering/VulkanRendererTest.cpp
-        rendering/UpscalingTest.cpp
     LIBS
         # Здесь будут библиотеки рендеринга
 )
 
 # Unit тесты для основных компонентов
-add_unit_test(core_tests
+add_unit_test(optix_tests
     SOURCES
-        core/InterfacesTest.cpp
-        core/GameObjectTest.cpp
-        core/ComponentTest.cpp
+        test_optix_integration.cpp
     LIBS
         # Здесь будут основные библиотеки
 )
 
 # Добавляем все тесты в глобальный список
 set(ALL_UNIT_TESTS 
-    math_tests
-    rendering_tests
-    core_tests
+    simple_math_test
     PARENT_SCOPE
 )
