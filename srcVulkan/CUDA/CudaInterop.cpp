@@ -8,9 +8,12 @@
 
 #include "Engine3D/CUDA/CudaInterop.h"
 #include "Engine3D/Vulkan/ResourceManager.h"
+#include "Engine3D/Core/Console.h"
 #include <iostream>
 #include <stdexcept>
 #include <cstring>
+#include <vector>
+#include <string>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -22,6 +25,7 @@
 // #define DISABLE_WIN32_INTEROP
 
 using namespace Engine3D::CUDA;
+using namespace Engine3D::Core;
 
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
 
@@ -49,30 +53,36 @@ bool CudaInterop::initializeInterop(vk::Device dev,
         
         // Проверяем базовую поддержку interop
         if (!isInteropSupported()) {
-            std::cerr << "[CudaInterop] Ошибка: Interop не поддерживается на данной платформе" << std::endl;
+            std::cout << "[CudaInterop] Ошибка: Interop не поддерживается на данной платформе" << std::endl;
+            return false;
+        }
+        
+        // Проверяем поддержку необходимых Vulkan расширений
+        if (!checkVulkanExtensionSupport()) {
+            std::cout << "[CudaInterop] Ошибка: Необходимые Vulkan расширения не поддерживаются" << std::endl;
             return false;
         }
         
         // Инициализируем CUDA контекст
         if (!initCudaContext()) {
-            std::cerr << "[CudaInterop] Ошибка инициализации CUDA контекста" << std::endl;
+            std::cout << "[CudaInterop] Ошибка инициализации CUDA контекста" << std::endl;
             return false;
         }
         
         // Проверяем поддержку external memory
         if (!checkExternalMemorySupport()) {
-            std::cerr << "[CudaInterop] Ошибка: External memory не поддерживается" << std::endl;
+            std::cout << "[CudaInterop] Ошибка: External memory не поддерживается" << std::endl;
             return false;
         }
         
         // Проверяем поддержку external semaphores
         if (!checkExternalSemaphoreSupport()) {
-            std::cerr << "[CudaInterop] Предупреждение: External semaphores не поддерживаются" << std::endl;
+            std::cout << "[CudaInterop] Предупреждение: External semaphores не поддерживаются" << std::endl;
         }
         
         // Ищем совпадающий CUDA device
         if (!findMatchingCudaDevice()) {
-            std::cerr << "[CudaInterop] Ошибка: Не найдено совпадающее CUDA устройство" << std::endl;
+            std::cout << "[CudaInterop] Ошибка: Не найдено совпадающее CUDA устройство" << std::endl;
             return false;
         }
         
@@ -83,7 +93,7 @@ bool CudaInterop::initializeInterop(vk::Device dev,
         return true;
         
     } catch (const std::exception& e) {
-        std::cerr << "[CudaInterop] Ошибка инициализации: " << e.what() << std::endl;
+        std::cout << "[CudaInterop] Ошибка инициализации: " << e.what() << std::endl;
         return false;
     }
 }
@@ -133,7 +143,7 @@ std::shared_ptr<SharedResource> CudaInterop::createSharedBuffer(
     unsigned int cudaFlags) {
     
     if (!initialized) {
-        std::cerr << "[CudaInterop] Ошибка: Interop не инициализирован" << std::endl;
+        std::cout << "[CudaInterop] Ошибка: Interop не инициализирован" << std::endl;
         return nullptr;
     }
     
@@ -202,7 +212,7 @@ std::shared_ptr<SharedResource> CudaInterop::createSharedBuffer(
         return resource;
         
     } catch (const std::exception& e) {
-        std::cerr << "[CudaInterop] Ошибка создания shared буфера: " << e.what() << std::endl;
+        std::cout << "[CudaInterop] Ошибка создания shared буфера: " << e.what() << std::endl;
         return nullptr;
     }
 }
@@ -233,7 +243,7 @@ void CudaInterop::freeSharedResource(std::shared_ptr<SharedResource> resource) {
 
 std::shared_ptr<SyncObject> CudaInterop::createSyncObject() {
     if (!initialized) {
-        std::cerr << "[CudaInterop] Ошибка: Interop не инициализирован" << std::endl;
+        std::cout << "[CudaInterop] Ошибка: Interop не инициализирован" << std::endl;
         return nullptr;
     }
     
@@ -264,7 +274,7 @@ std::shared_ptr<SyncObject> CudaInterop::createSyncObject() {
         std::cout << "[CudaInterop] Временная заглушка для semaphore handle (требуется VK_KHR_external_semaphore_win32)" << std::endl;
 #else
         void* handle = nullptr;
-        std::cerr << "[CudaInterop] Non-Windows платформы пока не поддерживаются" << std::endl;
+        std::cout << "[CudaInterop] Non-Windows платформы пока не поддерживаются" << std::endl;
         return nullptr;
 #endif
         
@@ -288,14 +298,14 @@ std::shared_ptr<SyncObject> CudaInterop::createSyncObject() {
         return syncObj;
         
     } catch (const std::exception& e) {
-        std::cerr << "[CudaInterop] Ошибка создания объекта синхронизации: " << e.what() << std::endl;
+        std::cout << "[CudaInterop] Ошибка создания объекта синхронизации: " << e.what() << std::endl;
         return nullptr;
     }
 }
 
 void CudaInterop::signalVulkanToCuda(std::shared_ptr<SyncObject> syncObj, cudaStream_t stream) {
     if (!syncObj || !syncObj->isValid) {
-        std::cerr << "[CudaInterop] Ошибка: Некорректный объект синхронизации" << std::endl;
+        std::cout << "[CudaInterop] Ошибка: Некорректный объект синхронизации" << std::endl;
         return;
     }
     
@@ -306,14 +316,14 @@ void CudaInterop::signalVulkanToCuda(std::shared_ptr<SyncObject> syncObj, cudaSt
         &syncObj->cudaExternalSemaphore, &waitParams, 1, stream);
     
     if (result != cudaSuccess) {
-        std::cerr << "[CudaInterop] Ошибка ожидания semaphore в CUDA: " 
+        std::cout << "[CudaInterop] Ошибка ожидания semaphore в CUDA: " 
                   << cudaGetErrorString(result) << std::endl;
     }
 }
 
 void CudaInterop::waitCudaFromVulkan(std::shared_ptr<SyncObject> syncObj, vk::CommandBuffer commandBuffer) {
     if (!syncObj || !syncObj->isValid) {
-        std::cerr << "[CudaInterop] Ошибка: Некорректный объект синхронизации" << std::endl;
+        std::cout << "[CudaInterop] Ошибка: Некорректный объект синхронизации" << std::endl;
         return;
     }
     
@@ -347,7 +357,7 @@ cudaExternalMemory_t CudaInterop::importVulkanMemory(vk::DeviceMemory vulkanMemo
         std::cout << "[CudaInterop] Временная заглушка для memory handle (требуется VK_KHR_external_memory_win32)" << std::endl;
 #else
         void* handle = nullptr;
-        std::cerr << "[CudaInterop] Non-Windows платформы пока не поддерживаются" << std::endl;
+        std::cout << "[CudaInterop] Non-Windows платформы пока не поддерживаются" << std::endl;
         return nullptr;
 #endif
         
@@ -368,7 +378,7 @@ cudaExternalMemory_t CudaInterop::importVulkanMemory(vk::DeviceMemory vulkanMemo
         return extMem;
         
     } catch (const std::exception& e) {
-        std::cerr << "[CudaInterop] " << e.what() << std::endl;
+        std::cout << "[CudaInterop] " << e.what() << std::endl;
         return nullptr;
     }
 }
@@ -386,20 +396,48 @@ vk::DeviceMemory CudaInterop::exportCudaMemory(CUdeviceptr cudaPtr, size_t size)
 
 bool CudaInterop::isInteropSupported() {
     #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
-        // Проверяем наличие CUDA runtime
-        int deviceCount = 0;
-        cudaError_t result = cudaGetDeviceCount(&deviceCount);
-        
-        if (result != cudaSuccess || deviceCount == 0) {
+        try {
+            // Проверяем наличие CUDA runtime
+            int deviceCount = 0;
+            cudaError_t result = cudaGetDeviceCount(&deviceCount);
+            
+            if (result != cudaSuccess) {
+                std::cout << "[CudaInterop] CUDA runtime недоступен: " << cudaGetErrorString(result) << std::endl;
+                return false;
+            }
+            
+            if (deviceCount == 0) {
+                std::cout << "[CudaInterop] CUDA устройства не найдены" << std::endl;
+                return false;
+            }
+            
+            std::cout << "[CudaInterop] Найдено CUDA устройств: " << SAFE_TO_STRING(deviceCount) << std::endl;
+            
+            // Проверяем каждое устройство на поддержку external memory
+            for (int device = 0; device < deviceCount; ++device) {
+                cudaDeviceProp prop;
+                result = cudaGetDeviceProperties(&prop, device);
+                if (result != cudaSuccess) {
+                    continue;
+                }
+                
+                std::cout << "[CudaInterop] Устройство " << SAFE_TO_STRING(device) << ": " << prop.name << std::endl;
+                std::cout << "[CudaInterop] Compute Capability: " << SAFE_TO_STRING(prop.major) << "." << SAFE_TO_STRING(prop.minor) << std::endl;
+                
+                // Для external memory нужна compute capability >= 6.0
+                if (prop.major >= 6) {
+                    std::cout << "[CudaInterop] Устройство поддерживает external memory (Compute >= 6.0)" << std::endl;
+                    return true;
+                }
+            }
+            
+            std::cout << "[CudaInterop] Ни одно устройство не поддерживает external memory (требуется Compute >= 6.0)" << std::endl;
+            return false;
+            
+        } catch (const std::exception& e) {
+            std::cout << "[CudaInterop] Ошибка проверки поддержки: " << e.what() << std::endl;
             return false;
         }
-        
-        // Проверяем поддержку external memory в CUDA
-        int supportsExternalMemory = 0;
-        cudaDeviceGetAttribute(&supportsExternalMemory, 
-                              cudaDevAttrIntegrated, 0); // Используем доступный атрибут
-        
-        return supportsExternalMemory != 0;
     #else
         return false;
     #endif
@@ -425,73 +463,188 @@ std::string CudaInterop::getInteropCapabilities() const {
 
 bool CudaInterop::initCudaContext() {
     try {
-        // Используем CUDA Runtime API для простоты
-        cudaError_t result = cudaSetDevice(0);
+        std::cout << "[CudaInterop] Инициализация CUDA контекста..." << std::endl;
+        
+        // Получаем количество устройств
+        int deviceCount = 0;
+        cudaError_t result = cudaGetDeviceCount(&deviceCount);
         if (result != cudaSuccess) {
-            std::cerr << "[CudaInterop] Ошибка установки CUDA устройства: " 
+            std::cout << "[CudaInterop] Ошибка получения количества CUDA устройств: " 
                       << cudaGetErrorString(result) << std::endl;
             return false;
         }
         
-        // Получаем количество устройств
-        int deviceCount = 0;
-        result = cudaGetDeviceCount(&deviceCount);
-        if (result != cudaSuccess || deviceCount == 0) {
-            std::cerr << "[CudaInterop] CUDA устройства не найдены" << std::endl;
+        if (deviceCount == 0) {
+            std::cout << "[CudaInterop] CUDA устройства не найдены" << std::endl;
             return false;
         }
         
-        // Устанавливаем device ID для внутреннего использования
+        std::cout << "[CudaInterop] Найдено CUDA устройств: " << SAFE_TO_STRING(deviceCount) << std::endl;
+        
+        // Выбираем первое доступное устройство
         cudaDevice = 0;
+        result = cudaSetDevice(cudaDevice);
+        if (result != cudaSuccess) {
+            std::cout << "[CudaInterop] Ошибка установки CUDA устройства " << SAFE_TO_STRING(cudaDevice) << ": " 
+                      << cudaGetErrorString(result) << std::endl;
+            return false;
+        }
+        
+        // Получаем информацию об устройстве
+        cudaDeviceProp prop;
+        result = cudaGetDeviceProperties(&prop, cudaDevice);
+        if (result == cudaSuccess) {
+            std::cout << "[CudaInterop] Выбрано устройство: " << prop.name << std::endl;
+            std::cout << "[CudaInterop] Compute Capability: " << SAFE_TO_STRING(prop.major) << "." << SAFE_TO_STRING(prop.minor) << std::endl;
+        }
+        
+        // Инициализируем CUDA Driver API для получения контекста
+        CUresult cuResult = cuInit(0);
+        if (cuResult != CUDA_SUCCESS) {
+            std::cout << "[CudaInterop] Ошибка инициализации CUDA Driver API" << std::endl;
+            return false;
+        }
         
         // Получаем current context (автоматически создается runtime API)
-        CUresult cuResult = cuCtxGetCurrent(&cudaContext);
+        cuResult = cuCtxGetCurrent(&cudaContext);
         if (cuResult != CUDA_SUCCESS) {
-            std::cerr << "[CudaInterop] Ошибка получения CUDA контекста" << std::endl;
+            std::cout << "[CudaInterop] Ошибка получения CUDA контекста" << std::endl;
             return false;
+        }
+        
+        // Если контекст не создан, создаем его через Runtime API
+        if (cudaContext == nullptr) {
+            // Используем Runtime API для создания контекста
+            cudaError_t result = cudaFree(0); // Принудительно создаем контекст
+            if (result != cudaSuccess) {
+                std::cout << "[CudaInterop] Ошибка создания CUDA контекста через Runtime API: " 
+                          << cudaGetErrorString(result) << std::endl;
+                return false;
+            }
+            
+            // Теперь получаем созданный контекст
+            cuResult = cuCtxGetCurrent(&cudaContext);
+            if (cuResult != CUDA_SUCCESS || cudaContext == nullptr) {
+                std::cout << "[CudaInterop] Ошибка получения созданного CUDA контекста" << std::endl;
+                return false;
+            }
         }
         
         std::cout << "[CudaInterop] CUDA контекст инициализирован успешно" << std::endl;
         return true;
         
     } catch (const std::exception& e) {
-        std::cerr << "[CudaInterop] Ошибка инициализации CUDA: " << e.what() << std::endl;
+        std::cout << "[CudaInterop] Ошибка инициализации CUDA: " << e.what() << std::endl;
         return false;
     }
 }
 
 bool CudaInterop::checkExternalMemorySupport() {
     if (cudaDevice < 0) {
+        std::cout << "[CudaInterop] CUDA устройство не инициализировано" << std::endl;
         return false;
     }
     
-    int supportsExternalMemory = 0;
-    cudaError_t result = cudaDeviceGetAttribute(
-        &supportsExternalMemory,
-        cudaDevAttrIntegrated, // Используем доступный атрибут
-        cudaDevice);
-    
-    if (result != cudaSuccess) {
-        std::cerr << "[CudaInterop] Ошибка проверки поддержки external memory" << std::endl;
+    try {
+        // Получаем свойства устройства
+        cudaDeviceProp prop;
+        cudaError_t result = cudaGetDeviceProperties(&prop, cudaDevice);
+        
+        if (result != cudaSuccess) {
+            std::cout << "[CudaInterop] Ошибка получения свойств устройства: " << cudaGetErrorString(result) << std::endl;
+            return false;
+        }
+        
+        // Проверяем compute capability для external memory
+        bool supportsExternalMemory = (prop.major >= 6);
+        
+        std::cout << "[CudaInterop] Устройство " << SAFE_TO_STRING(cudaDevice) << " (" << prop.name << ")" << std::endl;
+        std::cout << "[CudaInterop] Compute Capability: " << SAFE_TO_STRING(prop.major) << "." << SAFE_TO_STRING(prop.minor) << std::endl;
+        std::cout << "[CudaInterop] External Memory поддержка: " << (supportsExternalMemory ? "Да" : "Нет") << std::endl;
+        
+        hasPlatformSupport = supportsExternalMemory;
+        return hasPlatformSupport;
+        
+    } catch (const std::exception& e) {
+        std::cout << "[CudaInterop] Ошибка проверки external memory: " << e.what() << std::endl;
         return false;
     }
-    
-    hasPlatformSupport = (supportsExternalMemory != 0);
-    return hasPlatformSupport;
 }
 
 bool CudaInterop::checkExternalSemaphoreSupport() {
     if (cudaDevice < 0) {
+        std::cout << "[CudaInterop] CUDA устройство не инициализировано для проверки semaphore" << std::endl;
         return false;
     }
     
-    int supportsExternalSemaphore = 0;
-    cudaError_t result = cudaDeviceGetAttribute(
-        &supportsExternalSemaphore,
-        cudaDevAttrConcurrentManagedAccess, // Используем доступный атрибут
-        cudaDevice);
-    
-    return (result == cudaSuccess && supportsExternalSemaphore != 0);
+    try {
+        // Получаем свойства устройства
+        cudaDeviceProp prop;
+        cudaError_t result = cudaGetDeviceProperties(&prop, cudaDevice);
+        
+        if (result != cudaSuccess) {
+            std::cout << "[CudaInterop] Ошибка получения свойств для semaphore: " << cudaGetErrorString(result) << std::endl;
+            return false;
+        }
+        
+        // External semaphores также требуют compute capability >= 6.0
+        bool supportsExternalSemaphore = (prop.major >= 6);
+        
+        std::cout << "[CudaInterop] External Semaphore поддержка: " << (supportsExternalSemaphore ? "Да" : "Нет") << std::endl;
+        
+        return supportsExternalSemaphore;
+        
+    } catch (const std::exception& e) {
+        std::cout << "[CudaInterop] Ошибка проверки external semaphore: " << e.what() << std::endl;
+        return false;
+    }
+}
+
+bool CudaInterop::checkVulkanExtensionSupport() {
+    try {
+        std::cout << "[CudaInterop] Проверка поддержки Vulkan расширений..." << std::endl;
+        
+        // Получаем список поддерживаемых расширений
+        auto availableExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+        
+        // Список необходимых расширений для CUDA-Vulkan interop
+        std::vector<std::string> requiredExtensions = {
+            VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
+            VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
+#ifdef _WIN32
+            VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
+            VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME
+#else
+            VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
+            VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME
+#endif
+        };
+        
+        // Проверяем каждое необходимое расширение
+        for (const auto& required : requiredExtensions) {
+            bool found = false;
+            for (const auto& available : availableExtensions) {
+                if (std::string(available.extensionName.data()) == required) {
+                    found = true;
+                    break;
+                }
+            }
+            
+            if (found) {
+                std::cout << "[CudaInterop] ✓ Расширение поддерживается: " << required << std::endl;
+            } else {
+                std::cout << "[CudaInterop] ✗ Расширение НЕ поддерживается: " << required << std::endl;
+                return false;
+            }
+        }
+        
+        std::cout << "[CudaInterop] Все необходимые Vulkan расширения поддерживаются" << std::endl;
+        return true;
+        
+    } catch (const std::exception& e) {
+        std::cout << "[CudaInterop] Ошибка проверки Vulkan расширений: " << e.what() << std::endl;
+        return false;
+    }
 }
 
 bool CudaInterop::findMatchingCudaDevice() {
@@ -500,7 +653,7 @@ bool CudaInterop::findMatchingCudaDevice() {
     
     // Пока используем простую проверку
     if (cudaDevice >= 0) {
-        std::cout << "[CudaInterop] Используем CUDA устройство " << cudaDevice << std::endl;
+        std::cout << "[CudaInterop] Используем CUDA устройство " << SAFE_TO_STRING(cudaDevice) << std::endl;
         return true;
     }
     

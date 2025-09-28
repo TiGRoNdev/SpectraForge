@@ -202,6 +202,12 @@ private:
     bool checkExternalSemaphoreSupport();
     
     /**
+     * @brief Проверка поддержки необходимых Vulkan расширений
+     * @return true если все необходимые расширения поддерживаются
+     */
+    bool checkVulkanExtensionSupport();
+    
+    /**
      * @brief Получение CUDA device из Vulkan физического устройства
      * @return true если найдено совпадение
      */
