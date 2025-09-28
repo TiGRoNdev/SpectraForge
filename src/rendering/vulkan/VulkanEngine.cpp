@@ -132,7 +132,7 @@ bool VulkanEngine::init(vk::Instance vulkanInstance) {
 void VulkanEngine::renderFrame(const CameraParams& params) {
     // Подавляем предупреждение о неиспользуемом параметре
     (void)params;
-    
+
     if (!initialized) {
         SAFE_ERROR("[VulkanEngine] Ошибка: Движок не инициализирован");
         return;

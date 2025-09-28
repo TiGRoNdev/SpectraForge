@@ -14,7 +14,7 @@ add_unit_test(simple_math_test
 
 # Unit тесты для системы рендеринга
 add_unit_test(rendering_tests
-    SOURCES 
+    SOURCES
         rendering/RendererAdapterTest.cpp
         rendering/VulkanRendererTest.cpp
     LIBS
@@ -33,7 +33,7 @@ add_unit_test(optix_tests
 )
 
 # Добавляем все тесты в глобальный список
-set(ALL_UNIT_TESTS 
+set(ALL_UNIT_TESTS
     simple_math_test
     PARENT_SCOPE
 )
