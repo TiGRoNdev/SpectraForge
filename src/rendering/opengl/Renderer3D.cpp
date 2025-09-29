@@ -12,6 +12,10 @@ using namespace HyperEngine::Core;
 namespace HyperEngine {
 namespace Rendering {
 
+Renderer3D::Renderer3D() : renderStats() {}
+
+Renderer3D::~Renderer3D() = default;
+
 // Получение singleton экземпляра
 Renderer3D& Renderer3D::getInstance() {
     static Renderer3D instance;
