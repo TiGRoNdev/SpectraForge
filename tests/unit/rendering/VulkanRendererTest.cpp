@@ -144,7 +144,7 @@ TEST_F(VulkanRendererTest, SecondaryRayTracing) {
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
-            RawEffects result = mockRenderer->rayTraceSecondary(primaryImage);
+            [[maybe_unused]] RawEffects result = mockRenderer->rayTraceSecondary(primaryImage);
             // Результат должен содержать эффекты
         },
         "Secondary ray tracing через OptiX");
@@ -163,12 +163,12 @@ TEST_F(VulkanRendererTest, RayTracingWithDifferentComplexity) {
 
     // Тест с простой сценой
     EXPECT_NO_THROW_WITH_MESSAGE(
-        { RawEffects result1 = mockRenderer->rayTraceSecondary(primaryImage); },
+        { [[maybe_unused]] RawEffects result1 = mockRenderer->rayTraceSecondary(primaryImage); },
         "Ray tracing простой сцены");
 
     // Тест со сложной сценой
     EXPECT_NO_THROW_WITH_MESSAGE(
-        { RawEffects result2 = mockRenderer->rayTraceSecondary(primaryImage); },
+        { [[maybe_unused]] RawEffects result2 = mockRenderer->rayTraceSecondary(primaryImage); },
         "Ray tracing сложной сцены");
 }
 
@@ -181,7 +181,7 @@ TEST_F(VulkanRendererTest, AIDenoising) {
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
-            DenoisedImage result = mockRenderer->denoiseAI(rawEffects);
+            [[maybe_unused]] DenoisedImage result = mockRenderer->denoiseAI(rawEffects);
             // Результат должен быть деноизированным
         },
         "AI деноизинг через OptiX");
@@ -214,7 +214,7 @@ TEST_F(VulkanRendererTest, Upscaling) {
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
-            FinalImage result = mockRenderer->upscale(denoisedImage, testResolution);
+            [[maybe_unused]] FinalImage result = mockRenderer->upscale(denoisedImage, testResolution);
             // Результат должен иметь целевое разрешение
         },
         "Upscaling через DLSS/FSR");
@@ -236,7 +236,7 @@ TEST_F(VulkanRendererTest, UpscalingDifferentScaleFactors) {
         target.scaleFactor = scale;
 
         EXPECT_NO_THROW_WITH_MESSAGE(
-            { FinalImage result = mockRenderer->upscale(denoisedImage, target); },
+            { [[maybe_unused]] FinalImage result = mockRenderer->upscale(denoisedImage, target); },
             "Upscaling с коэффициентом " + std::to_string(scale));
     }
 }
@@ -269,7 +269,7 @@ TEST_F(VulkanRendererTest, FullRenderingPipeline) {
             PrimaryImage primary = mockRenderer->rasterizePrimary(testGaussians);
             RawEffects effects = mockRenderer->rayTraceSecondary(primary);
             DenoisedImage denoised = mockRenderer->denoiseAI(effects);
-            FinalImage final = mockRenderer->upscale(denoised, testResolution);
+            [[maybe_unused]] FinalImage final = mockRenderer->upscale(denoised, testResolution);
             mockRenderer->presentFinalImage();
         },
         "Полный rendering pipeline");
@@ -300,7 +300,7 @@ TEST_F(VulkanRendererTest, PipelinePerformance) {
                 PrimaryImage primary = mockRenderer->rasterizePrimary(testGaussians);
                 RawEffects effects = mockRenderer->rayTraceSecondary(primary);
                 DenoisedImage denoised = mockRenderer->denoiseAI(effects);
-                FinalImage final = mockRenderer->upscale(denoised, testResolution);
+                [[maybe_unused]] FinalImage final = mockRenderer->upscale(denoised, testResolution);
                 mockRenderer->presentFinalImage();
             }
         },
@@ -458,7 +458,7 @@ TEST_P(VulkanRendererResolutionTest, DifferentResolutions) {
         .WillOnce(testing::Return(mockFinal));
 
     EXPECT_NO_THROW_WITH_MESSAGE(
-        { FinalImage result = mockRenderer->upscale(denoisedImage, target); },
+        { [[maybe_unused]] FinalImage result = mockRenderer->upscale(denoisedImage, target); },
         "Upscaling для разрешения " + std::to_string(width) + "x" + std::to_string(height));
 }
 

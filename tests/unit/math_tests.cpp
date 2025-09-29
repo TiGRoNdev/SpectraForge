@@ -93,10 +93,14 @@ class Matrix4Test : public ::testing::Test {
 
 TEST_F(Matrix4Test, DefaultConstructor) {
     Matrix4 m;
-    // По умолчанию должна быть нулевой
+    // По умолчанию должна быть единичной
     for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 4; ++j) {
-            EXPECT_FLOAT_EQ(m(i, j), 0.0f);
+            if (i == j) {
+                EXPECT_FLOAT_EQ(m(i, j), 1.0f);
+            } else {
+                EXPECT_FLOAT_EQ(m(i, j), 0.0f);
+            }
         }
     }
 }

@@ -10,7 +10,7 @@ using namespace HyperEngine::Math;
 
 // Конструкторы
 Matrix4::Matrix4() : m{} {
-    setZero();
+    setIdentity();
 }
 
 Matrix4::Matrix4(const Matrix4& other) = default;
