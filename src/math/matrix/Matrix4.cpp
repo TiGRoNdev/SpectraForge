@@ -10,7 +10,7 @@ using namespace HyperEngine::Math;
 
 // Конструкторы
 Matrix4::Matrix4() : m{} {
-    setZero();
+    setIdentity();
 }
 
 Matrix4::Matrix4(const Matrix4& other) = default;
@@ -441,7 +441,7 @@ Matrix4 Matrix4::orthographic(float left,
 
     result.m[0][3] = -(right + left) / (right - left);
     result.m[1][3] = -(top + bottom) / (top - bottom);
-    result.m[2][3] = 0.0F;  // Для ортографической проекции это должно быть 0
+    result.m[2][3] = -(far + near) / (far - near);
 
     return result;
 }
