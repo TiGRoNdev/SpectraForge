@@ -6,8 +6,9 @@
 namespace HyperEngine {
 namespace Math {
 
-// Forward declaration
+// Forward declarations
 class Quaternion;
+class Vector4;
 
 /**
  * @brief 4x4 матрица для трансформаций в 3D пространстве
@@ -25,6 +26,23 @@ class Matrix4 {
     Matrix4(const Matrix4& other);
     explicit Matrix4(float diagonal);
     explicit Matrix4(const std::array<std::array<float, 4>, 4>& data);
+    // Конструктор с 16 параметрами (по строкам)
+    Matrix4(float m00,
+            float m01,
+            float m02,
+            float m03,
+            float m10,
+            float m11,
+            float m12,
+            float m13,
+            float m20,
+            float m21,
+            float m22,
+            float m23,
+            float m30,
+            float m31,
+            float m32,
+            float m33);
 
     // Операторы
     Matrix4& operator=(const Matrix4& other);
@@ -33,6 +51,7 @@ class Matrix4 {
     Matrix4 operator*(const Matrix4& other) const;
     Matrix4 operator*(float scalar) const;
     Vector3 operator*(const Vector3& vec) const;  // Умножение на 3D вектор
+    Vector4 operator*(const Vector4& vec) const;  // Умножение на 4D вектор
     Matrix4& operator+=(const Matrix4& other);
     Matrix4& operator-=(const Matrix4& other);
     Matrix4& operator*=(const Matrix4& other);
@@ -57,6 +76,10 @@ class Matrix4 {
     static Matrix4 scaling(const Vector3& scale);
     static Matrix4 scaling(float x, float y, float z);
     static Matrix4 scaling(float uniformScale);
+    // Алиас для совместимости с тестами
+    static Matrix4 scale(const Vector3& scale) { return scaling(scale); }
+    static Matrix4 scale(float x, float y, float z) { return scaling(x, y, z); }
+    static Matrix4 scale(float uniformScale) { return scaling(uniformScale); }
 
     // Повороты
     static Matrix4 rotationX(float angle);                       // Поворот вокруг оси X

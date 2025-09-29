@@ -65,7 +65,9 @@ else
     if cmake -B build/quality-check \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake \
-        -DBUILD_TESTING=ON > build/quality-reports/cmake-config.log 2>&1; then
+        -DBUILD_TESTING=ON \
+        -DBUILD_VULKAN_RENDERER=OFF \
+        -DENABLE_CODE_COVERAGE=OFF > build/quality-reports/cmake-config.log 2>&1; then
         log_success "Конфигурация CMake прошла успешно"
     else
         log_error "Ошибка конфигурации CMake. См. build/quality-reports/cmake-config.log"

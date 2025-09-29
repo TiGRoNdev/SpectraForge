@@ -158,7 +158,7 @@ size_t HardwareDetector::getVRAMSize() const {
         for (uint32_t i = 0; i < memoryProps.memoryHeapCount; ++i) {
             const auto& heap = memoryProps.memoryHeaps[i];
             if (heap.flags & vk::MemoryHeapFlagBits::eDeviceLocal) {
-                maxVRAM = std::max(maxVRAM, static_cast<size_t>(heap.size));
+                maxVRAM = (std::max)(maxVRAM, static_cast<size_t>(heap.size));
             }
         }
 

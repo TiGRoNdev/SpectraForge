@@ -1,16 +1,17 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop, refactoring/* ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
 
 env:
-  VCPKG_BINARY_SOURCES: 'clear;x-gha,readwrite'
+  BUILD_TYPE: Release
+  CMAKE_BUILD_TYPE: Release
 
 jobs:
-  # Проверка качества кода перед сборкой
+  # Проверка кода и статический анализ
   code-quality:
     name: Code Quality Check
     runs-on: ubuntu-latest
@@ -19,108 +20,319 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        submodules: recursive
     
-    - name: Setup LLVM/Clang
-      uses: KyleMayes/install-llvm-action@v1
-      with:
-        version: '16'
-        directory: ${{ runner.temp }}/llvm
-    
-    - name: Cache pre-commit
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pre-commit
-        key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
-    
-    - name: Install pre-commit
+    - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install pre-commit
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev
+        sudo apt-get install -y libvulkan-dev vulkan-tools
+        sudo apt-get install -y clang-tidy clang-format
+        sudo apt-get install -y cppcheck
     
-    - name: Run pre-commit checks
+    - name: Configure CMake
       run: |
-        pre-commit install
-        pre-commit run --all-files --show-diff-on-failure
+        cmake -B build -S . \
+          -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} \
+          -DBUILD_TESTS=ON \
+          -DENABLE_VULKAN_BACKEND=ON \
+          -DENABLE_OPENGL_BACKEND=ON \
+          -G Ninja
     
-    - name: Run quality check script
+    - name: Build
+      run: cmake --build build --config ${{ env.BUILD_TYPE }}
+    
+    - name: Run clang-format check
       run: |
-        chmod +x scripts/quality_check.sh
-        ./scripts/quality_check.sh
+        find . -name "*.cpp" -o -name "*.h" | grep -v build | xargs clang-format --dry-run --Werror
     
-    - name: Upload quality reports
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: quality-reports-${{ github.sha }}
-        path: build/quality-reports/
+    - name: Run clang-tidy
+      run: |
+        find . -name "*.cpp" | grep -v build | xargs clang-tidy --config-file=.clang-tidy
+    
+    - name: Run cppcheck
+      run: |
+        cppcheck --enable=all --inconclusive --std=c++17 \
+          --suppress=missingIncludeSystem \
+          --config-file=cppcheck.cfg \
+          src/ include/ tests/
 
-  # Основная сборка
-  build:
-    name: Build and Test
+  # Сборка и тестирование на Linux
+  build-linux:
+    name: Build and Test (Linux)
+    runs-on: ubuntu-latest
     needs: code-quality
-    runs-on: ${{ matrix.os }}
+    
     strategy:
-      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         build_type: [Debug, Release]
-        exclude:
-          - os: windows-latest
-            build_type: Debug
-
+        backend: [OpenGL, Vulkan]
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         submodules: recursive
     
-    - name: Export GitHub Actions cache environment variables
-      uses: actions/github-script@v6
-      with:
-        script: |
-          core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-          core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
-    
-    - name: Setup vcpkg
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgGitCommitId: 'latest'
-    
-    - name: Install system dependencies (Ubuntu)
-      if: matrix.os == 'ubuntu-latest'
+    - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential cmake ninja-build \
-          libgl1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
-    
-    - name: Install system dependencies (macOS)
-      if: matrix.os == 'macos-latest'
-      run: |
-        brew install cmake ninja
+        sudo apt-get install -y build-essential cmake ninja-build
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev
+        sudo apt-get install -y libvulkan-dev vulkan-tools
+        sudo apt-get install -y libgtest-dev libgmock-dev
     
     - name: Configure CMake
       run: |
-        cmake -B build \
+        cmake -B build-${{ matrix.build_type }}-${{ matrix.backend }} -S . \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
-          -DBUILD_TESTING=ON \
+          -DBUILD_TESTS=ON \
+          -DENABLE_${ matrix.backend }_BACKEND=ON \
           -G Ninja
     
     - name: Build
-      run: cmake --build build --config ${{ matrix.build_type }} --parallel
+      run: cmake --build build-${{ matrix.build_type }}-${{ matrix.backend }} --config ${{ matrix.build_type }}
     
-    - name: Test
-      working-directory: build
-      run: ctest --output-on-failure --config ${{ matrix.build_type }} --parallel
+    - name: Run tests
+      run: |
+        cd build-${{ matrix.build_type }}-${{ matrix.backend }}
+        ctest --output-on-failure --parallel 4
     
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
-      if: matrix.build_type == 'Release'
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
       with:
-        name: build-artifacts-${{ matrix.os }}-${{ matrix.build_type }}
-        path: |
-          build/src/
-          build/examples/
-          !build/**/*.obj
-          !build/**/*.o
+        name: test-results-${{ matrix.build_type }}-${{ matrix.backend }}
+        path: build-${{ matrix.build_type }}-${{ matrix.backend }}/Testing/
+
+  # Сборка и тестирование на Windows
+  build-windows:
+    name: Build and Test (Windows)
+    runs-on: windows-latest
+    needs: code-quality
+    
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+        backend: [OpenGL, Vulkan]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git
+        cd vcpkg
+        .\bootstrap-vcpkg.bat
+    
+    - name: Install dependencies
+      run: |
+        .\vcpkg\vcpkg.exe install glfw3:x64-windows glew:x64-windows vulkan:x64-windows
+        .\vcpkg\vcpkg.exe install gtest:x64-windows
+    
+    - name: Configure CMake
+      run: |
+        cmake -B build-${{ matrix.build_type }}-${{ matrix.backend }} -S . \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DBUILD_TESTS=ON \
+          -DENABLE_${ matrix.backend }_BACKEND=ON \
+          -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -A x64
+    
+    - name: Build
+      run: cmake --build build-${{ matrix.build_type }}-${{ matrix.backend }} --config ${{ matrix.build_type }}
+    
+    - name: Run tests
+      run: |
+        cd build-${{ matrix.build_type }}-${{ matrix.backend }}
+        ctest --output-on-failure --parallel 4 -C ${{ matrix.build_type }}
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-windows-${{ matrix.build_type }}-${{ matrix.backend }}
+        path: build-${{ matrix.build_type }}-${{ matrix.backend }}/Testing/
+
+  # Сборка и тестирование на macOS
+  build-macos:
+    name: Build and Test (macOS)
+    runs-on: macos-latest
+    needs: code-quality
+    
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+        backend: [OpenGL]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Install dependencies
+      run: |
+        brew install cmake ninja
+        brew install glfw glew
+        brew install googletest
+    
+    - name: Configure CMake
+      run: |
+        cmake -B build-${{ matrix.build_type }}-${{ matrix.backend }} -S . \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DBUILD_TESTS=ON \
+          -DENABLE_${ matrix.backend }_BACKEND=ON \
+          -G Ninja
+    
+    - name: Build
+      run: cmake --build build-${{ matrix.build_type }}-${{ matrix.backend }} --config ${{ matrix.build_type }}
+    
+    - name: Run tests
+      run: |
+        cd build-${{ matrix.build_type }}-${{ matrix.backend }}
+        ctest --output-on-failure --parallel 4
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-macos-${{ matrix.build_type }}-${{ matrix.backend }}
+        path: build-${{ matrix.build_type }}-${{ matrix.backend }}/Testing/
+
+  # Тесты производительности
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: build-linux
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build
+        sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev
+        sudo apt-get install -y libvulkan-dev vulkan-tools
+        sudo apt-get install -y libgtest-dev libgmock-dev
+        sudo apt-get install -y libbenchmark-dev
+    
+    - name: Configure CMake
+      run: |
+        cmake -B build-perf -S . \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_TESTS=ON \
+          -DENABLE_OPENGL_BACKEND=ON \
+          -DENABLE_VULKAN_BACKEND=ON \
+          -G Ninja
+    
+    - name: Build
+      run: cmake --build build-perf --config Release
+    
+    - name: Run performance tests
+      run: |
+        cd build-perf
+        # Запуск тестов производительности
+        find . -name "*performance*" -type f -executable -exec {} \;
+    
+    - name: Upload performance results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: performance-results
+        path: build-perf/performance-results/
+
+  # Сборка документации
+  build-docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    needs: build-linux
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y doxygen graphviz
+    
+    - name: Configure CMake
+      run: |
+        cmake -B build-docs -S . \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_DOCS=ON \
+          -G Ninja
+    
+    - name: Build documentation
+      run: cmake --build build-docs --target docs
+    
+    - name: Upload documentation
+      uses: actions/upload-artifact@v4
+      with:
+        name: documentation
+        path: build-docs/docs/
+
+  # Сборка релиза
+  build-release:
+    name: Build Release
+    runs-on: ubuntu-latest
+    needs: [build-linux, build-windows, build-macos]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Create release archive
+      run: |
+        tar -czf HyperEngine-${{ github.sha }}.tar.gz \
+          --exclude='.git' \
+          --exclude='build*' \
+          --exclude='.github' \
+          .
+    
+    - name: Upload release archive
+      uses: actions/upload-artifact@v4
+      with:
+        name: HyperEngine-release-${{ github.sha }}
+        path: HyperEngine-${{ github.sha }}.tar.gz
+
+  # Уведомления
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [build-linux, build-windows, build-macos]
+    if: always()
+    
+    steps:
+    - name: Notify success
+      if: needs.build-linux.result == 'success' && needs.build-windows.result == 'success' && needs.build-macos.result == 'success'
+      run: |
+        echo "✅ Все тесты прошли успешно!"
+        echo "Linux: ${{ needs.build-linux.result }}"
+        echo "Windows: ${{ needs.build-windows.result }}"
+        echo "macOS: ${{ needs.build-macos.result }}"
+    
+    - name: Notify failure
+      if: needs.build-linux.result == 'failure' || needs.build-windows.result == 'failure' || needs.build-macos.result == 'failure'
+      run: |
+        echo "❌ Некоторые тесты не прошли!"
+        echo "Linux: ${{ needs.build-linux.result }}"
+        echo "Windows: ${{ needs.build-windows.result }}"
+        echo "macOS: ${{ needs.build-macos.result }}"
+        exit 1

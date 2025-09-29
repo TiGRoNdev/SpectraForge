@@ -7,7 +7,7 @@ set(PROJECT_LANGUAGES CXX)
 option(BUILD_ENGINE_3D "Build 3D Engine" ON)
 option(BUILD_ENGINE_4D "Build 4D Engine" OFF)
 option(BUILD_VULKAN_RENDERER "Build Vulkan-based Hybrid Renderer" ON)
-option(BUILD_WITH_CUDA "Build with CUDA support" ON)
+option(BUILD_WITH_CUDA "Build with CUDA support" OFF)
 option(BUILD_WITH_OPTIX "Build with OptiX support" ON)
 option(BUILD_WITH_DLSS "Build with DLSS support" ON)
 option(BUILD_WITH_FSR "Build with FSR support" ON)
@@ -30,6 +30,9 @@ if(BUILD_WITH_CUDA)
         set(BUILD_WITH_CUDA OFF)
         set(CUDA_COMPILER_AVAILABLE FALSE)
     endif()
+else()
+    message(STATUS "CUDA support disabled by user")
+    set(CUDA_COMPILER_AVAILABLE FALSE)
 endif()
 
 # Опции для адаптеров рендеринга
@@ -40,9 +43,38 @@ option(DEFAULT_BACKEND_VULKAN "Use Vulkan as default backend (otherwise OpenGL)"
 # Создаем проект с поддерживаемыми языками
 project(HyperEngine VERSION 1.0.0 LANGUAGES ${PROJECT_LANGUAGES})
 
-# Установка стандарта C++
+# Включаем CUDA если нужно
+if(BUILD_WITH_CUDA AND CUDA_COMPILER_AVAILABLE)
+    enable_language(CUDA)
+    set(CMAKE_CUDA_ARCHITECTURES "50;60;70;75;80;86")
+    message(STATUS "CUDA language enabled")
+endif()
+
+# Устанавливаем стандарт C++ для всего проекта
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Обеспечиваем наличие Vulkan Memory Allocator
+find_path(VMA_INCLUDE_DIR
+    NAMES vk_mem_alloc.h
+    PATHS ${VULKAN_MEMORY_ALLOCATOR_INCLUDE_DIRS}
+          ${VulkanMemoryAllocator_INCLUDE_DIRS}
+          ${VulkanMemoryAllocator_INCLUDE_DIR}
+          ${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include
+          ${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include/vma
+          ${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/share/vulkan-memory-allocator/include
+          ${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/share/vulkan-memory-allocator
+          ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include
+          ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/vma
+    PATH_SUFFIXES include include/vma vma
+)
+
+if(NOT VMA_INCLUDE_DIR)
+    message(FATAL_ERROR "Unable to locate vk_mem_alloc.h. Please ensure Vulkan Memory Allocator is installed and available.")
+endif()
+
+set(VMA_INCLUDE_DIR "${VMA_INCLUDE_DIR}" CACHE PATH "Vulkan Memory Allocator include directory")
 
 # Проверяем CUDA без включения языка (обходим проблему с toolset)
 if(BUILD_WITH_CUDA AND CUDA_COMPILER_AVAILABLE)
@@ -89,11 +121,6 @@ if(ENABLE_OPENGL_BACKEND)
     message(STATUS "OpenGL backend enabled")
 endif()
 
-if(ENABLE_VULKAN_BACKEND AND BUILD_VULKAN_RENDERER)
-    add_compile_definitions(HyperEngine_ENABLE_VULKAN)
-    message(STATUS "Vulkan backend enabled")
-endif()
-
 if(DEFAULT_BACKEND_VULKAN)
     add_compile_definitions(HyperEngine_DEFAULT_BACKEND_VULKAN)
     message(STATUS "Vulkan set as default backend")
@@ -109,14 +136,16 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # Поиск пакетов
 if(BUILD_ENGINE_4D OR BUILD_VULKAN_RENDERER)
-    # Используем Vulkan из vcpkg
+    # Используем Vulkan из системы
     find_package(Vulkan REQUIRED)
-    find_package(VulkanMemoryAllocator CONFIG REQUIRED)
-    find_package(spirv_cross_core CONFIG REQUIRED)
-    find_package(unofficial-shaderc CONFIG REQUIRED)
-    find_package(imgui CONFIG REQUIRED)
-    find_package(assimp CONFIG REQUIRED)
-    find_package(Stb REQUIRED)
+
+    # Опциональные зависимости Vulkan
+    find_package(VulkanMemoryAllocator CONFIG QUIET)
+    find_package(spirv_cross_core CONFIG QUIET)
+    find_package(unofficial-shaderc CONFIG QUIET)
+    find_package(imgui CONFIG QUIET)
+    find_package(assimp CONFIG QUIET)
+    find_package(Stb QUIET)
 endif()
 
 # Поиск GLFW3 через vcpkg
@@ -124,6 +153,9 @@ find_package(glfw3 CONFIG REQUIRED)
 
 # Поиск GLEW через vcpkg
 find_package(GLEW REQUIRED)
+
+# Поиск OpenGL
+find_package(OpenGL REQUIRED)
 
 # Поиск GLM через vcpkg
 find_package(glm CONFIG REQUIRED)
@@ -200,6 +232,10 @@ endif()
 # Сборка 3D движка
 # ============================================================
 if(BUILD_ENGINE_3D)
+    if(ENABLE_VULKAN_BACKEND AND BUILD_VULKAN_RENDERER)
+        add_compile_definitions(HyperEngine_ENABLE_VULKAN)
+    endif()
+
     message(STATUS "Building HyperEngine with modular architecture...")
 
     # Подключаем новую модульную структуру
@@ -216,6 +252,12 @@ if(BUILD_ENGINE_3D)
         HyperEngine_Physics
         HyperEngine_Input
     )
+
+    # Подключаем Vulkan модуль если включен
+    if(ENABLE_VULKAN_BACKEND AND BUILD_VULKAN_RENDERER)
+        target_link_libraries(HyperEngine INTERFACE HyperEngine_Vulkan)
+        target_include_directories(HyperEngine INTERFACE ${VMA_INCLUDE_DIR})
+    endif()
 
     # Подключаем опциональные модули
     if(BUILD_WITH_CUDA)
@@ -315,8 +357,11 @@ if(BUILD_ENGINE_4D)
         Vulkan::Vulkan
         glfw
         glm::glm
-        GPUOpen::VulkanMemoryAllocator
     )
+    
+    if(TARGET VulkanMemoryAllocator::VulkanMemoryAllocator)
+        target_link_libraries(Engine4D PUBLIC VulkanMemoryAllocator::VulkanMemoryAllocator)
+    endif()
 
     # Определения компилятора для 4D
     target_compile_definitions(Engine4D PUBLIC ENGINE_4D_BUILD)
@@ -394,6 +439,12 @@ if(BUILD_VULKAN_RENDERER)
     # Создание библиотеки Vulkan рендерера
     add_library(VulkanRenderer STATIC ${VULKAN_SOURCES})
 
+    if(WIN32)
+        target_compile_definitions(VulkanRenderer PUBLIC VK_USE_PLATFORM_WIN32_KHR)
+    endif()
+
+    target_compile_definitions(VulkanRenderer PUBLIC HyperEngine_ENABLE_VULKAN)
+
     # Устанавливаем CUDA файлы как CUDA язык если доступен
     if(CUDA_AVAILABLE AND VULKAN_CUDA_SOURCES)
         set_source_files_properties(${VULKAN_CUDA_SOURCES} PROPERTIES LANGUAGE CUDA)
@@ -460,6 +511,7 @@ if(BUILD_VULKAN_RENDERER)
         ${CMAKE_SOURCE_DIR}/include/HyperEngine/CUDA
         ${CMAKE_SOURCE_DIR}/include/HyperEngine/OptiX
         ${CMAKE_SOURCE_DIR}/include/HyperEngine/Upscaling
+        ${VMA_INCLUDE_DIR}
     )
 
     # Линковка скомпилированных CUDA файлов
@@ -476,15 +528,26 @@ if(BUILD_VULKAN_RENDERER)
     # Базовые библиотеки для Vulkan рендерера
     target_link_libraries(VulkanRenderer PUBLIC
         Vulkan::Vulkan
-        GPUOpen::VulkanMemoryAllocator
-        spirv-cross-core
-        unofficial::shaderc::shaderc
-        imgui::imgui
-        assimp::assimp
         glfw
         glm::glm
     )
 
+    # Опциональные зависимости Vulkan
+    if(TARGET VulkanMemoryAllocator::VulkanMemoryAllocator)
+        target_link_libraries(VulkanRenderer PUBLIC VulkanMemoryAllocator::VulkanMemoryAllocator)
+    endif()
+    if(TARGET spirv_cross_core::spirv_cross_core)
+        target_link_libraries(VulkanRenderer PUBLIC spirv_cross_core::spirv_cross_core)
+    endif()
+    if(TARGET unofficial::shaderc::shaderc)
+        target_link_libraries(VulkanRenderer PUBLIC unofficial::shaderc::shaderc)
+    endif()
+    if(TARGET imgui::imgui)
+        target_link_libraries(VulkanRenderer PUBLIC imgui::imgui)
+    endif()
+    if(TARGET assimp::assimp)
+        target_link_libraries(VulkanRenderer PUBLIC assimp::assimp)
+    endif()
     # Подключение stb через include directories
     target_include_directories(VulkanRenderer PRIVATE ${Stb_INCLUDE_DIR})
 

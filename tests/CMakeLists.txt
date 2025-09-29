@@ -52,6 +52,8 @@ else()
         -Wall -Wextra -Wpedantic
         -Wno-unused-parameter
     )
+    
+    # Включаем code coverage только если явно запрошено
     if(ENABLE_CODE_COVERAGE)
         # Для Clang/GCC используем флаги coverage
         list(APPEND TEST_COMPILE_FLAGS
@@ -252,4 +254,8 @@ message(STATUS "  - Google Test: ${GTest_FOUND}")
 message(STATUS "  - Google Mock: ${GMock_FOUND}")
 message(STATUS "  - Google Benchmark: ${benchmark_FOUND}")
 message(STATUS "  - Clang-Tidy: ${CLANG_TIDY_EXECUTABLE}")
-message(STATUS "  - Code Coverage: Включено")
+if(ENABLE_CODE_COVERAGE)
+    message(STATUS "  - Code Coverage: Включено")
+else()
+    message(STATUS "  - Code Coverage: Отключено")
+endif()
