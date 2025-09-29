@@ -358,7 +358,7 @@ if(BUILD_ENGINE_4D)
         glfw
         glm::glm
     )
-    
+
     if(TARGET VulkanMemoryAllocator::VulkanMemoryAllocator)
         target_link_libraries(Engine4D PUBLIC VulkanMemoryAllocator::VulkanMemoryAllocator)
     endif()
