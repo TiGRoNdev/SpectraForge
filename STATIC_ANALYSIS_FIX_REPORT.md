@@ -1,7 +1,7 @@
 # Отчет об исправлении ошибок статического анализа HyperEngine
 
-**Дата:** 29 сентября 2025  
-**Автор:** AI Assistant  
+**Дата:** 29 сентября 2025
+**Автор:** AI Assistant
 **Версия:** 1.0
 
 ## Обзор проблем
@@ -50,9 +50,11 @@
 - Инструкции по установке для разных ОС
 
 ### 3. ✅ Исправлен скрипт проверки качества кода
+
 **Файл:** `scripts/quality_check.bat`
 
 **Исправления:**
+
 - Исправлены пути к директориям (убраны лишние `..`)
 - Корректная работа из корня проекта
 - Улучшенная обработка ошибок
@@ -60,6 +62,7 @@
 ## Результаты анализа
 
 ### Статический анализ паттернов
+
 Найдены следующие потенциальные проблемы:
 
 1. **Использование raw pointers** (56 случаев):
@@ -73,6 +76,7 @@
 3. **Небезопасные функции** - не найдены
 
 ### Проверка качества кода
+
 - ✅ Форматирование: соответствует стандартам
 - ✅ Сборка: успешна
 - ✅ Тесты: все прошли
@@ -81,6 +85,7 @@
 ## Рекомендации по установке инструментов
 
 ### Windows (рекомендуется)
+
 ```cmd
 # Установка через winget
 winget install LLVM.LLVM
@@ -92,12 +97,14 @@ choco install cppcheck
 ```
 
 ### Linux (Ubuntu/Debian)
+
 ```bash
 sudo apt update
 sudo apt install clang-tools cppcheck iwyu ninja-build
 ```
 
 ### macOS
+
 ```bash
 brew install llvm cppcheck include-what-you-use ninja
 ```
@@ -105,11 +112,13 @@ brew install llvm cppcheck include-what-you-use ninja
 ## Следующие шаги
 
 ### Немедленные действия
+
 1. **Установить LLVM/Clang** для получения clang-format и clang-tidy
 2. **Установить Cppcheck** для статического анализа
 3. **Рассмотреть использование Ninja** вместо Visual Studio генератора
 
 ### Долгосрочные улучшения
+
 1. **Настроить CI/CD** с автоматическим статическим анализом
 2. **Интегрировать pre-commit hooks** для автоматической проверки
 3. **Рассмотреть PVS-Studio** для более глубокого анализа
@@ -117,6 +126,7 @@ brew install llvm cppcheck include-what-you-use ninja
 ## Анализ найденных raw pointer использований
 
 ### Критичность: Средняя
+
 Большинство найденных случаев использования raw pointers являются оправданными:
 
 1. **Системные вызовы** (`getenv`) - нормально
@@ -125,6 +135,7 @@ brew install llvm cppcheck include-what-you-use ninja
 4. **Dynamic cast результаты** - временные указатели
 
 ### Рекомендации по улучшению
+
 1. Добавить комментарии к обоснованному использованию raw pointers
 2. Рассмотреть использование `gsl::not_null` для указателей, которые не должны быть null
 3. Добавить проверки на nullptr где это критично
@@ -143,14 +154,17 @@ brew install llvm cppcheck include-what-you-use ninja
 ## Файлы изменений
 
 ### Созданные файлы
+
 - `scripts/static_analysis_windows.bat` - Windows-версия статического анализа
 - `STATIC_ANALYSIS_FIX_REPORT.md` - данный отчет
 
 ### Измененные файлы
+
 - `scripts/static_analysis.sh` - улучшенная Linux-версия
 - `scripts/quality_check.bat` - исправлены пути
 
 ### Созданные отчеты
+
 - `build/static-analysis/summary.md` - сводный отчет анализа
 - `build/static-analysis/pattern-analysis.txt` - анализ паттернов кода
 - `build/quality-reports/summary.md` - отчет о качестве кода

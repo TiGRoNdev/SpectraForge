@@ -37,7 +37,7 @@ if command -v scan-build &> /dev/null; then
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
             -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake
     fi
-    
+
     scan-build --status-bugs cmake --build build/static-analysis
 else
     echo "⚠️ scan-build не найден, пропускаем Clang Static Analyzer"
@@ -121,15 +121,15 @@ echo "🔍 Запуск анализа паттернов..."
     echo "=== Поиск потенциальных утечек памяти ==="
     grep -rn "new\|malloc\|calloc" src/ include/ 2>/dev/null || echo "Не найдено"
     echo ""
-    
+
     echo "=== Поиск использования raw pointers ==="
     grep -rn "\*.*=" src/ include/ 2>/dev/null | head -20 || echo "Не найдено"
     echo ""
-    
+
     echo "=== Поиск TODO и FIXME ==="
     grep -rn "TODO\|FIXME\|HACK\|XXX" src/ include/ 2>/dev/null || echo "Не найдено"
     echo ""
-    
+
     echo "=== Поиск потенциально небезопасных функций ==="
     grep -rn "strcpy\|strcat\|sprintf\|gets" src/ include/ 2>/dev/null || echo "Не найдено"
 } > build/static-analysis/pattern-analysis.txt
@@ -144,7 +144,7 @@ echo "📋 Создание сводного отчета..."
     echo ""
     echo "## Выполненные проверки"
     echo ""
-    
+
     if command -v scan-build &> /dev/null; then
         echo "### Clang Static Analyzer"
         echo "- Статус: ✅ Выполнен"
@@ -156,7 +156,7 @@ echo "📋 Создание сводного отчета..."
         echo "- Установка: sudo apt install clang-tools (Ubuntu/Debian)"
         echo ""
     fi
-    
+
     if [ -f build/static-analysis/clang-tidy-fixes.yaml ]; then
         echo "### Clang-Tidy"
         echo "- Статус: ✅ Выполнен"
@@ -167,7 +167,7 @@ echo "📋 Создание сводного отчета..."
         echo "- Статус: ❌ Не выполнен (compile_commands.json не найден или clang-tidy недоступен)"
         echo ""
     fi
-    
+
     if [ -f build/static-analysis/cppcheck-report.xml ]; then
         echo "### Cppcheck"
         echo "- Статус: ✅ Выполнен"
@@ -179,7 +179,7 @@ echo "📋 Создание сводного отчета..."
         echo "- Установка: sudo apt install cppcheck (Ubuntu/Debian)"
         echo ""
     fi
-    
+
     if [ -f build/static-analysis/iwyu-report.txt ]; then
         echo "### Include What You Use"
         echo "- Статус: ✅ Выполнен"
@@ -191,12 +191,12 @@ echo "📋 Создание сводного отчета..."
         echo "- Установка: sudo apt install iwyu (Ubuntu/Debian)"
         echo ""
     fi
-    
+
     echo "### Анализ паттернов"
     echo "- Статус: ✅ Выполнен"
     echo "- Отчет: build/static-analysis/pattern-analysis.txt"
     echo ""
-    
+
     echo "## Рекомендации по установке инструментов"
     echo ""
     case $OS_TYPE in
@@ -224,7 +224,7 @@ echo "📋 Создание сводного отчета..."
             echo ""
             ;;
     esac
-    
+
     echo "## Следующие шаги"
     echo ""
     echo "1. Просмотрите все найденные предупреждения"
