@@ -24,7 +24,7 @@ if exist %CLANG_TIDY% (
         echo Используем compile_commands.json из build-vcpkg
 
         REM Создаем временный файл со списком файлов для анализа
-        dir /s /b src\*.cpp | head -20 > temp_cpp_files.txt
+        dir /s /b src\*.cpp > temp_cpp_files.txt
 
         set ANALYZED_FILES=0
         for /f "delims=" %%f in (temp_cpp_files.txt) do (

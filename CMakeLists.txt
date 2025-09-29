@@ -13,6 +13,7 @@ option(BUILD_WITH_DLSS "Build with DLSS support" ON)
 option(BUILD_WITH_FSR "Build with FSR support" ON)
 option(BUILD_EXAMPLES "Build example applications" ON)
 option(BUILD_TESTS "Build test suite" ON)
+option(ENABLE_CODE_COVERAGE "Enable code coverage for tests" ON)
 
 # Ранняя настройка CUDA для поддержки
 if(BUILD_WITH_CUDA)
@@ -255,7 +256,7 @@ if(BUILD_ENGINE_3D)
     # Подключаем Vulkan модуль если включен
     if(ENABLE_VULKAN_BACKEND AND BUILD_VULKAN_RENDERER)
         target_link_libraries(HyperEngine INTERFACE HyperEngine_Vulkan)
-    target_include_directories(HyperEngine INTERFACE ${VMA_INCLUDE_DIR})
+        target_include_directories(HyperEngine INTERFACE ${VMA_INCLUDE_DIR})
     endif()
 
     # Подключаем опциональные модули
@@ -357,6 +358,7 @@ if(BUILD_ENGINE_4D)
         glfw
         glm::glm
     )
+    
     if(TARGET VulkanMemoryAllocator::VulkanMemoryAllocator)
         target_link_libraries(Engine4D PUBLIC VulkanMemoryAllocator::VulkanMemoryAllocator)
     endif()
@@ -546,7 +548,6 @@ if(BUILD_VULKAN_RENDERER)
     if(TARGET assimp::assimp)
         target_link_libraries(VulkanRenderer PUBLIC assimp::assimp)
     endif()
-
     # Подключение stb через include directories
     target_include_directories(VulkanRenderer PRIVATE ${Stb_INCLUDE_DIR})
 

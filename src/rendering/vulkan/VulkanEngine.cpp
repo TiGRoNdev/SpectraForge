@@ -11,6 +11,12 @@
 #include "HyperEngine/Vulkan/SceneManager.h"
 #include "HyperEngine/Vulkan/VulkanRenderer.h"
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#endif
+
 #include <cstring>
 #include <iostream>
 #include <stdexcept>

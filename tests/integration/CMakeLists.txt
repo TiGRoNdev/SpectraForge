@@ -9,7 +9,15 @@ add_integration_test(simple_integration_test
     SOURCES
         rendering/CudaVulkanInteropTest.cpp
     LIBS
-        # CUDA и Vulkan библиотеки
+        HyperEngine_Math
+        HyperEngine_Core
+        HyperEngine_CUDA
+        HyperEngine_Vulkan
+        Vulkan::Vulkan
+        GPUOpen::VulkanMemoryAllocator
+        CUDA::cudart
+        CUDA::cuda_driver
+        glm::glm
 )
 
 # Добавляем все тесты в глобальный список
