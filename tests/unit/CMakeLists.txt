@@ -22,6 +22,9 @@ add_unit_test(rendering_tests
         HyperEngine_Core
         HyperEngine_OpenGL
         HyperEngine_Vulkan
+        glfw
+        GLEW::GLEW
+        glm::glm
 )
 
 # Unit тесты для основных компонентов
@@ -29,7 +32,11 @@ add_unit_test(optix_tests
     SOURCES
         test_optix_integration.cpp
     LIBS
-        # Здесь будут основные библиотеки
+        HyperEngine_Math
+        HyperEngine_Core
+        CUDA::cudart
+        CUDA::cuda_driver
+        glm::glm
 )
 
 # Добавляем все тесты в глобальный список

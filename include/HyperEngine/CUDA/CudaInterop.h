@@ -132,7 +132,8 @@ class CudaInterop {
      * @param syncObj Объект синхронизации
      * @param commandBuffer Command buffer для вставки wait
      */
-    void waitCudaFromVulkan(const std::shared_ptr<SyncObject>& syncObj, vk::CommandBuffer commandBuffer);
+    void waitCudaFromVulkan(const std::shared_ptr<SyncObject>& syncObj,
+                            vk::CommandBuffer commandBuffer);
 
     /**
      * @brief Импорт Vulkan памяти в CUDA

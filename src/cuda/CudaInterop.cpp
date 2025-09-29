@@ -324,7 +324,8 @@ std::shared_ptr<SyncObject> CudaInterop::createSyncObject() {
     }
 }
 
-void CudaInterop::signalVulkanToCuda(const std::shared_ptr<SyncObject>& syncObj, cudaStream_t stream) {
+void CudaInterop::signalVulkanToCuda(const std::shared_ptr<SyncObject>& syncObj,
+                                     cudaStream_t stream) {
     if (syncObj == nullptr || !syncObj->isValid) {
         std::cout << "[CudaInterop] Ошибка: Некорректный объект синхронизации" << std::endl;
         return;
