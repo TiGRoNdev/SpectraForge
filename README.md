@@ -74,18 +74,35 @@
 
 ## 🛠️ Быстрая установка
 
-### Windows (Рекомендуется vcpkg)
+### Windows (Рекомендуется vcpkg + Ninja)
 
 ```bash
 # 1. Клонирование репозитория
 git clone https://github.com/TiGRoNdev/HyperEngine.git
 cd HyperEngine
 
-# 2. Автоматическая сборка с vcpkg
+# 2. Быстрая сборка с Ninja (рекомендуется)
 .\build_with_vcpkg.bat
 
 # 3. Запуск демо
-.\build-vcpkg\Release\Engine3D_Demo.exe
+.\build-ninja\Engine3D_Demo.exe
+```
+
+**Преимущества Ninja:**
+- ⚡ Быстрая сборка (в 2-3 раза быстрее Visual Studio)
+- 📋 Автоматический экспорт команд компиляции (`compile_commands.json`)
+- 🔧 Лучшая интеграция с IDE и инструментами анализа
+
+**Альтернативные методы сборки:**
+```bash
+# Через CMake Presets
+cmake --preset windows-ninja
+cmake --build --preset windows-ninja
+
+# Ручная конфигурация
+mkdir build-ninja && cd build-ninja
+cmake .. -G Ninja -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+ninja
 ```
 
 ### Linux (Ubuntu/Debian)
@@ -475,6 +492,7 @@ scripts\setup_git_hooks.bat       # Windows
 #### 📚 Документация разработчика
 - [Стандарты кодирования](docs/CODING_STANDARDS.md)
 - [Инструменты разработки](docs/DEVELOPMENT_TOOLS.md)
+- [Настройка Ninja Build System](docs/guides/NINJA_SETUP.md) ⚡
 - [Архитектурные решения](docs/architecture/)
 
 ### Стандарты разработки

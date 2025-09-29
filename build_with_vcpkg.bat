@@ -1,21 +1,35 @@
 @echo off
-echo Building HyperEngine with vcpkg...
+echo Building HyperEngine with vcpkg and Ninja...
+
+REM Add ninja to PATH for this session
+set PATH=%~dp0tools;%PATH%
+
+REM Check if ninja is available
+ninja --version >nul 2>&1
+if errorlevel 1 (
+    echo ERROR: Ninja not found! Please ensure ninja.exe is in the tools directory.
+    pause
+    exit /b 1
+)
 
 REM Install dependencies
 echo Installing dependencies with vcpkg...
-vcpkg install
+cd vcpkg
+call .\vcpkg.exe install
+cd ..
 
 REM Create build directory
-if not exist "build-vcpkg" mkdir build-vcpkg
-cd build-vcpkg
+if not exist "build-ninja" mkdir build-ninja
+cd build-ninja
 
-REM Configure with vcpkg
-echo Configuring with CMake and vcpkg...
-cmake .. -DCMAKE_TOOLCHAIN_FILE=vcpkg\scripts\buildsystems\vcpkg.cmake -G "Visual Studio 17 2022" -A x64
+REM Configure with vcpkg and Ninja
+echo Configuring with CMake, vcpkg and Ninja...
+cmake .. -G Ninja -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
 REM Build
-echo Building...
-cmake --build . --config Release
+echo Building with Ninja...
+ninja
 
 echo Build complete!
+echo Compile commands exported to: build-ninja\compile_commands.json
 pause
