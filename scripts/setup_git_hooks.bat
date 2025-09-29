@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 REM Скрипт для установки локальных git hooks для HyperEngine (Windows)
 
 echo 🔧 Настройка git hooks для HyperEngine...

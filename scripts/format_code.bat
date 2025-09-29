@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 REM Скрипт для форматирования кода с помощью clang-format
 
 echo 🎨 Форматирование кода HyperEngine...

@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 REM Автоматическое исправление форматирования кода HyperEngine
 setlocal enabledelayedexpansion
 

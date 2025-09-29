@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 REM Комплексный статический анализ кода HyperEngine для Windows
 setlocal enabledelayedexpansion
 
