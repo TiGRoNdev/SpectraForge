@@ -14,8 +14,9 @@
 #include <vector>
 #include "HyperEngine/Core/Console.h"
 #include "HyperEngine/Core/SafeConsole.h"
-#ifdef BUILD_VULKAN_RENDERER
+#ifdef HyperEngine_ENABLE_VULKAN
 #include "HyperEngine/Vulkan/ResourceManager.h"
+using namespace vk;
 #endif
 
 using namespace HyperEngine::Core;
@@ -32,8 +33,6 @@ using namespace HyperEngine::Core;
 using namespace HyperEngine::CUDA;
 using namespace HyperEngine::Core;
 
-#ifdef CUDA_VULKAN_INTEROP_SUPPORTED
-
 namespace HyperEngine::CUDA {
 
 CudaInterop::CudaInterop() = default;
@@ -44,7 +43,7 @@ CudaInterop::~CudaInterop() {
     }
 }
 
-#ifdef BUILD_VULKAN_RENDERER
+#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
 bool CudaInterop::initializeInterop(vk::Device dev,
                                     vk::PhysicalDevice physDev,
                                     Vulkan::ResourceManager* resMgr) {
@@ -104,7 +103,10 @@ bool CudaInterop::initializeInterop(vk::Device dev,
     }
 }
 #else
-bool CudaInterop::initializeInterop(void* dev, void* physDev, Vulkan::ResourceManager* resMgr) {
+bool CudaInterop::initializeInterop(void* dev, void* physDev, void* resMgr) {
+    (void)dev;
+    (void)physDev;
+    (void)resMgr;
     SAFE_ERROR("[CudaInterop] Vulkan рендерер отключен, interop недоступен");
     return false;
 }
@@ -129,7 +131,9 @@ void CudaInterop::cleanup() {
     for (auto& syncObj : syncObjects) {
         if (syncObj != nullptr && syncObj->isValid) {
             if (syncObj->vulkanSemaphore) {
+#ifdef HyperEngine_ENABLE_VULKAN
                 device.destroySemaphore(syncObj->vulkanSemaphore);
+#endif
             }
             if (syncObj->cudaExternalSemaphore != nullptr) {
                 cudaDestroyExternalSemaphore(syncObj->cudaExternalSemaphore);
@@ -150,13 +154,18 @@ void CudaInterop::cleanup() {
 }
 
 std::shared_ptr<SharedResource> CudaInterop::createSharedBuffer(size_t size,
+#ifdef HyperEngine_ENABLE_VULKAN
                                                                 vk::BufferUsageFlags vulkanUsage,
+#else
+                                                                uint32_t vulkanUsage,
+#endif
                                                                 unsigned int cudaFlags) {
     if (!initialized) {
         SAFE_ERROR("[CudaInterop] Ошибка: Interop не инициализирован");
         return nullptr;
     }
 
+#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
     try {
         auto resource = std::make_shared<SharedResource>();
         resource->size = size;
@@ -225,6 +234,12 @@ std::shared_ptr<SharedResource> CudaInterop::createSharedBuffer(size_t size,
         SAFE_ERROR("[CudaInterop] Ошибка создания shared буфера: " + std::string(e.what()));
         return nullptr;
     }
+#else
+    SAFE_ERROR("[CudaInterop] Vulkan рендерер отключен, создание shared буфера недоступно");
+    (void)vulkanUsage;
+    (void)cudaFlags;
+    return nullptr;
+#endif
 }
 
 void CudaInterop::freeSharedResource(std::shared_ptr<SharedResource> resource) {
@@ -240,6 +255,7 @@ void CudaInterop::freeSharedResource(std::shared_ptr<SharedResource> resource) {
     }
 
     // Освобождаем Vulkan ресурсы
+#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
     if (resource->vulkanBuffer) {
         device.destroyBuffer(resource->vulkanBuffer);
     }
@@ -247,6 +263,7 @@ void CudaInterop::freeSharedResource(std::shared_ptr<SharedResource> resource) {
     if (resource->vulkanMemory) {
         device.freeMemory(resource->vulkanMemory);
     }
+#endif
 
     resource->isValid = false;
 }
@@ -257,6 +274,7 @@ std::shared_ptr<SyncObject> CudaInterop::createSyncObject() {
         return nullptr;
     }
 
+#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
     try {
         auto syncObj = std::make_shared<SyncObject>();
         syncObj->isValid = false;
@@ -331,6 +349,10 @@ std::shared_ptr<SyncObject> CudaInterop::createSyncObject() {
                   << std::endl;
         return nullptr;
     }
+#else
+    SAFE_ERROR("[CudaInterop] Vulkan рендерер отключен, создание объекта синхронизации недоступно");
+    return nullptr;
+#endif
 }
 
 void CudaInterop::signalVulkanToCuda(const std::shared_ptr<SyncObject>& syncObj,
@@ -352,25 +374,32 @@ void CudaInterop::signalVulkanToCuda(const std::shared_ptr<SyncObject>& syncObj,
     }
 }
 
+#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
 void CudaInterop::waitCudaFromVulkan(const std::shared_ptr<SyncObject>& syncObj,
                                      vk::CommandBuffer commandBuffer) {
+#else
+void CudaInterop::waitCudaFromVulkan(const std::shared_ptr<SyncObject>& syncObj,
+                                     void* commandBuffer) {
+#endif
     if (syncObj == nullptr || !syncObj->isValid) {
         std::cout << "[CudaInterop] Ошибка: Некорректный объект синхронизации" << std::endl;
         return;
     }
 
-    // Подавляем предупреждение о неиспользуемом параметре
     (void)commandBuffer;
 
-    // Вставляем wait в command buffer
+#ifdef HyperEngine_ENABLE_VULKAN
     vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eAllCommands;
-    (void)waitStage;  // Подавляем предупреждение
+    (void)waitStage;
 
-    // TODO: Реализовать правильную вставку wait operation в command buffer
-    // Это требует более сложной логики с submission
     std::cout << "[CudaInterop] Ожидание CUDA signal в Vulkan (реализация в progress)" << std::endl;
+#else
+    std::cout << "[CudaInterop] Vulkan рендерер отключен, ожидание команд в Vulkan недоступно"
+              << std::endl;
+#endif
 }
 
+#ifdef HyperEngine_ENABLE_VULKAN
 cudaExternalMemory_t CudaInterop::importVulkanMemory(vk::DeviceMemory vulkanMemory, size_t size) {
     try {
         // Подавляем предупреждение о неиспользуемом параметре
@@ -379,7 +408,7 @@ cudaExternalMemory_t CudaInterop::importVulkanMemory(vk::DeviceMemory vulkanMemo
         // Получаем Windows handle из Vulkan memory
         // TODO: Временная заглушка до полной поддержки VK_KHR_external_memory_win32
 #ifdef _WIN32
-        // Пока используем заглушку для handle
+
         HANDLE handle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
         if (handle == reinterpret_cast<HANDLE>(static_cast<uintptr_t>(-1))) {
@@ -422,8 +451,8 @@ cudaExternalMemory_t CudaInterop::importVulkanMemory(vk::DeviceMemory vulkanMemo
             throw;
         }
 #else
-        void* handle = nullptr;
-        std::cout << "[CudaInterop] Non-Windows платформы пока не поддерживаются" << std::endl;
+        std::cout << "[CudaInterop] Vulkan рендерер отключен, импорт памяти недоступен"
+                  << std::endl;
         return nullptr;
 #endif
 
@@ -432,16 +461,19 @@ cudaExternalMemory_t CudaInterop::importVulkanMemory(vk::DeviceMemory vulkanMemo
         return nullptr;
     }
 }
+#endif  // HyperEngine_ENABLE_VULKAN
 
 vk::DeviceMemory CudaInterop::exportCudaMemory(CUdeviceptr cudaPtr, size_t size) {
-    // Подавляем предупреждения о неиспользуемых параметрах
     (void)cudaPtr;
     (void)size;
 
-    // TODO: Реализация экспорта CUDA памяти в Vulkan
-    // Это более сложная операция, требующая создания CUDA external memory
+#ifdef HyperEngine_ENABLE_VULKAN
     std::cout << "[CudaInterop] Экспорт CUDA памяти в Vulkan (пока не реализован)" << std::endl;
     return vk::DeviceMemory{};
+#else
+    std::cout << "[CudaInterop] Vulkan рендерер отключен, экспорт памяти недоступен" << std::endl;
+    return {};
+#endif
 }
 
 bool CudaInterop::isInteropSupported() {
@@ -670,6 +702,7 @@ bool CudaInterop::checkExternalSemaphoreSupport() {
 }
 
 bool CudaInterop::checkVulkanExtensionSupport() {
+#ifdef HyperEngine_ENABLE_VULKAN
     try {
         std::cout << "[CudaInterop] Проверка поддержки Vulkan расширений..." << std::endl;
 
@@ -715,6 +748,10 @@ bool CudaInterop::checkVulkanExtensionSupport() {
         std::cout << "[CudaInterop] Ошибка проверки Vulkan расширений: " << e.what() << std::endl;
         return false;
     }
+#else
+    SAFE_ERROR("[CudaInterop] Vulkan рендерер отключен, проверка расширений недоступна");
+    return false;
+#endif
 }
 
 bool CudaInterop::findMatchingCudaDevice() {
@@ -732,15 +769,6 @@ bool CudaInterop::findMatchingCudaDevice() {
 }
 
 }  // namespace HyperEngine::CUDA
-
-#else  // CUDA_VULKAN_INTEROP_SUPPORTED
-
-// Заглушки для случая без поддержки CUDA
-namespace HyperEngine::CUDA {
-// Все методы уже реализованы в заголовочном файле как inline
-}
-
-#endif  // CUDA_VULKAN_INTEROP_SUPPORTED
 
 // Экспортируемая функция для тестирования
 extern "C" {

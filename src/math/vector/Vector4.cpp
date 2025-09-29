@@ -1,8 +1,8 @@
 #include "HyperEngine/Math/Vector4.h"
-#include "HyperEngine/Math/Vector3.h"
 #include <algorithm>
 #include <limits>
 #include <stdexcept>
+#include "HyperEngine/Math/Vector3.h"
 
 namespace HyperEngine::Math {
 
@@ -36,12 +36,10 @@ Vector4 Vector4::operator*(float scalar) const {
 Vector4 Vector4::operator/(float scalar) const {
     if (std::abs(scalar) < std::numeric_limits<float>::epsilon()) {
         // Возвращаем inf вместо исключения для совместимости с тестами
-        return Vector4(
-            std::numeric_limits<float>::infinity(),
-            std::numeric_limits<float>::infinity(),
-            std::numeric_limits<float>::infinity(),
-            std::numeric_limits<float>::infinity()
-        );
+        return Vector4(std::numeric_limits<float>::infinity(),
+                       std::numeric_limits<float>::infinity(),
+                       std::numeric_limits<float>::infinity(),
+                       std::numeric_limits<float>::infinity());
     }
     return Vector4(x / scalar, y / scalar, z / scalar, w / scalar);
 }
@@ -173,8 +171,8 @@ void Vector4::zero() {
 
 bool Vector4::isZero() const {
     const float epsilon = std::numeric_limits<float>::epsilon();
-    return std::abs(x) < epsilon && std::abs(y) < epsilon
-           && std::abs(z) < epsilon && std::abs(w) < epsilon;
+    return std::abs(x) < epsilon && std::abs(y) < epsilon && std::abs(z) < epsilon
+           && std::abs(w) < epsilon;
 }
 
 bool Vector4::isNormalized() const {

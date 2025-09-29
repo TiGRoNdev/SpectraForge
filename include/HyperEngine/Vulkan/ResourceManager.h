@@ -1,9 +1,15 @@
 #pragma once
 
+#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
+#include <vulkan/vulkan.hpp>
+using namespace vk;
+#else
+#include <vulkan/vulkan_core.h>
+#endif
+
 #include <vk_mem_alloc.h>
 #include <memory>
 #include <unordered_map>
-#include <vulkan/vulkan.hpp>
 
 #if defined(VULKAN_RENDERER_CUDA_SUPPORT) && defined(CUDA_VULKAN_INTEROP_SUPPORTED)
 #include <cuda.h>
@@ -19,7 +25,11 @@ struct ImageData {
     uint32_t width;
     uint32_t height;
     uint32_t depth = 1;
+#ifdef HyperEngine_ENABLE_VULKAN
     vk::Format format;
+#else
+    uint32_t format = 0;
+#endif
     const void* data;
     size_t dataSize;
     uint32_t mipLevels = 1;
@@ -62,7 +72,16 @@ class ResourceManager {
      * @param instance Vulkan instance
      * @return true если инициализация успешна
      */
-    bool init(vk::PhysicalDevice physicalDevice, vk::Device device, vk::Instance instance);
+    bool init(
+#ifdef HyperEngine_ENABLE_VULKAN
+        vk::PhysicalDevice physicalDevice,
+        vk::Device device,
+        vk::Instance instance);
+#else
+        void* physicalDevice,
+        void* device,
+        void* instance);
+#endif
 
     /**
      * @brief Завершение работы менеджера
@@ -135,7 +154,12 @@ class ResourceManager {
      * @param usage Флаги использования
      * @return Shared буфер
      */
-    vk::Buffer createSharedBuffer(size_t size, vk::BufferUsageFlags usage);
+    vk::Buffer createSharedBuffer(size_t size,
+#ifdef HyperEngine_ENABLE_VULKAN
+                                  vk::BufferUsageFlags usage);
+#else
+                                  uint32_t usage);
+#endif
 
     /**
      * @brief Экспорт Vulkan памяти для CUDA
@@ -163,12 +187,23 @@ class ResourceManager {
      * @param properties Требуемые свойства памяти
      * @return Индекс типа памяти
      */
-    uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
+    uint32_t findMemoryType(uint32_t typeFilter,
+#ifdef HyperEngine_ENABLE_VULKAN
+                            vk::MemoryPropertyFlags properties);
+#else
+                            uint32_t properties);
+#endif
 
   private:
+#ifdef HyperEngine_ENABLE_VULKAN
     vk::PhysicalDevice physicalDevice;
     vk::Device device;
     vk::Instance instance;
+#else
+    void* physicalDevice = nullptr;
+    void* device = nullptr;
+    void* instance = nullptr;
+#endif
     VmaAllocator allocator = VK_NULL_HANDLE;
 
     // Кэш аллокаций для отслеживания

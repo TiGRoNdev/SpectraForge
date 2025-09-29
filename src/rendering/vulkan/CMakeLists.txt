@@ -17,8 +17,11 @@ target_compile_features(HyperEngine_Vulkan PRIVATE cxx_std_17)
 
 # Включаем директории
 target_include_directories(HyperEngine_Vulkan
-    PUBLIC ${CMAKE_SOURCE_DIR}/include
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+    PUBLIC
+        ${CMAKE_SOURCE_DIR}/include
+        ${VMA_INCLUDE_DIR}
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # Подключаем зависимости

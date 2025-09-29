@@ -8,7 +8,7 @@ namespace HyperEngine {
 namespace Math {
 class Vector3;
 }
-}
+}  // namespace HyperEngine
 
 namespace HyperEngine {
 namespace Math {
@@ -60,8 +60,8 @@ class Vector4 {
     bool isNormalized() const;
 
     // Преобразования
-    Vector3 xyz() const;                                // Возвращает первые 3 компоненты как Vector3
-    Vector3 homogeneousDivide() const;                  // Деление на w (для гомогенных координат)
+    Vector3 xyz() const;                // Возвращает первые 3 компоненты как Vector3
+    Vector3 homogeneousDivide() const;  // Деление на w (для гомогенных координат)
 
     // Статические методы
     static Vector4 createZero();

@@ -32,4 +32,3 @@ ninja
 
 echo Build complete!
 echo Compile commands exported to: build-vcpkg\compile_commands.json
-pause
