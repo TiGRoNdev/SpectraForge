@@ -20,7 +20,8 @@ namespace Rendering {
 // === HybridRenderer3D Implementation ===
 
 HybridRenderer3D::HybridRenderer3D()
-    : dynamicQualityEnabled(false),
+    : renderBuffers(),
+      dynamicQualityEnabled(false),
       targetFrameRate(60.0f),
       currentFrameRate(60.0f),
       qualityAdjustmentFactor(1.0f) {
@@ -471,7 +472,13 @@ void HybridRenderer3D::RenderBuffers::cleanup() {
 
 // === ReSTIRGlobalIllumination Implementation ===
 
-ReSTIRGlobalIllumination::ReSTIRGlobalIllumination() : initialized(false) {
+ReSTIRGlobalIllumination::ReSTIRGlobalIllumination()
+    : initialized(false),
+      reservoirBuffer(0),
+      lightBuffer(0),
+      computeShader(0),
+      temporalBuffer(0),
+      spatialBuffer(0) {
     settings = ReSTIRSettings{};
     stats.reset();
 }
@@ -560,7 +567,7 @@ void ReSTIRGlobalIllumination::finalShading() {
 
 // === AIDenoiser Implementation ===
 
-AIDenoiser::AIDenoiser() : initialized(false) {
+AIDenoiser::AIDenoiser() : initialized(false), temporalHistoryBuffer(0), intermediateBuffer(0) {
     settings = DenoiserSettings{};
     stats.reset();
 }

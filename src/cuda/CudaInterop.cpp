@@ -35,7 +35,14 @@ using namespace HyperEngine::Core;
 
 namespace HyperEngine::CUDA {
 
-CudaInterop::CudaInterop() = default;
+CudaInterop::CudaInterop()
+    : device(nullptr),
+      physicalDevice(nullptr),
+      resourceManager(nullptr),
+      cudaContext(nullptr),
+      cudaDevice(-1),
+      initialized(false),
+      hasPlatformSupport(false) {}
 
 CudaInterop::~CudaInterop() {
     if (initialized) {

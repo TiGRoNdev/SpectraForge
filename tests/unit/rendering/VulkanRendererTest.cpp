@@ -214,7 +214,8 @@ TEST_F(VulkanRendererTest, Upscaling) {
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
-            [[maybe_unused]] FinalImage result = mockRenderer->upscale(denoisedImage, testResolution);
+            [[maybe_unused]] FinalImage result =
+                mockRenderer->upscale(denoisedImage, testResolution);
             // Результат должен иметь целевое разрешение
         },
         "Upscaling через DLSS/FSR");
