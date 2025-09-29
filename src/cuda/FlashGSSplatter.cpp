@@ -86,9 +86,8 @@ using namespace HyperEngine::Core;
 namespace HyperEngine::CUDA {
 
 // TileBasedRasterizer implementation
-TileBasedRasterizer::TileBasedRasterizer() {
-    // Инициализация в init()
-}
+TileBasedRasterizer::TileBasedRasterizer()
+    : width(0), height(0), tileSize(16), initialized(false) {}
 
 TileBasedRasterizer::~TileBasedRasterizer() {
     if (initialized) {
@@ -130,8 +129,7 @@ void TileBasedRasterizer::rasterize(const GaussianParams& params,
 }
 
 // FlashGSSplatter implementation
-FlashGSSplatter::FlashGSSplatter() {
-    // Инициализация в init()
+FlashGSSplatter::FlashGSSplatter() : legacyParams() {
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
     // Устанавливаем параметры оптимизации по умолчанию
     optimParams.learningRate = 0.01f;
