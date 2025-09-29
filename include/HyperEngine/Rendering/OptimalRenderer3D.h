@@ -266,7 +266,7 @@ class OptimalRendererFactory {
      */
     static std::unique_ptr<OptimalRenderer3D> createOptimalRenderer(
         const CreationParams& params);
-    
+
     /**
      * @brief Создает оптимальный рендерер с параметрами по умолчанию
      */
