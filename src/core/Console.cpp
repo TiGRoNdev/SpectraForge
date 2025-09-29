@@ -89,10 +89,10 @@ bool Console::initialize() {
 bool Console::setupUTF8() {
 #ifdef _WIN32
     // Настройка UTF-8 для консоли Windows
-    if (!SetConsoleCP(CP_UTF8)) {
+    if (SetConsoleCP(CP_UTF8) == 0) {
         return false;
     }
-    if (!SetConsoleOutputCP(CP_UTF8)) {
+    if (SetConsoleOutputCP(CP_UTF8) == 0) {
         return false;
     }
 
@@ -161,17 +161,17 @@ bool Console::setupLocale() {
 bool Console::enableColorOutput() {
 #ifdef _WIN32
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (hOut == INVALID_HANDLE_VALUE) {
+    if (hOut == reinterpret_cast<HANDLE>(static_cast<uintptr_t>(-1))) {
         return false;
     }
 
     DWORD dwMode = 0;
-    if (!GetConsoleMode(hOut, &dwMode)) {
+    if (GetConsoleMode(hOut, &dwMode) == 0) {
         return false;
     }
 
-    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-    if (!SetConsoleMode(hOut, dwMode)) {
+    dwMode |= static_cast<DWORD>(ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    if (SetConsoleMode(hOut, dwMode) == 0) {
         return false;
     }
 
@@ -195,17 +195,17 @@ bool Console::enableColorOutput() {
 bool Console::enableVirtualTerminal() {
 #ifdef _WIN32
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (hOut == INVALID_HANDLE_VALUE) {
+    if (hOut == reinterpret_cast<HANDLE>(static_cast<uintptr_t>(-1))) {
         return false;
     }
 
     DWORD dwMode = 0;
-    if (!GetConsoleMode(hOut, &dwMode)) {
+    if (GetConsoleMode(hOut, &dwMode) == 0) {
         return false;
     }
 
-    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-    if (!SetConsoleMode(hOut, dwMode)) {
+    dwMode |= static_cast<DWORD>(ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    if (SetConsoleMode(hOut, dwMode) == 0) {
         return false;
     }
 
@@ -260,9 +260,21 @@ void Console::log(const std::string& message, LogLevel level) {
 
 void Console::clear() {
 #ifdef _WIN32
-    system("cls");
+    // Используем более безопасный способ очистки консоли
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut != reinterpret_cast<HANDLE>(static_cast<uintptr_t>(-1))) {
+        COORD coord = {0, 0};
+        DWORD count;
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        if (GetConsoleScreenBufferInfo(hOut, &csbi) != 0) {
+            FillConsoleOutputCharacterA(hOut, ' ', csbi.dwSize.X * csbi.dwSize.Y, coord, &count);
+            SetConsoleCursorPosition(hOut, coord);
+        }
+    }
 #else
-    system("clear");
+    // На Unix системах используем ANSI escape sequence
+    std::cout << "\033[2J\033[1;1H";
+    std::cout.flush();
 #endif
 }
 
@@ -341,87 +353,120 @@ void Console::testColorDisplay() {
 
 std::string Console::getColorCode(ConsoleColor color) {
     switch (color) {
-        case ConsoleColor::RESET:
+        case ConsoleColor::RESET: {
             return "\033[0m";
-        case ConsoleColor::BLACK:
+        }
+        case ConsoleColor::BLACK: {
             return "\033[30m";
-        case ConsoleColor::RED:
+        }
+        case ConsoleColor::RED: {
             return "\033[31m";
-        case ConsoleColor::GREEN:
+        }
+        case ConsoleColor::GREEN: {
             return "\033[32m";
-        case ConsoleColor::YELLOW:
+        }
+        case ConsoleColor::YELLOW: {
             return "\033[33m";
-        case ConsoleColor::BLUE:
+        }
+        case ConsoleColor::BLUE: {
             return "\033[34m";
-        case ConsoleColor::MAGENTA:
+        }
+        case ConsoleColor::MAGENTA: {
             return "\033[35m";
-        case ConsoleColor::CYAN:
+        }
+        case ConsoleColor::CYAN: {
             return "\033[36m";
-        case ConsoleColor::WHITE:
+        }
+        case ConsoleColor::WHITE: {
             return "\033[37m";
-        case ConsoleColor::BRIGHT_BLACK:
+        }
+        case ConsoleColor::BRIGHT_BLACK: {
             return "\033[90m";
-        case ConsoleColor::BRIGHT_RED:
+        }
+        case ConsoleColor::BRIGHT_RED: {
             return "\033[91m";
-        case ConsoleColor::BRIGHT_GREEN:
+        }
+        case ConsoleColor::BRIGHT_GREEN: {
             return "\033[92m";
-        case ConsoleColor::BRIGHT_YELLOW:
+        }
+        case ConsoleColor::BRIGHT_YELLOW: {
             return "\033[93m";
-        case ConsoleColor::BRIGHT_BLUE:
+        }
+        case ConsoleColor::BRIGHT_BLUE: {
             return "\033[94m";
-        case ConsoleColor::BRIGHT_MAGENTA:
+        }
+        case ConsoleColor::BRIGHT_MAGENTA: {
             return "\033[95m";
-        case ConsoleColor::BRIGHT_CYAN:
+        }
+        case ConsoleColor::BRIGHT_CYAN: {
             return "\033[96m";
-        case ConsoleColor::BRIGHT_WHITE:
+        }
+        case ConsoleColor::BRIGHT_WHITE: {
             return "\033[97m";
-        default:
+        }
+        default: {
             return "\033[0m";
+        }
     }
 }
 
 std::string Console::getLogLevelEmoji(LogLevel level) {
     switch (level) {
-        case LogLevel::DEBUG_LEVEL:
+        case LogLevel::DEBUG_LEVEL: {
             return "🐛";
-        case LogLevel::INFO_LEVEL:
+        }
+        case LogLevel::INFO_LEVEL: {
             return "ℹ️";
-        case LogLevel::WARNING_LEVEL:
+        }
+        case LogLevel::WARNING_LEVEL: {
             return "⚠️";
-        case LogLevel::ERROR_LEVEL:
+        }
+        case LogLevel::ERROR_LEVEL: {
             return "❌";
-        default:
+        }
+        default: {
             return "";
+        }
     }
 }
 
 ConsoleColor Console::getLogLevelColor(LogLevel level) {
     switch (level) {
-        case LogLevel::DEBUG_LEVEL:
+        case LogLevel::DEBUG_LEVEL: {
             return ConsoleColor::CYAN;
-        case LogLevel::INFO_LEVEL:
+        }
+        case LogLevel::INFO_LEVEL: {
             return ConsoleColor::GREEN;
-        case LogLevel::WARNING_LEVEL:
+        }
+        case LogLevel::WARNING_LEVEL: {
             return ConsoleColor::YELLOW;
-        case LogLevel::ERROR_LEVEL:
+        }
+        case LogLevel::ERROR_LEVEL: {
             return ConsoleColor::RED;
-        default:
+        }
+        default: {
             return ConsoleColor::RESET;
+        }
     }
 }
 
 std::string Console::getLogLevelString(LogLevel level) {
     switch (level) {
-        case LogLevel::DEBUG_LEVEL:
+        case LogLevel::DEBUG_LEVEL: {
             return "DEBUG";
-        case LogLevel::INFO_LEVEL:
+        }
+        case LogLevel::INFO_LEVEL: {
             return "INFO";
-        case LogLevel::WARNING_LEVEL:
+        }
+        case LogLevel::WARNING_LEVEL: {
             return "WARNING";
-        case LogLevel::ERROR_LEVEL:
+        }
+        case LogLevel::ERROR_LEVEL: {
             return "ERROR";
-        default:
+        }
+        default: {
             return "UNKNOWN";
+        }
     }
 }
 
@@ -463,32 +508,39 @@ bool Console::isTextSafe(const std::string& text) {
 
             // Проверяем UTF-8 последовательности
             if ((c & 0xE0) == 0xC0) {  // 2-байтовая последовательность
-                if (i + 1 >= text.length())
+                if (i + 1 >= text.length()) {
                     return false;
+                }
                 unsigned char c2 = static_cast<unsigned char>(text[i + 1]);
-                if ((c2 & 0xC0) != 0x80)
+                if ((c2 & 0xC0) != 0x80) {
                     return false;
+                }
                 i += 1;
             } else if ((c & 0xF0) == 0xE0) {  // 3-байтовая последовательность
-                if (i + 2 >= text.length())
+                if (i + 2 >= text.length()) {
                     return false;
+                }
                 unsigned char c2 = static_cast<unsigned char>(text[i + 1]);
                 unsigned char c3 = static_cast<unsigned char>(text[i + 2]);
-                if ((c2 & 0xC0) != 0x80 || (c3 & 0xC0) != 0x80)
+                if ((c2 & 0xC0) != 0x80 || (c3 & 0xC0) != 0x80) {
                     return false;
+                }
                 i += 2;
             } else if ((c & 0xF8) == 0xF0) {  // 4-байтовая последовательность (эмодзи)
-                if (i + 3 >= text.length())
+                if (i + 3 >= text.length()) {
                     return false;
+                }
                 unsigned char c2 = static_cast<unsigned char>(text[i + 1]);
                 unsigned char c3 = static_cast<unsigned char>(text[i + 2]);
                 unsigned char c4 = static_cast<unsigned char>(text[i + 3]);
-                if ((c2 & 0xC0) != 0x80 || (c3 & 0xC0) != 0x80 || (c4 & 0xC0) != 0x80)
+                if ((c2 & 0xC0) != 0x80 || (c3 & 0xC0) != 0x80 || (c4 & 0xC0) != 0x80) {
                     return false;
+                }
 
                 // Если эмодзи не поддерживаются, считаем небезопасным
-                if (!emojiSupported)
+                if (!emojiSupported) {
                     return false;
+                }
                 i += 3;
             } else {
                 // Некорректная UTF-8 последовательность

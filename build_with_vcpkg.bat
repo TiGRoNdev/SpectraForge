@@ -19,8 +19,8 @@ call .\vcpkg.exe install
 cd ..
 
 REM Create build directory
-if not exist "build-ninja" mkdir build-ninja
-cd build-ninja
+if not exist "build-vcpkg" mkdir build-vcpkg
+cd build-vcpkg
 
 REM Configure with vcpkg and Ninja
 echo Configuring with CMake, vcpkg and Ninja...
@@ -31,5 +31,5 @@ echo Building with Ninja...
 ninja
 
 echo Build complete!
-echo Compile commands exported to: build-ninja\compile_commands.json
+echo Compile commands exported to: build-vcpkg\compile_commands.json
 pause

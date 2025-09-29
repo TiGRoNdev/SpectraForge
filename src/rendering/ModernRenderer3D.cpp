@@ -11,20 +11,21 @@
 using namespace HyperEngine::Rendering;
 using namespace HyperEngine::Core;
 
-namespace HyperEngine {
-namespace Rendering {
+namespace HyperEngine::Rendering {
 
 // Конструктор с dependency injection (DIP)
-ModernRenderer3D::ModernRenderer3D(std::shared_ptr<IRenderStrategy> renderStrategy,
-                                   std::shared_ptr<ILightingSystem> lightingSystem,
-                                   std::shared_ptr<ICameraSystem> cameraSystem,
-                                   std::shared_ptr<IRenderStatistics> statistics,
-                                   std::shared_ptr<Core::ILogger> logger)
+ModernRenderer3D::ModernRenderer3D(const std::shared_ptr<IRenderStrategy>& renderStrategy,
+                                   const std::shared_ptr<ILightingSystem>& lightingSystem,
+                                   const std::shared_ptr<ICameraSystem>& cameraSystem,
+                                   const std::shared_ptr<IRenderStatistics>& statistics,
+                                   const std::shared_ptr<Core::ILogger>& logger)
     : renderStrategy(renderStrategy),
       lightingSystem(lightingSystem),
       cameraSystem(cameraSystem),
       statistics(statistics),
-      logger(logger) {
+      logger(logger),
+      postProcessEffects{},
+      configParameters{} {
     if (!renderStrategy) {
         throw std::invalid_argument("RenderStrategy не может быть nullptr");
     }
@@ -210,10 +211,16 @@ void ModernRenderer3D::setConfigParameter(const std::string& key, const std::any
 
     // Применение некоторых параметров немедленно
     try {
-        if (key == "width" && std::any_cast<int>(value) > 0) {
-            config.width = std::any_cast<int>(value);
-        } else if (key == "height" && std::any_cast<int>(value) > 0) {
-            config.height = std::any_cast<int>(value);
+        if (key == "width") {
+            const int intValue = std::any_cast<int>(value);
+            if (intValue > 0) {
+                config.width = intValue;
+            }
+        } else if (key == "height") {
+            const int intValue = std::any_cast<int>(value);
+            if (intValue > 0) {
+                config.height = intValue;
+            }
         } else if (key == "vsync") {
             config.vsync = std::any_cast<bool>(value);
         } else if (key == "msaa_samples") {
@@ -258,7 +265,7 @@ bool ModernRenderer3D::saveConfig(const std::string& configPath) const {
 }
 
 // Управление стратегиями (Strategy Pattern + OCP)
-void ModernRenderer3D::setRenderStrategy(std::shared_ptr<IRenderStrategy> newStrategy) {
+void ModernRenderer3D::setRenderStrategy(const std::shared_ptr<IRenderStrategy>& newStrategy) {
     if (!newStrategy) {
         logger->logWarning("Попытка установить nullptr стратегию рендеринга");
         return;
@@ -284,7 +291,7 @@ void ModernRenderer3D::setRenderStrategy(std::shared_ptr<IRenderStrategy> newStr
 }
 
 // Управление пост-процессинг эффектами (OCP)
-void ModernRenderer3D::addPostProcessEffect(std::shared_ptr<IPostProcessEffect> effect) {
+void ModernRenderer3D::addPostProcessEffect(const std::shared_ptr<IPostProcessEffect>& effect) {
     if (!effect) {
         logger->logWarning("Попытка добавить nullptr пост-процессинг эффект");
         return;
@@ -340,5 +347,4 @@ void ModernRenderer3D::applyPostProcessEffects() {
     }
 }
 
-}  // namespace Rendering
-}  // namespace HyperEngine
+}  // namespace HyperEngine::Rendering

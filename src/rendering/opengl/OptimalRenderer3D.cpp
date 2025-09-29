@@ -1017,6 +1017,11 @@ std::unique_ptr<OptimalRenderer3D> OptimalRendererFactory::createOptimalRenderer
     return renderer;
 }
 
+std::unique_ptr<OptimalRenderer3D> OptimalRendererFactory::createOptimalRenderer() {
+    CreationParams defaultParams;
+    return createOptimalRenderer(defaultParams);
+}
+
 OptimalRenderer3D::HardwareConfig OptimalRendererFactory::detectHardware() {
     OptimalRenderer3D::HardwareConfig config;
 

@@ -60,7 +60,7 @@ class Console {
 
     // Безопасный вывод
     static void safePrint(const std::string& text);
-    static void safePrintLine(const std::string& text);
+    static void safePrintLine(const std::string& message);
     static void safeInfo(const std::string& message);
     static void safeWarning(const std::string& message);
     static void safeError(const std::string& message);

@@ -51,11 +51,11 @@ class ModernRenderer3D : public IRenderer,
      * @param statistics Система статистики (DIP)
      * @param logger Логгер (DIP)
      */
-    ModernRenderer3D(std::shared_ptr<IRenderStrategy> renderStrategy,
-                     std::shared_ptr<ILightingSystem> lightingSystem,
-                     std::shared_ptr<ICameraSystem> cameraSystem,
-                     std::shared_ptr<IRenderStatistics> statistics,
-                     std::shared_ptr<Core::ILogger> logger);
+    ModernRenderer3D(const std::shared_ptr<IRenderStrategy>& renderStrategy,
+                     const std::shared_ptr<ILightingSystem>& lightingSystem,
+                     const std::shared_ptr<ICameraSystem>& cameraSystem,
+                     const std::shared_ptr<IRenderStatistics>& statistics,
+                     const std::shared_ptr<Core::ILogger>& logger);
 
     /**
      * @brief Деструктор
@@ -87,7 +87,7 @@ class ModernRenderer3D : public IRenderer,
      * @brief Смена стратегии рендеринга (Strategy Pattern + OCP)
      * @param newStrategy Новая стратегия рендеринга
      */
-    void setRenderStrategy(std::shared_ptr<IRenderStrategy> newStrategy);
+    void setRenderStrategy(const std::shared_ptr<IRenderStrategy>& newStrategy);
 
     /**
      * @brief Получение текущей стратегии рендеринга
@@ -99,7 +99,7 @@ class ModernRenderer3D : public IRenderer,
      * @brief Добавление пост-процессинг эффекта (OCP)
      * @param effect Эффект для добавления
      */
-    void addPostProcessEffect(std::shared_ptr<class IPostProcessEffect> effect);
+    void addPostProcessEffect(const std::shared_ptr<class IPostProcessEffect>& effect);
 
     /**
      * @brief Удаление пост-процессинг эффекта

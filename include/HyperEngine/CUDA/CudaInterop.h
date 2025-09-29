@@ -87,9 +87,9 @@ class CudaInterop {
      * @param resourceManager Менеджер ресурсов Vulkan
      * @return true если инициализация успешна
      */
-    bool initializeInterop(vk::Device device,
-                           vk::PhysicalDevice physicalDevice,
-                           Vulkan::ResourceManager* resourceManager);
+    bool initializeInterop(vk::Device dev,
+                           vk::PhysicalDevice physDev,
+                           Vulkan::ResourceManager* resMgr);
 
     /**
      * @brief Завершение работы interop
@@ -125,14 +125,14 @@ class CudaInterop {
      * @param syncObj Объект синхронизации
      * @param stream CUDA stream
      */
-    void signalVulkanToCuda(std::shared_ptr<SyncObject> syncObj, cudaStream_t stream = 0);
+    void signalVulkanToCuda(const std::shared_ptr<SyncObject>& syncObj, cudaStream_t stream = 0);
 
     /**
      * @brief Ожидание сигнала от CUDA в Vulkan
      * @param syncObj Объект синхронизации
      * @param commandBuffer Command buffer для вставки wait
      */
-    void waitCudaFromVulkan(std::shared_ptr<SyncObject> syncObj, vk::CommandBuffer commandBuffer);
+    void waitCudaFromVulkan(const std::shared_ptr<SyncObject>& syncObj, vk::CommandBuffer commandBuffer);
 
     /**
      * @brief Импорт Vulkan памяти в CUDA

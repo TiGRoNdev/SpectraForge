@@ -34,9 +34,7 @@ using namespace HyperEngine::Core;
 
 namespace HyperEngine::CUDA {
 
-CudaInterop::CudaInterop() {
-    // Инициализация в initializeInterop()
-}
+CudaInterop::CudaInterop() = default;
 
 CudaInterop::~CudaInterop() {
     if (initialized) {
@@ -120,11 +118,11 @@ void CudaInterop::cleanup() {
 
     // Освобождаем sync объекты
     for (auto& syncObj : syncObjects) {
-        if (syncObj && syncObj->isValid) {
+        if (syncObj != nullptr && syncObj->isValid) {
             if (syncObj->vulkanSemaphore) {
                 device.destroySemaphore(syncObj->vulkanSemaphore);
             }
-            if (syncObj->cudaExternalSemaphore) {
+            if (syncObj->cudaExternalSemaphore != nullptr) {
                 cudaDestroyExternalSemaphore(syncObj->cudaExternalSemaphore);
             }
             syncObj->isValid = false;
@@ -133,7 +131,7 @@ void CudaInterop::cleanup() {
     syncObjects.clear();
 
     // Освобождаем CUDA контекст
-    if (cudaContext) {
+    if (cudaContext != nullptr) {
         cuCtxDestroy(cudaContext);
         cudaContext = nullptr;
     }
@@ -270,13 +268,13 @@ std::shared_ptr<SyncObject> CudaInterop::createSyncObject() {
         // Пока используем заглушку для handle
         HANDLE handle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
-        if (handle == INVALID_HANDLE_VALUE) {
+        if (handle == reinterpret_cast<HANDLE>(static_cast<uintptr_t>(-1))) {
             throw std::runtime_error("Не удалось создать временный Windows handle для semaphore");
         }
 
         // RAII-обертка для автоматического освобождения handle в случае исключения
         auto handleGuard = [handle]() {
-            if (handle != INVALID_HANDLE_VALUE) {
+            if (handle != reinterpret_cast<HANDLE>(static_cast<uintptr_t>(-1))) {
                 CloseHandle(handle);
             }
         };
@@ -326,8 +324,8 @@ std::shared_ptr<SyncObject> CudaInterop::createSyncObject() {
     }
 }
 
-void CudaInterop::signalVulkanToCuda(std::shared_ptr<SyncObject> syncObj, cudaStream_t stream) {
-    if (!syncObj || !syncObj->isValid) {
+void CudaInterop::signalVulkanToCuda(const std::shared_ptr<SyncObject>& syncObj, cudaStream_t stream) {
+    if (syncObj == nullptr || !syncObj->isValid) {
         std::cout << "[CudaInterop] Ошибка: Некорректный объект синхронизации" << std::endl;
         return;
     }
@@ -344,9 +342,9 @@ void CudaInterop::signalVulkanToCuda(std::shared_ptr<SyncObject> syncObj, cudaSt
     }
 }
 
-void CudaInterop::waitCudaFromVulkan(std::shared_ptr<SyncObject> syncObj,
+void CudaInterop::waitCudaFromVulkan(const std::shared_ptr<SyncObject>& syncObj,
                                      vk::CommandBuffer commandBuffer) {
-    if (!syncObj || !syncObj->isValid) {
+    if (syncObj == nullptr || !syncObj->isValid) {
         std::cout << "[CudaInterop] Ошибка: Некорректный объект синхронизации" << std::endl;
         return;
     }
@@ -374,13 +372,13 @@ cudaExternalMemory_t CudaInterop::importVulkanMemory(vk::DeviceMemory vulkanMemo
         // Пока используем заглушку для handle
         HANDLE handle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
-        if (handle == INVALID_HANDLE_VALUE) {
+        if (handle == reinterpret_cast<HANDLE>(static_cast<uintptr_t>(-1))) {
             throw std::runtime_error("Не удалось создать временный Windows handle для памяти");
         }
 
         // RAII-обертка для автоматического освобождения handle в случае исключения
         auto handleGuard = [handle]() {
-            if (handle != INVALID_HANDLE_VALUE) {
+            if (handle != reinterpret_cast<HANDLE>(static_cast<uintptr_t>(-1))) {
                 CloseHandle(handle);
             }
         };

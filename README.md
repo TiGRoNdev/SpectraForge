@@ -46,12 +46,14 @@
 ## 📊 Производительность
 
 ### Метрики производительности (GTX 1060)
+
 - **🎯 FPS**: 60 FPS стабильно при 1080p
 - **📦 Объекты**: 100,000+ объектов с frustum culling
 - **⏱️ Latency**: <1ms время кадра для простых сцен
 - **💾 Memory**: <100MB памяти для базовых сцен
 
 ### Оптимизации рендеринга
+
 - **🔍 Frustum Culling**: Отсечение невидимых объектов
 - **📦 Batch Rendering**: Группировка draw calls
 - **🎮 GPU-driven Rendering**: Минимизация CPU-GPU синхронизации
@@ -60,6 +62,7 @@
 ## 📋 Системные требования
 
 ### Минимальные требования
+
 - **💻 OS**: Windows 10+ / Linux (Ubuntu 20.04+)
 - **🔧 Compiler**: Visual Studio 2019+ (Windows) / GCC 9+ / Clang 10+ (Linux)
 - **⚙️ CMake**: 3.16 или новее
@@ -67,6 +70,7 @@
 - **🎮 GPU**: OpenGL 4.1+ / Vulkan 1.3+ (для advanced features)
 
 ### Рекомендованные требования
+
 - **🖥️ CPU**: Intel i5-8400 / AMD Ryzen 5 2600 или лучше
 - **🎮 GPU**: NVIDIA GTX 1060 / AMD RX 580 или лучше (RTX для ray tracing)
 - **🧠 Memory**: 8 GB RAM
@@ -89,11 +93,13 @@ cd HyperEngine
 ```
 
 **Преимущества Ninja:**
+
 - ⚡ Быстрая сборка (в 2-3 раза быстрее Visual Studio)
 - 📋 Автоматический экспорт команд компиляции (`compile_commands.json`)
 - 🔧 Лучшая интеграция с IDE и инструментами анализа
 
 **Альтернативные методы сборки:**
+
 ```bash
 # Через CMake Presets
 cmake --preset windows-ninja
@@ -209,6 +215,7 @@ HyperEngine/
 ### Основные архитектурные компоненты
 
 #### 🧮 Математическая библиотека (`Math`)
+
 ```cpp
 #include <Engine3D/Math/Vector3.h>
 #include <Engine3D/Math/Matrix4.h>
@@ -221,6 +228,7 @@ Quaternion rotation = Quaternion::fromEulerAngles(0, 45, 0);
 ```
 
 #### 🎨 Система рендеринга (`Rendering`)
+
 ```cpp
 #include <Engine3D/Rendering/Renderer3D.h>
 #include <Engine3D/Rendering/OptimalRenderer3D.h>
@@ -235,6 +243,7 @@ optimalRenderer->initialize(1920, 1080, 2560, 1440); // render -> target resolut
 ```
 
 #### 🎯 Система объектов (`Core`)
+
 ```cpp
 #include <Engine3D/Core/GameObject3D.h>
 #include <Engine3D/Core/Transform3D.h>
@@ -246,6 +255,7 @@ auto meshRenderer = gameObject->addComponent<MeshRenderer3D>();
 ```
 
 #### ⚡ Физическая система (`Physics`)
+
 ```cpp
 #include <Engine3D/Physics/Physics3D.h>
 
@@ -255,6 +265,7 @@ rigidBody->applyForce(Vector3(0, -9.81f, 0));
 ```
 
 #### 🎮 Система ввода (`Input`)
+
 ```cpp
 #include <Engine3D/Input/Input3D.h>
 
@@ -265,6 +276,7 @@ if (input.isKeyPressed(KeyCode::W)) {
 ```
 
 #### 💻 UTF-8 консоль (`Console`)
+
 ```cpp
 #include <Engine3D/Core/Console.h>
 
@@ -284,47 +296,47 @@ Console::error("❌ Ошибка загрузки ресурса");
 
 int main() {
     using namespace Engine3D;
-    
+
     // Инициализация UTF-8 консоли
     Core::Console::initialize();
     Core::Console::info("🚀 Запуск HyperEngine...");
-    
+
     // Инициализация рендерера
     auto& renderer = Rendering::Renderer3D::getInstance();
     if (!renderer.initialize(1280, 720)) {
         Core::Console::error("❌ Ошибка инициализации рендерера");
         return -1;
     }
-    
+
     // Создание камеры
     auto cameraObj = Core::GameObject3D::create("Camera");
     auto camera = cameraObj->addComponent<Rendering::Camera3D>();
     camera->setPosition(Math::Vector3(0, 0, -5));
     renderer.setMainCamera(camera);
-    
+
     // Создание вращающегося куба
     auto cube = Core::GameObject3D::create("Cube");
     auto meshRenderer = cube->addComponent<Core::MeshRenderer3D>();
     auto mesh = Rendering::Mesh3D::createCube(1.0f);
     meshRenderer->setMesh(mesh);
     meshRenderer->setColor(Math::Vector3(0.8f, 0.3f, 0.2f));
-    
+
     // Игровой цикл
     while (!renderer.shouldClose()) {
         renderer.beginFrame();
-        
+
         // Вращение куба
         float time = glfwGetTime();
         cube->getComponent<Core::Transform3D>()->setRotation(
             Math::Quaternion::fromEulerAngles(time * 50, time * 30, 0)
         );
-        
+
         // Рендеринг
         cube->render();
-        
+
         renderer.endFrame();
     }
-    
+
     renderer.cleanup();
     Core::Console::cleanup();
     return 0;
@@ -360,14 +372,14 @@ public:
     void update(float deltaTime) override {
         auto& input = Input::Input3D::getInstance();
         auto transform = getGameObject()->getComponent<Core::Transform3D>();
-        
+
         Math::Vector3 movement(0);
-        
+
         if (input.isKeyPressed(Input::KeyCode::W)) movement += transform->forward();
         if (input.isKeyPressed(Input::KeyCode::S)) movement -= transform->forward();
         if (input.isKeyPressed(Input::KeyCode::A)) movement -= transform->right();
         if (input.isKeyPressed(Input::KeyCode::D)) movement += transform->right();
-        
+
         if (movement.magnitude() > 0) {
             movement = movement.normalized() * moveSpeed * deltaTime;
             transform->translate(movement);
@@ -382,18 +394,21 @@ private:
 ## 📚 Полная документация
 
 ### 📖 Основная документация
+
 - 🏗️ [**Архитектура системы**](docs/architecture/ARCHITECTURE.md) - Детальное описание архитектуры, SOLID принципов и компонентной системы
 - 📚 [**API Reference**](docs/api/API_Reference.md) - Полная справочная документация по всем компонентам API
 - 🎯 [**Руководство с примерами**](docs/guides/Examples.md) - Практические примеры использования и лучшие практики
 - 🔧 [**Инструкции по сборке**](BUILD_INSTRUCTIONS.md) - Детальное руководство по сборке на разных платформах
 
 ### 🚀 Специализированная документация
+
 - ⚡ [**Vulkan Architecture**](docs/architecture/VULKAN_ARCHITECTURE.md) - Архитектура Vulkan рендерера
 - 🧠 [**Optimal Rendering Algorithm**](docs/architecture/OPTIMAL_RENDERING_ALGORITHM.md) - 5-этапный алгоритм оптимального рендеринга
 - 🎮 [**Component System**](docs/architecture/COMPONENT_SYSTEM.md) - Система GameObject-Component
 - 🔄 [**Renderer Adapters**](docs/architecture/RENDERER_ADAPTERS.md) - Адаптеры для переключения backend'ов
 
 ### 🔧 Для разработчиков
+
 - 🤝 [**Руководство по участию**](CONTRIBUTING.md) - Как принять участие в разработке
 - 📝 [**История изменений**](CHANGELOG.md) - Детальный лог всех изменений
 - 🔗 [**Зависимости**](DEPENDENCIES.md) - Список и описание всех зависимостей
@@ -402,6 +417,7 @@ private:
 ## 🌐 Экспериментальные возможности
 
 ### 4D Движок (Экспериментальный)
+
 ```cpp
 // 4D математика
 Engine4D::Math::Vector4 position4D(1, 2, 3, 4);
@@ -417,6 +433,7 @@ controller->setWMovement(true); // Движение по W-оси
 ```
 
 ### Advanced Graphics Features
+
 - **🌟 Ray Tracing**: OptiX-powered лучевая трассировка для реалистичного освещения
 - **🎨 Gaussian Splatting**: Продвинутая техника рендеринга для фотореалистичных сцен
 - **🧠 AI Upscaling**: DLSS/FSR интеграция для повышения производительности
@@ -425,18 +442,21 @@ controller->setWMovement(true); // Движение по W-оси
 ## 🔮 Дорожная карта
 
 ### Версия 1.1 (Q1 2026)
+
 - [ ] 🎮 **VR/AR поддержка**: Полная интеграция с VR/AR SDK
 - [ ] 🌊 **Продвинутая система частиц**: Расширенные эффекты частиц с GPU симуляцией
 - [ ] 🔊 **3D позиционный звук**: Система пространственного аудио
 - [ ] 📱 **Мобильные платформы**: Портирование на Android/iOS
 
 ### Версия 1.2 (Q2 2026)
+
 - [ ] 🎨 **Визуальный редактор сцен**: WYSIWYG редактор для создания сцен
 - [ ] 🧠 **Интегрированная система ИИ**: AI для поведения NPC и процедурной генерации
 - [ ] 🌐 **Сетевая поддержка**: Мультиплеер и синхронизация состояния
 - [ ] 📊 **Встроенный профайлер**: Real-time профилирование производительности
 
 ### Версия 2.0 (Q4 2026)
+
 - [ ] 🔥 **Hardware Ray Tracing**: Полная поддержка RTX/RDNA ray tracing
 - [ ] 🌍 **Процедурная генерация**: Автоматическая генерация миров и контента
 - [ ] 🎯 **Production-ready 4D**: Полная поддержка 4D игр для коммерческого использования
@@ -447,6 +467,7 @@ controller->setWMovement(true); // Движение по W-оси
 Мы приветствуем вклад сообщества! Проект развивается благодаря участию разработчиков со всего мира.
 
 ### Как помочь проекту
+
 1. 🐛 **Сообщайте об ошибках** через [GitHub Issues](https://github.com/yourusername/hyperengine/issues)
 2. 💡 **Предлагайте новые возможности** в [Discussions](https://github.com/yourusername/hyperengine/discussions)
 3. 📝 **Улучшайте документацию** через Pull Requests
@@ -458,6 +479,7 @@ controller->setWMovement(true); // Движение по W-оси
 Проект включает полный набор инструментов для обеспечения качества кода:
 
 #### 🎨 Автоматическое форматирование
+
 ```bash
 # Форматирование всего кода
 ./scripts/format_code.bat        # Windows
@@ -467,6 +489,7 @@ controller->setWMovement(true); // Движение по W-оси
 ```
 
 #### 🔍 Проверка качества кода
+
 ```bash
 # Полная проверка качества
 ./scripts/quality_check.sh
@@ -476,6 +499,7 @@ controller->setWMovement(true); // Движение по W-оси
 ```
 
 #### 🔧 Git Hooks
+
 ```bash
 # Установка локальных git hooks
 ./scripts/setup_git_hooks.sh      # Linux/macOS
@@ -483,6 +507,7 @@ scripts\setup_git_hooks.bat       # Windows
 ```
 
 **Автоматические проверки:**
+
 - ✅ Форматирование кода (clang-format)
 - 🔒 Проверка безопасности
 - 📋 Соответствие стандартам кодирования
@@ -490,12 +515,14 @@ scripts\setup_git_hooks.bat       # Windows
 - 📝 Валидация commit messages
 
 #### 📚 Документация разработчика
+
 - [Стандарты кодирования](docs/CODING_STANDARDS.md)
 - [Инструменты разработки](docs/DEVELOPMENT_TOOLS.md)
 - [Настройка Ninja Build System](docs/guides/NINJA_SETUP.md) ⚡
 - [Архитектурные решения](docs/architecture/)
 
 ### Стандарты разработки
+
 - **📋 Код**: Следование SOLID принципам и C++20 стандартам
 - **🎨 Форматирование**: Автоматическое с clang-format
 - **🔍 Статический анализ**: clang-tidy + cppcheck
@@ -510,28 +537,31 @@ scripts\setup_git_hooks.bat       # Windows
 Проект распространяется под лицензией **MIT**. См. [LICENSE](LICENSE) для подробностей.
 
 ```
-MIT License - Вы можете свободно использовать, изменять и распространять 
+MIT License - Вы можете свободно использовать, изменять и распространять
 этот код в коммерческих и некоммерческих проектах.
 ```
 
 ## 📞 Поддержка и контакты
 
 ### 🌐 Официальные ресурсы
+
 - **GitHub**: [HyperEngine Repository](https://github.com/yourusername/hyperengine)
 - **Discussions**: [GitHub Discussions](https://github.com/yourusername/hyperengine/discussions)
 - **Issues**: [Bug Reports & Feature Requests](https://github.com/yourusername/hyperengine/issues)
 - **Wiki**: [Project Wiki](https://github.com/yourusername/hyperengine/wiki)
 
 ### 💬 Сообщество
+
 - **Discord**: [HyperEngine Community](#) - Общение с разработчиками
 - **Reddit**: [r/HyperEngine](#) - Обсуждения и новости
 - **Twitter**: [@HyperEngineGame](#) - Последние обновления
 - **YouTube**: [HyperEngine Channel](#) - Видео-туториалы и демо
 
 ### 📧 Прямая связь
-- **Email**: hyperengine.dev@example.com
-- **Technical Support**: support@hyperengine.dev
-- **Business Inquiries**: business@hyperengine.dev
+
+- **Email**: <hyperengine.dev@example.com>
+- **Technical Support**: <support@hyperengine.dev>
+- **Business Inquiries**: <business@hyperengine.dev>
 
 ## 📊 Статистика проекта
 

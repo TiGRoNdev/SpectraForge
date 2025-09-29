@@ -43,7 +43,7 @@ class Transform3D : public UpdatableComponent, public ITransformable {
     // Операции трансформации
     void translate(const Math::Vector3& translation);
     void rotate(const Math::Quaternion& rotation);
-    void scaleBy(const Math::Vector3& scale);
+    void scaleBy(const Math::Vector3& scl);
 
     // Геттеры мировых координат
     Math::Vector3 getWorldPosition() const;
