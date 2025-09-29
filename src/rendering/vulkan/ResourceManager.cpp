@@ -10,6 +10,7 @@
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
+#include "HyperEngine/Core/SafeConsole.h"
 
 #ifdef _WIN32
 #include <windows.h>

@@ -1,7 +1,10 @@
 #pragma once
 
 #include <memory>
+
+#ifdef BUILD_VULKAN_RENDERER
 #include <vulkan/vulkan.hpp>
+#endif
 
 // Forward declarations
 namespace HyperEngine {
@@ -102,6 +105,7 @@ class VulkanRenderer {
      * @brief Первичная растеризация гауссианов
      * @param gaussians Гауссианы для рендеринга
      * @return Первичное изображение
+     * @throws std::invalid_argument если данные гауссианов невалидны
      */
     PrimaryImage rasterizePrimary(const Gaussians& gaussians);
 

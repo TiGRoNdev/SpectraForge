@@ -39,6 +39,13 @@ option(DEFAULT_BACKEND_VULKAN "Use Vulkan as default backend (otherwise OpenGL)"
 # Создаем проект с поддерживаемыми языками
 project(HyperEngine VERSION 1.0.0 LANGUAGES ${PROJECT_LANGUAGES})
 
+# Включаем CUDA если нужно
+if(BUILD_WITH_CUDA AND CUDA_COMPILER_AVAILABLE)
+    enable_language(CUDA)
+    set(CMAKE_CUDA_ARCHITECTURES "50;60;70;75;80;86")
+    message(STATUS "CUDA language enabled")
+endif()
+
 # Установка стандарта C++
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -108,14 +115,16 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # Поиск пакетов
 if(BUILD_ENGINE_4D OR BUILD_VULKAN_RENDERER)
-    # Используем Vulkan из vcpkg
+    # Используем Vulkan из системы
     find_package(Vulkan REQUIRED)
-    find_package(VulkanMemoryAllocator CONFIG REQUIRED)
-    find_package(spirv_cross_core CONFIG REQUIRED)
-    find_package(unofficial-shaderc CONFIG REQUIRED)
-    find_package(imgui CONFIG REQUIRED)
-    find_package(assimp CONFIG REQUIRED)
-    find_package(Stb REQUIRED)
+    
+    # Опциональные зависимости Vulkan
+    find_package(VulkanMemoryAllocator CONFIG QUIET)
+    find_package(spirv_cross_core CONFIG QUIET)
+    find_package(unofficial-shaderc CONFIG QUIET)
+    find_package(imgui CONFIG QUIET)
+    find_package(assimp CONFIG QUIET)
+    find_package(Stb QUIET)
 endif()
 
 # Поиск GLFW3 через vcpkg
@@ -123,6 +132,9 @@ find_package(glfw3 CONFIG REQUIRED)
 
 # Поиск GLEW через vcpkg
 find_package(GLEW REQUIRED)
+
+# Поиск OpenGL
+find_package(OpenGL REQUIRED)
 
 # Поиск GLM через vcpkg
 find_package(glm CONFIG REQUIRED)
@@ -215,6 +227,11 @@ if(BUILD_ENGINE_3D)
         HyperEngine_Physics
         HyperEngine_Input
     )
+    
+    # Подключаем Vulkan модуль если включен
+    if(ENABLE_VULKAN_BACKEND AND BUILD_VULKAN_RENDERER)
+        target_link_libraries(HyperEngine INTERFACE HyperEngine_Vulkan)
+    endif()
     
     # Подключаем опциональные модули
     if(BUILD_WITH_CUDA)
@@ -314,8 +331,10 @@ if(BUILD_ENGINE_4D)
         Vulkan::Vulkan
         glfw
         glm::glm
-        GPUOpen::VulkanMemoryAllocator
     )
+    if(TARGET VulkanMemoryAllocator::VulkanMemoryAllocator)
+        target_link_libraries(Engine4D PUBLIC VulkanMemoryAllocator::VulkanMemoryAllocator)
+    endif()
     
     # Определения компилятора для 4D
     target_compile_definitions(Engine4D PUBLIC ENGINE_4D_BUILD)
@@ -475,14 +494,26 @@ if(BUILD_VULKAN_RENDERER)
     # Базовые библиотеки для Vulkan рендерера
     target_link_libraries(VulkanRenderer PUBLIC 
         Vulkan::Vulkan
-        GPUOpen::VulkanMemoryAllocator
-        spirv-cross-core
-        unofficial::shaderc::shaderc
-        imgui::imgui
-        assimp::assimp
         glfw
         glm::glm
     )
+    
+    # Опциональные зависимости Vulkan
+    if(TARGET VulkanMemoryAllocator::VulkanMemoryAllocator)
+        target_link_libraries(VulkanRenderer PUBLIC VulkanMemoryAllocator::VulkanMemoryAllocator)
+    endif()
+    if(TARGET spirv_cross_core::spirv_cross_core)
+        target_link_libraries(VulkanRenderer PUBLIC spirv_cross_core::spirv_cross_core)
+    endif()
+    if(TARGET unofficial::shaderc::shaderc)
+        target_link_libraries(VulkanRenderer PUBLIC unofficial::shaderc::shaderc)
+    endif()
+    if(TARGET imgui::imgui)
+        target_link_libraries(VulkanRenderer PUBLIC imgui::imgui)
+    endif()
+    if(TARGET assimp::assimp)
+        target_link_libraries(VulkanRenderer PUBLIC assimp::assimp)
+    endif()
     
     # Подключение stb через include directories
     target_include_directories(VulkanRenderer PRIVATE ${Stb_INCLUDE_DIR})

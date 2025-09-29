@@ -6,6 +6,7 @@ message(STATUS "Настройка HyperEngine_Math")
 # Исходные файлы математической библиотеки
 set(MATH_SOURCES
     vector/Vector3.cpp
+    vector/Vector4.cpp
     matrix/Matrix4.cpp
     matrix/Quaternion.cpp
 )
@@ -17,6 +18,7 @@ get_filename_component(PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE
 set(MATH_HEADERS
     ${PROJECT_ROOT}/include/HyperEngine/Math/Vector2.h
     ${PROJECT_ROOT}/include/HyperEngine/Math/Vector3.h
+    ${PROJECT_ROOT}/include/HyperEngine/Math/Vector4.h
     ${PROJECT_ROOT}/include/HyperEngine/Math/Matrix4.h
     ${PROJECT_ROOT}/include/HyperEngine/Math/Quaternion.h
     ${PROJECT_ROOT}/include/HyperEngine/Math/Math.h

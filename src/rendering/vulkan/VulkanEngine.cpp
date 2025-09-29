@@ -19,8 +19,8 @@
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
-#include <windows.h>
 #include <vulkan/vulkan_win32.h>
+#include <windows.h>
 #include "HyperEngine/Core/Console.h"
 #endif
 

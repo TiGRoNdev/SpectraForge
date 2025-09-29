@@ -14,7 +14,9 @@
 #include <vector>
 #include "HyperEngine/Core/Console.h"
 #include "HyperEngine/Core/SafeConsole.h"
+#ifdef BUILD_VULKAN_RENDERER
 #include "HyperEngine/Vulkan/ResourceManager.h"
+#endif
 
 using namespace HyperEngine::Core;
 
@@ -42,6 +44,7 @@ CudaInterop::~CudaInterop() {
     }
 }
 
+#ifdef BUILD_VULKAN_RENDERER
 bool CudaInterop::initializeInterop(vk::Device dev,
                                     vk::PhysicalDevice physDev,
                                     Vulkan::ResourceManager* resMgr) {
@@ -100,6 +103,12 @@ bool CudaInterop::initializeInterop(vk::Device dev,
         return false;
     }
 }
+#else
+bool CudaInterop::initializeInterop(void* dev, void* physDev, Vulkan::ResourceManager* resMgr) {
+    SAFE_ERROR("[CudaInterop] Vulkan рендерер отключен, interop недоступен");
+    return false;
+}
+#endif
 
 void CudaInterop::cleanup() {
     if (!initialized) {
@@ -324,7 +333,8 @@ std::shared_ptr<SyncObject> CudaInterop::createSyncObject() {
     }
 }
 
-void CudaInterop::signalVulkanToCuda(const std::shared_ptr<SyncObject>& syncObj, cudaStream_t stream) {
+void CudaInterop::signalVulkanToCuda(const std::shared_ptr<SyncObject>& syncObj,
+                                     cudaStream_t stream) {
     if (syncObj == nullptr || !syncObj->isValid) {
         std::cout << "[CudaInterop] Ошибка: Некорректный объект синхронизации" << std::endl;
         return;

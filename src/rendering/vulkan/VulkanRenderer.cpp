@@ -101,11 +101,24 @@ void VulkanRenderer::shutdown() {
 PrimaryImage VulkanRenderer::rasterizePrimary(const Gaussians& gaussians) {
     if (!initialized) {
         SAFE_ERROR("[VulkanRenderer] Ошибка: Рендерер не инициализирован");
-        return PrimaryImage{};
+        throw std::runtime_error("VulkanRenderer не инициализирован");
     }
 
-    std::cout << "[VulkanRenderer] Первичная растеризация " << gaussians.count << " гауссианов"
-              << std::endl;
+    // Валидация входных параметров
+    if (gaussians.count == 0) {
+        SAFE_ERROR("[VulkanRenderer] Ошибка: Пустые данные гауссианов");
+        throw std::invalid_argument("Количество гауссианов должно быть больше 0");
+    }
+
+    if (gaussians.count > 1000000) {  // Разумный лимит
+        SAFE_ERROR("[VulkanRenderer] Ошибка: Слишком много гауссианов: "
+                   + std::to_string(gaussians.count));
+        throw std::invalid_argument(
+            "Количество гауссианов превышает максимально допустимое значение");
+    }
+
+    SAFE_PRINT_LINE("[VulkanRenderer] Первичная растеризация " + std::to_string(gaussians.count)
+                    + " гауссианов");
 
     // TODO: Реализация через FlashGSSplatter на этапе 3
     // В полной реализации здесь будет:
@@ -126,11 +139,23 @@ PrimaryImage VulkanRenderer::rasterizePrimary(const Gaussians& gaussians) {
 RawEffects VulkanRenderer::rayTraceSecondary(const PrimaryImage& image) {
     if (!initialized) {
         SAFE_ERROR("[VulkanRenderer] Ошибка: Рендерер не инициализирован");
-        return RawEffects{};
+        throw std::runtime_error("VulkanRenderer не инициализирован");
     }
 
-    std::cout << "[VulkanRenderer] Вторичный ray tracing для изображения " << image.width << "x"
-              << image.height << std::endl;
+    // Валидация входных параметров
+    if (image.width == 0 || image.height == 0) {
+        SAFE_ERROR("[VulkanRenderer] Ошибка: Невалидные размеры изображения");
+        throw std::invalid_argument("Размеры изображения должны быть больше 0");
+    }
+
+    if (image.width > 8192 || image.height > 8192) {  // Разумный лимит
+        SAFE_ERROR("[VulkanRenderer] Ошибка: Слишком большие размеры изображения");
+        throw std::invalid_argument(
+            "Размеры изображения превышают максимально допустимые значения");
+    }
+
+    SAFE_PRINT_LINE("[VulkanRenderer] Вторичный ray tracing для изображения "
+                    + std::to_string(image.width) + "x" + std::to_string(image.height));
 
     // TODO: Реализация через OptiXRayTracer на этапе 4
     // В полной реализации здесь будет:
@@ -171,11 +196,29 @@ DenoisedImage VulkanRenderer::denoiseAI(const RawEffects& effects) {
 FinalImage VulkanRenderer::upscale(const DenoisedImage& image, const ResolutionTarget& target) {
     if (!initialized) {
         SAFE_ERROR("[VulkanRenderer] Ошибка: Рендерер не инициализирован");
-        return FinalImage{};
+        throw std::runtime_error("VulkanRenderer не инициализирован");
     }
 
-    std::cout << "[VulkanRenderer] Upscaling до разрешения " << target.width << "x" << target.height
-              << " (масштаб: " << target.scaleFactor << "x)" << std::endl;
+    // Валидация входных параметров
+    if (target.width == 0 || target.height == 0) {
+        SAFE_ERROR("[VulkanRenderer] Ошибка: Невалидные размеры целевого разрешения");
+        throw std::invalid_argument("Размеры целевого разрешения должны быть больше 0");
+    }
+
+    if (target.scaleFactor <= 0.0f || target.scaleFactor > 8.0f) {
+        SAFE_ERROR("[VulkanRenderer] Ошибка: Невалидный коэффициент масштабирования");
+        throw std::invalid_argument("Коэффициент масштабирования должен быть в диапазоне (0, 8]");
+    }
+
+    if (target.width > 16384 || target.height > 16384) {  // Разумный лимит
+        SAFE_ERROR("[VulkanRenderer] Ошибка: Слишком большие размеры целевого разрешения");
+        throw std::invalid_argument(
+            "Размеры целевого разрешения превышают максимально допустимые значения");
+    }
+
+    SAFE_PRINT_LINE("[VulkanRenderer] Upscaling до разрешения " + std::to_string(target.width) + "x"
+                    + std::to_string(target.height)
+                    + " (масштаб: " + std::to_string(target.scaleFactor) + "x)");
 
     // TODO: Реализация через Upscaler на этапе 6
     // В полной реализации здесь будет:
