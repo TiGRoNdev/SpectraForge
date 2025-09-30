@@ -280,7 +280,7 @@ void demonstrateAdaptivePerformance() {
     // Включаем адаптивное качество с высоким целевым FPS
     renderer->enableAdaptiveQuality(true);
     renderer->setPerformanceTarget(120.0f);  // Высокая планка для демонстрации адаптации
-    renderer->setQualityLevel(5);            // Начинаем с максимального качества
+    renderer->setQualityLevel(5);  // Начинаем с максимального качества
 
     Console::info("Начинаем с максимального качества и целевого FPS 120...");
     Console::info("Система автоматически адаптирует качество для достижения цели.");

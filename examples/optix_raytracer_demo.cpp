@@ -304,8 +304,7 @@ int main() {
             auto duration = chrono::duration_cast<chrono::milliseconds>(endTime - startTime);
             float megapixels = (res.first * res.second) / 1000000.0f;
 
-            SAFE_PRINT_LINE("  Время: " << duration.count() << " мс, "
-                                        << "Производительность: "
+            SAFE_PRINT_LINE("  Время: " << duration.count() << " мс, " << "Производительность: "
                                         << (megapixels / (duration.count() / 1000.0f)) << " Mpx/s");
         }
 

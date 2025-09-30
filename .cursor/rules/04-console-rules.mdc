@@ -2,17 +2,22 @@
 description: Rules for safe console output in HyperEngine projects using Cursor IDE.
 globs: ["**/*.cpp", "**/*.h"]
 alwaysApply: true
+priority: 700
 ---
 
 # Console Output Rules
 
 @context {
   "type": "console_guidelines",
-  "purpose": "Ensure safe and consistent console output practices.",
-  "format_version": "1.0",
+  "purpose": "Ensure safe and consistent console output practices",
+  "format_version": "2.0",
+  "priority": 700,
   "applies_to": "All files using console output",
-  "supported_macros": ["SAFE_TO_STRING", "SAFE_*"]
+  "supported_macros": ["SAFE_TO_STRING", "SAFE_*"],
+  "ai_model": "Claude 4.5 Sonnet"
 }
+
+> **CLAUDE DIRECTIVE**: ALWAYS use SAFE_TO_STRING macros for console output to prevent crashes.
 
 ## 1. Console Output Standards
 Follow these for safe printing.
@@ -41,5 +46,25 @@ Follow these for safe printing.
 ]
 
 ## 2. Best Practices and Enforcement
-- Prevent crashes from invalid conversions.
-- Enforce via static analysis.
+
+- Prevent crashes from invalid conversions
+- Enforce via static analysis (clang-tidy custom checks)
+- Auto-fix in code generation when possible
+
+## 3. Example Usage
+
+```cpp
+// ❌ WRONG - Direct std::to_string can crash
+std::cout << "Value: " << std::to_string(value) << std::endl;
+
+// ✅ CORRECT - Use SAFE_TO_STRING
+std::cout << "Value: " << SAFE_TO_STRING(value) << std::endl;
+
+// ✅ CORRECT - Short form macros
+SAFE_INT(42)
+SAFE_FLOAT(3.14f)
+SAFE_DOUBLE(2.718)
+```
+
+---
+**Version**: 2.0 | **Optimized for**: Claude 4.5 Sonnet

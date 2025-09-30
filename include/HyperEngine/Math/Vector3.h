@@ -37,13 +37,13 @@ class Vector3 {
     float& operator[](int index);
 
     // Математические операции
-    float dot(const Vector3& other) const;              // Скалярное произведение
-    Vector3 cross(const Vector3& other) const;          // Векторное произведение
-    float magnitude() const;                            // Длина вектора
-    float magnitudeSquared() const;                     // Квадрат длины вектора
-    Vector3 normalized() const;                         // Нормализованный вектор
-    void normalize();                                   // Нормализация на месте
-    float distance(const Vector3& other) const;         // Расстояние до другого вектора
+    float dot(const Vector3& other) const;      // Скалярное произведение
+    Vector3 cross(const Vector3& other) const;  // Векторное произведение
+    float magnitude() const;                    // Длина вектора
+    float magnitudeSquared() const;             // Квадрат длины вектора
+    Vector3 normalized() const;                 // Нормализованный вектор
+    void normalize();                           // Нормализация на месте
+    float distance(const Vector3& other) const;  // Расстояние до другого вектора
     float distanceSquared(const Vector3& other) const;  // Квадрат расстояния
 
     // Утилиты
@@ -52,8 +52,8 @@ class Vector3 {
     bool isZero() const;
     Vector3 lerp(const Vector3& other, float t) const;  // Линейная интерполяция
     Vector3 reflect(const Vector3& normal) const;       // Отражение от нормали
-    Vector3 project(const Vector3& other) const;        // Проекция на другой вектор
-    float angle(const Vector3& other) const;            // Угол между векторами
+    Vector3 project(const Vector3& other) const;  // Проекция на другой вектор
+    float angle(const Vector3& other) const;      // Угол между векторами
 
     // Статические методы
     static Vector3 zero();

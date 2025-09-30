@@ -30,8 +30,8 @@ class RendererFactory {
         std::string name;                        ///< Человекочитаемое имя
         std::string description;                 ///< Описание рендерера
         std::vector<RenderingFeature> features;  ///< Поддерживаемые функции
-        bool isSupported;                        ///< Поддерживается ли на текущем оборудовании
-        int priority;                            ///< Приоритет (больше = лучше)
+        bool isSupported;  ///< Поддерживается ли на текущем оборудовании
+        int priority;  ///< Приоритет (больше = лучше)
         struct {
             std::string vendor;      ///< Производитель GPU
             std::string apiVersion;  ///< Версия API

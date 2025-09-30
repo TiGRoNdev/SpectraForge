@@ -128,11 +128,11 @@ enum class UpscalingType {
  * @brief Режимы качества upscaling
  */
 enum class UpscalingQuality {
-    Performance,   ///< Максимальная производительность (низкое качество)
-    Balanced,      ///< Баланс между качеством и производительностью
-    Quality,       ///< Высокое качество (средняя производительность)
+    Performance,  ///< Максимальная производительность (низкое качество)
+    Balanced,  ///< Баланс между качеством и производительностью
+    Quality,  ///< Высокое качество (средняя производительность)
     UltraQuality,  ///< Максимальное качество (низкая производительность)
-    Native         ///< Нативное разрешение (без upscaling)
+    Native  ///< Нативное разрешение (без upscaling)
 };
 
 /**
@@ -157,19 +157,19 @@ struct UpscalingConfig {
     int outputWidth = 1920;                                ///< Целевая ширина
     int outputHeight = 1080;                               ///< Целевая высота
     UpscalingQuality quality = UpscalingQuality::Quality;  ///< Режим качества
-    bool enableFrameGeneration = false;                    ///< Включить генерацию кадров (DLSS 3)
-    bool enableSharpening = true;                          ///< Включить повышение резкости
-    float sharpeningStrength = 0.5f;                       ///< Сила повышения резкости [0, 1]
-    bool enableHDR = false;                                ///< Поддержка HDR
-    bool enableDebugOverlay = false;                       ///< Отладочная информация
-    std::string modelPath;                                 ///< Путь к модели (для алгоритмов с ML)
+    bool enableFrameGeneration = false;  ///< Включить генерацию кадров (DLSS 3)
+    bool enableSharpening = true;        ///< Включить повышение резкости
+    float sharpeningStrength = 0.5f;     ///< Сила повышения резкости [0, 1]
+    bool enableHDR = false;              ///< Поддержка HDR
+    bool enableDebugOverlay = false;     ///< Отладочная информация
+    std::string modelPath;  ///< Путь к модели (для алгоритмов с ML)
 };
 
 /**
  * @brief Параметры upscaling для кадра
  */
 struct UpscalingParams {
-    TextureHandle inputColor = INVALID_HANDLE;     ///< Входное цветное изображение
+    TextureHandle inputColor = INVALID_HANDLE;  ///< Входное цветное изображение
     TextureHandle inputDepth = INVALID_HANDLE;     ///< Входной depth buffer
     TextureHandle motionVectors = INVALID_HANDLE;  ///< Motion vectors
     TextureHandle outputTexture = INVALID_HANDLE;  ///< Выходная текстура
@@ -193,12 +193,12 @@ struct UpscalingParams {
  * @brief Результат upscaling
  */
 struct UpscalingResult {
-    bool success = false;              ///< Успешность операции
-    float executionTime = 0.0f;        ///< Время выполнения в мс
+    bool success = false;        ///< Успешность операции
+    float executionTime = 0.0f;  ///< Время выполнения в мс
     float actualUpscaleFactor = 1.0f;  ///< Фактический коэффициент увеличения
     int outputWidth = 0;               ///< Фактическая ширина результата
     int outputHeight = 0;              ///< Фактическая высота результата
-    std::string errorMessage;          ///< Сообщение об ошибке (если success = false)
+    std::string errorMessage;  ///< Сообщение об ошибке (если success = false)
 };
 
 /**
@@ -206,12 +206,12 @@ struct UpscalingResult {
  */
 struct UpscalingStats {
     float averageExecutionTime = 0.0f;  ///< Среднее время выполнения в мс
-    float minExecutionTime = 0.0f;      ///< Минимальное время выполнения в мс
-    float maxExecutionTime = 0.0f;      ///< Максимальное время выполнения в мс
-    uint64_t framesProcessed = 0;       ///< Количество обработанных кадров
-    uint64_t errorsCount = 0;           ///< Количество ошибок
-    size_t memoryUsage = 0;             ///< Использование памяти в байтах
-    float qualityScore = 0.0f;          ///< Оценка качества (если доступна)
+    float minExecutionTime = 0.0f;  ///< Минимальное время выполнения в мс
+    float maxExecutionTime = 0.0f;  ///< Максимальное время выполнения в мс
+    uint64_t framesProcessed = 0;  ///< Количество обработанных кадров
+    uint64_t errorsCount = 0;      ///< Количество ошибок
+    size_t memoryUsage = 0;        ///< Использование памяти в байтах
+    float qualityScore = 0.0f;     ///< Оценка качества (если доступна)
 
     /**
      * @brief Получить FPS boost от upscaling

@@ -27,13 +27,13 @@ class OptimalRenderer3D {
      * @brief Конфигурация аппаратного обеспечения
      */
     struct HardwareConfig {
-        bool supportsRayTracing = false;   // Поддержка аппаратной трассировки лучей
+        bool supportsRayTracing = false;  // Поддержка аппаратной трассировки лучей
         bool supportsNeural = false;       // Поддержка нейронных операций
         bool supportsMeshShaders = false;  // Поддержка mesh шейдеров
         bool supportsVRS = false;          // Variable Rate Shading
         int gpuMemoryMB = 4096;            // Память GPU в MB
         int computeUnits = 32;             // Количество compute units
-        float performanceRating = 1.0f;    // Относительная производительность (0.1-3.0)
+        float performanceRating = 1.0f;  // Относительная производительность (0.1-3.0)
 
         // Автоматическое определение возможностей
         void autoDetect();
@@ -72,7 +72,7 @@ class OptimalRenderer3D {
         // Дополнительные параметры для оптимизации
         float viewDistance;      // Расстояние до центра сцены
         Math::Vector3 velocity;  // Скорость движения камеры
-        bool isMoving;           // Флаг движения для временной стабилизации
+        bool isMoving;  // Флаг движения для временной стабилизации
 
         CameraParams()
             : position(0, 0, 5),
@@ -104,8 +104,8 @@ class OptimalRenderer3D {
                          const HardwareConfig& hardwareConfig);
 
     // Настройки качества и производительности
-    void setQualityLevel(int level);          // 1-5 (Low, Medium, High, Ultra, Extreme)
-    void setPerformanceTarget(float fps);     // Целевой FPS
+    void setQualityLevel(int level);       // 1-5 (Low, Medium, High, Ultra, Extreme)
+    void setPerformanceTarget(float fps);  // Целевой FPS
     void enableAdaptiveQuality(bool enable);  // Автоматическая адаптация качества
 
     // Управление эффектами
@@ -299,13 +299,13 @@ class OptimalRendererFactory {
 class AdaptiveLOD {
   public:
     struct LODSettings {
-        float maxDistance = 1000.0f;         // Максимальная дистанция рендеринга
-        float highDetailDistance = 10.0f;    // Расстояние для максимальной детализации
+        float maxDistance = 1000.0f;  // Максимальная дистанция рендеринга
+        float highDetailDistance = 10.0f;  // Расстояние для максимальной детализации
         float mediumDetailDistance = 50.0f;  // Расстояние для средней детализации
-        float lowDetailDistance = 200.0f;    // Расстояние для низкой детализации
+        float lowDetailDistance = 200.0f;  // Расстояние для низкой детализации
 
         int maxGaussiansPerLevel[4] = {50000, 20000, 5000, 1000};  // LOD уровни
-        float qualityMultipliers[4] = {1.0f, 0.7f, 0.4f, 0.2f};    // Множители качества
+        float qualityMultipliers[4] = {1.0f, 0.7f, 0.4f, 0.2f};  // Множители качества
 
         bool enableTemporalStability = true;  // Стабилизация LOD во времени
         bool enableMotionBasedLOD = true;     // LOD на основе движения

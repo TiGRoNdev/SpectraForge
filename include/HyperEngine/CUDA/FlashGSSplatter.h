@@ -33,9 +33,9 @@ namespace HyperEngine::CUDA {
  * @brief Структура гауссиана на GPU (соответствует gaussian_optimization.cu)
  */
 struct GPUGaussian {
-    float4 position;       // x, y, z, opacity
-    float4 color;          // r, g, b, scale
-    float4 rotation;       // quaternion (x, y, z, w)
+    float4 position;  // x, y, z, opacity
+    float4 color;     // r, g, b, scale
+    float4 rotation;  // quaternion (x, y, z, w)
     float4 covariance[2];  // 6 элементов ковариационной матрицы (3x3 symmetric)
 };
 

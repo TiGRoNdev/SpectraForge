@@ -1,18 +1,23 @@
 ---
-description: Comprehensive rules and standards for building the HyperEngine project in Cursor IDE, integrating GitHub SVC via MCP commands where applicable.
-globs: ["**/*.bat", "**/*.cmake", "**/*.md"]
+description: Build system rules for HyperEngine - vcpkg, CMake, CI/CD with GitHub MCP integration
+globs: ["**/*.bat", "**/*.cmake", "**/*.md", "**/CMakeLists.txt"]
 alwaysApply: true
+priority: 600
 ---
 
 # Build Instructions for HyperEngine
 
 @context {
   "type": "build_guidelines",
-  "purpose": "Ensure consistent build processes and dependency management for the HyperEngine project using tools like vcpkg, CMake, and GitHub integration.",
-  "format_version": "1.0",
+  "purpose": "Ensure consistent build processes and dependency management for HyperEngine",
+  "format_version": "2.0",
+  "priority": 600,
   "applies_to": "All build scripts, CMake files, and related documentation",
-  "supported_tools": ["Visual Studio", "CMake", "vcpkg", "Git"]
+  "supported_tools": ["Visual Studio", "CMake", "vcpkg", "Git"],
+  "ai_model": "Claude 4.5 Sonnet"
 }
+
+> **CLAUDE DIRECTIVE**: ALWAYS use vcpkg for dependency management unless explicitly overridden.
 
 ## 1. Prerequisites
 Follow these requirements to set up the build environment. The AI should suggest checks during project setup.
@@ -161,8 +166,34 @@ Expected build artifacts.
 | mcp_github_download_workflow_run_artifact | Download build artifacts | Access HyperEngine.lib |
 | mcp_github_create_issue | Report build failures | Log errors with logs |
 
-## 9. Best Practices and Enforcement
-- Always use vcpkg for consistency unless specified otherwise.
-- Integrate builds with GitHub Actions for CI.
-- Reference official docs for tools like CMake and vcpkg.
-- Enforce via Cursor AI suggestions during editing.
+## 9. MCP Integration for Builds
+
+@mcp_build_tools [
+  {
+    "id": "trigger_workflow",
+    "mcp_tool": "mcp_MCP_DOCKER_run_workflow",
+    "when": "Trigger CI/CD builds",
+    "params": {"owner": "TiGRoNdev", "repo": "HyperEngine", "workflow_id": "ci.yml", "ref": "main"}
+  },
+  {
+    "id": "download_artifacts",
+    "mcp_tool": "mcp_MCP_DOCKER_download_workflow_run_artifact",
+    "when": "Get build outputs"
+  },
+  {
+    "id": "report_build_issues",
+    "mcp_tool": "mcp_MCP_DOCKER_create_issue",
+    "when": "Build failures occur",
+    "labels": ["build", "bug"]
+  }
+]
+
+## 10. Best Practices and Enforcement
+
+- ALWAYS use vcpkg for consistency unless specified otherwise
+- Integrate builds with GitHub Actions for CI
+- Reference official docs for tools like CMake and vcpkg
+- Enforce via Cursor AI suggestions during editing
+
+---
+**Version**: 2.0 | **Optimized for**: Claude 4.5 Sonnet

@@ -137,9 +137,8 @@ void HybridRenderer3D::endFrame() {
         }
     }
 
-    std::cout << "Завершение гибридного кадра. "
-              << "Время: " << hybridStats.totalFrameTime << "мс, "
-              << "FPS: " << currentFrameRate << std::endl;
+    std::cout << "Завершение гибридного кадра. " << "Время: " << hybridStats.totalFrameTime
+              << "мс, " << "FPS: " << currentFrameRate << std::endl;
 
     Renderer3D::endFrame();
 }

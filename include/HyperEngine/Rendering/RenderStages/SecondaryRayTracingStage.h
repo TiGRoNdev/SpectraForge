@@ -35,12 +35,12 @@ class SecondaryRayTracingStage : public IRenderStage {
         bool enableShadows = true;             ///< Включить тени
         bool enableGlobalIllumination = true;  ///< Включить GI
         bool enableAmbientOcclusion = true;    ///< Включить AO
-        uint32_t maxBounces = 3;               ///< Максимальное количество отскоков
-        uint32_t samplesPerPixel = 1;          ///< Количество лучей на пиксель
-        float rayTMin = 0.001f;                ///< Минимальное расстояние луча
-        float rayTMax = 1000.0f;               ///< Максимальное расстояние луча
-        bool enableSER = true;                 ///< Shader Execution Reordering
-        bool enableAdaptiveSampling = true;    ///< Адаптивный сэмплинг
+        uint32_t maxBounces = 3;  ///< Максимальное количество отскоков
+        uint32_t samplesPerPixel = 1;  ///< Количество лучей на пиксель
+        float rayTMin = 0.001f;        ///< Минимальное расстояние луча
+        float rayTMax = 1000.0f;       ///< Максимальное расстояние луча
+        bool enableSER = true;         ///< Shader Execution Reordering
+        bool enableAdaptiveSampling = true;  ///< Адаптивный сэмплинг
     } settings_;
 
   public:

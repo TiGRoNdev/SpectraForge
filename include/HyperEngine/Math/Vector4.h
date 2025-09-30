@@ -45,12 +45,12 @@ class Vector4 {
     float& operator[](int index);
 
     // Математические операции
-    float dot(const Vector4& other) const;              // Скалярное произведение
-    float magnitude() const;                            // Длина вектора
-    float magnitudeSquared() const;                     // Квадрат длины вектора
-    Vector4 normalized() const;                         // Нормализованный вектор
-    void normalize();                                   // Нормализация на месте
-    float distance(const Vector4& other) const;         // Расстояние до другого вектора
+    float dot(const Vector4& other) const;  // Скалярное произведение
+    float magnitude() const;                // Длина вектора
+    float magnitudeSquared() const;         // Квадрат длины вектора
+    Vector4 normalized() const;             // Нормализованный вектор
+    void normalize();                       // Нормализация на месте
+    float distance(const Vector4& other) const;  // Расстояние до другого вектора
     float distanceSquared(const Vector4& other) const;  // Квадрат расстояния
 
     // Утилиты
@@ -60,7 +60,7 @@ class Vector4 {
     bool isNormalized() const;
 
     // Преобразования
-    Vector3 xyz() const;                // Возвращает первые 3 компоненты как Vector3
+    Vector3 xyz() const;  // Возвращает первые 3 компоненты как Vector3
     Vector3 homogeneousDivide() const;  // Деление на w (для гомогенных координат)
 
     // Статические методы

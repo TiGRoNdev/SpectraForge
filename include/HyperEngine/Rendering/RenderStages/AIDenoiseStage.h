@@ -27,12 +27,12 @@ class AIDenoiseStage : public IRenderStage {
 
     // Настройки деноизинга
     struct DenoiseSettings {
-        float temporalAlpha = 0.95f;       ///< Temporal accumulation factor
-        bool enableSpatialFilter = true;   ///< Включить пространственную фильтрацию
+        float temporalAlpha = 0.95f;  ///< Temporal accumulation factor
+        bool enableSpatialFilter = true;  ///< Включить пространственную фильтрацию
         bool enableTemporalFilter = true;  ///< Включить временную фильтрацию
-        uint32_t spatialIterations = 3;    ///< Итерации пространственной фильтрации
-        float varianceThreshold = 0.1f;    ///< Порог variance для адаптивности
-        bool enableAOV = true;             ///< Использовать auxiliary buffers
+        uint32_t spatialIterations = 3;  ///< Итерации пространственной фильтрации
+        float varianceThreshold = 0.1f;  ///< Порог variance для адаптивности
+        bool enableAOV = true;           ///< Использовать auxiliary buffers
     } settings_;
 
   public:

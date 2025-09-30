@@ -1,18 +1,23 @@
 ---
-description: Comprehensive architecture rules and standards for HyperEngine in Cursor IDE, integrating GitHub SVC via MCP commands for version control, issues, and PRs.
+description: SOLID principles, architecture patterns, and comprehensive development standards for HyperEngine
 globs: ["**/*.cpp", "**/*.h", "**/*.hpp"]
 alwaysApply: true
+priority: 900
 ---
 
 # HyperEngine Architecture Rules
 
 @context {
   "type": "architecture_guidelines",
-  "purpose": "Enforce SOLID principles, project structure, code quality, testing, build systems, documentation, performance, security, version control, monitoring, deployment, and enforcement for C++ projects.",
-  "format_version": "1.0",
+  "purpose": "Enforce SOLID principles, project structure, code quality, testing, build systems, documentation, performance, security, version control, monitoring, deployment, and enforcement for C++ projects",
+  "format_version": "2.0",
+  "priority": 900,
   "applies_to": "All project files and architecture decisions",
-  "supported_languages": ["C++"]
+  "supported_languages": ["C++17", "C++20"],
+  "ai_model": "Claude 4.5 Sonnet"
 }
+
+> **CLAUDE DIRECTIVE**: STRICTLY enforce SOLID principles in ALL code generation. Violations of SRP, OCP, LSP, ISP, or DIP are CRITICAL errors.
 
 ## 1. Core Principles
 Adhere to these foundational principles to ensure maintainable and extensible code. Prioritize modern C++ features for better performance and safety.
@@ -347,9 +352,35 @@ Document and approve exceptions.
 | Valgrind | Memory checks | In tests |
 | Docker | Deployment | Multi-stage builds |
 
-## 16. Best Practices and Enforcement
-- Regularly review architecture.
-- Use Cursor AI for rule suggestions.
-- Reference sources for deeper insights.
-- Integrate MCP commands for GitHub automation.
-- Balance simplicity with performance needs.
+## 16. MCP Integration for Architecture
+
+@mcp_architecture_tools [
+  {
+    "id": "github_issues",
+    "mcp_tool": "mcp_MCP_DOCKER_create_issue",
+    "when": "Architecture violations or technical debt detected",
+    "params": {"owner": "TiGRoNdev", "repo": "HyperEngine", "labels": ["architecture", "technical-debt"]}
+  },
+  {
+    "id": "research",
+    "mcp_tool": "mcp_MCP_DOCKER_perplexity_research",
+    "when": "Need architectural patterns or best practices research"
+  },
+  {
+    "id": "library_docs",
+    "mcp_tools": ["mcp_MCP_DOCKER_resolve-library-id", "mcp_MCP_DOCKER_get-library-docs"],
+    "when": "Researching third-party library architectures"
+  }
+]
+
+## 17. Best Practices and Enforcement
+
+- Regularly review architecture against SOLID principles
+- Use Cursor AI for rule suggestions and enforcement
+- Reference C++ Core Guidelines and industry standards
+- Integrate MCP commands for GitHub automation
+- Balance simplicity with performance needs
+- BLOCK merges that violate critical architecture rules
+
+---
+**Version**: 2.0 | **Optimized for**: Claude 4.5 Sonnet

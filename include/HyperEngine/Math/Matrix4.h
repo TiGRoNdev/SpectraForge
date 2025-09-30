@@ -82,11 +82,11 @@ class Matrix4 {
     static Matrix4 scale(float uniformScale) { return scaling(uniformScale); }
 
     // Повороты
-    static Matrix4 rotationX(float angle);                       // Поворот вокруг оси X
-    static Matrix4 rotationY(float angle);                       // Поворот вокруг оси Y
-    static Matrix4 rotationZ(float angle);                       // Поворот вокруг оси Z
-    static Matrix4 rotation(const Vector3& axis, float angle);   // Поворот вокруг произвольной оси
-    static Matrix4 rotationFromQuaternion(const Quaternion& q);  // Из кватерниона
+    static Matrix4 rotationX(float angle);  // Поворот вокруг оси X
+    static Matrix4 rotationY(float angle);  // Поворот вокруг оси Y
+    static Matrix4 rotationZ(float angle);  // Поворот вокруг оси Z
+    static Matrix4 rotation(const Vector3& axis, float angle);  // Поворот вокруг произвольной оси
+    static Matrix4 rotationFromQuaternion(const Quaternion& q);      // Из кватерниона
     static Matrix4 eulerAngles(float pitch, float yaw, float roll);  // Углы Эйлера
 
     // Камера и проекции
@@ -100,12 +100,12 @@ class Matrix4 {
                                 float far);
 
     // Утилиты
-    Vector3 transformPoint(const Vector3& point) const;          // Трансформация точки
+    Vector3 transformPoint(const Vector3& point) const;  // Трансформация точки
     Vector3 transformDirection(const Vector3& direction) const;  // Трансформация направления
     Vector3 transformVector(
         const Vector3& vector) const;  // Трансформация вектора (алиас для transformPoint)
-    Vector3 getTranslation() const;    // Извлечение трансляции
-    Vector3 getScale() const;          // Извлечение масштаба
+    Vector3 getTranslation() const;  // Извлечение трансляции
+    Vector3 getScale() const;        // Извлечение масштаба
     void decompose(Vector3& translation, Quaternion& rotation, Vector3& scale) const;
 
     // Доступ к данным для OpenGL

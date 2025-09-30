@@ -36,13 +36,13 @@ class Window {
         int width = 1280;                               ///< Ширина окна
         int height = 720;                               ///< Высота окна
         WindowMode mode = WINDOWED;                     ///< Режим окна
-        bool resizable = true;                          ///< Возможность изменения размера
-        bool vSync = true;                              ///< Вертикальная синхронизация
-        bool decorated = true;                          ///< Рамка окна
-        bool focused = true;                            ///< Фокус при создании
-        bool floating = false;                          ///< Поверх всех окон
-        bool maximized = false;                         ///< Максимизированное при создании
-        int samples = 0;                                ///< MSAA сэмплы (0 = отключено)
+        bool resizable = true;   ///< Возможность изменения размера
+        bool vSync = true;       ///< Вертикальная синхронизация
+        bool decorated = true;   ///< Рамка окна
+        bool focused = true;     ///< Фокус при создании
+        bool floating = false;   ///< Поверх всех окон
+        bool maximized = false;  ///< Максимизированное при создании
+        int samples = 0;         ///< MSAA сэмплы (0 = отключено)
 
         // OpenGL контекст
         int openglMajor = 3;     ///< Основная версия OpenGL

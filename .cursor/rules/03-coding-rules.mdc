@@ -1,0 +1,228 @@
+---
+description: C++ Coding Standards for HyperEngine with GitHub MCP integration
+globs: ["**/*.cpp", "**/*.h", "**/*.hpp"]
+alwaysApply: true
+priority: 800
+---
+
+# C++ Coding Standards
+
+@context {
+  "type": "coding_standards",
+  "priority": 800,
+  "applies_to": "All C++ files",
+  "ai_model": "Claude 4.5 Sonnet"
+}
+
+## 🎨 Style Rules (CRITICAL)
+
+@style_critical [
+  {
+    "id": "naming",
+    "rule": "snake_case: functions/vars; PascalCase: classes; UPPER_CASE: macros/constants",
+    "severity": "critical",
+    "auto_fix": false
+  },
+  {
+    "id": "indentation",
+    "rule": "4 spaces, NO tabs",
+    "severity": "high",
+    "auto_fix": true
+  },
+  {
+    "id": "line_length",
+    "rule": "Max 100 characters",
+    "severity": "high",
+    "auto_fix": true
+  },
+  {
+    "id": "pragma_once",
+    "rule": "All headers MUST use #pragma once",
+    "severity": "critical",
+    "auto_fix": true
+  },
+  {
+    "id": "no_using_namespace_std",
+    "rule": "NEVER 'using namespace std;' in headers",
+    "severity": "high"
+  }
+]
+
+## 🧠 Modern C++ (REQUIRED)
+
+@modern_cpp [
+  {
+    "id": "smart_pointers",
+    "rule": "NO raw pointers for ownership - use std::unique_ptr/shared_ptr",
+    "severity": "critical",
+    "example": "auto ptr = std::make_unique<Object>();"
+  },
+  {
+    "id": "auto_keyword",
+    "rule": "Use 'auto' for iterators and complex types",
+    "severity": "medium"
+  },
+  {
+    "id": "range_based_for",
+    "rule": "Prefer range-based for loops",
+    "severity": "medium",
+    "example": "for (const auto& item : collection) {}"
+  },
+  {
+    "id": "raii",
+    "rule": "ALL resources MUST follow RAII",
+    "severity": "critical"
+  },
+  {
+    "id": "move_semantics",
+    "rule": "Implement move for resource-owning classes",
+    "severity": "high"
+  }
+]
+
+## 📝 Documentation (HIGH)
+
+@documentation [
+  {
+    "id": "doxygen_public",
+    "rule": "ALL public APIs MUST have Doxygen comments",
+    "severity": "critical",
+    "template": "/**\n * @brief Description\n * @param name Description\n * @return Description\n */"
+  },
+  {
+    "id": "complex_logic",
+    "rule": "Complex code (>10 lines) needs comments",
+    "severity": "medium"
+  }
+]
+
+## 🔒 Error Handling (CRITICAL)
+
+@error_handling [
+  {
+    "id": "exceptions",
+    "rule": "Use exceptions for exceptional conditions only",
+    "severity": "high"
+  },
+  {
+    "id": "optional",
+    "rule": "Use std::optional for optional values",
+    "severity": "high"
+  },
+  {
+    "id": "never_catch_all",
+    "rule": "NEVER catch(...) without logging/re-throw",
+    "severity": "critical"
+  }
+]
+
+## 🧪 Testing (CRITICAL)
+
+@testing [
+  {
+    "id": "coverage",
+    "rule": "Minimum 80% test coverage",
+    "severity": "critical"
+  },
+  {
+    "id": "aaa_pattern",
+    "rule": "Use AAA pattern: Arrange, Act, Assert",
+    "severity": "high"
+  },
+  {
+    "id": "framework",
+    "rule": "Use Google Test or Catch2",
+    "severity": "high"
+  }
+]
+
+## 🔧 GitHub MCP Workflow
+
+@github_mcp [
+  {
+    "id": "issues",
+    "mcp_tool": "mcp_MCP_DOCKER_create_issue",
+    "when": "Bug reports, features",
+    "params": {"owner": "TiGRoNdev", "repo": "HyperEngine"}
+  },
+  {
+    "id": "branches",
+    "mcp_tool": "mcp_MCP_DOCKER_create_branch",
+    "when": "Start new work",
+    "format": "feature/* | bugfix/* | hotfix/*"
+  },
+  {
+    "id": "pull_requests",
+    "mcp_tool": "mcp_MCP_DOCKER_create_pull_request",
+    "when": "Code ready for review",
+    "params": {"owner": "TiGRoNdev", "repo": "HyperEngine"}
+  },
+  {
+    "id": "copilot_review",
+    "mcp_tool": "mcp_MCP_DOCKER_request_copilot_review",
+    "when": "PR created"
+  }
+]
+
+## 🛡️ Security (CRITICAL)
+
+@security [
+  {
+    "id": "input_validation",
+    "rule": "ALWAYS validate external inputs",
+    "severity": "critical"
+  },
+  {
+    "id": "buffer_safety",
+    "rule": "Use std::string/vector, NOT C-arrays",
+    "severity": "critical"
+  },
+  {
+    "id": "no_strcpy",
+    "rule": "NEVER use strcpy/strcat",
+    "severity": "critical"
+  }
+]
+
+## ⚡ Performance (MEDIUM)
+
+@performance [
+  {
+    "id": "profile_first",
+    "rule": "Profile before optimizing",
+    "severity": "high"
+  },
+  {
+    "id": "minimize_alloc",
+    "rule": "Minimize allocations in hot paths",
+    "severity": "high"
+  },
+  {
+    "id": "const_ref",
+    "rule": "Pass large objects by const&",
+    "severity": "medium"
+  }
+]
+
+## ✅ Pre-Commit Checklist
+
+```
+✅ Naming conventions followed
+✅ Doxygen comments added
+✅ clang-format applied
+✅ clang-tidy passed
+✅ Tests written (80%+ coverage)
+✅ No memory leaks (ASAN clean)
+```
+
+## 📊 Severity Levels
+
+| Level | Action | Block Merge |
+|-------|--------|-------------|
+| CRITICAL | Must fix NOW | YES |
+| HIGH | Must fix before PR | YES |
+| MEDIUM | Should fix in review | NO |
+| LOW | Optional | NO |
+
+---
+**Version**: 2.0 | **Optimized for**: Claude 4.5 Sonnet

@@ -202,9 +202,9 @@ void demonstrateErrorHandling() {
     auto shader = Shader3D::createBasicShader();
 
     if (mesh && shader) {
-        adapter.beginFrame();                                     // Должно быть безопасно
+        adapter.beginFrame();  // Должно быть безопасно
         adapter.renderMesh(*mesh, Matrix4::identity(), *shader);  // Должно быть безопасно
-        adapter.endFrame();                                       // Должно быть безопасно
+        adapter.endFrame();  // Должно быть безопасно
         SAFE_PRINT_LINE("Обработка ошибок работает корректно");
     }
 

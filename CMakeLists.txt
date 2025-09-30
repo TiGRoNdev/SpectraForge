@@ -55,26 +55,28 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Обеспечиваем наличие Vulkan Memory Allocator
-find_path(VMA_INCLUDE_DIR
-    NAMES vk_mem_alloc.h
-    PATHS ${VULKAN_MEMORY_ALLOCATOR_INCLUDE_DIRS}
-          ${VulkanMemoryAllocator_INCLUDE_DIRS}
-          ${VulkanMemoryAllocator_INCLUDE_DIR}
-          ${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include
-          ${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include/vma
-          ${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/share/vulkan-memory-allocator/include
-          ${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/share/vulkan-memory-allocator
-          ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include
-          ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/vma
-    PATH_SUFFIXES include include/vma vma
-)
+# Обеспечиваем наличие Vulkan Memory Allocator (только если BUILD_VULKAN_RENDERER включен)
+if(BUILD_VULKAN_RENDERER)
+    find_path(VMA_INCLUDE_DIR
+        NAMES vk_mem_alloc.h
+        PATHS ${VULKAN_MEMORY_ALLOCATOR_INCLUDE_DIRS}
+              ${VulkanMemoryAllocator_INCLUDE_DIRS}
+              ${VulkanMemoryAllocator_INCLUDE_DIR}
+              ${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include
+              ${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include/vma
+              ${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/share/vulkan-memory-allocator/include
+              ${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/share/vulkan-memory-allocator
+              ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include
+              ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/vma
+        PATH_SUFFIXES include include/vma vma
+    )
 
-if(NOT VMA_INCLUDE_DIR)
-    message(FATAL_ERROR "Unable to locate vk_mem_alloc.h. Please ensure Vulkan Memory Allocator is installed and available.")
+    if(NOT VMA_INCLUDE_DIR)
+        message(FATAL_ERROR "Unable to locate vk_mem_alloc.h. Please ensure Vulkan Memory Allocator is installed and available.")
+    endif()
+
+    set(VMA_INCLUDE_DIR "${VMA_INCLUDE_DIR}" CACHE PATH "Vulkan Memory Allocator include directory")
 endif()
-
-set(VMA_INCLUDE_DIR "${VMA_INCLUDE_DIR}" CACHE PATH "Vulkan Memory Allocator include directory")
 
 # Проверяем CUDA без включения языка (обходим проблему с toolset)
 if(BUILD_WITH_CUDA AND CUDA_COMPILER_AVAILABLE)
