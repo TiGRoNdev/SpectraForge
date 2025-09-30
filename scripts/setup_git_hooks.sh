@@ -126,9 +126,9 @@ if [ -f "scripts/pre_commit_check.sh" ]; then
 fi
 
 # Проверяем, что проект собирается
-if [ -d "build-vcpkg" ]; then
+if [ -d "build" ]; then
     echo "🔨 Проверка сборки..."
-    cd build-vcpkg
+    cd build
     if ! cmake --build . --config Release --parallel 2 >/dev/null; then
         echo "❌ Проект не собирается"
         cd ..

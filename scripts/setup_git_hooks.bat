@@ -90,9 +90,9 @@ echo     fi
 echo fi
 echo.
 echo # Проверяем, что проект собирается
-echo if [ -d "build-vcpkg" ]; then
+echo if [ -d "build" ]; then
 echo     echo "🔨 Проверка сборки..."
-echo     cd build-vcpkg
+echo     cd build
 echo     if ! cmake --build . --config Release --parallel 2 ^>/dev/null; then
 echo         echo "❌ Проект не собирается"
 echo         cd ..

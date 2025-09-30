@@ -74,14 +74,14 @@ else
 fi
 echo
 
-# Проверка vcpkg
-echo "Дополнительно: Проверка vcpkg..."
-if [ -f "vcpkg/vcpkg" ]; then
-    echo "✓ vcpkg найден"
+# Проверка системных пакетов (для Linux/Docker)
+echo "Дополнительно: Проверка системных библиотек..."
+if pkg-config --exists glfw3 glm vulkan 2>/dev/null; then
+    echo "✓ Основные системные пакеты найдены (glfw3, glm, vulkan)"
 else
-    echo "⚠ vcpkg не найден в текущей директории"
-    echo "  Выполните: git clone https://github.com/Microsoft/vcpkg.git"
-    echo "  Затем: ./vcpkg/bootstrap-vcpkg.sh"
+    echo "⚠ Некоторые системные пакеты не найдены"
+    echo "  Установите: sudo apt-get install libglfw3-dev libglm-dev libvulkan-dev libglew-dev libassimp-dev"
+    echo "  Для полного списка см. DOCKER_SYSTEM_PACKAGES_MIGRATION.md"
 fi
 echo
 
@@ -91,21 +91,27 @@ echo "========================================"
 echo
 
 echo "Минимальная конфигурация (без дополнительных SDK):"
-echo "cmake .. -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake \\"
-echo "         -DBUILD_VULKAN_RENDERER=ON \\"
-echo "         -DBUILD_WITH_CUDA=OFF \\"
-echo "         -DBUILD_WITH_OPTIX=OFF \\"
-echo "         -DBUILD_WITH_DLSS=OFF \\"
-echo "         -DBUILD_WITH_FSR=OFF"
+echo "cmake -B build -G Ninja \\"
+echo "      -DCMAKE_BUILD_TYPE=Release \\"
+echo "      -DBUILD_VULKAN_RENDERER=ON \\"
+echo "      -DBUILD_WITH_CUDA=OFF \\"
+echo "      -DBUILD_WITH_OPTIX=OFF \\"
+echo "      -DBUILD_WITH_DLSS=OFF \\"
+echo "      -DBUILD_WITH_FSR=OFF"
 echo
 
 echo "Полная конфигурация (все SDK):"
-echo "cmake .. -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake \\"
-echo "         -DBUILD_VULKAN_RENDERER=ON \\"
-echo "         -DBUILD_WITH_CUDA=ON \\"
-echo "         -DBUILD_WITH_OPTIX=ON \\"
-echo "         -DBUILD_WITH_DLSS=ON \\"
-echo "         -DBUILD_WITH_FSR=ON"
+echo "cmake -B build -G Ninja \\"
+echo "      -DCMAKE_BUILD_TYPE=Release \\"
+echo "      -DBUILD_VULKAN_RENDERER=ON \\"
+echo "      -DBUILD_WITH_CUDA=ON \\"
+echo "      -DBUILD_WITH_OPTIX=ON \\"
+echo "      -DBUILD_WITH_DLSS=ON \\"
+echo "      -DBUILD_WITH_FSR=ON"
+echo
+
+echo "Для Docker окружения:"
+echo "docker-compose run --rm ci-runner"
 echo
 
 echo "Для получения подробной информации см. docs/SDK_SETUP_GUIDE.md"

@@ -73,13 +73,13 @@ if ! pkg-config --exists glm 2>/dev/null && [ ! -d "/usr/include/glm" ]; then
     log_warning "GLM не найден. Установите libglm-dev для корректной сборки"
 fi
 
-# Используем существующую сборку build-vcpkg
-if [ -d "build-vcpkg" ]; then
-    log_success "Используем существующую сборку build-vcpkg"
+# Используем существующую сборку или создаем новую
+if [ -d "build/quality-check" ] && [ -f "build/quality-check/CMakeCache.txt" ]; then
+    log_success "Используем существующую сборку build/quality-check"
     echo "Сборка уже выполнена успешно" > build/quality-reports/cmake-config.log
     echo "Сборка уже выполнена успешно" > build/quality-reports/build.log
 else
-    # Попытка создать новую сборку для Unix-систем (без vcpkg)
+    # Создаем новую сборку с системными пакетами (без vcpkg)
     if cmake -B build/quality-check \
         -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_TESTING=ON \
@@ -100,7 +100,7 @@ else
         fi
     else
         log_error "Ошибка конфигурации CMake. См. build/quality-reports/cmake-config.log"
-        log_info "Убедитесь, что установлены все зависимости: libglm-dev, libgtest-dev"
+        log_info "Убедитесь, что установлены все зависимости: libglm-dev, libgtest-dev, libglfw3-dev, libglew-dev"
         # Выходим с ошибкой только в CI
         if [ "$IS_CI" = "true" ]; then
             exit 1
@@ -113,19 +113,7 @@ fi
 # 4. Запуск тестов
 echo ""
 echo "🧪 Запуск тестов..."
-if [ -d "build-vcpkg" ]; then
-    cd build-vcpkg
-    if ctest --output-on-failure > ../build/quality-reports/tests.log 2>&1; then
-        log_success "Все тесты прошли успешно"
-    else
-        log_error "Некоторые тесты не прошли. См. build/quality-reports/tests.log"
-        cd ..
-        if [ "$IS_CI" = "true" ]; then
-            exit 1
-        fi
-    fi
-    cd ..
-elif [ -d "build/quality-check" ]; then
+if [ -d "build/quality-check" ]; then
     cd build/quality-check
     if ctest --output-on-failure > ../quality-reports/tests.log 2>&1; then
         # Проверяем, были ли найдены тесты

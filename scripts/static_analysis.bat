@@ -20,8 +20,8 @@ REM 1. Clang-Tidy анализ
 echo.
 echo 🔧 Запуск Clang-Tidy...
 if exist %CLANG_TIDY% (
-    if exist "build-vcpkg\compile_commands.json" (
-        echo Используем compile_commands.json из build-vcpkg
+    if exist "build\compile_commands.json" (
+        echo Используем compile_commands.json из build
 
         REM Создаем временный файл со списком файлов для анализа
         dir /s /b src\*.cpp > temp_cpp_files.txt
@@ -29,7 +29,7 @@ if exist %CLANG_TIDY% (
         set ANALYZED_FILES=0
         for /f "delims=" %%f in (temp_cpp_files.txt) do (
             echo Анализируем: %%f
-            %CLANG_TIDY% "%%f" --config-file=.clang-tidy -p build-vcpkg >> build\static-analysis\clang-tidy-report.txt 2>&1
+            %CLANG_TIDY% "%%f" --config-file=.clang-tidy -p build >> build\static-analysis\clang-tidy-report.txt 2>&1
             if !errorlevel! neq 0 (
                 set /a WARNINGS+=1
             )

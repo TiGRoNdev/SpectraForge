@@ -54,18 +54,19 @@ del temp_files.txt 2>nul
 REM 2. Проверка сборки
 echo.
 echo 🔨 Проверка сборки...
-if exist "build-vcpkg" (
-    echo ✅ Используем существующую сборку build-vcpkg
+if exist "build" (
+    echo ✅ Используем существующую сборку build
 ) else (
-    echo ⚠️ ПРЕДУПРЕЖДЕНИЕ: Директория сборки build-vcpkg не найдена
+    echo ⚠️ ПРЕДУПРЕЖДЕНИЕ: Директория сборки build не найдена
+    echo    Выполните сборку: cmake -B build -G Ninja ^&^& cmake --build build
     set /a WARNINGS+=1
 )
 
 REM 3. Запуск тестов
 echo.
 echo 🧪 Запуск тестов...
-if exist "build-vcpkg" (
-    cd build-vcpkg
+if exist "build" (
+    cd build
     ctest -C Release --output-on-failure > ..\build\quality-reports\tests.log 2>&1
     if !errorlevel! equ 0 (
         echo ✅ Все тесты прошли успешно

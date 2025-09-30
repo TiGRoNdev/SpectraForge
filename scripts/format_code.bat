@@ -9,21 +9,14 @@ REM Проверяем наличие clang-format
 where clang-format >nul 2>&1
 if %errorlevel% neq 0 (
     echo ❌ clang-format не найден в системе
-    echo 📥 Попытка установки через vcpkg...
-
-    REM Пытаемся установить через vcpkg
+    echo 📥 Варианты установки:
+    echo    1. Visual Studio Installer (компонент "Clang-format")
+    echo    2. LLVM: https://releases.llvm.org/
+    echo    3. Chocolatey: choco install llvm
     if exist "vcpkg\vcpkg.exe" (
-        vcpkg\vcpkg.exe install llvm[clang-format]:x64-windows
-        if %errorlevel% neq 0 (
-            echo ❌ Не удалось установить clang-format через vcpkg
-            echo 💡 Установите LLVM/Clang вручную: https://releases.llvm.org/
-            exit /b 1
-        )
-    ) else (
-        echo ❌ vcpkg не найден
-        echo 💡 Установите LLVM/Clang вручную: https://releases.llvm.org/
-        exit /b 1
+        echo    4. vcpkg: vcpkg install llvm[clang-format]:x64-windows
     )
+    exit /b 1
 )
 
 REM Создаем директорию для отчетов

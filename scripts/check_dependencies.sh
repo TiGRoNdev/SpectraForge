@@ -4,13 +4,22 @@ echo "========================================"
 echo "Проверка зависимостей HyperEngine"
 echo "========================================"
 
-# Проверка vcpkg
-echo "[1/6] Проверка vcpkg..."
-if [ -d "/workspace/vcpkg" ]; then
-    echo "✓ vcpkg установлен"
-    ./vcpkg/vcpkg list | head -5
-else
-    echo "✗ vcpkg не найден"
+# Проверка системных пакетов
+echo "[1/6] Проверка системных библиотек..."
+MISSING_PKGS=()
+for pkg in glfw3 glm vulkan glew; do
+    if pkg-config --exists $pkg 2>/dev/null; then
+        VERSION=$(pkg-config --modversion $pkg 2>/dev/null || echo "N/A")
+        echo "✓ $pkg установлен (версия: $VERSION)"
+    else
+        echo "✗ $pkg не найден"
+        MISSING_PKGS+=($pkg)
+    fi
+done
+
+if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
+    echo "⚠️  Установите недостающие пакеты:"
+    echo "  sudo apt-get install $(printf 'lib%s-dev ' "${MISSING_PKGS[@]}")"
 fi
 
 # Проверка CUDA
