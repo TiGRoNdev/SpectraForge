@@ -132,6 +132,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     automake \
     libtool \
     m4 \
+    # Core library dependencies (required by minizip and other packages)
+    zlib1g-dev \
+    libssl-dev \
+    libbz2-dev \
+    liblzma-dev \
     # Additional X11/Wayland dependencies (base has core X11)
     libxext-dev \
     libwayland-dev \
