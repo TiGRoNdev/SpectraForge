@@ -41,8 +41,8 @@ void OptimalRenderer3D::HardwareConfig::autoDetect() {
     // Variable Rate Shading
     supportsVRS = (performanceRating > 1.0f);
 
-    std::cout << "Определена конфигурация: RT=" << (supportsRayTracing ? "Y" : "N")
-              << ", Neural=" << (supportsNeural ? "Y" : "N") << ", MeshShaders="
+    std::cout << "Определена конфигурация: RT=" << (supportsRayTracing ? "Y" : "N") << ", Neural="
+              << (supportsNeural ? "Y" : "N") << ", MeshShaders="
               << (supportsMeshShaders ? "Y" : "N") << ", VRS=" << (supportsVRS ? "Y" : "N")
               << ", Memory=" << gpuMemoryMB << "MB, Performance=" << performanceRating
               << std::endl;
@@ -720,9 +720,8 @@ void OptimalRenderer3D::balanceQualityAndPerformance() {
     float denoisingRatio = metrics.denoisingTime / totalTime;
     float upscalingRatio = metrics.upscalingTime / totalTime;
 
-    std::cout << "Анализ производительности: растеризация=" << (rasterizationRatio * 100)
-              << "%, трассировка=" << (rayTracingRatio * 100) << "%, деноизинг="
-              << (denoisingRatio * 100) << "%, масштабирование="
+    std::cout << "Анализ производительности: растеризация=" << (rasterizationRatio * 100) << ", трассировка="
+              << (rayTracingRatio * 100) << "%, деноизинг=" << (denoisingRatio * 100) << "%, масштабирование="
               << (upscalingRatio * 100) << "%" << std::endl;
 
     // Адаптируем настройки на основе узких мест
@@ -1126,9 +1125,8 @@ void AdaptiveLOD::computeLOD(GaussianField3D& field,
     // Адаптируем к производительности
     adaptToPerformance(0.0f, targetFrameTime);  // TODO: передать реальный frametime
 
-    std::cout << "LOD распределение: L0=" << stats.gaussiansPerLevel[0] << ", L1="
-              << stats.gaussiansPerLevel[1] << ", L2=" << stats.gaussiansPerLevel[2]
-              << ", L3=" << stats.gaussiansPerLevel[3] << std::endl;
+    std::cout << "LOD распределение: L0=" << stats.gaussiansPerLevel[0] << ", L1=" << stats.gaussiansPerLevel[1]
+              << ", L2=" << stats.gaussiansPerLevel[2] << ", L3=" << stats.gaussiansPerLevel[3] << std::endl;
 }
 
 void AdaptiveLOD::adaptToPerformance(float currentFrameTime, float targetFrameTime) {
