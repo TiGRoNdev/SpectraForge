@@ -121,11 +121,23 @@ ENV VCPKG_ROOT=/opt/vcpkg \
     VCPKG_DEFAULT_TRIPLET=x64-linux \
     VCPKG_FORCE_SYSTEM_BINARIES=1
 
-# Install additional dependencies for vcpkg (zip/unzip for package extraction)
+# Install additional dependencies for vcpkg and package builds
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Package extraction tools
     zip \
     unzip \
     tar \
+    # Build dependencies for vcpkg packages
+    autoconf \
+    automake \
+    libtool \
+    m4 \
+    # Additional X11/Wayland dependencies (base has core X11)
+    libxext-dev \
+    libwayland-dev \
+    libxkbcommon-dev \
+    # Shader compilation tools
+    glslang-tools \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone and setup vcpkg (use latest stable release)

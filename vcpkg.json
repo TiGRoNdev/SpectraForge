@@ -1,16 +1,9 @@
 {
-  "builtin-baseline": "e6e4bc74aaf5c63dfc358810594f662f7e9bc4d4",
   "name": "hyperengine",
   "version": "0.1.0",
   "description": "HyperEngine - Modern 3D/4D Game Engine with advanced rendering capabilities",
   "homepage": "https://github.com/TiGRoNdev/HyperEngine",
   "license": "MIT",
-  "overrides": [
-    {
-      "name": "glm",
-      "version": "1.0.1#3"
-    }
-  ],
   "dependencies": [
     {
       "name": "glfw3"
