@@ -9,7 +9,7 @@
 #ifdef ENGINE3D_ENABLE_VULKAN
 // #include "HyperEngine/Vulkan/VulkanEngine.h"
 // #include "HyperEngine/Vulkan/HardwareDetector.h"
-// Пока не включаем, так как Vulkan компоненты не собираются с Engine3D
+// Пока не включаем, так как Vulkan компоненты не собираются с HyperEngine
 #endif
 
 // Определение дефолтного backend на основе макросов компиляции

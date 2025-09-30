@@ -7,6 +7,15 @@ enable_testing()
 # Поиск Google Test и Google Mock (vcpkg style)
 find_package(GTest CONFIG REQUIRED)
 
+# Проверка наличия GMock
+if(TARGET GTest::gmock)
+    set(GMOCK_FOUND TRUE)
+    message(STATUS "Google Mock найден")
+else()
+    set(GMOCK_FOUND FALSE)
+    message(STATUS "Google Mock не найден, тесты будут собраны без него")
+endif()
+
 # Включение поддержки Google Benchmark для тестов производительности
 find_package(benchmark QUIET)
 
@@ -68,9 +77,15 @@ endif()
 set(TEST_LINK_LIBRARIES
     GTest::gtest
     GTest::gtest_main
-    GTest::gmock
-    GTest::gmock_main
 )
+
+# Добавляем GMock только если он доступен
+if(GMOCK_FOUND)
+    list(APPEND TEST_LINK_LIBRARIES
+        GTest::gmock
+        GTest::gmock_main
+    )
+endif()
 
 # Добавление include директорий
 include_directories(
@@ -251,7 +266,7 @@ endif()
 # Вывод информации о настроенных тестах
 message(STATUS "Система тестирования настроена:")
 message(STATUS "  - Google Test: ${GTest_FOUND}")
-message(STATUS "  - Google Mock: ${GMock_FOUND}")
+message(STATUS "  - Google Mock: ${GMOCK_FOUND}")
 message(STATUS "  - Google Benchmark: ${benchmark_FOUND}")
 message(STATUS "  - Clang-Tidy: ${CLANG_TIDY_EXECUTABLE}")
 if(ENABLE_CODE_COVERAGE)

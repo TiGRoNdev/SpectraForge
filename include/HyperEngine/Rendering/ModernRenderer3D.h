@@ -1,3 +1,4 @@
+
 /**
  * @file ModernRenderer3D.h
  * @brief Рефакторенный рендерер согласно SOLID принципам

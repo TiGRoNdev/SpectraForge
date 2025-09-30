@@ -1,3 +1,4 @@
+
 /**
  * @file IEventHandler.h
  * @brief Интерфейс для обработки событий

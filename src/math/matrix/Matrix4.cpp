@@ -9,8 +9,13 @@
 using namespace HyperEngine::Math;
 
 // Конструкторы
+/**
+ * @brief Конструктор по умолчанию создает нулевую матрицу
+ *
+ * Для создания единичной матрицы используйте Matrix4::identity()
+ */
 Matrix4::Matrix4() : m{} {
-    setIdentity();
+    setZero();
 }
 
 Matrix4::Matrix4(const Matrix4& other) = default;
@@ -449,6 +454,19 @@ Matrix4 Matrix4::perspective(float fovY, float aspect, float near, float far) {
     return result;
 }
 
+/**
+ * @brief Создает ортографическую матрицу проекции
+ *
+ * @param left Левая граница области просмотра
+ * @param right Правая граница области просмотра
+ * @param bottom Нижняя граница области просмотра
+ * @param top Верхняя граница области просмотра
+ * @param near Ближняя плоскость отсечения
+ * @param far Дальняя плоскость отсечения
+ * @return Ортографическая матрица проекции в row-major формате
+ *
+ * Матрица преобразует координаты в нормализованное пространство устройства [-1, 1]
+ */
 Matrix4 Matrix4::orthographic(float left,
                               float right,
                               float bottom,
@@ -458,14 +476,16 @@ Matrix4 Matrix4::orthographic(float left,
     Matrix4 result;
     result.setZero();
 
+    // Масштабирование
     result.m[0][0] = 2.0F / (right - left);
     result.m[1][1] = 2.0F / (top - bottom);
     result.m[2][2] = -2.0F / (far - near);
     result.m[3][3] = 1.0F;
 
-    result.m[0][3] = -(right + left) / (right - left);
-    result.m[1][3] = -(top + bottom) / (top - bottom);
-    result.m[2][3] = -(far + near) / (far - near);
+    // Трансляция - в последней строке для row-major представления
+    result.m[3][0] = -(right + left) / (right - left);
+    result.m[3][1] = -(top + bottom) / (top - bottom);
+    result.m[3][2] = -(far + near) / (far - near);
 
     return result;
 }

@@ -1,6 +1,14 @@
 #pragma once
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+// GMock опционален - подключаем только если доступен
+#ifdef __has_include
+#if __has_include(<gmock/gmock.h>)
+#include <gmock/gmock.h>
+#define HYPERENGINE_HAS_GMOCK 1
+#endif
+#endif
+
 #include <chrono>
 #include <iostream>
 #include <stdexcept>

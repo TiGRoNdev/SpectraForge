@@ -1,3 +1,4 @@
+
 #pragma once
 
 #ifdef VULKAN_RENDERER_DLSS_SUPPORT

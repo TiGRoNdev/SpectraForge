@@ -8,11 +8,17 @@ set(ALL_INTEGRATION_TESTS "" PARENT_SCOPE)
 set(INTEGRATION_TEST_LIBS
     HyperEngine_Math
     HyperEngine_Core
-    HyperEngine_Vulkan
-    Vulkan::Vulkan
-    GPUOpen::VulkanMemoryAllocator
     glm::glm
 )
+
+# Добавляем Vulkan зависимости только если Vulkan доступен
+if(TARGET HyperEngine_Vulkan AND TARGET Vulkan::Vulkan)
+    list(APPEND INTEGRATION_TEST_LIBS
+        HyperEngine_Vulkan
+        Vulkan::Vulkan
+        GPUOpen::VulkanMemoryAllocator
+    )
+endif()
 
 # Добавляем CUDA зависимости только если CUDA доступна
 if(BUILD_WITH_CUDA AND TARGET HyperEngine_CUDA)
@@ -23,15 +29,16 @@ if(BUILD_WITH_CUDA AND TARGET HyperEngine_CUDA)
     )
 endif()
 
-add_integration_test(simple_integration_test
-    SOURCES
-        rendering/CudaVulkanInteropTest.cpp
-    LIBS
-        ${INTEGRATION_TEST_LIBS}
-)
-
-# Добавляем все тесты в глобальный список
-set(ALL_INTEGRATION_TESTS
-    simple_integration_test
-    PARENT_SCOPE
-)
+# simple_integration_test требует GMock для моков - пропускаем если GMock недоступен
+if(GMOCK_FOUND)
+    add_integration_test(simple_integration_test
+        SOURCES
+            rendering/CudaVulkanInteropTest.cpp
+        LIBS
+            ${INTEGRATION_TEST_LIBS}
+    )
+    set(ALL_INTEGRATION_TESTS simple_integration_test PARENT_SCOPE)
+else()
+    message(STATUS "Пропуск simple_integration_test - требуется GMock")
+    set(ALL_INTEGRATION_TESTS "" PARENT_SCOPE)
+endif()

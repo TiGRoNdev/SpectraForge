@@ -3,8 +3,17 @@
 
 # НЕ используем set -e, так как хотим продолжить проверку даже при ошибках
 
+# Определяем корневую директорию проекта
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Переходим в корневую директорию проекта
+cd "$PROJECT_ROOT" || exit 1
+
 echo "🎯 Комплексная проверка качества кода HyperEngine"
 echo "================================================"
+echo "📁 Корневая директория: $PROJECT_ROOT"
+echo ""
 
 # Счетчики
 ERRORS=0
@@ -122,7 +131,7 @@ elif [ -d "build/quality-check" ]; then
         # Проверяем, были ли найдены тесты
         if grep -q "No tests were found" ../quality-reports/tests.log 2>/dev/null; then
             log_error "Тесты не были найдены. Проверьте сборку тестов."
-            cd ../..
+            cd "$PROJECT_ROOT"
             if [ "$IS_CI" = "true" ]; then
                 exit 1
             fi
@@ -131,12 +140,12 @@ elif [ -d "build/quality-check" ]; then
         fi
     else
         log_error "Некоторые тесты не прошли. См. build/quality-reports/tests.log"
-        cd ../..
+        cd "$PROJECT_ROOT"
         if [ "$IS_CI" = "true" ]; then
             exit 1
         fi
     fi
-    cd ../..
+    cd "$PROJECT_ROOT"
 else
     log_error "Директория сборки не найдена, невозможно запустить тесты"
     if [ "$IS_CI" = "true" ]; then

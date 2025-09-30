@@ -1,3 +1,4 @@
+
 /**
  * @file HyperEngine.h
  * @brief Главный заголовочный файл движка HyperEngine

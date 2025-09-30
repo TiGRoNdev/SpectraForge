@@ -1,3 +1,4 @@
+
 #pragma once
 
 #if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)

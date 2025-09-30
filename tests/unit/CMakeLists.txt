@@ -44,39 +44,43 @@ if(TARGET HyperEngine_Vulkan)
     add_compile_definitions(HyperEngine_ENABLE_VULKAN)
 endif()
 
-add_unit_test(rendering_tests
-    SOURCES
-        rendering/RendererAdapterTest.cpp
-        rendering/VulkanRendererTest.cpp
-    LIBS
-        ${RENDERING_TEST_LIBS}
-        HyperEngine_Math
-        HyperEngine_Core
-        HyperEngine_OpenGL
-        HyperEngine_Vulkan
-        glfw
-        GLEW::GLEW
-        glm::glm
-)
+# rendering_tests требует GMock для моков - пропускаем если GMock недоступен
+if(GMOCK_FOUND)
+    add_unit_test(rendering_tests
+        SOURCES
+            rendering/RendererAdapterTest.cpp
+            rendering/VulkanRendererTest.cpp
+        LIBS
+            ${RENDERING_TEST_LIBS}
+            glfw
+            GLEW::GLEW
+            glm::glm
+    )
+    list(APPEND ALL_UNIT_TESTS rendering_tests)
+else()
+    message(STATUS "Пропуск rendering_tests - требуется GMock")
+endif()
 
-# Unit тесты для основных компонентов
-add_unit_test(optix_tests
-    SOURCES
-        test_optix_integration.cpp
-    LIBS
-        HyperEngine_Math
-        HyperEngine_Core
-        CUDA::cudart
-        CUDA::cuda_driver
-        glm::glm
-)
+# Unit тесты для основных компонентов (только если CUDA доступна)
+if(TARGET CUDA::cudart)
+    add_unit_test(optix_tests
+        SOURCES
+            test_optix_integration.cpp
+        LIBS
+            HyperEngine_Math
+            HyperEngine_Core
+            CUDA::cudart
+            CUDA::cuda_driver
+            glm::glm
+    )
+    list(APPEND ALL_UNIT_TESTS optix_tests)
+endif()
 
 # Добавляем все тесты в глобальный список
 set(ALL_UNIT_TESTS
     simple_math_test
     math_vector4_test
     math_matrix4_test
-    rendering_tests
-    optix_tests
+    ${ALL_UNIT_TESTS}  # Включаем условные тесты (rendering_tests, optix_tests)
     PARENT_SCOPE
 )
