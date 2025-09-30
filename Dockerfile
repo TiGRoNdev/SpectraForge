@@ -121,9 +121,16 @@ ENV VCPKG_ROOT=/opt/vcpkg \
     VCPKG_DEFAULT_TRIPLET=x64-linux \
     VCPKG_FORCE_SYSTEM_BINARIES=1
 
-RUN git clone https://github.com/Microsoft/vcpkg.git ${VCPKG_ROOT} && \
+# Install additional dependencies for vcpkg (zip/unzip for package extraction)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    zip \
+    unzip \
+    tar \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clone and setup vcpkg (use latest stable release)
+RUN git clone --depth 1 https://github.com/Microsoft/vcpkg.git ${VCPKG_ROOT} && \
     cd ${VCPKG_ROOT} && \
-    git checkout e6e4bc74aaf5c63dfc358810594f662f7e9bc4d4 && \
     ./bootstrap-vcpkg.sh -disableMetrics && \
     ln -s ${VCPKG_ROOT}/vcpkg /usr/local/bin/vcpkg
 
