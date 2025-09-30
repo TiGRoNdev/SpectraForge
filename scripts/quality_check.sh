@@ -55,6 +55,12 @@ fi
 # 3. Проверка сборки
 echo ""
 echo "🔨 Проверка сборки..."
+
+# Проверка наличия GLM
+if ! pkg-config --exists glm 2>/dev/null && [ ! -d "/usr/include/glm" ]; then
+    log_warning "GLM не найден. Установите libglm-dev для корректной сборки"
+fi
+
 # Используем существующую сборку build-vcpkg
 if [ -d "build-vcpkg" ]; then
     log_success "Используем существующую сборку build-vcpkg"
@@ -78,8 +84,10 @@ else
             log_error "Ошибка сборки проекта. См. build/quality-reports/build.log"
         fi
     else
-        log_warning "Ошибка конфигурации CMake (возможно, не установлены зависимости). См. build/quality-reports/cmake-config.log"
-        log_info "Пропускаем сборку и тесты из-за отсутствия зависимостей"
+        log_error "Ошибка конфигурации CMake. См. build/quality-reports/cmake-config.log"
+        log_info "Убедитесь, что установлены все зависимости: libglm-dev, libgtest-dev"
+        # Не пропускаем ошибку, чтобы CI провалился
+        exit 1
     fi
 fi
 
@@ -97,13 +105,21 @@ if [ -d "build-vcpkg" ]; then
 elif [ -d "build/quality-check" ]; then
     cd build/quality-check
     if ctest --output-on-failure > ../quality-reports/tests.log 2>&1; then
-        log_success "Все тесты прошли успешно"
+        # Проверяем, были ли найдены тесты
+        if grep -q "No tests were found" ../quality-reports/tests.log 2>/dev/null; then
+            log_error "Тесты не были найдены. Проверьте сборку тестов."
+            cd ../..
+            exit 1
+        else
+            log_success "Все тесты прошли успешно"
+        fi
     else
         log_error "Некоторые тесты не прошли. См. build/quality-reports/tests.log"
     fi
     cd ../..
 else
-    log_warning "Директория сборки не найдена, пропускаем тесты"
+    log_error "Директория сборки не найдена, невозможно запустить тесты"
+    exit 1
 fi
 
 # 5. Проверка покрытия кода (если доступно)

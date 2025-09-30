@@ -37,6 +37,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y lcov valgrind flawfinder
+        sudo apt-get install -y libglm-dev libgtest-dev
         pip install bandit semgrep
     
     - name: Cache vcpkg
@@ -92,7 +93,7 @@ jobs:
     - name: Install sanitizer tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y valgrind
+        sudo apt-get install -y valgrind libglm-dev libgtest-dev
     
     - name: Cache vcpkg
       uses: actions/cache@v4
