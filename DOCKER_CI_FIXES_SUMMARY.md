@@ -16,14 +16,26 @@
 
 **Коммит**: `6b350b0`
 
+### 🔧 Исправление #3: Установка пакетов vcpkg
+**Проблема**: Ошибка установки пакетов из vcpkg.json (exit code 1)  
+**Решение**: 
+- Удален устаревший builtin-baseline и overrides
+- Добавлены build tools: autoconf, automake, libtool, m4
+- Добавлена поддержка Wayland и X11 расширений
+- Добавлены инструменты компиляции шейдеров
+
+**Коммит**: `620a754`
+
 ## 📊 Статистика
 
 ```bash
-Всего коммитов: 4
-├── 93ccd17 - fix(docker): update cppcheck version
+Всего коммитов: 7
+├── 93ccd17 - fix(docker): update cppcheck version to 2.13.0
 ├── e5c2e3f - docs: add Docker CI/CD build fix report  
-├── 6b350b0 - fix(docker): improve vcpkg installation
-└── f5548d2 - docs: update Docker fix report
+├── 6b350b0 - fix(docker): improve vcpkg installation stability
+├── f5548d2 - docs: update Docker fix report with vcpkg solution
+├── 6ffd60c - docs: add comprehensive Docker CI fixes summary
+└── 620a754 - fix(docker): resolve vcpkg package installation issues
 ```
 
 ## ✅ Проверка соблюдения правил проекта
