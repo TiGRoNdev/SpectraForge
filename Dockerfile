@@ -100,8 +100,8 @@ RUN pip3 install --no-cache-dir \
     cmake-format \
     pyyaml
 
-# Install latest cppcheck from source
-ARG CPPCHECK_VERSION=2.12
+# Install latest cppcheck from source (for newer features than apt version)
+ARG CPPCHECK_VERSION=2.13.0
 RUN wget https://github.com/danmar/cppcheck/archive/refs/tags/${CPPCHECK_VERSION}.tar.gz && \
     tar -xzf ${CPPCHECK_VERSION}.tar.gz && \
     cd cppcheck-${CPPCHECK_VERSION} && \
