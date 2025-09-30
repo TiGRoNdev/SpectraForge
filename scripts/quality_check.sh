@@ -56,6 +56,9 @@ fi
 echo ""
 echo "🔨 Проверка сборки..."
 
+# Проверяем, запущены ли мы в CI
+IS_CI=${CI:-false}
+
 # Проверка наличия GLM
 if ! pkg-config --exists glm 2>/dev/null && [ ! -d "/usr/include/glm" ]; then
     log_warning "GLM не найден. Установите libglm-dev для корректной сборки"
@@ -82,12 +85,19 @@ else
             log_success "Сборка прошла успешно"
         else
             log_error "Ошибка сборки проекта. См. build/quality-reports/build.log"
+            if [ "$IS_CI" = "true" ]; then
+                exit 1
+            fi
         fi
     else
         log_error "Ошибка конфигурации CMake. См. build/quality-reports/cmake-config.log"
         log_info "Убедитесь, что установлены все зависимости: libglm-dev, libgtest-dev"
-        # Не пропускаем ошибку, чтобы CI провалился
-        exit 1
+        # Выходим с ошибкой только в CI
+        if [ "$IS_CI" = "true" ]; then
+            exit 1
+        else
+            log_info "Продолжаем выполнение (локальная среда)"
+        fi
     fi
 fi
 
@@ -100,6 +110,10 @@ if [ -d "build-vcpkg" ]; then
         log_success "Все тесты прошли успешно"
     else
         log_error "Некоторые тесты не прошли. См. build/quality-reports/tests.log"
+        cd ..
+        if [ "$IS_CI" = "true" ]; then
+            exit 1
+        fi
     fi
     cd ..
 elif [ -d "build/quality-check" ]; then
@@ -109,17 +123,27 @@ elif [ -d "build/quality-check" ]; then
         if grep -q "No tests were found" ../quality-reports/tests.log 2>/dev/null; then
             log_error "Тесты не были найдены. Проверьте сборку тестов."
             cd ../..
-            exit 1
+            if [ "$IS_CI" = "true" ]; then
+                exit 1
+            fi
         else
             log_success "Все тесты прошли успешно"
         fi
     else
         log_error "Некоторые тесты не прошли. См. build/quality-reports/tests.log"
+        cd ../..
+        if [ "$IS_CI" = "true" ]; then
+            exit 1
+        fi
     fi
     cd ../..
 else
     log_error "Директория сборки не найдена, невозможно запустить тесты"
-    exit 1
+    if [ "$IS_CI" = "true" ]; then
+        exit 1
+    else
+        log_info "Пропускаем тесты (нет директории сборки)"
+    fi
 fi
 
 # 5. Проверка покрытия кода (если доступно)

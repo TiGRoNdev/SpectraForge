@@ -159,8 +159,31 @@ find_package(GLEW REQUIRED)
 # Поиск OpenGL
 find_package(OpenGL REQUIRED)
 
-# Поиск GLM через vcpkg
-find_package(glm CONFIG REQUIRED)
+# Поиск GLM через vcpkg или системную установку
+find_package(glm CONFIG QUIET)
+
+if(NOT glm_FOUND)
+    # Fallback: поиск GLM как header-only библиотеки (для системной установки)
+    find_path(GLM_INCLUDE_DIR 
+        NAMES glm/glm.hpp
+        PATHS 
+            /usr/include
+            /usr/local/include
+            ${CMAKE_SOURCE_DIR}/external/glm
+    )
+    
+    if(GLM_INCLUDE_DIR)
+        message(STATUS "GLM found (header-only): ${GLM_INCLUDE_DIR}")
+        # Создаем интерфейс библиотеку для GLM
+        add_library(glm INTERFACE)
+        add_library(glm::glm ALIAS glm)
+        target_include_directories(glm INTERFACE ${GLM_INCLUDE_DIR})
+    else()
+        message(FATAL_ERROR "GLM not found. Install libglm-dev or use vcpkg.")
+    endif()
+else()
+    message(STATUS "GLM found via CMake config")
+endif()
 
 # Добавление пути к CMake модулям
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
