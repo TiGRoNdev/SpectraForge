@@ -72,8 +72,11 @@ jobs:
             clang-tidy --version
             clang-format --version
             cppcheck --version
-            vcpkg version
             ninja --version
+            echo 'System Libraries:'
+            pkg-config --modversion glfw3 || echo 'GLFW3: N/A'
+            pkg-config --modversion glm || echo 'GLM: N/A'
+            pkg-config --modversion gtest || echo 'GTest: N/A'
           "
       
       - name: Save Docker image
@@ -132,8 +135,7 @@ jobs:
               if [ ! -f build/compile_commands.json ]; then
                 cmake -B build -S . \
                   -DCMAKE_BUILD_TYPE=Debug \
-                  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-                  -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake
+                  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
               fi
               
               # Run clang-tidy on source files
@@ -211,7 +213,6 @@ jobs:
               cmake -B build-${{ matrix.build_type }} -S . \
                 -G Ninja \
                 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake \
                 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
                 -DBUILD_TESTS=ON \
                 -DENABLE_VULKAN_BACKEND=ON \

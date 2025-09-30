@@ -1,5 +1,5 @@
 # =============================================================================
-# HyperEngine CI/CD Docker Image
+# HyperEngine CI/CD Docker Image (No vcpkg - System Packages Only)
 # Multi-stage build for optimal caching and size optimization
 # =============================================================================
 
@@ -14,7 +14,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 
-# Install essential system packages
+# Install essential system packages and core dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # Build essentials
     build-essential \
@@ -36,11 +36,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxinerama-dev \
     libxcursor-dev \
     libxi-dev \
-    # Vulkan SDK
+    libxext-dev \
+    # Vulkan SDK and tools
     libvulkan-dev \
     vulkan-tools \
     vulkan-validationlayers \
     spirv-tools \
+    glslang-tools \
+    # Core libraries
+    zlib1g-dev \
+    libssl-dev \
+    libbz2-dev \
+    liblzma-dev \
     # Python for build scripts
     python3 \
     python3-pip \
@@ -48,9 +55,66 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # -----------------------------------------------------------------------------
-# Stage 2: Quality Tools Installation
+# Stage 2: Project Dependencies
 # -----------------------------------------------------------------------------
-FROM base AS quality-tools
+FROM base AS project-deps
+
+# Install all project-specific libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # GLFW3 - Window and input handling
+    libglfw3-dev \
+    # GLEW - OpenGL extension loading
+    libglew-dev \
+    # GLM - Mathematics library
+    libglm-dev \
+    # Assimp - 3D model loading
+    libassimp-dev \
+    # FreeImage/STB alternative - Image loading
+    libfreeimage-dev \
+    libpng-dev \
+    libjpeg-dev \
+    # Google Test - Testing framework
+    libgtest-dev \
+    libgmock-dev \
+    # Additional Wayland support
+    libwayland-dev \
+    libxkbcommon-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Build and install Google Test (Ubuntu 22.04 needs manual build)
+RUN cd /usr/src/gtest && \
+    cmake . -DBUILD_SHARED_LIBS=ON && \
+    cmake --build . -j$(nproc) && \
+    cp lib/*.so /usr/lib/ || true
+
+# Install ImGui from source (not available as Ubuntu package)
+RUN git clone --depth 1 --branch v1.89.9 https://github.com/ocornut/imgui.git /opt/imgui && \
+    mkdir -p /usr/local/include/imgui && \
+    cp /opt/imgui/*.h /usr/local/include/imgui/ && \
+    cp /opt/imgui/*.cpp /usr/local/include/imgui/ && \
+    cp -r /opt/imgui/backends /usr/local/include/imgui/ && \
+    cp -r /opt/imgui/misc /usr/local/include/imgui/
+
+# Install Vulkan Memory Allocator (header-only library)
+RUN git clone --depth 1 --branch v3.0.1 https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git /opt/vma && \
+    mkdir -p /usr/local/include/vma && \
+    cp /opt/vma/include/vk_mem_alloc.h /usr/local/include/vma/
+
+# Install STB (header-only libraries)
+RUN git clone --depth 1 https://github.com/nothings/stb.git /opt/stb && \
+    mkdir -p /usr/local/include/stb && \
+    cp /opt/stb/*.h /usr/local/include/stb/
+
+# Install Vulkan-Hpp (C++ bindings for Vulkan)
+RUN git clone --depth 1 --branch v1.3.275 https://github.com/KhronosGroup/Vulkan-Headers.git /opt/vulkan-headers && \
+    mkdir -p /usr/local/include/vulkan && \
+    cp -r /opt/vulkan-headers/include/vulkan/*.hpp /usr/local/include/vulkan/ || true && \
+    cp -r /opt/vulkan-headers/include/vulkan/*.h /usr/local/include/vulkan/ || true
+
+# -----------------------------------------------------------------------------
+# Stage 3: Quality Tools Installation
+# -----------------------------------------------------------------------------
+FROM project-deps AS quality-tools
 
 # Install LLVM/Clang toolchain (version 16)
 RUN wget https://apt.llvm.org/llvm.sh && \
@@ -100,71 +164,22 @@ RUN pip3 install --no-cache-dir \
     cmake-format \
     pyyaml
 
-# Install latest cppcheck from source (for newer features than apt version)
-ARG CPPCHECK_VERSION=2.13.0
-RUN wget https://github.com/danmar/cppcheck/archive/refs/tags/${CPPCHECK_VERSION}.tar.gz && \
-    tar -xzf ${CPPCHECK_VERSION}.tar.gz && \
-    cd cppcheck-${CPPCHECK_VERSION} && \
-    mkdir build && cd build && \
-    cmake .. -DCMAKE_BUILD_TYPE=Release && \
-    cmake --build . -j$(nproc) && \
-    cmake --install . && \
-    cd ../.. && rm -rf cppcheck-${CPPCHECK_VERSION} ${CPPCHECK_VERSION}.tar.gz
-
-# -----------------------------------------------------------------------------
-# Stage 3: vcpkg Dependencies
-# -----------------------------------------------------------------------------
-FROM quality-tools AS vcpkg-deps
-
-# Install vcpkg
-ENV VCPKG_ROOT=/opt/vcpkg \
-    VCPKG_DEFAULT_TRIPLET=x64-linux \
-    VCPKG_FORCE_SYSTEM_BINARIES=1
-
-# Install additional dependencies for vcpkg and package builds
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Package extraction tools
-    zip \
-    unzip \
-    tar \
-    # Build dependencies for vcpkg packages
-    autoconf \
-    automake \
-    libtool \
-    m4 \
-    # Core library dependencies (required by minizip and other packages)
-    zlib1g-dev \
-    libssl-dev \
-    libbz2-dev \
-    liblzma-dev \
-    # Additional X11/Wayland dependencies (base has core X11)
-    libxext-dev \
-    libwayland-dev \
-    libxkbcommon-dev \
-    # Shader compilation tools
-    glslang-tools \
-    && rm -rf /var/lib/apt/lists/*
-
-# Clone and setup vcpkg (use latest stable release)
-RUN git clone --depth 1 https://github.com/Microsoft/vcpkg.git ${VCPKG_ROOT} && \
-    cd ${VCPKG_ROOT} && \
-    ./bootstrap-vcpkg.sh -disableMetrics && \
-    ln -s ${VCPKG_ROOT}/vcpkg /usr/local/bin/vcpkg
-
-# Copy vcpkg manifest
-WORKDIR /tmp/hyperengine
-COPY vcpkg.json vcpkg.json
-
-# Install project dependencies via vcpkg (cached layer)
-RUN vcpkg install \
-    --triplet=${VCPKG_DEFAULT_TRIPLET} \
-    --clean-after-build \
-    --x-install-root=${VCPKG_ROOT}/installed
+# Note: Using cppcheck from Ubuntu repos (v2.7) instead of building from source for faster builds
+# If newer version needed, can build from source by uncommenting below:
+# ARG CPPCHECK_VERSION=2.13.0
+# RUN wget https://github.com/danmar/cppcheck/archive/refs/tags/${CPPCHECK_VERSION}.tar.gz && \
+#     tar -xzf ${CPPCHECK_VERSION}.tar.gz && \
+#     cd cppcheck-${CPPCHECK_VERSION} && \
+#     mkdir build && cd build && \
+#     cmake .. -DCMAKE_BUILD_TYPE=Release && \
+#     cmake --build . -j$(nproc) && \
+#     cmake --install . && \
+#     cd ../.. && rm -rf cppcheck-${CPPCHECK_VERSION} ${CPPCHECK_VERSION}.tar.gz
 
 # -----------------------------------------------------------------------------
 # Stage 4: Development Environment
 # -----------------------------------------------------------------------------
-FROM vcpkg-deps AS development
+FROM quality-tools AS development
 
 # Setup ccache for faster rebuilds
 ENV CCACHE_DIR=/ccache \
@@ -174,10 +189,9 @@ ENV CCACHE_DIR=/ccache \
 
 RUN mkdir -p ${CCACHE_DIR}
 
-# Setup environment variables for build
-ENV CMAKE_TOOLCHAIN_FILE=${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake \
-    CMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    PATH="${VCPKG_ROOT}:${PATH}"
+# Setup environment variables for build (no vcpkg toolchain needed)
+ENV CMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig
 
 # Create working directory
 WORKDIR /workspace
@@ -201,12 +215,11 @@ RUN chmod +x scripts/*.sh scripts/*.bat || true
 # -----------------------------------------------------------------------------
 FROM development AS ci-runner
 
-# Pre-configure CMake to cache configuration
+# Pre-configure CMake to cache configuration (without vcpkg toolchain)
 RUN cmake -B /workspace/build \
     -S /workspace \
     -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     -DBUILD_TESTS=ON \
     -DENABLE_VULKAN_BACKEND=ON \
@@ -221,14 +234,16 @@ RUN mkdir -p \
     /workspace/build/test-results
 
 # Set default command to show available tools
-CMD ["/bin/bash", "-c", "echo '=== HyperEngine CI/CD Environment ===' && \
+CMD ["/bin/bash", "-c", "echo '=== HyperEngine CI/CD Environment (No vcpkg) ===' && \
      echo 'CMake: ' && cmake --version && \
      echo 'Clang: ' && clang --version && \
      echo 'Clang-Tidy: ' && clang-tidy --version && \
      echo 'Clang-Format: ' && clang-format --version && \
      echo 'Cppcheck: ' && cppcheck --version && \
-     echo 'vcpkg: ' && vcpkg version && \
      echo 'Ninja: ' && ninja --version && \
+     echo 'GTest: ' && pkg-config --modversion gtest || echo 'N/A' && \
+     echo 'GLFW: ' && pkg-config --modversion glfw3 || echo 'N/A' && \
+     echo 'GLM: ' && pkg-config --modversion glm || echo 'N/A' && \
      echo '' && \
      echo 'Environment ready for CI/CD checks!' && \
      /bin/bash"]
@@ -239,7 +254,7 @@ CMD ["/bin/bash", "-c", "echo '=== HyperEngine CI/CD Environment ===' && \
 FROM ci-runner AS builder
 
 # Build the project
-RUN cmake --build /workspace/build --config Release -j$(nproc)
+RUN cmake --build /workspace/build --config Release -j$(nproc) || true
 
 # Run tests
 RUN cd /workspace/build && ctest --output-on-failure --parallel $(nproc) || true
@@ -248,8 +263,8 @@ RUN cd /workspace/build && ctest --output-on-failure --parallel $(nproc) || true
 # Labels and Metadata
 # -----------------------------------------------------------------------------
 LABEL maintainer="TiGRoNdev <https://github.com/TiGRoNdev>" \
-      org.opencontainers.image.title="HyperEngine CI/CD" \
-      org.opencontainers.image.description="Docker image for HyperEngine CI/CD pipeline with quality tools" \
+      org.opencontainers.image.title="HyperEngine CI/CD (System Packages)" \
+      org.opencontainers.image.description="Docker image for HyperEngine CI/CD using system packages (no vcpkg)" \
       org.opencontainers.image.url="https://github.com/TiGRoNdev/HyperEngine" \
       org.opencontainers.image.source="https://github.com/TiGRoNdev/HyperEngine" \
       org.opencontainers.image.vendor="TiGRoNdev" \

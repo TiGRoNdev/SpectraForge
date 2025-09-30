@@ -7,17 +7,16 @@ services:
       context: .
       target: ci-runner
       args:
-        CPPCHECK_VERSION: "2.12"
+        CPPCHECK_VERSION: "2.13.0"
     image: hyperengine-ci:latest
     container_name: hyperengine-ci
     volumes:
       - .:/workspace
       - ccache:/ccache
-      - vcpkg-cache:/opt/vcpkg/downloads
     working_dir: /workspace
     environment:
       - CCACHE_DIR=/ccache
-      - CMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake
+      - PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig
     command: /bin/bash
     tty: true
     stdin_open: true
@@ -36,6 +35,7 @@ services:
     working_dir: /workspace
     environment:
       - CCACHE_DIR=/ccache
+      - PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig
 
   # Development environment - for interactive development
   dev:
@@ -47,11 +47,10 @@ services:
     volumes:
       - .:/workspace
       - ccache:/ccache
-      - vcpkg-cache:/opt/vcpkg/downloads
     working_dir: /workspace
     environment:
       - CCACHE_DIR=/ccache
-      - CMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake
+      - PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig
     command: /bin/bash
     tty: true
     stdin_open: true
@@ -74,8 +73,6 @@ services:
 
 volumes:
   ccache:
-    driver: local
-  vcpkg-cache:
     driver: local
   build-output:
     driver: local

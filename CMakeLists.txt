@@ -62,12 +62,9 @@ if(BUILD_VULKAN_RENDERER)
         PATHS ${VULKAN_MEMORY_ALLOCATOR_INCLUDE_DIRS}
               ${VulkanMemoryAllocator_INCLUDE_DIRS}
               ${VulkanMemoryAllocator_INCLUDE_DIR}
-              ${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include
-              ${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/include/vma
-              ${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/share/vulkan-memory-allocator/include
-              ${CMAKE_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/share/vulkan-memory-allocator
-              ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include
-              ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/vma
+              /usr/local/include/vma
+              /usr/local/include
+              /usr/include
         PATH_SUFFIXES include include/vma vma
     )
 
@@ -150,16 +147,16 @@ if(BUILD_ENGINE_4D OR BUILD_VULKAN_RENDERER)
     find_package(Stb QUIET)
 endif()
 
-# Поиск GLFW3 через vcpkg
+# Find GLFW3 (window and input library)
 find_package(glfw3 CONFIG REQUIRED)
 
-# Поиск GLEW через vcpkg
+# Find GLEW (OpenGL extension loader)
 find_package(GLEW REQUIRED)
 
-# Поиск OpenGL
+# Find OpenGL
 find_package(OpenGL REQUIRED)
 
-# Поиск GLM через vcpkg или системную установку
+# Find GLM (mathematics library) - CONFIG mode or header-only fallback
 find_package(glm CONFIG QUIET)
 
 if(NOT glm_FOUND)
@@ -179,7 +176,7 @@ if(NOT glm_FOUND)
         add_library(glm::glm ALIAS glm)
         target_include_directories(glm INTERFACE ${GLM_INCLUDE_DIR})
     else()
-        message(FATAL_ERROR "GLM not found. Install libglm-dev or use vcpkg.")
+        message(FATAL_ERROR "GLM not found. Install libglm-dev package.")
     endif()
 else()
     message(STATUS "GLM found via CMake config")
