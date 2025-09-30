@@ -561,8 +561,8 @@ bool OptiXRayTracer::allocateBuffers() {
     CUDA_CHECK(cudaMemset(d_albedo, 0, bufferSize));
     CUDA_CHECK(cudaMemset(d_normals, 0, bufferSize));
 
-    std::cout << "[OptiXRayTracer] Буферы выделены для " << imageWidth << "x" << imageHeight
-              << std::endl;
+    SAFE_PRINT_LINE("[OptiXRayTracer] Буферы выделены для " + SAFE_TO_STRING(imageWidth) + "x"
+                    + SAFE_TO_STRING(imageHeight));
     return true;
 }
 

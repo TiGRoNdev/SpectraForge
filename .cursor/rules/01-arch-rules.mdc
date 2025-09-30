@@ -85,14 +85,23 @@ Adhere to these foundational principles to ensure maintainable and extensible co
 Maintain a flat, modular structure to facilitate navigation and scalability.
 
 @structure_rules {
-  "src": "Source code implementation files",
+  "src": "Source code implementation files with modular subdirectories",
+  "src/core": "Core engine components (GameObject, Component, Transform)",
+  "src/math": "Mathematical library (Vector3/4, Matrix4, Quaternion)",
+  "src/rendering": "Rendering systems (OpenGL, Vulkan backends)",
+  "src/physics": "Physics simulation components",
+  "src/input": "Input handling system",
+  "src/cuda": "CUDA integration for GPU acceleration",
+  "src/optix": "OptiX ray tracing integration",
+  "src/upscaling": "AI upscaling (DLSS/FSR)",
   "include": "Header files for interfaces and declarations",
   "tests": "Unit and integration tests mirroring source structure",
   "docs": "Technical documentation and architecture diagrams",
   "examples": "Usage examples and demo applications",
   "build": "Build artifacts (add to .gitignore)",
   "scripts": "Build scripts, utilities, and automation tools",
-  "config": "Configuration files for builds and runtime"
+  "cmake": "CMake modules and find scripts",
+  "shaders": "GLSL/HLSL shader files"
 }
 
 - Place headers and sources together for easy navigation in small projects; use subdirectories for modules in larger ones.
@@ -109,9 +118,9 @@ Enforce readability and maintainability through consistent practices.
   },
   {
     "id": "naming_conventions",
-    "rule": "Use PascalCase for classes, camelCase for functions and variables.",
+    "rule": "Use PascalCase for classes, snake_case for functions and variables.",
     "severity": "high",
-    "example": "class Engine4D; void renderFrame();"
+    "example": "class Engine4D; void render_frame();"
   },
   {
     "id": "function_design",
@@ -357,18 +366,18 @@ Document and approve exceptions.
 @mcp_architecture_tools [
   {
     "id": "github_issues",
-    "mcp_tool": "mcp_MCP_DOCKER_create_issue",
+    "mcp_tool": "mcp_github_create_issue",
     "when": "Architecture violations or technical debt detected",
     "params": {"owner": "TiGRoNdev", "repo": "HyperEngine", "labels": ["architecture", "technical-debt"]}
   },
   {
     "id": "research",
-    "mcp_tool": "mcp_MCP_DOCKER_perplexity_research",
+    "mcp_tool": "mcp_perplexity-ask_perplexity_research",
     "when": "Need architectural patterns or best practices research"
   },
   {
     "id": "library_docs",
-    "mcp_tools": ["mcp_MCP_DOCKER_resolve-library-id", "mcp_MCP_DOCKER_get-library-docs"],
+    "mcp_tools": ["mcp_context7_resolve-library-id", "mcp_context7_get-library-docs"],
     "when": "Researching third-party library architectures"
   }
 ]

@@ -141,25 +141,25 @@ priority: 800
 @github_mcp [
   {
     "id": "issues",
-    "mcp_tool": "mcp_MCP_DOCKER_create_issue",
+    "mcp_tool": "mcp_github_create_issue",
     "when": "Bug reports, features",
     "params": {"owner": "TiGRoNdev", "repo": "HyperEngine"}
   },
   {
     "id": "branches",
-    "mcp_tool": "mcp_MCP_DOCKER_create_branch",
+    "mcp_tool": "mcp_github_create_branch",
     "when": "Start new work",
     "format": "feature/* | bugfix/* | hotfix/*"
   },
   {
     "id": "pull_requests",
-    "mcp_tool": "mcp_MCP_DOCKER_create_pull_request",
+    "mcp_tool": "mcp_github_create_pull_request",
     "when": "Code ready for review",
     "params": {"owner": "TiGRoNdev", "repo": "HyperEngine"}
   },
   {
     "id": "copilot_review",
-    "mcp_tool": "mcp_MCP_DOCKER_request_copilot_review",
+    "mcp_tool": "mcp_github_request_copilot_review",
     "when": "PR created"
   }
 ]

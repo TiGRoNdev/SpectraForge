@@ -68,25 +68,25 @@ Follow these steps for new features.
 @mcp_workflow [
   {
     "id": "create_branch",
-    "mcp_tool": "mcp_MCP_DOCKER_create_branch",
+    "mcp_tool": "mcp_github_create_branch",
     "step": 1,
     "params": {"owner": "TiGRoNdev", "repo": "HyperEngine", "branch": "feature/[name]", "from_branch": "main"}
   },
   {
     "id": "push_changes",
-    "mcp_tool": "mcp_MCP_DOCKER_push_files",
+    "mcp_tool": "mcp_github_push_files",
     "step": 3,
     "params": {"owner": "TiGRoNdev", "repo": "HyperEngine", "files": [], "message": "feat: [description]"}
   },
   {
     "id": "create_pr",
-    "mcp_tool": "mcp_MCP_DOCKER_create_pull_request",
+    "mcp_tool": "mcp_github_create_pull_request",
     "step": 4,
     "params": {"owner": "TiGRoNdev", "repo": "HyperEngine", "head": "feature/[name]", "base": "main"}
   },
   {
     "id": "request_review",
-    "mcp_tool": "mcp_MCP_DOCKER_request_copilot_review",
+    "mcp_tool": "mcp_github_request_copilot_review",
     "step": 5
   }
 ]

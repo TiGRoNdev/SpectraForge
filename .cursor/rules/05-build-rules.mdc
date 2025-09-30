@@ -171,18 +171,18 @@ Expected build artifacts.
 @mcp_build_tools [
   {
     "id": "trigger_workflow",
-    "mcp_tool": "mcp_MCP_DOCKER_run_workflow",
+    "mcp_tool": "mcp_github_run_workflow",
     "when": "Trigger CI/CD builds",
     "params": {"owner": "TiGRoNdev", "repo": "HyperEngine", "workflow_id": "ci.yml", "ref": "main"}
   },
   {
     "id": "download_artifacts",
-    "mcp_tool": "mcp_MCP_DOCKER_download_workflow_run_artifact",
+    "mcp_tool": "mcp_github_download_workflow_run_artifact",
     "when": "Get build outputs"
   },
   {
     "id": "report_build_issues",
-    "mcp_tool": "mcp_MCP_DOCKER_create_issue",
+    "mcp_tool": "mcp_github_create_issue",
     "when": "Build failures occur",
     "labels": ["build", "bug"]
   }

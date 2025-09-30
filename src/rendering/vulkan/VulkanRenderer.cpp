@@ -112,12 +112,12 @@ PrimaryImage VulkanRenderer::rasterizePrimary(const Gaussians& gaussians) {
 
     if (gaussians.count > 1000000) {  // Разумный лимит
         SAFE_ERROR("[VulkanRenderer] Ошибка: Слишком много гауссианов: "
-                   + std::to_string(gaussians.count));
+                   + SAFE_TO_STRING(gaussians.count));
         throw std::invalid_argument(
             "Количество гауссианов превышает максимально допустимое значение");
     }
 
-    SAFE_PRINT_LINE("[VulkanRenderer] Первичная растеризация " + std::to_string(gaussians.count)
+    SAFE_PRINT_LINE("[VulkanRenderer] Первичная растеризация " + SAFE_TO_STRING(gaussians.count)
                     + " гауссианов");
 
     // TODO: Реализация через FlashGSSplatter на этапе 3
@@ -155,7 +155,7 @@ RawEffects VulkanRenderer::rayTraceSecondary(const PrimaryImage& image) {
     }
 
     SAFE_PRINT_LINE("[VulkanRenderer] Вторичный ray tracing для изображения "
-                    + std::to_string(image.width) + "x" + std::to_string(image.height));
+                    + SAFE_TO_STRING(image.width) + "x" + SAFE_TO_STRING(image.height));
 
     // TODO: Реализация через OptiXRayTracer на этапе 4
     // В полной реализации здесь будет:
@@ -216,9 +216,9 @@ FinalImage VulkanRenderer::upscale(const DenoisedImage& image, const ResolutionT
             "Размеры целевого разрешения превышают максимально допустимые значения");
     }
 
-    SAFE_PRINT_LINE("[VulkanRenderer] Upscaling до разрешения " + std::to_string(target.width) + "x"
-                    + std::to_string(target.height)
-                    + " (масштаб: " + std::to_string(target.scaleFactor) + "x)");
+    SAFE_PRINT_LINE("[VulkanRenderer] Upscaling до разрешения " + SAFE_TO_STRING(target.width) + "x"
+                    + SAFE_TO_STRING(target.height)
+                    + " (масштаб: " + SAFE_TO_STRING(target.scaleFactor) + "x)");
 
     // TODO: Реализация через Upscaler на этапе 6
     // В полной реализации здесь будет:

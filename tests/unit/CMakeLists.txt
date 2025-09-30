@@ -74,6 +74,46 @@ if(TARGET CUDA::cudart)
             glm::glm
     )
     list(APPEND ALL_UNIT_TESTS optix_tests)
+    
+    # NEW P0: FlashGSSplatter unit tests (CRITICAL for 80% coverage)
+    add_unit_test(flashgs_splatter_test
+        SOURCES
+            cuda/FlashGSSplatterTest.cpp
+        LIBS
+            HyperEngine_Math
+            HyperEngine_Core
+            CUDA::cudart
+            CUDA::cuda_driver
+            glm::glm
+    )
+    list(APPEND ALL_UNIT_TESTS flashgs_splatter_test)
+    
+    # NEW P1: OptiX RayTracer unit tests (CRITICAL for 80% coverage)
+    add_unit_test(optix_raytracer_test
+        SOURCES
+            optix/OptiXRayTracerTest.cpp
+        LIBS
+            HyperEngine_Math
+            HyperEngine_Core
+            CUDA::cudart
+            CUDA::cuda_driver
+            glm::glm
+    )
+    list(APPEND ALL_UNIT_TESTS optix_raytracer_test)
+endif()
+
+# NEW P0: ResourceManager unit tests (CRITICAL - RICE: 16.2)
+if(TARGET HyperEngine_Vulkan)
+    add_unit_test(resource_manager_test
+        SOURCES
+            vulkan/ResourceManagerTest.cpp
+        LIBS
+            HyperEngine_Math
+            HyperEngine_Core
+            HyperEngine_Vulkan
+            glm::glm
+    )
+    list(APPEND ALL_UNIT_TESTS resource_manager_test)
 endif()
 
 # Добавляем все тесты в глобальный список
@@ -81,6 +121,6 @@ set(ALL_UNIT_TESTS
     simple_math_test
     math_vector4_test
     math_matrix4_test
-    ${ALL_UNIT_TESTS}  # Включаем условные тесты (rendering_tests, optix_tests)
+    ${ALL_UNIT_TESTS}  # Включаем условные тесты (rendering_tests, optix_tests, new P0 tests)
     PARENT_SCOPE
 )

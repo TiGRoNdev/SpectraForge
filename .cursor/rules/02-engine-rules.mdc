@@ -125,12 +125,12 @@ Rules for vendor-specific paths.
 @mcp_architecture [
   {
     "id": "architecture_research",
-    "mcp_tool": "mcp_MCP_DOCKER_perplexity_research",
+    "mcp_tool": "mcp_perplexity-ask_perplexity_research",
     "when": "Researching Vulkan/CUDA/OptiX best practices"
   },
   {
     "id": "library_docs",
-    "mcp_tools": ["mcp_MCP_DOCKER_resolve-library-id", "mcp_MCP_DOCKER_get-library-docs"],
+    "mcp_tools": ["mcp_context7_resolve-library-id", "mcp_context7_get-library-docs"],
     "when": "Need Vulkan, OptiX, or CUDA documentation"
   }
 ]

@@ -550,7 +550,7 @@ std::string CudaInterop::getInteropCapabilities() const {
 
     // Добавляем информацию о CUDA устройстве
     if (cudaDevice >= 0) {
-        caps += ", CUDA Device: " + std::to_string(cudaDevice);
+        caps += ", CUDA Device: " + SAFE_TO_STRING(cudaDevice);
     }
 
     return caps;

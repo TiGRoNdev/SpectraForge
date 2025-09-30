@@ -9,7 +9,7 @@ priority: 1000
 
 @context {
   "type": "master_coordinator",
-  "purpose": "Ensure STRICT enforcement of all project rules with Claude 4.5 Sonnet optimization",
+  "purpose": "Ensure STRICT enforcement of all project rules with Claude 4.5 Sonnet optimization, use context7",
   "priority": "CRITICAL",
   "format_version": "2.0",
   "applies_to": "ALL project files and operations",
@@ -110,31 +110,31 @@ STEP 6: Report compliance status
 @github_mcp_mandatory [
   {
     "id": "issue_creation",
-    "rule": "ALWAYS use mcp_MCP_DOCKER_create_issue for bug/feature tracking",
+    "rule": "ALWAYS use mcp_github_create_issue for bug/feature tracking",
     "severity": "high",
     "when": "User reports bug or requests feature"
   },
   {
     "id": "pr_creation",
-    "rule": "ALWAYS use mcp_MCP_DOCKER_create_pull_request for code changes",
+    "rule": "ALWAYS use mcp_github_create_pull_request for code changes",
     "severity": "high",
     "when": "Code changes ready for review"
   },
   {
     "id": "branch_creation",
-    "rule": "ALWAYS use mcp_MCP_DOCKER_create_branch for new features/fixes",
+    "rule": "ALWAYS use mcp_github_create_branch for new features/fixes",
     "severity": "high",
     "when": "Starting new development work"
   },
   {
     "id": "workflow_execution",
-    "rule": "ALWAYS use mcp_MCP_DOCKER_run_workflow for CI/CD triggers",
+    "rule": "ALWAYS use mcp_github_run_workflow for CI/CD triggers",
     "severity": "medium",
     "when": "Testing or deployment needed"
   },
   {
     "id": "code_review",
-    "rule": "SUGGEST mcp_MCP_DOCKER_request_copilot_review for PR reviews",
+    "rule": "SUGGEST mcp_github_request_copilot_review for PR reviews",
     "severity": "medium",
     "when": "PR created and needs review"
   }
@@ -145,19 +145,19 @@ STEP 6: Report compliance status
 @research_mcp_tools [
   {
     "id": "perplexity_research",
-    "rule": "USE mcp_MCP_DOCKER_perplexity_research for deep technical research",
+    "rule": "USE mcp_perplexity-ask_perplexity_research for deep technical research",
     "severity": "medium",
     "when": "Need current information or technical deep dive"
   },
   {
-    "id": "web_fetch",
-    "rule": "USE mcp_MCP_DOCKER_fetch_content for documentation/article parsing",
+    "id": "web_scrape",
+    "rule": "USE mcp_firecrawl-mcp_firecrawl_scrape for documentation/article parsing",
     "severity": "medium",
     "when": "Need to extract content from specific URL"
   },
   {
     "id": "web_search",
-    "rule": "USE mcp_MCP_DOCKER_search for general web searches",
+    "rule": "USE mcp_firecrawl-mcp_firecrawl_search for general web searches",
     "severity": "low",
     "when": "Need to find information online"
   }
@@ -168,13 +168,13 @@ STEP 6: Report compliance status
 @library_docs_mcp [
   {
     "id": "resolve_library",
-    "rule": "ALWAYS use mcp_MCP_DOCKER_resolve-library-id BEFORE get-library-docs",
+    "rule": "ALWAYS use mcp_context7_resolve-library-id BEFORE get-library-docs",
     "severity": "high",
     "when": "Need library documentation"
   },
   {
     "id": "get_docs",
-    "rule": "USE mcp_MCP_DOCKER_get-library-docs for up-to-date library documentation",
+    "rule": "USE mcp_context7_get-library-docs for up-to-date library documentation",
     "severity": "medium",
     "when": "Working with external libraries"
   }
@@ -389,13 +389,13 @@ PROJECT:
     "id": "github_workflow",
     "rule": "For each feature: 1) Create branch, 2) Develop with TDD, 3) Create PR, 4) Request review",
     "severity": "high",
-    "tools": ["mcp_MCP_DOCKER_create_branch", "mcp_MCP_DOCKER_create_pull_request", "mcp_MCP_DOCKER_request_copilot_review"]
+    "tools": ["mcp_github_create_branch", "mcp_github_create_pull_request", "mcp_github_request_copilot_review"]
   },
   {
     "id": "ci_integration",
     "rule": "After PR creation, trigger CI workflow",
     "severity": "medium",
-    "tools": ["mcp_MCP_DOCKER_run_workflow"]
+    "tools": ["mcp_github_run_workflow"]
   }
 ]
 
