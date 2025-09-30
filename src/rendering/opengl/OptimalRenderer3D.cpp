@@ -41,10 +41,10 @@ void OptimalRenderer3D::HardwareConfig::autoDetect() {
     // Variable Rate Shading
     supportsVRS = (performanceRating > 1.0f);
 
-    std::cout << "Определена конфигурация: " << "RT=" << (supportsRayTracing ? "Y" : "N")
+    std::cout << "Определена конфигурация: RT=" << (supportsRayTracing ? "Y" : "N")
               << ", Neural=" << (supportsNeural ? "Y" : "N")
-              << ", MeshShaders=" << (supportsMeshShaders ? "Y" : "N")
-              << ", VRS=" << (supportsVRS ? "Y" : "N") << ", Memory=" << gpuMemoryMB << "MB"
+              << ", MeshShaders=" << (supportsMeshShaders ? "Y" : "N") << ", VRS="
+              << (supportsVRS ? "Y" : "N") << ", Memory=" << gpuMemoryMB << "MB"
               << ", Performance=" << performanceRating << std::endl;
 }
 
@@ -237,7 +237,7 @@ bool OptimalRenderer3D::initialize(int width, int height, const HardwareConfig& 
 
     initialized = true;
 
-    std::cout << "Оптимальный рендерер успешно инициализирован:" << "\n  Разрешение рендеринга: "
+    std::cout << "Оптимальный рендерер успешно инициализирован:\n  Разрешение рендеринга: "
               << renderWidth << "x" << renderHeight << "\n  Целевое разрешение: " << targetWidth
               << "x" << targetHeight
               << "\n  Глобальное освещение: " << (globalIllumination ? "Да" : "Нет")
@@ -720,9 +720,9 @@ void OptimalRenderer3D::balanceQualityAndPerformance() {
     float denoisingRatio = metrics.denoisingTime / totalTime;
     float upscalingRatio = metrics.upscalingTime / totalTime;
 
-    std::cout << "Анализ производительности:" << " растеризация=" << (rasterizationRatio * 100)
-              << "%" << " трассировка=" << (rayTracingRatio * 100) << "%"
-              << " деноизинг=" << (denoisingRatio * 100) << "%"
+    std::cout << "Анализ производительности: растеризация=" << (rasterizationRatio * 100)
+              << "%, трассировка=" << (rayTracingRatio * 100) << "%, деноизинг="
+              << (denoisingRatio * 100) << "%"
               << " масштабирование=" << (upscalingRatio * 100) << "%" << std::endl;
 
     // Адаптируем настройки на основе узких мест
@@ -981,8 +981,8 @@ void OptimalRenderer3D::PerformanceMetrics::print() const {
 
 std::unique_ptr<OptimalRenderer3D> OptimalRendererFactory::createOptimalRenderer(
     const CreationParams& params) {
-    std::cout << "Создание оптимального рендерера с параметрами:" << "\n  Разрешение: "
-              << params.width << "x" << params.height << "\n  Качество: " << params.qualityLevel
+    std::cout << "Создание оптимального рендерера с параметрами:\n  Разрешение: " << params.width
+              << "x" << params.height << "\n  Качество: " << params.qualityLevel
               << "\n  Целевой FPS: " << params.targetFPS << std::endl;
 
     // Определяем конфигурацию железа
@@ -1126,9 +1126,9 @@ void AdaptiveLOD::computeLOD(GaussianField3D& field,
     // Адаптируем к производительности
     adaptToPerformance(0.0f, targetFrameTime);  // TODO: передать реальный frametime
 
-    std::cout << "LOD распределение: " << "L0=" << stats.gaussiansPerLevel[0]
-              << ", L1=" << stats.gaussiansPerLevel[1] << ", L2=" << stats.gaussiansPerLevel[2]
-              << ", L3=" << stats.gaussiansPerLevel[3] << std::endl;
+    std::cout << "LOD распределение: L0=" << stats.gaussiansPerLevel[0] << ", L1="
+              << stats.gaussiansPerLevel[1] << ", L2=" << stats.gaussiansPerLevel[2] << ", L3="
+              << stats.gaussiansPerLevel[3] << std::endl;
 }
 
 void AdaptiveLOD::adaptToPerformance(float currentFrameTime, float targetFrameTime) {
