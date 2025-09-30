@@ -18,8 +18,6 @@ queries:
 paths:
   - src/
   - include/
-  - srcVulkan/
-  - src3D/
 
 # Исключенные пути
 paths-ignore:

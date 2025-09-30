@@ -2,9 +2,9 @@ name: Code Quality and Security Checks
 
 on:
   push:
-    branches: [ main, develop, refactoring/* ]
+    branches: [ master, release/*, refactoring/* ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ mater, release/* ]
   schedule:
     # Запуск ежедневно в 2:00 UTC
     - cron: '0 2 * * *'
