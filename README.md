@@ -4,6 +4,8 @@
 [![CMake](https://img.shields.io/badge/CMake-3.16%2B-blue.svg)](https://cmake.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg)]()
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](Dockerfile)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-Docker-green.svg)](.github/workflows/docker-ci.yml)
 [![Version](https://img.shields.io/badge/Version-1.0.1-green.svg)]()
 
 **HyperEngine** - экспериментальный игровой движок нового поколения с поддержкой как классического 3D, так и инновационного 4D рендеринга. Движок демонстрирует современные подходы к архитектуре программного обеспечения, следуя принципам SOLID и предоставляя высокопроизводительную платформу для создания уникальных игровых проектов.
@@ -128,6 +130,48 @@ make -j$(nproc)
 # 3. Запуск демо
 ./Engine3D_Demo
 ```
+
+### Docker (Рекомендуется для CI/CD) 🐳
+
+```bash
+# 1. Клонирование репозитория
+git clone https://github.com/TiGRoNdev/HyperEngine.git
+cd HyperEngine
+
+# 2. Запуск CI/CD окружения
+docker-compose build ci-runner
+
+# 3. Запуск проверок качества
+docker-compose run --rm ci-runner ./scripts/quality_check.sh
+
+# 4. Сборка проекта
+docker-compose run --rm ci-runner bash -c "
+  cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+  cmake --build build -j\$(nproc)
+"
+
+# 5. Запуск тестов
+docker-compose run --rm ci-runner bash -c "cd build && ctest --output-on-failure"
+```
+
+**Преимущества Docker:**
+
+- 🔧 Все зависимости уже установлены (Clang, CMake, vcpkg, Vulkan SDK)
+- ✅ Готовые инструменты качества (clang-tidy, cppcheck, Valgrind)
+- 🚀 Идеально для CI/CD и автоматизации
+- 📦 Изолированное окружение без конфликтов
+- 🌍 Кросс-платформенность (работает везде, где есть Docker)
+
+**Доступные сервисы:**
+
+- `ci-runner` - Полное CI/CD окружение с инструментами анализа
+- `builder` - Сборка проекта с тестами
+- `dev` - Интерактивная разработка
+- `demo` - Запуск GUI демонстраций
+
+📚 **Подробнее:** [DOCKER_QUICK_START.md](DOCKER_QUICK_START.md) | [docs/DOCKER_CICD_GUIDE.md](docs/DOCKER_CICD_GUIDE.md)
+
+---
 
 ### CMake опции сборки
 
