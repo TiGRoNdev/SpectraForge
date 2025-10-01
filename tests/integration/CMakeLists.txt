@@ -37,8 +37,20 @@ if(GMOCK_FOUND)
         LIBS
             ${INTEGRATION_TEST_LIBS}
     )
-    set(ALL_INTEGRATION_TESTS simple_integration_test PARENT_SCOPE)
+    
+    # NEW: Full Pipeline Integration Test (CRITICAL for 80% coverage)
+    add_integration_test(full_pipeline_integration_test
+        SOURCES
+            rendering/FullPipelineIntegrationTest.cpp
+        LIBS
+            ${INTEGRATION_TEST_LIBS}
+    )
+    
+    set(ALL_INTEGRATION_TESTS 
+        simple_integration_test
+        full_pipeline_integration_test
+        PARENT_SCOPE)
 else()
-    message(STATUS "Пропуск simple_integration_test - требуется GMock")
+    message(STATUS "Пропуск integration tests - требуется GMock")
     set(ALL_INTEGRATION_TESTS "" PARENT_SCOPE)
 endif()
