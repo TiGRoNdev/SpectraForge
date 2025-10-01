@@ -140,6 +140,30 @@ if(BUILD_ENGINE_4D OR BUILD_VULKAN_RENDERER)
 
     # Опциональные зависимости Vulkan
     find_package(VulkanMemoryAllocator CONFIG QUIET)
+    
+    # Fallback: создаем интерфейсный таргет для VMA если не найден через find_package
+    if(NOT TARGET VulkanMemoryAllocator::VulkanMemoryAllocator AND NOT TARGET GPUOpen::VulkanMemoryAllocator)
+        # Ищем заголовочный файл VMA
+        find_path(VMA_INCLUDE_DIR
+            NAMES vk_mem_alloc.h
+            PATHS
+                /usr/local/include/vma
+                /usr/include/vma
+                ${CMAKE_SOURCE_DIR}/external/vma/include
+                ${CMAKE_SOURCE_DIR}/external/VulkanMemoryAllocator/include
+        )
+        
+        if(VMA_INCLUDE_DIR)
+            message(STATUS "VulkanMemoryAllocator found (header-only): ${VMA_INCLUDE_DIR}")
+            add_library(VulkanMemoryAllocator INTERFACE)
+            add_library(VulkanMemoryAllocator::VulkanMemoryAllocator ALIAS VulkanMemoryAllocator)
+            target_include_directories(VulkanMemoryAllocator INTERFACE ${VMA_INCLUDE_DIR})
+            target_link_libraries(VulkanMemoryAllocator INTERFACE Vulkan::Vulkan)
+        else()
+            message(STATUS "VulkanMemoryAllocator not found - VMA features will be disabled")
+        endif()
+    endif()
+    
     find_package(spirv_cross_core CONFIG QUIET)
     find_package(unofficial-shaderc CONFIG QUIET)
     find_package(imgui CONFIG QUIET)

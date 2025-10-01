@@ -16,8 +16,14 @@ if(TARGET HyperEngine_Vulkan AND TARGET Vulkan::Vulkan)
     list(APPEND INTEGRATION_TEST_LIBS
         HyperEngine_Vulkan
         Vulkan::Vulkan
-        GPUOpen::VulkanMemoryAllocator
     )
+    
+    # Добавляем VMA если доступен
+    if(TARGET VulkanMemoryAllocator::VulkanMemoryAllocator)
+        list(APPEND INTEGRATION_TEST_LIBS VulkanMemoryAllocator::VulkanMemoryAllocator)
+    elseif(TARGET GPUOpen::VulkanMemoryAllocator)
+        list(APPEND INTEGRATION_TEST_LIBS GPUOpen::VulkanMemoryAllocator)
+    endif()
 endif()
 
 # Добавляем CUDA зависимости только если CUDA доступна
