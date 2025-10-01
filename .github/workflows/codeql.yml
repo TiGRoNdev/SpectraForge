@@ -39,9 +39,10 @@ jobs:
           cmake \
           ninja-build \
           libvulkan-dev \
-          vulkan-headers \
-          vulkan-validationlayers \
-          spirv-tools
+          vulkan-tools \
+          spirv-tools \
+          libglm-dev \
+          pkg-config
 
     - name: Configure CMake (CodeQL-compatible)
       run: |
