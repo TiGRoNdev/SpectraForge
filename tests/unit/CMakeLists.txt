@@ -43,6 +43,11 @@ if(TARGET HyperEngine_Vulkan)
     list(APPEND RENDERING_TEST_LIBS HyperEngine_Vulkan)
 endif()
 
+# Добавляем VulkanRenderer если доступен (нужен для VulkanRendererTest)
+if(TARGET VulkanRenderer)
+    list(APPEND RENDERING_TEST_LIBS VulkanRenderer)
+endif()
+
 # Добавляем условную компиляцию для Vulkan тестов
 if(TARGET HyperEngine_Vulkan)
     add_compile_definitions(HyperEngine_ENABLE_VULKAN)
