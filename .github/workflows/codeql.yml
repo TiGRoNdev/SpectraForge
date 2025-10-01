@@ -43,6 +43,11 @@ jobs:
           spirv-tools \
           libglm-dev \
           pkg-config
+        
+        # Установка Vulkan Memory Allocator (header-only library)
+        sudo mkdir -p /usr/local/include
+        sudo curl -L https://raw.githubusercontent.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/master/include/vk_mem_alloc.h \
+          -o /usr/local/include/vk_mem_alloc.h
 
     - name: Configure CMake (CodeQL-compatible)
       run: |
