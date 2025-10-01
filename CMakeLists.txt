@@ -435,30 +435,41 @@ if(BUILD_VULKAN_RENDERER)
     message(STATUS "Building Vulkan Hybrid Renderer...")
 
     # Сбор файлов для Vulkan рендерера
-    file(GLOB_RECURSE VULKAN_CPP_SOURCES "src/*.cpp")
-    file(GLOB_RECURSE VULKAN_HEADERS "src/*.h")
+    # ИСКЛЮЧАЕМ модульные директории, которые собираются отдельно в src/CMakeLists.txt
+    file(GLOB_RECURSE VULKAN_CPP_SOURCES 
+        "src/rendering/*.cpp"
+        "src/upscaling/*.cpp"
+    )
+    file(GLOB_RECURSE VULKAN_HEADERS 
+        "src/rendering/*.h"
+        "src/upscaling/*.h"
+    )
 
+    # Сбор CUDA файлов отдельно (если они нужны)
+    file(GLOB_RECURSE VULKAN_CUDA_CPP_SOURCES "src/cuda/*.cpp")
+    file(GLOB_RECURSE VULKAN_CUDA_CU_SOURCES "src/cuda/*.cu")
+    
     # Исключаем CUDA файлы если CUDA выключена
     if(NOT BUILD_WITH_CUDA)
-        list(REMOVE_ITEM VULKAN_CPP_SOURCES
-            "${CMAKE_SOURCE_DIR}/src/cuda/cuda_stubs.cpp"
-            "${CMAKE_SOURCE_DIR}/src/cuda/FlashGSSplatter.cpp"
-            "${CMAKE_SOURCE_DIR}/src/cuda/CudaInterop.cpp"
-        )
+        # Не добавляем CUDA файлы к VULKAN_CPP_SOURCES
         message(STATUS "Excluding CUDA files from build (BUILD_WITH_CUDA=OFF)")
+    else()
+        # Добавляем CUDA cpp файлы если CUDA включена
+        list(APPEND VULKAN_CPP_SOURCES ${VULKAN_CUDA_CPP_SOURCES})
+        message(STATUS "Including CUDA cpp files in build")
     endif()
+    
+    # Сбор OptiX файлов отдельно (если они нужны)
+    file(GLOB_RECURSE VULKAN_OPTIX_SOURCES "src/optix/*.cpp")
     
     # Исключаем OptiX файлы если OptiX выключен
     if(NOT BUILD_WITH_OPTIX)
-        list(REMOVE_ITEM VULKAN_CPP_SOURCES
-            "${CMAKE_SOURCE_DIR}/src/optix/OptiXRayTracer.cpp"
-            "${CMAKE_SOURCE_DIR}/src/optix/DenoiseModule.cpp"
-        )
         message(STATUS "Excluding OptiX files from build (BUILD_WITH_OPTIX=OFF)")
+    else()
+        # Добавляем OptiX файлы если OptiX включен
+        list(APPEND VULKAN_CPP_SOURCES ${VULKAN_OPTIX_SOURCES})
+        message(STATUS "Including OptiX files in build")
     endif()
-
-    # Отдельно собираем CUDA файлы
-    file(GLOB_RECURSE VULKAN_CUDA_SOURCES "src/*.cu")
 
     # Объединяем исходники
     set(VULKAN_SOURCES ${VULKAN_CPP_SOURCES} ${VULKAN_HEADERS})
@@ -467,7 +478,6 @@ if(BUILD_VULKAN_RENDERER)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/cuda_kernels_partial.lib")
         # Если есть библиотека но нет отдельных объектных файлов
         set(CUDA_LIBRARY_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/cuda_kernels_partial.lib")
-        list(REMOVE_ITEM VULKAN_CPP_SOURCES "${CMAKE_SOURCE_DIR}/src/CUDA/cuda_stubs.cpp")
         message(STATUS "Using compiled CUDA library: ${CUDA_LIBRARY_FILE}")
         set(USING_COMPILED_CUDA_LIBRARY TRUE)
     elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/gaussian_optimization.obj")
@@ -478,27 +488,8 @@ if(BUILD_VULKAN_RENDERER)
             "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/tile_rasterization.obj"
             "${CMAKE_CURRENT_SOURCE_DIR}/cuda_build/depth_sorting.obj"
         )
-        # Исключаем заглушки так как у нас есть реальные функции
-        list(REMOVE_ITEM VULKAN_SOURCES "src/CUDA/cuda_stubs.cpp")
-        list(REMOVE_ITEM VULKAN_SOURCES "${CMAKE_SOURCE_DIR}/src/CUDA/cuda_stubs.cpp")
         message(STATUS "Using compiled CUDA object files: ${CUDA_OBJECT_FILES}")
         set(USING_COMPILED_CUDA_OBJECTS TRUE)
-    else()
-        # Fallback: Добавляем CUDA файлы или заглушки
-        if(CUDA_AVAILABLE AND VULKAN_CUDA_SOURCES)
-            # Исключаем заглушки и добавляем реальные CUDA файлы
-            list(REMOVE_ITEM VULKAN_CPP_SOURCES "${CMAKE_SOURCE_DIR}/src/CUDA/cuda_stubs.cpp")
-            list(APPEND VULKAN_SOURCES ${VULKAN_CUDA_SOURCES})
-            message(STATUS "Building with CUDA kernels: ${VULKAN_CUDA_SOURCES}")
-        elseif(CUDA_RUNTIME_ONLY)
-            # Добавляем заглушки, но с runtime поддержкой
-            list(APPEND VULKAN_SOURCES "src/CUDA/cuda_stubs.cpp")
-            message(STATUS "Building with CUDA stubs but with runtime libraries")
-        else()
-            # Добавляем заглушки CUDA если CUDA недоступна
-            list(APPEND VULKAN_SOURCES "src/CUDA/cuda_stubs.cpp")
-            message(STATUS "Building with CUDA stubs (CUDA not available)")
-        endif()
     endif()
 
     # Создание библиотеки Vulkan рендерера
@@ -511,9 +502,9 @@ if(BUILD_VULKAN_RENDERER)
     target_compile_definitions(VulkanRenderer PUBLIC HyperEngine_ENABLE_VULKAN)
 
     # Устанавливаем CUDA файлы как CUDA язык если доступен
-    if(CUDA_AVAILABLE AND VULKAN_CUDA_SOURCES)
-        set_source_files_properties(${VULKAN_CUDA_SOURCES} PROPERTIES LANGUAGE CUDA)
-        message(STATUS "Set CUDA language for: ${VULKAN_CUDA_SOURCES}")
+    if(CUDA_AVAILABLE AND VULKAN_CUDA_CU_SOURCES)
+        set_source_files_properties(${VULKAN_CUDA_CU_SOURCES} PROPERTIES LANGUAGE CUDA)
+        message(STATUS "Set CUDA language for: ${VULKAN_CUDA_CU_SOURCES}")
     endif()
 
     # Настройка CUDA для VulkanRenderer если доступен
@@ -592,6 +583,12 @@ if(BUILD_VULKAN_RENDERER)
 
     # Базовые библиотеки для Vulkan рендерера
     target_link_libraries(VulkanRenderer PUBLIC
+        HyperEngine_Core
+        HyperEngine_Math
+        HyperEngine_OpenGL
+        HyperEngine_Physics
+        HyperEngine_Input
+        HyperEngine_Upscaling
         Vulkan::Vulkan
         glfw
         glm::glm
