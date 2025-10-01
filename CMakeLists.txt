@@ -632,7 +632,7 @@ if(BUILD_VULKAN_RENDERER)
     endif()
 
     # Определения компилятора для Vulkan рендерера
-    target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_BUILD CUDA_VULKAN_INTEROP_SUPPORTED)
+    target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_BUILD)
 
     # Настройки CUDA для .cu файлов выполняются в configure_cuda_target()
 
