@@ -438,16 +438,23 @@ if(BUILD_VULKAN_RENDERER)
     file(GLOB_RECURSE VULKAN_CPP_SOURCES "src/*.cpp")
     file(GLOB_RECURSE VULKAN_HEADERS "src/*.h")
 
-    # Исключаем CUDA и OptiX файлы если CUDA выключена
+    # Исключаем CUDA файлы если CUDA выключена
     if(NOT BUILD_WITH_CUDA)
         list(REMOVE_ITEM VULKAN_CPP_SOURCES
             "${CMAKE_SOURCE_DIR}/src/cuda/cuda_stubs.cpp"
             "${CMAKE_SOURCE_DIR}/src/cuda/FlashGSSplatter.cpp"
             "${CMAKE_SOURCE_DIR}/src/cuda/CudaInterop.cpp"
+        )
+        message(STATUS "Excluding CUDA files from build (BUILD_WITH_CUDA=OFF)")
+    endif()
+    
+    # Исключаем OptiX файлы если OptiX выключен
+    if(NOT BUILD_WITH_OPTIX)
+        list(REMOVE_ITEM VULKAN_CPP_SOURCES
             "${CMAKE_SOURCE_DIR}/src/optix/OptiXRayTracer.cpp"
             "${CMAKE_SOURCE_DIR}/src/optix/DenoiseModule.cpp"
         )
-        message(STATUS "Excluding CUDA and OptiX files from build (BUILD_WITH_CUDA=OFF)")
+        message(STATUS "Excluding OptiX files from build (BUILD_WITH_OPTIX=OFF)")
     endif()
 
     # Отдельно собираем CUDA файлы

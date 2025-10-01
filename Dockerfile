@@ -226,6 +226,10 @@ RUN cmake -B /workspace/build \
     -DBUILD_TESTS=ON \
     -DENABLE_VULKAN_BACKEND=ON \
     -DENABLE_OPENGL_BACKEND=ON \
+    -DBUILD_WITH_CUDA=OFF \
+    -DBUILD_WITH_OPTIX=OFF \
+    -DBUILD_WITH_DLSS=OFF \
+    -DBUILD_WITH_FSR=OFF \
     || true
 
 # Create directories for reports
