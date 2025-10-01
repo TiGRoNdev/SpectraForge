@@ -1,8 +1,14 @@
-# Исправление CodeQL Workflow - 2025-10-01
+# Исправление CodeQL Workflow - 2025-10-01 ✅
+
+## 🎉 СТАТУС: УСПЕШНО ИСПРАВЛЕНО
+
+**Workflow Run #26**: ✅ `success`  
+**Время выполнения**: 6 минут 21 секунда  
+**URL**: https://github.com/TiGRoNdev/HyperEngine/actions/runs/18160870873
 
 ## 📋 Резюме
 
-Исправлены критические проблемы с GitHub CodeQL workflow, которые препятствовали успешному выполнению анализа безопасности кода.
+Исправлены критические проблемы с GitHub CodeQL workflow, которые препятствовали успешному выполнению анализа безопасности кода. После серии итеративных исправлений workflow успешно выполнился.
 
 ## 🔧 Основные изменения
 
@@ -154,14 +160,103 @@ endif()
 | `examples/test_external_memory.cpp` | `#ifdef _WIN32` для windows.h | ✅ Корректно |
 | `examples/cuda_vulkan_interop_demo.cpp` | `#ifdef CUDA_VULKAN_INTEROP_SUPPORTED` | ✅ Корректно |
 
+## 🔧 Дополнительные исправления (Итеративные)
+
+После первоначальных изменений workflow все еще падал. Выполнена серия дополнительных исправлений:
+
+### 5. Исправление зависимостей для Ubuntu 24.04
+
+**Проблема**: Пакет `vulkan-headers` не существует в Ubuntu 24.04 (заменен на `libvulkan-dev`).
+
+**Исправление**:
+```yaml
+- name: Install dependencies
+  run: |
+    sudo apt-get update
+    sudo apt-get install -y \
+      build-essential \
+      cmake \
+      ninja-build \
+      libvulkan-dev \
+      vulkan-tools \
+      spirv-tools \
+      libglm-dev \
+      libglfw3-dev \
+      libglew-dev \
+      pkg-config
+    
+    # Установка Vulkan Memory Allocator (header-only library)
+    sudo mkdir -p /usr/local/include
+    sudo curl -L https://raw.githubusercontent.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/master/include/vk_mem_alloc.h \
+      -o /usr/local/include/vk_mem_alloc.h
+```
+
+### 6. Условное включение CUDA/OptiX заголовков
+
+**Проблема**: `VulkanRenderer.cpp` безусловно включал:
+```cpp
+#include "HyperEngine/CUDA/FlashGSSplatter.h"
+#include "HyperEngine/OptiX/DenoiseModule.h"
+#include "HyperEngine/OptiX/OptiXRayTracer.h"
+```
+
+**Исправление**: Обернул включения в препроцессорные директивы:
+```cpp
+#ifdef CUDA_VULKAN_INTEROP_SUPPORTED
+#include "HyperEngine/CUDA/FlashGSSplatter.h"
+#endif
+#ifdef VULKAN_RENDERER_OPTIX_SUPPORT
+#include "HyperEngine/OptiX/DenoiseModule.h"
+#include "HyperEngine/OptiX/OptiXRayTracer.h"
+#endif
+```
+
+### 7. Убрано безусловное определение макроса в CMake
+
+**Проблема**: `CMakeLists.txt` безусловно определял `CUDA_VULKAN_INTEROP_SUPPORTED` на строке 635:
+```cmake
+target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_BUILD CUDA_VULKAN_INTEROP_SUPPORTED)
+```
+
+**Исправление**: Убрано безусловное определение:
+```cmake
+target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_BUILD)
+```
+
+### 8. Защита std::unique_ptr от incomplete type ошибок
+
+**Проблема**: В заголовке `VulkanRenderer.h` объявлены `std::unique_ptr` для CUDA/OptiX классов безусловно:
+```cpp
+std::unique_ptr<HyperEngine::CUDA::FlashGSSplatter> splatter;
+std::unique_ptr<HyperEngine::OptiX::OptiXRayTracer> rayTracer;
+std::unique_ptr<HyperEngine::OptiX::DenoiseModule> denoiseModule;
+```
+
+Компилятор не мог сгенерировать деструктор для incomplete типов.
+
+**Исправление**: Обернул объявления в условную компиляцию:
+```cpp
+#ifdef CUDA_VULKAN_INTEROP_SUPPORTED
+std::unique_ptr<HyperEngine::CUDA::FlashGSSplatter> splatter;
+#endif
+#ifdef VULKAN_RENDERER_OPTIX_SUPPORT
+std::unique_ptr<HyperEngine::OptiX::OptiXRayTracer> rayTracer;
+std::unique_ptr<HyperEngine::OptiX::DenoiseModule> denoiseModule;
+#endif
+```
+
+Аналогично защищены вызовы `.reset()` в деструкторе.
+
 ## 🎯 Результаты
 
-### Ожидаемые улучшения:
+### ✅ Достигнутые улучшения:
 
-1. ✅ **CodeQL workflow будет успешно запускаться** на Linux runners
-2. ✅ **Анализ безопасности кода** будет проводиться автоматически
-3. ✅ **Сборка не будет пытаться включать** Windows/CUDA код на Linux
-4. ✅ **Меньше конфликтов** при включении заголовков благодаря защите макросов
+1. ✅ **CodeQL workflow успешно выполняется** на Linux runners
+2. ✅ **Анализ безопасности кода** проводится автоматически
+3. ✅ **Сборка корректно обрабатывает** отсутствие Windows/CUDA SDK
+4. ✅ **Нет ошибок incomplete type** для std::unique_ptr
+5. ✅ **Все зависимости установлены** для Ubuntu 24.04
+6. ✅ **Меньше конфликтов** при включении заголовков благодаря защите макросов
 
 ### Что НЕ изменилось:
 
@@ -174,12 +269,26 @@ endif()
 ### Измененные файлы
 
 ```
-modified:   .github/workflows/codeql.yml
-modified:   src/rendering/vulkan/VulkanEngine.cpp
-modified:   src/rendering/vulkan/ResourceManager.cpp
-modified:   src/rendering/vulkan/CMakeLists.txt
+modified:   .github/workflows/codeql.yml (8 коммитов - итеративные исправления зависимостей)
+modified:   src/rendering/vulkan/VulkanEngine.cpp (защита windows.h)
+modified:   src/rendering/vulkan/ResourceManager.cpp (защита windows.h)
+modified:   src/rendering/vulkan/CMakeLists.txt (условное VK_USE_PLATFORM_WIN32_KHR)
+modified:   src/rendering/vulkan/VulkanRenderer.cpp (условные includes для CUDA/OptiX)
+modified:   include/HyperEngine/Vulkan/VulkanRenderer.h (условные unique_ptr)
+modified:   CMakeLists.txt (убрано безусловное CUDA_VULKAN_INTEROP_SUPPORTED)
 new file:   docs/reports/CODEQL_FIX_2025-10-01.md
 ```
+
+### Коммиты
+
+Всего выполнено **8 коммитов** для достижения успешного результата:
+1. `fix(ci): обновление CodeQL actions v2 → v3 и кастомная сборка`
+2. `fix(ci): исправление зависимостей в CodeQL workflow для Ubuntu 24.04`
+3. `fix(ci): добавление Vulkan Memory Allocator в CodeQL workflow`
+4. `fix(ci): добавление GLFW3 и GLEW в CodeQL workflow`
+5. `fix(rendering): условное включение CUDA/OptiX заголовков в VulkanRenderer`
+6. `fix(cmake): убрано безусловное определение CUDA_VULKAN_INTEROP_SUPPORTED`
+7. `fix(rendering): защита CUDA/OptiX unique_ptr от incomplete type ошибок`
 
 ### CMake опции для CodeQL
 
