@@ -235,7 +235,9 @@ TEST_F(FullPipelineIntegrationTest, MultiFramePipelinePerformance) {
                 struct {
                     uint32_t w;
                     uint32_t h;
-                } img = {sceneWidth, sceneHeight};
+                } img;
+                img.w = sceneWidth;
+                img.h = sceneHeight;
                 (void)img;
             }
 
@@ -476,17 +478,26 @@ TEST_F(FullPipelineIntegrationTest, PipelineStressTest) {
                     struct {
                         uint32_t w;
                         uint32_t h;
-                    } img = {sceneWidth, sceneHeight};
+                    } img;
+                    img.w = sceneWidth;
+                    img.h = sceneHeight;
+                    
                     struct {
                         void* data;
-                    } effects = {reinterpret_cast<void*>(0x1000)};
+                    } effects;
+                    effects.data = reinterpret_cast<void*>(0x1000);
+                    
                     struct {
                         void* data;
-                    } denoised = {reinterpret_cast<void*>(0x2000)};
+                    } denoised;
+                    denoised.data = reinterpret_cast<void*>(0x2000);
+                    
                     struct {
                         uint32_t w;
                         uint32_t h;
-                    } upscaled = {img.w * 2, img.h * 2};
+                    } upscaled;
+                    upscaled.w = img.w * 2;
+                    upscaled.h = img.h * 2;
 
                     if (upscaled.w > 0 && upscaled.h > 0) {
                         successfulFrames++;
