@@ -172,7 +172,7 @@ void benchmarkPerformance(OptiXRayTracer& rayTracer,
         RawEffects effects = rayTracer.traceRays(params);
 
         if (frame % 20 == 0) {
-            SAFE_PRINT_LINE("Кадр " << frame << "/" << numFrames << " завершен");
+            std::cout << "Кадр " << frame << "/" << numFrames << " завершен" << std::endl;
         }
     }
 
@@ -183,11 +183,11 @@ void benchmarkPerformance(OptiXRayTracer& rayTracer,
     float frameTime = duration.count() / float(numFrames);
 
     SAFE_PRINT_LINE("Результаты производительности:");
-    SAFE_PRINT_LINE("  Разрешение: " << width << "x" << height);
-    SAFE_PRINT_LINE("  Кадров: " << numFrames);
-    SAFE_PRINT_LINE("  Общее время: " << duration.count() << " мс");
-    SAFE_PRINT_LINE("  Среднее время кадра: " << frameTime << " мс");
-    SAFE_PRINT_LINE("  FPS: " << fps);
+    std::cout << "  Разрешение: " << width << "x" << height << std::endl;
+    std::cout << "  Кадров: " << numFrames << std::endl;
+    std::cout << "  Общее время: " << duration.count() << " мс" << std::endl;
+    std::cout << "  Среднее время кадра: " << frameTime << " мс" << std::endl;
+    std::cout << "  FPS: " << fps << std::endl;
 }
 
 /**
@@ -205,9 +205,9 @@ void testSER(OptiXRayTracer& rayTracer) {
 
     for (size_t i = 0; i < testCases.size(); ++i) {
         const auto& hints = testCases[i];
-        SAFE_PRINT_LINE("Тест " << (i + 1) << ": Когерентность лучей=" << hints.rayCoherence
-                                << ", материалов=" << hints.materialCoherence
-                                << ", геометрии=" << hints.geometryCoherence);
+        std::cout << "Тест " << (i + 1) << ": Когерентность лучей=" << hints.rayCoherence
+                  << ", материалов=" << hints.materialCoherence
+                  << ", геометрии=" << hints.geometryCoherence << std::endl;
 
         rayTracer.applySER(hints);
 
@@ -271,15 +271,15 @@ int main() {
         RawEffects effects = rayTracer.traceRays(params);
 
         SAFE_PRINT_LINE("Результаты трассировки:");
-        SAFE_PRINT_LINE("  Разрешение: " << effects.width << "x" << effects.height);
-        SAFE_PRINT_LINE("  Буферы созданы: " << (effects.reflections ? "✓" : "✗") << " Отражения");
-        SAFE_PRINT_LINE("                  " << (effects.shadows ? "✓" : "✗") << " Тени");
-        SAFE_PRINT_LINE("                  " << (effects.globalIllumination ? "✓" : "✗")
-                                             << " Глобальное освещение");
-        SAFE_PRINT_LINE("                  " << (effects.motionVectors ? "✓" : "✗")
-                                             << " Motion vectors");
-        SAFE_PRINT_LINE("                  " << (effects.albedo ? "✓" : "✗") << " Альбедо");
-        SAFE_PRINT_LINE("                  " << (effects.normals ? "✓" : "✗") << " Нормали");
+        std::cout << "  Разрешение: " << effects.width << "x" << effects.height << std::endl;
+        std::cout << "  Буферы созданы: " << (effects.reflections ? "✓" : "✗") << " Отражения" << std::endl;
+        std::cout << "                  " << (effects.shadows ? "✓" : "✗") << " Тени" << std::endl;
+        std::cout << "                  " << (effects.globalIllumination ? "✓" : "✗")
+                  << " Глобальное освещение" << std::endl;
+        std::cout << "                  " << (effects.motionVectors ? "✓" : "✗")
+                  << " Motion vectors" << std::endl;
+        std::cout << "                  " << (effects.albedo ? "✓" : "✗") << " Альбедо" << std::endl;
+        std::cout << "                  " << (effects.normals ? "✓" : "✗") << " Нормали" << std::endl;
 
         // Тестирование SER
         testSER(rayTracer);
@@ -293,7 +293,7 @@ int main() {
             {640, 480}, {1280, 720}, {1920, 1080}, {2560, 1440}};
 
         for (const auto& res : resolutions) {
-            SAFE_PRINT_LINE("Тестирование разрешения " << res.first << "x" << res.second << "...");
+            std::cout << "Тестирование разрешения " << res.first << "x" << res.second << "..." << std::endl;
 
             LaunchParams testParams = createTestCameraParams(res.first, res.second);
 
@@ -304,14 +304,14 @@ int main() {
             auto duration = chrono::duration_cast<chrono::milliseconds>(endTime - startTime);
             float megapixels = (res.first * res.second) / 1000000.0f;
 
-            SAFE_PRINT_LINE("  Время: " << duration.count() << " мс, Производительность: "
-                                        << (megapixels / (duration.count() / 1000.0f)) << " Mpx/s");
+            std::cout << "  Время: " << duration.count() << " мс, Производительность: "
+                      << (megapixels / (duration.count() / 1000.0f)) << " Mpx/s" << std::endl;
         }
 
         SAFE_PRINT_LINE("\n=== ДЕМОНСТРАЦИЯ ЗАВЕРШЕНА УСПЕШНО ===");
 
     } catch (const exception& e) {
-        SAFE_ERROR("Ошибка во время выполнения демо: " << e.what());
+        std::cerr << "[ERROR] Ошибка во время выполнения демо: " << e.what() << std::endl;
         return 1;
     }
 

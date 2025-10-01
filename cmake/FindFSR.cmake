@@ -13,8 +13,13 @@
 cmake_minimum_required(VERSION 3.16)
 
 # Поиск корневой директории FSR SDK
+# Поддержка двух вариантов структуры:
+# 1. Официальный SDK: sdk/include/FidelityFX/host/ffx_fsr2.h
+# 2. GitHub исходники: src/ffx-fsr2-api/ffx_fsr2.h
 find_path(FSR_ROOT_DIR
-    NAMES sdk/include/FidelityFX/host/ffx_fsr2.h
+    NAMES 
+        sdk/include/FidelityFX/host/ffx_fsr2.h
+        src/ffx-fsr2-api/ffx_fsr2.h
     PATHS
         ${FSR_ROOT_DIR}
         $ENV{FSR_ROOT_DIR}
@@ -29,11 +34,13 @@ find_path(FSR_ROOT_DIR
 )
 
 # Поиск заголовочных файлов
+# Сначала проверяем официальную структуру SDK, затем GitHub исходники
 find_path(FSR_INCLUDE_DIR
-    NAMES FidelityFX/host/ffx_fsr2.h
+    NAMES FidelityFX/host/ffx_fsr2.h ffx_fsr2.h
     PATHS
         ${FSR_ROOT_DIR}/sdk/include
         ${FSR_ROOT_DIR}/include
+        ${FSR_ROOT_DIR}/src/ffx-fsr2-api
     DOC "FSR include directory"
 )
 
@@ -74,42 +81,75 @@ find_library(FSR_FRAMEINTERPOLATION_LIBRARY
 
 # Определение версии FSR
 if(FSR_INCLUDE_DIR)
-    file(READ "${FSR_INCLUDE_DIR}/FidelityFX/host/ffx_fsr2.h" FSR_HEADER_CONTENT LIMIT 4096)
+    # Попробуем найти заголовочный файл с версией
+    if(EXISTS "${FSR_INCLUDE_DIR}/FidelityFX/host/ffx_fsr2.h")
+        set(FSR_HEADER_FILE "${FSR_INCLUDE_DIR}/FidelityFX/host/ffx_fsr2.h")
+    elseif(EXISTS "${FSR_INCLUDE_DIR}/ffx_fsr2.h")
+        set(FSR_HEADER_FILE "${FSR_INCLUDE_DIR}/ffx_fsr2.h")
+    endif()
     
-    string(REGEX MATCH "#define FFX_FSR2_VERSION_MAJOR ([0-9]+)" FSR_VERSION_MAJOR_MATCH "${FSR_HEADER_CONTENT}")
-    string(REGEX MATCH "#define FFX_FSR2_VERSION_MINOR ([0-9]+)" FSR_VERSION_MINOR_MATCH "${FSR_HEADER_CONTENT}")
-    string(REGEX MATCH "#define FFX_FSR2_VERSION_PATCH ([0-9]+)" FSR_VERSION_PATCH_MATCH "${FSR_HEADER_CONTENT}")
-    
-    if(FSR_VERSION_MAJOR_MATCH AND FSR_VERSION_MINOR_MATCH AND FSR_VERSION_PATCH_MATCH)
-        string(REGEX REPLACE ".*([0-9]+).*" "\\1" FSR_VERSION_MAJOR "${FSR_VERSION_MAJOR_MATCH}")
-        string(REGEX REPLACE ".*([0-9]+).*" "\\1" FSR_VERSION_MINOR "${FSR_VERSION_MINOR_MATCH}")
-        string(REGEX REPLACE ".*([0-9]+).*" "\\1" FSR_VERSION_PATCH "${FSR_VERSION_PATCH_MATCH}")
-        set(FSR_VERSION "${FSR_VERSION_MAJOR}.${FSR_VERSION_MINOR}.${FSR_VERSION_PATCH}")
+    if(FSR_HEADER_FILE)
+        file(READ "${FSR_HEADER_FILE}" FSR_HEADER_CONTENT LIMIT 8192)
+        
+        string(REGEX MATCH "#define FFX_FSR2_VERSION_MAJOR ([0-9]+)" FSR_VERSION_MAJOR_MATCH "${FSR_HEADER_CONTENT}")
+        string(REGEX MATCH "#define FFX_FSR2_VERSION_MINOR ([0-9]+)" FSR_VERSION_MINOR_MATCH "${FSR_HEADER_CONTENT}")
+        string(REGEX MATCH "#define FFX_FSR2_VERSION_PATCH ([0-9]+)" FSR_VERSION_PATCH_MATCH "${FSR_HEADER_CONTENT}")
+        
+        if(FSR_VERSION_MAJOR_MATCH AND FSR_VERSION_MINOR_MATCH AND FSR_VERSION_PATCH_MATCH)
+            string(REGEX REPLACE ".*([0-9]+).*" "\\1" FSR_VERSION_MAJOR "${FSR_VERSION_MAJOR_MATCH}")
+            string(REGEX REPLACE ".*([0-9]+).*" "\\1" FSR_VERSION_MINOR "${FSR_VERSION_MINOR_MATCH}")
+            string(REGEX REPLACE ".*([0-9]+).*" "\\1" FSR_VERSION_PATCH "${FSR_VERSION_PATCH_MATCH}")
+            set(FSR_VERSION "${FSR_VERSION_MAJOR}.${FSR_VERSION_MINOR}.${FSR_VERSION_PATCH}")
+        else()
+            set(FSR_VERSION "2.2.1")  # Значение по умолчанию для GitHub версии
+        endif()
     else()
-        set(FSR_VERSION "2.0.0")  # Значение по умолчанию
+        set(FSR_VERSION "2.2.1")
     endif()
 endif()
 
 # Установка переменных результата
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(FSR
-    FOUND_VAR FSR_FOUND
-    REQUIRED_VARS FSR_ROOT_DIR FSR_INCLUDE_DIR FSR_API_LIBRARY
-    VERSION_VAR FSR_VERSION
-)
+
+# Для GitHub исходников библиотека необязательна (можно компилировать вместе с проектом)
+if(FSR_API_LIBRARY)
+    find_package_handle_standard_args(FSR
+        FOUND_VAR FSR_FOUND
+        REQUIRED_VARS FSR_ROOT_DIR FSR_INCLUDE_DIR FSR_API_LIBRARY
+        VERSION_VAR FSR_VERSION
+    )
+else()
+    # Если библиотеки нет, проверяем только наличие исходников
+    find_package_handle_standard_args(FSR
+        FOUND_VAR FSR_FOUND
+        REQUIRED_VARS FSR_ROOT_DIR FSR_INCLUDE_DIR
+        VERSION_VAR FSR_VERSION
+    )
+    
+    if(FSR_FOUND)
+        message(STATUS "FSR SDK found as source code (will be compiled with project)")
+    endif()
+endif()
 
 if(FSR_FOUND)
     set(FSR_INCLUDE_DIRS ${FSR_INCLUDE_DIR})
-    set(FSR_LIBRARIES ${FSR_API_LIBRARY})
     
-    # Добавление Vulkan backend если найден
-    if(FSR_VK_LIBRARY)
-        list(APPEND FSR_LIBRARIES ${FSR_VK_LIBRARY})
-    endif()
-    
-    # Добавление Frame Interpolation если найден
-    if(FSR_FRAMEINTERPOLATION_LIBRARY)
-        list(APPEND FSR_LIBRARIES ${FSR_FRAMEINTERPOLATION_LIBRARY})
+    # Для скомпилированных библиотек
+    if(FSR_API_LIBRARY)
+        set(FSR_LIBRARIES ${FSR_API_LIBRARY})
+        
+        # Добавление Vulkan backend если найден
+        if(FSR_VK_LIBRARY)
+            list(APPEND FSR_LIBRARIES ${FSR_VK_LIBRARY})
+        endif()
+        
+        # Добавление Frame Interpolation если найден
+        if(FSR_FRAMEINTERPOLATION_LIBRARY)
+            list(APPEND FSR_LIBRARIES ${FSR_FRAMEINTERPOLATION_LIBRARY})
+        endif()
+    else()
+        # Для исходников - библиотеки будут пустыми, компиляция вместе с проектом
+        set(FSR_LIBRARIES "")
     endif()
     
     # Создание imported target

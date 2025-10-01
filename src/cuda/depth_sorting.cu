@@ -12,6 +12,7 @@
 #include <thrust/execution_policy.h>
 #include <thrust/sort.h>
 #include <cub/cub.cuh>
+#include <cfloat>
 
 // Определяем необходимые типы локально, чтобы избежать зависимостей от Vulkan
 namespace HyperEngine::CUDA {

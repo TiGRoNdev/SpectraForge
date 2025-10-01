@@ -254,12 +254,20 @@ endif()
 
 # Поиск DLSS SDK
 if(BUILD_WITH_DLSS)
-    find_package(DLSS)
-    if(DLSS_FOUND)
-        message(STATUS "DLSS SDK found")
-    else()
-        message(WARNING "DLSS SDK not found. DLSS upscaling will be disabled.")
+    # ВАЖНО: DLSS (Streamline) официально поддерживает только Windows
+    if(UNIX AND NOT APPLE)
+        message(WARNING "DLSS (Streamline SDK) officially supports only Windows.")
+        message(WARNING "For Linux, consider using FSR (FidelityFX Super Resolution) instead.")
+        message(WARNING "DLSS support will be disabled. Use -DBUILD_WITH_DLSS=OFF to suppress this warning.")
         set(BUILD_WITH_DLSS OFF)
+    else()
+        find_package(DLSS)
+        if(DLSS_FOUND)
+            message(STATUS "DLSS SDK found: ${DLSS_ROOT_DIR} (version ${DLSS_VERSION})")
+        else()
+            message(WARNING "DLSS SDK not found. DLSS upscaling will be disabled.")
+            set(BUILD_WITH_DLSS OFF)
+        endif()
     endif()
 endif()
 
@@ -549,6 +557,12 @@ if(BUILD_VULKAN_RENDERER)
             VULKAN_RENDERER_CUDA_SUPPORT=1
         )
 
+        # Добавляем CUDA include пути для runtime
+        find_package(CUDAToolkit REQUIRED)
+        target_include_directories(VulkanRenderer PRIVATE
+            ${CUDAToolkit_INCLUDE_DIRS}
+        )
+        
         # Линковка только runtime CUDA библиотек
         target_link_libraries(VulkanRenderer PUBLIC CUDA::cudart CUDA::cuda_driver)
 
@@ -572,10 +586,22 @@ if(BUILD_VULKAN_RENDERER)
     if(USING_COMPILED_CUDA_OBJECTS)
         # Добавляем объектные файлы к target
         target_sources(VulkanRenderer PRIVATE ${CUDA_OBJECT_FILES})
+        
+        # Добавляем CUDA include пути для использования с объектными файлами
+        find_package(CUDAToolkit REQUIRED)
+        target_include_directories(VulkanRenderer PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+        target_link_libraries(VulkanRenderer PUBLIC CUDA::cudart CUDA::cuda_driver)
+        
         message(STATUS "Linked CUDA object files to VulkanRenderer")
     elseif(USING_COMPILED_CUDA_LIBRARY)
         # Линкуем библиотеку
         target_link_libraries(VulkanRenderer PUBLIC ${CUDA_LIBRARY_FILE})
+        
+        # Добавляем CUDA include пути для использования с библиотекой
+        find_package(CUDAToolkit REQUIRED)
+        target_include_directories(VulkanRenderer PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+        target_link_libraries(VulkanRenderer PUBLIC CUDA::cudart CUDA::cuda_driver)
+        
         message(STATUS "Linked CUDA library to VulkanRenderer")
     endif()
 
@@ -620,21 +646,25 @@ if(BUILD_VULKAN_RENDERER)
     if(BUILD_WITH_OPTIX AND OptiX_FOUND)
         target_include_directories(VulkanRenderer PRIVATE ${OptiX_INCLUDE_DIRS})
         target_link_libraries(VulkanRenderer PRIVATE ${OptiX_LIBRARIES})
-        target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_OPTIX_SUPPORT CUDA_VULKAN_INTEROP_SUPPORTED)
+        target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_OPTIX_SUPPORT)
+        # OptiX требует CUDA, поэтому добавляем макрос только если CUDA включен
+        if(BUILD_WITH_CUDA)
+            target_compile_definitions(VulkanRenderer PUBLIC CUDA_VULKAN_INTEROP_SUPPORTED)
+        endif()
     endif()
 
     # DLSS поддержка
     if(BUILD_WITH_DLSS AND DLSS_FOUND)
         target_include_directories(VulkanRenderer PRIVATE ${DLSS_INCLUDE_DIRS})
         target_link_libraries(VulkanRenderer PRIVATE ${DLSS_LIBRARIES})
-        target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_DLSS_SUPPORT CUDA_VULKAN_INTEROP_SUPPORTED)
+        target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_DLSS_SUPPORT)
     endif()
 
     # FSR поддержка
     if(BUILD_WITH_FSR AND FSR_FOUND)
         target_include_directories(VulkanRenderer PRIVATE ${FSR_INCLUDE_DIRS})
         target_link_libraries(VulkanRenderer PRIVATE ${FSR_LIBRARIES})
-        target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_FSR_SUPPORT CUDA_VULKAN_INTEROP_SUPPORTED)
+        target_compile_definitions(VulkanRenderer PUBLIC VULKAN_RENDERER_FSR_SUPPORT)
     endif()
 
     # Определения компилятора для Vulkan рендерера
@@ -658,6 +688,12 @@ if(BUILD_VULKAN_RENDERER)
             VulkanRenderer
             HyperEngine
         )
+
+        # Добавляем OptiX include directories если OptiX доступен
+        if(BUILD_WITH_OPTIX AND OptiX_FOUND)
+            target_include_directories(VulkanRenderer_Demo PRIVATE ${OptiX_INCLUDE_DIRS})
+            message(STATUS "VulkanRenderer_Demo: добавлены OptiX include directories")
+        endif()
 
         # Добавляем CUDA библиотеки к VulkanRenderer_Demo если CUDA доступна
         if(CUDA_AVAILABLE OR CUDA_RUNTIME_ONLY OR USING_COMPILED_CUDA_OBJECTS OR USING_COMPILED_CUDA_LIBRARY)

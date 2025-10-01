@@ -45,10 +45,18 @@ bool ShaderBindingTable::create(OptixPipeline pipeline) {
         const size_t missRecordSize = sizeof(void*);
         const size_t hitgroupRecordSize = sizeof(void*);
 
-        // Выделяем память для записей
-        CUDA_CHECK(cudaMalloc(&raygenRecord, raygenRecordSize));
-        CUDA_CHECK(cudaMalloc(&missRecords, missRecordSize));
-        CUDA_CHECK(cudaMalloc(&hitgroupRecords, hitgroupRecordSize));
+        // Выделяем память для записей через промежуточные указатели
+        void* raygenPtr = nullptr;
+        void* missPtr = nullptr;
+        void* hitgroupPtr = nullptr;
+        
+        CUDA_CHECK(cudaMalloc(&raygenPtr, raygenRecordSize));
+        CUDA_CHECK(cudaMalloc(&missPtr, missRecordSize));
+        CUDA_CHECK(cudaMalloc(&hitgroupPtr, hitgroupRecordSize));
+        
+        raygenRecord = reinterpret_cast<CUdeviceptr>(raygenPtr);
+        missRecords = reinterpret_cast<CUdeviceptr>(missPtr);
+        hitgroupRecords = reinterpret_cast<CUdeviceptr>(hitgroupPtr);
 
         // Настраиваем SBT
         sbt.raygenRecord = raygenRecord;
@@ -138,20 +146,18 @@ bool AccelerationStructure::build(const SceneGeometry& geometry) {
         buildInput.triangleArray.numIndexTriplets = geometry.triangleCount;
 
         // Копируем геометрию на GPU
-        CUdeviceptr d_vertices, d_indices;
+        void* verticesPtr = nullptr;
+        void* indicesPtr = nullptr;
         size_t verticesSize = geometry.vertexCount * geometry.vertexStride;
         size_t indicesSize = geometry.triangleCount * 3 * sizeof(uint32_t);
 
-        CUDA_CHECK(cudaMalloc(&d_vertices, verticesSize));
-        CUDA_CHECK(cudaMalloc(&d_indices, indicesSize));
-        CUDA_CHECK(cudaMemcpy(reinterpret_cast<void*>(d_vertices),
-                              geometry.vertices,
-                              verticesSize,
-                              cudaMemcpyHostToDevice));
-        CUDA_CHECK(cudaMemcpy(reinterpret_cast<void*>(d_indices),
-                              geometry.indices,
-                              indicesSize,
-                              cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMalloc(&verticesPtr, verticesSize));
+        CUDA_CHECK(cudaMalloc(&indicesPtr, indicesSize));
+        CUDA_CHECK(cudaMemcpy(verticesPtr, geometry.vertices, verticesSize, cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMemcpy(indicesPtr, geometry.indices, indicesSize, cudaMemcpyHostToDevice));
+
+        CUdeviceptr d_vertices = reinterpret_cast<CUdeviceptr>(verticesPtr);
+        CUdeviceptr d_indices = reinterpret_cast<CUdeviceptr>(indicesPtr);
 
         buildInput.triangleArray.vertexBuffers = &d_vertices;
         buildInput.triangleArray.indexBuffer = d_indices;
@@ -172,9 +178,13 @@ bool AccelerationStructure::build(const SceneGeometry& geometry) {
             optixAccelComputeMemoryUsage(context, &accelOptions, &buildInput, 1, &gasBufferSizes));
 
         // Выделяем буферы
-        CUdeviceptr d_tempBuffer;
-        CUDA_CHECK(cudaMalloc(&d_tempBuffer, gasBufferSizes.tempSizeInBytes));
-        CUDA_CHECK(cudaMalloc(&gasBuffer, gasBufferSizes.outputSizeInBytes));
+        void* tempBufferPtr = nullptr;
+        void* gasBufferPtr = nullptr;
+        CUDA_CHECK(cudaMalloc(&tempBufferPtr, gasBufferSizes.tempSizeInBytes));
+        CUDA_CHECK(cudaMalloc(&gasBufferPtr, gasBufferSizes.outputSizeInBytes));
+        
+        CUdeviceptr d_tempBuffer = reinterpret_cast<CUdeviceptr>(tempBufferPtr);
+        gasBuffer = reinterpret_cast<CUdeviceptr>(gasBufferPtr);
         gasBufferSize = gasBufferSizes.outputSizeInBytes;
 
         // Строим GAS
@@ -193,9 +203,9 @@ bool AccelerationStructure::build(const SceneGeometry& geometry) {
                                     ));
 
         // Освобождаем временные буферы
-        CUDA_CHECK(cudaFree(d_tempBuffer));
-        CUDA_CHECK(cudaFree(reinterpret_cast<void*>(d_vertices)));
-        CUDA_CHECK(cudaFree(reinterpret_cast<void*>(d_indices)));
+        CUDA_CHECK(cudaFree(reinterpret_cast<void*>(d_tempBuffer)));
+        CUDA_CHECK(cudaFree(verticesPtr));
+        CUDA_CHECK(cudaFree(indicesPtr));
 
         SAFE_PRINT_LINE("[AccelerationStructure] GAS построен успешно");
         return true;
@@ -366,11 +376,12 @@ RawEffects OptiXRayTracer::traceRays(const LaunchParams& params) {
     CUDA_CHECK(cudaMemcpy(d_params, &params, paramsSize, cudaMemcpyHostToDevice));
 
     // Запуск OptiX kernel
+    OptixShaderBindingTable sbtData = sbt->getSBT();
     OPTIX_CHECK(optixLaunch(pipeline,
                             0,  // CUDA stream
                             reinterpret_cast<CUdeviceptr>(d_params),
                             paramsSize,
-                            &sbt->getSBT(),
+                            &sbtData,
                             params.width,
                             params.height,
                             1  // depth
@@ -441,7 +452,7 @@ bool OptiXRayTracer::createModule() {
     OptixModuleCompileOptions moduleCompileOptions = {};
     moduleCompileOptions.maxRegisterCount = 50;
     moduleCompileOptions.optLevel = OPTIX_COMPILE_OPTIMIZATION_DEFAULT;
-    moduleCompileOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO;
+    moduleCompileOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_MINIMAL;
 
     OptixPipelineCompileOptions pipelineCompileOptions = {};
     pipelineCompileOptions.usesMotionBlur = false;
@@ -454,14 +465,14 @@ bool OptiXRayTracer::createModule() {
     char log[2048];
     size_t sizeof_log = sizeof(log);
 
-    OPTIX_CHECK_LOG(optixModuleCreateFromPTX(context,
-                                             &moduleCompileOptions,
-                                             &pipelineCompileOptions,
-                                             ptx_code,
-                                             strlen(ptx_code),
-                                             log,
-                                             &sizeof_log,
-                                             &module));
+    OPTIX_CHECK_LOG(optixModuleCreate(context,
+                                      &moduleCompileOptions,
+                                      &pipelineCompileOptions,
+                                      ptx_code,
+                                      strlen(ptx_code),
+                                      log,
+                                      &sizeof_log,
+                                      &module));
 
     SAFE_PRINT_LINE("[OptiXRayTracer] OptiX модуль создан");
     if (sizeof_log > 1) {
@@ -545,21 +556,35 @@ bool OptiXRayTracer::allocateBuffers() {
     size_t pixelCount = imageWidth * imageHeight;
     size_t bufferSize = pixelCount * 4 * sizeof(float);  // RGBA
 
-    // Выделяем буферы для различных эффектов
-    CUDA_CHECK(cudaMalloc(&d_reflections, bufferSize));
-    CUDA_CHECK(cudaMalloc(&d_shadows, bufferSize));
-    CUDA_CHECK(cudaMalloc(&d_globalIllumination, bufferSize));
-    CUDA_CHECK(cudaMalloc(&d_motionVectors, bufferSize));
-    CUDA_CHECK(cudaMalloc(&d_albedo, bufferSize));
-    CUDA_CHECK(cudaMalloc(&d_normals, bufferSize));
+    // Выделяем буферы для различных эффектов через промежуточные указатели
+    void* reflectionsPtr = nullptr;
+    void* shadowsPtr = nullptr;
+    void* globalIlluminationPtr = nullptr;
+    void* motionVectorsPtr = nullptr;
+    void* albedoPtr = nullptr;
+    void* normalsPtr = nullptr;
+    
+    CUDA_CHECK(cudaMalloc(&reflectionsPtr, bufferSize));
+    CUDA_CHECK(cudaMalloc(&shadowsPtr, bufferSize));
+    CUDA_CHECK(cudaMalloc(&globalIlluminationPtr, bufferSize));
+    CUDA_CHECK(cudaMalloc(&motionVectorsPtr, bufferSize));
+    CUDA_CHECK(cudaMalloc(&albedoPtr, bufferSize));
+    CUDA_CHECK(cudaMalloc(&normalsPtr, bufferSize));
+    
+    d_reflections = reinterpret_cast<CUdeviceptr>(reflectionsPtr);
+    d_shadows = reinterpret_cast<CUdeviceptr>(shadowsPtr);
+    d_globalIllumination = reinterpret_cast<CUdeviceptr>(globalIlluminationPtr);
+    d_motionVectors = reinterpret_cast<CUdeviceptr>(motionVectorsPtr);
+    d_albedo = reinterpret_cast<CUdeviceptr>(albedoPtr);
+    d_normals = reinterpret_cast<CUdeviceptr>(normalsPtr);
 
     // Инициализируем буферы нулями
-    CUDA_CHECK(cudaMemset(d_reflections, 0, bufferSize));
-    CUDA_CHECK(cudaMemset(d_shadows, 0, bufferSize));
-    CUDA_CHECK(cudaMemset(d_globalIllumination, 0, bufferSize));
-    CUDA_CHECK(cudaMemset(d_motionVectors, 0, bufferSize));
-    CUDA_CHECK(cudaMemset(d_albedo, 0, bufferSize));
-    CUDA_CHECK(cudaMemset(d_normals, 0, bufferSize));
+    CUDA_CHECK(cudaMemset(reflectionsPtr, 0, bufferSize));
+    CUDA_CHECK(cudaMemset(shadowsPtr, 0, bufferSize));
+    CUDA_CHECK(cudaMemset(globalIlluminationPtr, 0, bufferSize));
+    CUDA_CHECK(cudaMemset(motionVectorsPtr, 0, bufferSize));
+    CUDA_CHECK(cudaMemset(albedoPtr, 0, bufferSize));
+    CUDA_CHECK(cudaMemset(normalsPtr, 0, bufferSize));
 
     SAFE_PRINT_LINE("[OptiXRayTracer] Буферы выделены для " + SAFE_TO_STRING(imageWidth) + "x"
                     + SAFE_TO_STRING(imageHeight));

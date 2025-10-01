@@ -39,16 +39,9 @@ find_path(OptiX_INCLUDE_DIR
     DOC "OptiX include directory"
 )
 
-# Поиск библиотек OptiX (статические библиотеки для OptiX 7.x)
-find_library(OptiX_LIBRARY
-    NAMES optix_7
-    PATHS
-        ${OptiX_ROOT_DIR}/lib64
-        ${OptiX_ROOT_DIR}/lib
-        ${OptiX_ROOT_DIR}/SDK/lib64
-        ${OptiX_ROOT_DIR}/SDK/lib
-    DOC "OptiX library"
-)
+# OptiX 7.x является header-only SDK, библиотеки не требуются
+# Все функции загружаются динамически через CUDA Driver API
+set(OptiX_LIBRARY "" CACHE STRING "OptiX library (not required for OptiX 7.x)" FORCE)
 
 # Определение версии OptiX
 if(OptiX_INCLUDE_DIR)
@@ -87,7 +80,8 @@ find_package_handle_standard_args(OptiX
 
 if(OptiX_FOUND)
     set(OptiX_INCLUDE_DIRS ${OptiX_INCLUDE_DIR})
-    set(OptiX_LIBRARIES ${OptiX_LIBRARY})
+    # OptiX 7.x не имеет библиотек для линковки
+    set(OptiX_LIBRARIES "")
     
     # Создание imported target
     if(NOT TARGET OptiX::OptiX)
@@ -96,6 +90,8 @@ if(OptiX_FOUND)
         
         # OptiX 7.x не требует линковки библиотек, только заголовочные файлы
         # Все функции загружаются динамически через CUDA Driver API
+        # Требуется только CUDA Driver API
+        target_compile_definitions(OptiX::OptiX INTERFACE OPTIX_AVAILABLE=1)
     endif()
     
     # Дополнительные пути для примеров и утилит OptiX
@@ -111,5 +107,4 @@ endif()
 mark_as_advanced(
     OptiX_ROOT_DIR
     OptiX_INCLUDE_DIR
-    OptiX_LIBRARY
 )
