@@ -96,10 +96,15 @@ if(TARGET CUDA::cudart)
         LIBS
             HyperEngine_Math
             HyperEngine_Core
+            HyperEngine_CUDA
             CUDA::cudart
             CUDA::cuda_driver
             glm::glm
     )
+    # Добавляем CUDA include directories и макросы для CUDA-теста
+    find_package(CUDAToolkit REQUIRED)
+    target_include_directories(flashgs_splatter_test PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+    target_compile_definitions(flashgs_splatter_test PRIVATE CUDA_VULKAN_INTEROP_SUPPORTED=1)
     list(APPEND ALL_UNIT_TESTS flashgs_splatter_test)
     
     # NEW P1: OptiX RayTracer unit tests (CRITICAL for 80% coverage)
@@ -109,10 +114,14 @@ if(TARGET CUDA::cudart)
         LIBS
             HyperEngine_Math
             HyperEngine_Core
+            HyperEngine_OptiX
             CUDA::cudart
             CUDA::cuda_driver
             glm::glm
     )
+    # Добавляем CUDA include directories и макросы для OptiX-теста
+    target_include_directories(optix_raytracer_test PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+    target_compile_definitions(optix_raytracer_test PRIVATE CUDA_VULKAN_INTEROP_SUPPORTED=1)
     list(APPEND ALL_UNIT_TESTS optix_raytracer_test)
 endif()
 

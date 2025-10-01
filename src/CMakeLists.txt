@@ -39,7 +39,8 @@ if(BUILD_WITH_CUDA)
     
     # Временно исключаем файлы, требующие Vulkan-CUDA interop
     list(FILTER CUDA_SOURCES EXCLUDE REGEX ".*CudaInterop\\.cpp$")
-    list(FILTER CUDA_SOURCES EXCLUDE REGEX ".*FlashGSSplatter\\.cpp$")
+    # FlashGSSplatter теперь включен - CUDA headers доступны
+    # list(FILTER CUDA_SOURCES EXCLUDE REGEX ".*FlashGSSplatter\\.cpp$")
     
     add_library(HyperEngine_CUDA STATIC ${CUDA_SOURCES})
     set_property(TARGET HyperEngine_CUDA PROPERTY CUDA_SEPARABLE_COMPILATION ON)

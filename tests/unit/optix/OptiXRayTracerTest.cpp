@@ -9,6 +9,10 @@
 #include "HyperEngine/OptiX/OptiXRayTracer.h"
 #include "TestFramework.h"
 
+#ifdef CUDA_VULKAN_INTEROP_SUPPORTED
+#include <cuda_runtime.h>
+#endif
+
 using namespace HyperEngine::Testing;
 using namespace HyperEngine::OptiX;
 using namespace HyperEngine::Core;
@@ -452,6 +456,7 @@ TEST_F(OptiXRayTracerTest, HandleInvalidGeometry) {
 }
 
 TEST_F(OptiXRayTracerTest, HandleCUDAErrors) {
+#ifdef CUDA_VULKAN_INTEROP_SUPPORTED
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
             // Симуляция CUDA ошибки при OptiX операциях
@@ -465,6 +470,9 @@ TEST_F(OptiXRayTracerTest, HandleCUDAErrors) {
             EXPECT_NE(fakeError, cudaSuccess);
         },
         "Обработка CUDA ошибок");
+#else
+    GTEST_SKIP() << "CUDA-Vulkan interop не поддерживается в этой сборке";
+#endif
 }
 
 // ============================================================================
