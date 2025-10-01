@@ -583,7 +583,6 @@ if(BUILD_VULKAN_RENDERER)
     target_link_libraries(VulkanRenderer PUBLIC
         HyperEngine_Core
         HyperEngine_Math
-        HyperEngine_OpenGL
         HyperEngine_Physics
         HyperEngine_Input
         HyperEngine_Upscaling
@@ -591,6 +590,11 @@ if(BUILD_VULKAN_RENDERER)
         glfw
         glm::glm
     )
+    
+    # Опционально линкуем OpenGL если он доступен
+    if(TARGET HyperEngine_OpenGL)
+        target_link_libraries(VulkanRenderer PUBLIC HyperEngine_OpenGL)
+    endif()
 
     # Опциональные зависимости Vulkan
     if(TARGET VulkanMemoryAllocator::VulkanMemoryAllocator)
