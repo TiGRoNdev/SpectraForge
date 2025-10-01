@@ -190,9 +190,13 @@ class VulkanRenderer {
     ResourceManager* resourceManager = nullptr;
 
     // Компоненты рендеринга (будут созданы на следующих этапах)
+#ifdef CUDA_VULKAN_INTEROP_SUPPORTED
     std::unique_ptr<HyperEngine::CUDA::FlashGSSplatter> splatter;
+#endif
+#ifdef VULKAN_RENDERER_OPTIX_SUPPORT
     std::unique_ptr<HyperEngine::OptiX::OptiXRayTracer> rayTracer;
     std::unique_ptr<HyperEngine::OptiX::DenoiseModule> denoiseModule;
+#endif
     std::unique_ptr<HyperEngine::Upscaling::Upscaler> upscaler;
 
     bool initialized = false;

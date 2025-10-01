@@ -83,9 +83,13 @@ void VulkanRenderer::shutdown() {
 
     // Освобождаем компоненты рендеринга
     upscaler.reset();
+#ifdef VULKAN_RENDERER_OPTIX_SUPPORT
     denoiseModule.reset();
     rayTracer.reset();
+#endif
+#ifdef CUDA_VULKAN_INTEROP_SUPPORTED
     splatter.reset();
+#endif
 
     // Освобождаем Vulkan объекты
     if (commandPool) {
