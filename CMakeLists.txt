@@ -14,6 +14,7 @@ option(BUILD_WITH_FSR "Build with FSR support" ON)
 option(BUILD_EXAMPLES "Build example applications" ON)
 option(BUILD_TESTS "Build test suite" ON)
 option(ENABLE_CODE_COVERAGE "Enable code coverage for tests" ON)
+option(ENABLE_FREQVOX "Enable FreqVox Renderer modules" ON)
 
 # Ранняя настройка CUDA для поддержки
 if(BUILD_WITH_CUDA)
@@ -307,6 +308,12 @@ if(BUILD_ENGINE_3D)
         HyperEngine_Input
     )
 
+    # Подключаем FreqVox модуль, если он собран
+    if(ENABLE_FREQVOX AND TARGET HyperEngine_FreqVox)
+        target_link_libraries(HyperEngine INTERFACE HyperEngine_FreqVox)
+        add_compile_definitions(HyperEngine_ENABLE_FREQVOX)
+    endif()
+
     # Подключаем Vulkan модуль если включен
     if(ENABLE_VULKAN_BACKEND AND BUILD_VULKAN_RENDERER)
         target_link_libraries(HyperEngine INTERFACE HyperEngine_Vulkan)
@@ -352,6 +359,14 @@ if(BUILD_ENGINE_3D)
             examples/optimal_renderer_demo.cpp
         )
         target_link_libraries(OptimalRenderer_Demo PRIVATE HyperEngine)
+
+        # FreqVox Renderer демо (если включен)
+        if(ENABLE_FREQVOX AND TARGET HyperEngine_FreqVox)
+            add_executable(FreqVox_Demo
+                examples/freqvox_demo.cpp
+            )
+            target_link_libraries(FreqVox_Demo PRIVATE HyperEngine HyperEngine_FreqVox)
+        endif()
 
         # Демо UTF-8 консоли
         add_executable(UTF8Console_Demo

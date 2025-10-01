@@ -10,6 +10,7 @@ add_subdirectory(math)
 # Rendering модули
 file(GLOB_RECURSE RENDERING_COMMON_SOURCES "rendering/common/*.cpp" "rendering/common/*.h")
 file(GLOB_RECURSE RENDERING_OPENGL_SOURCES "rendering/opengl/*.cpp" "rendering/opengl/*.h")
+file(GLOB_RECURSE FREQVOX_SOURCES "rendering/freqvox/*.cpp" "rendering/freqvox/*.h")
 
 # Создаем библиотеки только если есть исходные файлы
 if(RENDERING_COMMON_SOURCES)
@@ -18,6 +19,31 @@ endif()
 
 if(RENDERING_OPENGL_SOURCES)
     add_library(HyperEngine_OpenGL STATIC ${RENDERING_OPENGL_SOURCES})
+endif()
+
+# FreqVox модуль (опционально)
+if(ENABLE_FREQVOX AND FREQVOX_SOURCES)
+    add_library(HyperEngine_FreqVox STATIC ${FREQVOX_SOURCES})
+    target_link_libraries(HyperEngine_FreqVox PUBLIC
+        HyperEngine_Core
+        HyperEngine_Math
+    )
+    target_include_directories(HyperEngine_FreqVox
+        PUBLIC ${CMAKE_SOURCE_DIR}/include
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    target_compile_features(HyperEngine_FreqVox PUBLIC cxx_std_20)
+
+    # Опционально объявляем доступность CUDA для бэкенда cuFFT
+    if(BUILD_WITH_CUDA)
+        find_package(CUDAToolkit QUIET)
+        if(CUDAToolkit_FOUND)
+            target_compile_definitions(HyperEngine_FreqVox PUBLIC HYPERENGINE_CUDA_AVAILABLE=1)
+            target_include_directories(HyperEngine_FreqVox PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+            target_link_libraries(HyperEngine_FreqVox PRIVATE CUDA::cudart CUDA::cufft)
+            message(STATUS "FreqVox: cuFFT backend enabled")
+        endif()
+    endif()
 endif()
 
 # Vulkan модуль с отдельным CMakeLists.txt

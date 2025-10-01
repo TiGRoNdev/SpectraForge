@@ -75,6 +75,31 @@ else()
     message(STATUS "Пропуск rendering_tests - требуется GMock")
 endif()
 
+# FreqVox unit тест (всегда лёгкая заглушка)
+add_unit_test(freqvox_stage_test
+    SOURCES
+        rendering/FreqVoxStageTest.cpp
+    LIBS
+        ${RENDERING_TEST_LIBS}
+)
+list(APPEND ALL_UNIT_TESTS freqvox_stage_test)
+
+add_unit_test(freqvox_strategy_test
+    SOURCES
+        rendering/FreqVoxStrategyTest.cpp
+    LIBS
+        ${RENDERING_TEST_LIBS}
+)
+list(APPEND ALL_UNIT_TESTS freqvox_strategy_test)
+
+add_unit_test(freqvox_backends_test
+    SOURCES
+        rendering/FreqVoxBackendsTest.cpp
+    LIBS
+        ${RENDERING_TEST_LIBS}
+)
+list(APPEND ALL_UNIT_TESTS freqvox_backends_test)
+
 # Unit тесты для основных компонентов (только если CUDA доступна)
 if(TARGET CUDA::cudart)
     add_unit_test(optix_tests
