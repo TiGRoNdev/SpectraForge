@@ -435,14 +435,12 @@ if(BUILD_VULKAN_RENDERER)
     message(STATUS "Building Vulkan Hybrid Renderer...")
 
     # Сбор файлов для Vulkan рендерера
-    # ИСКЛЮЧАЕМ модульные директории, которые собираются отдельно в src/CMakeLists.txt
+    # ТОЛЬКО rendering директория, остальное уже собрано в отдельные модули в src/CMakeLists.txt
     file(GLOB_RECURSE VULKAN_CPP_SOURCES 
         "src/rendering/*.cpp"
-        "src/upscaling/*.cpp"
     )
     file(GLOB_RECURSE VULKAN_HEADERS 
         "src/rendering/*.h"
-        "src/upscaling/*.h"
     )
 
     # Сбор CUDA файлов отдельно (если они нужны)
