@@ -31,8 +31,12 @@ add_unit_test(math_matrix4_test
 set(RENDERING_TEST_LIBS
     HyperEngine_Math
     HyperEngine_Core
-    HyperEngine_OpenGL
 )
+
+# Добавляем OpenGL только если он включен
+if(TARGET HyperEngine_OpenGL)
+    list(APPEND RENDERING_TEST_LIBS HyperEngine_OpenGL)
+endif()
 
 # Добавляем Vulkan только если он включен
 if(TARGET HyperEngine_Vulkan)
@@ -46,15 +50,20 @@ endif()
 
 # rendering_tests требует GMock для моков - пропускаем если GMock недоступен
 if(GMOCK_FOUND)
+    set(RENDERING_TEST_EXTRA_LIBS glfw glm::glm)
+    
+    # Добавляем GLEW только если доступен
+    if(TARGET GLEW::GLEW)
+        list(APPEND RENDERING_TEST_EXTRA_LIBS GLEW::GLEW)
+    endif()
+    
     add_unit_test(rendering_tests
         SOURCES
             rendering/RendererAdapterTest.cpp
             rendering/VulkanRendererTest.cpp
         LIBS
             ${RENDERING_TEST_LIBS}
-            glfw
-            GLEW::GLEW
-            glm::glm
+            ${RENDERING_TEST_EXTRA_LIBS}
     )
     list(APPEND ALL_UNIT_TESTS rendering_tests)
 else()
