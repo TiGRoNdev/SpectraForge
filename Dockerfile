@@ -106,10 +106,12 @@ RUN git clone --depth 1 https://github.com/nothings/stb.git /opt/stb && \
     cp /opt/stb/*.h /usr/local/include/stb/
 
 # Install Vulkan-Hpp (C++ bindings for Vulkan)
-RUN git clone --depth 1 --branch v1.3.275 https://github.com/KhronosGroup/Vulkan-Headers.git /opt/vulkan-headers && \
+# Используем более новую версию с поддержкой video encoding типов
+RUN git clone --depth 1 --branch v1.3.296 https://github.com/KhronosGroup/Vulkan-Headers.git /opt/vulkan-headers && \
     mkdir -p /usr/local/include/vulkan && \
     cp -r /opt/vulkan-headers/include/vulkan/*.hpp /usr/local/include/vulkan/ || true && \
-    cp -r /opt/vulkan-headers/include/vulkan/*.h /usr/local/include/vulkan/ || true
+    cp -r /opt/vulkan-headers/include/vulkan/*.h /usr/local/include/vulkan/ || true && \
+    cp -r /opt/vulkan-headers/include/vk_video /usr/local/include/ || true
 
 # -----------------------------------------------------------------------------
 # Stage 3: Quality Tools Installation
