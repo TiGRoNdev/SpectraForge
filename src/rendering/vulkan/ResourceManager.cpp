@@ -11,11 +11,16 @@
 #include <iostream>
 #include <stdexcept>
 #include "HyperEngine/Core/SafeConsole.h"
+#include "HyperEngine/Core/Console.h"
 
 #ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif
 

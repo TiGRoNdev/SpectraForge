@@ -59,10 +59,14 @@ endif()
 target_compile_definitions(HyperEngine_Vulkan
     PUBLIC
         HyperEngine_ENABLE_VULKAN
-        VK_USE_PLATFORM_WIN32_KHR  # Для Windows
     PRIVATE
         VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
 )
+
+# Платформо-зависимые определения
+if(WIN32)
+    target_compile_definitions(HyperEngine_Vulkan PUBLIC VK_USE_PLATFORM_WIN32_KHR)
+endif()
 
 # Настройки компилятора
 if(MSVC)
