@@ -8,11 +8,15 @@
 #include "HyperEngine/Vulkan/VulkanRenderer.h"
 #include <iostream>
 #include <stdexcept>
+#ifdef CUDA_VULKAN_INTEROP_SUPPORTED
 #include "HyperEngine/CUDA/FlashGSSplatter.h"
+#endif
 #include "HyperEngine/Core/Console.h"
 #include "HyperEngine/Core/SafeConsole.h"
+#ifdef VULKAN_RENDERER_OPTIX_SUPPORT
 #include "HyperEngine/OptiX/DenoiseModule.h"
 #include "HyperEngine/OptiX/OptiXRayTracer.h"
+#endif
 #include "HyperEngine/Upscaling/Upscaler.h"
 #include "HyperEngine/Vulkan/ResourceManager.h"
 
