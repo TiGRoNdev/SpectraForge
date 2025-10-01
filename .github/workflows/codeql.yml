@@ -42,6 +42,8 @@ jobs:
           vulkan-tools \
           spirv-tools \
           libglm-dev \
+          libglfw3-dev \
+          libglew-dev \
           pkg-config
         
         # Установка Vulkan Memory Allocator (header-only library)
