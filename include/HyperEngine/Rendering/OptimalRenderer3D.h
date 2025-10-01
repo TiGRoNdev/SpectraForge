@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <functional>
@@ -264,8 +265,12 @@ class OptimalRendererFactory {
     /**
      * @brief Создает оптимальный рендерер для текущей системы
      */
-    static std::unique_ptr<OptimalRenderer3D> createOptimalRenderer(
-        const CreationParams& params = CreationParams{});
+    static std::unique_ptr<OptimalRenderer3D> createOptimalRenderer(const CreationParams& params);
+
+    /**
+     * @brief Создает оптимальный рендерер с параметрами по умолчанию
+     */
+    static std::unique_ptr<OptimalRenderer3D> createOptimalRenderer();
 
     /**
      * @brief Определяет конфигурацию аппаратного обеспечения
@@ -356,4 +361,3 @@ class AdaptiveLOD {
 
 }  // namespace Rendering
 }  // namespace HyperEngine
-

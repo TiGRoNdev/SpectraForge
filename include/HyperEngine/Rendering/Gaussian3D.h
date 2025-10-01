@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <memory>
@@ -224,4 +225,3 @@ class GaussianRenderer3D {
 
 }  // namespace Rendering
 }  // namespace HyperEngine
-

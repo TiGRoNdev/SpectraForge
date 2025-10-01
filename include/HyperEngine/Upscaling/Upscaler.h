@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <glm/glm.hpp>
@@ -166,4 +167,3 @@ class UpscalerFactory {
 };
 
 }  // namespace HyperEngine::Upscaling
-

@@ -1,10 +1,14 @@
-#include "HyperEngine/Vulkan/VulkanRenderer.h"
 #include "TestFramework.h"
 #include "mocks/MockVulkanRenderer.h"
 
+// Условная компиляция для Vulkan тестов
+#ifdef HyperEngine_ENABLE_VULKAN
+#include "HyperEngine/Vulkan/VulkanRenderer.h"
+using namespace HyperEngine::Vulkan;
+#endif
+
 using namespace HyperEngine::Testing;
 using namespace HyperEngine::Testing::Mocks;
-using namespace HyperEngine::Vulkan;
 
 /**
  * @brief Unit тесты для VulkanRenderer
@@ -57,14 +61,20 @@ class VulkanRendererTest : public HyperEngineTest {
 
 // Тесты инициализации
 TEST_F(VulkanRendererTest, SuccessfulInitialization) {
+#ifdef HyperEngine_ENABLE_VULKAN
     vk::Device mockDevice;  // Заглушка для Vulkan device
+#else
+    // Заглушка для случая без Vulkan
+    void* mockDevice = nullptr;
+#endif
 
     EXPECT_CALL(*mockRenderer, init(testing::_, testing::_)).WillOnce(testing::Return(true));
     EXPECT_CALL(*mockRenderer, isInitialized()).WillRepeatedly(testing::Return(true));
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
-            bool result = mockRenderer->init(mockDevice, mockResourceManager.get());
+            bool result = mockRenderer->init(
+                mockDevice, reinterpret_cast<ResourceManager*>(mockResourceManager.get()));
             EXPECT_TRUE(result);
             EXPECT_TRUE(mockRenderer->isInitialized());
         },
@@ -73,9 +83,14 @@ TEST_F(VulkanRendererTest, SuccessfulInitialization) {
 
 TEST_F(VulkanRendererTest, FailedInitialization) {
     auto failingRenderer = VulkanMockFactory::createFailingRenderer();
+#ifdef HyperEngine_ENABLE_VULKAN
     vk::Device mockDevice;
+#else
+    void* mockDevice = nullptr;
+#endif
 
-    EXPECT_FALSE(failingRenderer->init(mockDevice, mockResourceManager.get()));
+    EXPECT_FALSE(failingRenderer->init(
+        mockDevice, reinterpret_cast<ResourceManager*>(mockResourceManager.get())));
     EXPECT_FALSE(failingRenderer->isInitialized());
 }
 
@@ -129,7 +144,7 @@ TEST_F(VulkanRendererTest, SecondaryRayTracing) {
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
-            RawEffects result = mockRenderer->rayTraceSecondary(primaryImage);
+            [[maybe_unused]] RawEffects result = mockRenderer->rayTraceSecondary(primaryImage);
             // Результат должен содержать эффекты
         },
         "Secondary ray tracing через OptiX");
@@ -148,12 +163,12 @@ TEST_F(VulkanRendererTest, RayTracingWithDifferentComplexity) {
 
     // Тест с простой сценой
     EXPECT_NO_THROW_WITH_MESSAGE(
-        { RawEffects result1 = mockRenderer->rayTraceSecondary(primaryImage); },
+        { [[maybe_unused]] RawEffects result1 = mockRenderer->rayTraceSecondary(primaryImage); },
         "Ray tracing простой сцены");
 
     // Тест со сложной сценой
     EXPECT_NO_THROW_WITH_MESSAGE(
-        { RawEffects result2 = mockRenderer->rayTraceSecondary(primaryImage); },
+        { [[maybe_unused]] RawEffects result2 = mockRenderer->rayTraceSecondary(primaryImage); },
         "Ray tracing сложной сцены");
 }
 
@@ -166,7 +181,7 @@ TEST_F(VulkanRendererTest, AIDenoising) {
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
-            DenoisedImage result = mockRenderer->denoiseAI(rawEffects);
+            [[maybe_unused]] DenoisedImage result = mockRenderer->denoiseAI(rawEffects);
             // Результат должен быть деноизированным
         },
         "AI деноизинг через OptiX");
@@ -199,7 +214,8 @@ TEST_F(VulkanRendererTest, Upscaling) {
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
-            FinalImage result = mockRenderer->upscale(denoisedImage, testResolution);
+            [[maybe_unused]] FinalImage result =
+                mockRenderer->upscale(denoisedImage, testResolution);
             // Результат должен иметь целевое разрешение
         },
         "Upscaling через DLSS/FSR");
@@ -221,7 +237,7 @@ TEST_F(VulkanRendererTest, UpscalingDifferentScaleFactors) {
         target.scaleFactor = scale;
 
         EXPECT_NO_THROW_WITH_MESSAGE(
-            { FinalImage result = mockRenderer->upscale(denoisedImage, target); },
+            { [[maybe_unused]] FinalImage result = mockRenderer->upscale(denoisedImage, target); },
             "Upscaling с коэффициентом " + std::to_string(scale));
     }
 }
@@ -254,7 +270,7 @@ TEST_F(VulkanRendererTest, FullRenderingPipeline) {
             PrimaryImage primary = mockRenderer->rasterizePrimary(testGaussians);
             RawEffects effects = mockRenderer->rayTraceSecondary(primary);
             DenoisedImage denoised = mockRenderer->denoiseAI(effects);
-            FinalImage final = mockRenderer->upscale(denoised, testResolution);
+            [[maybe_unused]] FinalImage final = mockRenderer->upscale(denoised, testResolution);
             mockRenderer->presentFinalImage();
         },
         "Полный rendering pipeline");
@@ -285,7 +301,7 @@ TEST_F(VulkanRendererTest, PipelinePerformance) {
                 PrimaryImage primary = mockRenderer->rasterizePrimary(testGaussians);
                 RawEffects effects = mockRenderer->rayTraceSecondary(primary);
                 DenoisedImage denoised = mockRenderer->denoiseAI(effects);
-                FinalImage final = mockRenderer->upscale(denoised, testResolution);
+                [[maybe_unused]] FinalImage final = mockRenderer->upscale(denoised, testResolution);
                 mockRenderer->presentFinalImage();
             }
         },
@@ -300,6 +316,98 @@ TEST_F(VulkanRendererTest, RenderingWithoutInitialization) {
 
     // Попытки рендеринга без инициализации должны приводить к ошибкам
     EXPECT_THROW(uninitializedRenderer->rasterizePrimary(testGaussians), std::runtime_error);
+}
+
+// Тесты валидации входных параметров
+TEST_F(VulkanRendererTest, ValidateGaussiansEmpty) {
+    Gaussians emptyGaussians;
+    emptyGaussians.count = 0;
+
+    EXPECT_CALL(*mockRenderer, rasterizePrimary(testing::_))
+        .WillOnce(
+            testing::Throw(std::invalid_argument("Количество гауссианов должно быть больше 0")));
+
+    EXPECT_THROW(mockRenderer->rasterizePrimary(emptyGaussians), std::invalid_argument);
+}
+
+TEST_F(VulkanRendererTest, ValidateGaussiansTooMany) {
+    Gaussians tooManyGaussians;
+    tooManyGaussians.count = 2000000;  // Превышает лимит
+
+    EXPECT_CALL(*mockRenderer, rasterizePrimary(testing::_))
+        .WillOnce(testing::Throw(std::invalid_argument(
+            "Количество гауссианов превышает максимально допустимое значение")));
+
+    EXPECT_THROW(mockRenderer->rasterizePrimary(tooManyGaussians), std::invalid_argument);
+}
+
+TEST_F(VulkanRendererTest, ValidateImageDimensions) {
+    PrimaryImage invalidImage;
+    invalidImage.width = 0;
+    invalidImage.height = 1080;
+
+    EXPECT_CALL(*mockRenderer, rayTraceSecondary(testing::_))
+        .WillOnce(
+            testing::Throw(std::invalid_argument("Размеры изображения должны быть больше 0")));
+
+    EXPECT_THROW(mockRenderer->rayTraceSecondary(invalidImage), std::invalid_argument);
+}
+
+TEST_F(VulkanRendererTest, ValidateImageTooLarge) {
+    PrimaryImage tooLargeImage;
+    tooLargeImage.width = 10000;
+    tooLargeImage.height = 10000;
+
+    EXPECT_CALL(*mockRenderer, rayTraceSecondary(testing::_))
+        .WillOnce(testing::Throw(std::invalid_argument(
+            "Размеры изображения превышают максимально допустимые значения")));
+
+    EXPECT_THROW(mockRenderer->rayTraceSecondary(tooLargeImage), std::invalid_argument);
+}
+
+TEST_F(VulkanRendererTest, ValidateResolutionTarget) {
+    ResolutionTarget invalidTarget;
+    invalidTarget.width = 0;
+    invalidTarget.height = 1080;
+    invalidTarget.scaleFactor = 2.0f;
+
+    DenoisedImage denoisedImage;
+
+    EXPECT_CALL(*mockRenderer, upscale(testing::_, testing::_))
+        .WillOnce(testing::Throw(
+            std::invalid_argument("Размеры целевого разрешения должны быть больше 0")));
+
+    EXPECT_THROW(mockRenderer->upscale(denoisedImage, invalidTarget), std::invalid_argument);
+}
+
+TEST_F(VulkanRendererTest, ValidateScaleFactor) {
+    ResolutionTarget invalidTarget;
+    invalidTarget.width = 1920;
+    invalidTarget.height = 1080;
+    invalidTarget.scaleFactor = 0.0f;  // Невалидный масштаб
+
+    DenoisedImage denoisedImage;
+
+    EXPECT_CALL(*mockRenderer, upscale(testing::_, testing::_))
+        .WillOnce(testing::Throw(
+            std::invalid_argument("Коэффициент масштабирования должен быть в диапазоне (0, 8]")));
+
+    EXPECT_THROW(mockRenderer->upscale(denoisedImage, invalidTarget), std::invalid_argument);
+}
+
+TEST_F(VulkanRendererTest, ValidateScaleFactorTooLarge) {
+    ResolutionTarget invalidTarget;
+    invalidTarget.width = 1920;
+    invalidTarget.height = 1080;
+    invalidTarget.scaleFactor = 10.0f;  // Слишком большой масштаб
+
+    DenoisedImage denoisedImage;
+
+    EXPECT_CALL(*mockRenderer, upscale(testing::_, testing::_))
+        .WillOnce(testing::Throw(
+            std::invalid_argument("Коэффициент масштабирования должен быть в диапазоне (0, 8]")));
+
+    EXPECT_THROW(mockRenderer->upscale(denoisedImage, invalidTarget), std::invalid_argument);
 }
 
 TEST_F(VulkanRendererTest, InvalidGaussianData) {
@@ -351,7 +459,7 @@ TEST_P(VulkanRendererResolutionTest, DifferentResolutions) {
         .WillOnce(testing::Return(mockFinal));
 
     EXPECT_NO_THROW_WITH_MESSAGE(
-        { FinalImage result = mockRenderer->upscale(denoisedImage, target); },
+        { [[maybe_unused]] FinalImage result = mockRenderer->upscale(denoisedImage, target); },
         "Upscaling для разрешения " + std::to_string(width) + "x" + std::to_string(height));
 }
 
@@ -362,4 +470,3 @@ INSTANTIATE_TEST_SUITE_P(ResolutionTests,
                                            std::make_tuple(2560, 1440, 1.5f),
                                            std::make_tuple(3840, 2160, 1.0f),
                                            std::make_tuple(3840, 2160, 2.0f)));
-

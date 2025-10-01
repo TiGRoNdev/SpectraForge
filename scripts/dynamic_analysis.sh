@@ -11,7 +11,6 @@ echo "🚫 Сборка с AddressSanitizer..."
 cmake -B build/asan \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer -g" \
-    -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake \
     -DBUILD_TESTING=ON
 
 if cmake --build build/asan --parallel; then
@@ -37,7 +36,6 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     cmake -B build/msan \
         -DCMAKE_BUILD_TYPE=Debug \
         -DCMAKE_CXX_FLAGS="-fsanitize=memory -fno-omit-frame-pointer -g" \
-        -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake \
         -DBUILD_TESTING=ON
     
     if cmake --build build/msan --parallel; then
@@ -59,7 +57,6 @@ echo "❓ Сборка с UBSanitizer..."
 cmake -B build/ubsan \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_CXX_FLAGS="-fsanitize=undefined -fno-omit-frame-pointer -g" \
-    -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake \
     -DBUILD_TESTING=ON
 
 if cmake --build build/ubsan --parallel; then
@@ -84,7 +81,6 @@ echo "🧵 Сборка с ThreadSanitizer..."
 cmake -B build/tsan \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_CXX_FLAGS="-fsanitize=thread -fno-omit-frame-pointer -g" \
-    -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake \
     -DBUILD_TESTING=ON
 
 if cmake --build build/tsan --parallel; then
@@ -109,7 +105,6 @@ if [[ "$OSTYPE" == "linux-gnu"* ]] && command -v valgrind &> /dev/null; then
     echo "🔍 Запуск Valgrind..."
     cmake -B build/valgrind \
         -DCMAKE_BUILD_TYPE=Debug \
-        -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake \
         -DBUILD_TESTING=ON
     
     if cmake --build build/valgrind --parallel; then

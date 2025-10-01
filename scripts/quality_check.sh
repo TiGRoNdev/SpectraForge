@@ -1,10 +1,19 @@
 #!/bin/bash
 # Комплексная проверка качества кода HyperEngine
 
-set -e  # Остановиться при первой ошибке
+# НЕ используем set -e, так как хотим продолжить проверку даже при ошибках
+
+# Определяем корневую директорию проекта
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Переходим в корневую директорию проекта
+cd "$PROJECT_ROOT" || exit 1
 
 echo "🎯 Комплексная проверка качества кода HyperEngine"
 echo "================================================"
+echo "📁 Корневая директория: $PROJECT_ROOT"
+echo ""
 
 # Счетчики
 ERRORS=0
@@ -55,50 +64,83 @@ fi
 # 3. Проверка сборки
 echo ""
 echo "🔨 Проверка сборки..."
-# Используем существующую сборку build-vcpkg
-if [ -d "build-vcpkg" ]; then
-    log_success "Используем существующую сборку build-vcpkg"
+
+# Проверяем, запущены ли мы в CI
+IS_CI=${CI:-false}
+
+# Проверка наличия GLM
+if ! pkg-config --exists glm 2>/dev/null && [ ! -d "/usr/include/glm" ]; then
+    log_warning "GLM не найден. Установите libglm-dev для корректной сборки"
+fi
+
+# Используем существующую сборку или создаем новую
+if [ -d "build/quality-check" ] && [ -f "build/quality-check/CMakeCache.txt" ]; then
+    log_success "Используем существующую сборку build/quality-check"
     echo "Сборка уже выполнена успешно" > build/quality-reports/cmake-config.log
     echo "Сборка уже выполнена успешно" > build/quality-reports/build.log
 else
-    # Попытка создать новую сборку для Unix-систем
+    # Создаем новую сборку с системными пакетами (без vcpkg)
     if cmake -B build/quality-check \
         -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake \
-        -DBUILD_TESTING=ON > build/quality-reports/cmake-config.log 2>&1; then
+        -DBUILD_TESTING=ON \
+        -DBUILD_VULKAN_RENDERER=OFF \
+        -DBUILD_WITH_OPTIX=OFF \
+        -DBUILD_WITH_DLSS=OFF \
+        -DBUILD_WITH_FSR=OFF \
+        -DENABLE_CODE_COVERAGE=OFF > build/quality-reports/cmake-config.log 2>&1; then
         log_success "Конфигурация CMake прошла успешно"
+        
+        if cmake --build build/quality-check --parallel > build/quality-reports/build.log 2>&1; then
+            log_success "Сборка прошла успешно"
+        else
+            log_error "Ошибка сборки проекта. См. build/quality-reports/build.log"
+            if [ "$IS_CI" = "true" ]; then
+                exit 1
+            fi
+        fi
     else
         log_error "Ошибка конфигурации CMake. См. build/quality-reports/cmake-config.log"
-    fi
-
-    if cmake --build build/quality-check --parallel > build/quality-reports/build.log 2>&1; then
-        log_success "Сборка прошла успешно"
-    else
-        log_error "Ошибка сборки проекта. См. build/quality-reports/build.log"
+        log_info "Убедитесь, что установлены все зависимости: libglm-dev, libgtest-dev, libglfw3-dev, libglew-dev"
+        # Выходим с ошибкой только в CI
+        if [ "$IS_CI" = "true" ]; then
+            exit 1
+        else
+            log_info "Продолжаем выполнение (локальная среда)"
+        fi
     fi
 fi
 
 # 4. Запуск тестов
 echo ""
 echo "🧪 Запуск тестов..."
-if [ -d "build-vcpkg" ]; then
-    cd build-vcpkg
-    if ctest --output-on-failure > ../build/quality-reports/tests.log 2>&1; then
-        log_success "Все тесты прошли успешно"
-    else
-        log_error "Некоторые тесты не прошли. См. build/quality-reports/tests.log"
-    fi
-    cd ..
-elif [ -d "build/quality-check" ]; then
+if [ -d "build/quality-check" ]; then
     cd build/quality-check
     if ctest --output-on-failure > ../quality-reports/tests.log 2>&1; then
-        log_success "Все тесты прошли успешно"
+        # Проверяем, были ли найдены тесты
+        if grep -q "No tests were found" ../quality-reports/tests.log 2>/dev/null; then
+            log_error "Тесты не были найдены. Проверьте сборку тестов."
+            cd "$PROJECT_ROOT"
+            if [ "$IS_CI" = "true" ]; then
+                exit 1
+            fi
+        else
+            log_success "Все тесты прошли успешно"
+        fi
     else
         log_error "Некоторые тесты не прошли. См. build/quality-reports/tests.log"
+        cd "$PROJECT_ROOT"
+        if [ "$IS_CI" = "true" ]; then
+            exit 1
+        fi
     fi
-    cd ../..
+    cd "$PROJECT_ROOT"
 else
-    log_warning "Директория сборки не найдена, пропускаем тесты"
+    log_error "Директория сборки не найдена, невозможно запустить тесты"
+    if [ "$IS_CI" = "true" ]; then
+        exit 1
+    else
+        log_info "Пропускаем тесты (нет директории сборки)"
+    fi
 fi
 
 # 5. Проверка покрытия кода (если доступно)

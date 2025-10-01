@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <memory>
@@ -279,4 +280,3 @@ class Material3D {
 
 }  // namespace Rendering
 }  // namespace HyperEngine
-

@@ -1,7 +1,11 @@
+
 #pragma once
 
 #include <memory>
+
+#ifdef HyperEngine_ENABLE_VULKAN
 #include <vulkan/vulkan.hpp>
+#endif
 
 // Forward declarations
 namespace HyperEngine {
@@ -27,6 +31,10 @@ class Upscaler;
 
 namespace HyperEngine::Vulkan {
 
+#ifdef HyperEngine_ENABLE_VULKAN
+using namespace vk;
+#endif
+
 /**
  * @brief Структуры данных для рендеринга
  */
@@ -36,21 +44,37 @@ struct Gaussians {
 };
 
 struct PrimaryImage {
+#ifdef HyperEngine_ENABLE_VULKAN
     vk::Image image;
     vk::ImageView imageView;
+#else
+    void* image = nullptr;
+    void* imageView = nullptr;
+#endif
     uint32_t width;
     uint32_t height;
 };
 
 struct RawEffects {
+#ifdef HyperEngine_ENABLE_VULKAN
     vk::Image reflections;
     vk::Image shadows;
     vk::Image globalIllumination;
+#else
+    void* reflections = nullptr;
+    void* shadows = nullptr;
+    void* globalIllumination = nullptr;
+#endif
 };
 
 struct DenoisedImage {
+#ifdef HyperEngine_ENABLE_VULKAN
     vk::Image image;
     vk::ImageView imageView;
+#else
+    void* image = nullptr;
+    void* imageView = nullptr;
+#endif
 };
 
 struct ResolutionTarget {
@@ -60,8 +84,13 @@ struct ResolutionTarget {
 };
 
 struct FinalImage {
+#ifdef HyperEngine_ENABLE_VULKAN
     vk::Image image;
     vk::ImageView imageView;
+#else
+    void* image = nullptr;
+    void* imageView = nullptr;
+#endif
 };
 
 /**
@@ -91,7 +120,13 @@ class VulkanRenderer {
      * @param resourceManager Менеджер ресурсов
      * @return true если инициализация успешна
      */
-    bool init(vk::Device device, ResourceManager* resourceManager);
+    bool init(
+#ifdef HyperEngine_ENABLE_VULKAN
+        vk::Device device,
+#else
+        void* device,
+#endif
+        ResourceManager* resourceManager);
 
     /**
      * @brief Завершение работы рендерера
@@ -102,6 +137,7 @@ class VulkanRenderer {
      * @brief Первичная растеризация гауссианов
      * @param gaussians Гауссианы для рендеринга
      * @return Первичное изображение
+     * @throws std::invalid_argument если данные гауссианов невалидны
      */
     PrimaryImage rasterizePrimary(const Gaussians& gaussians);
 
@@ -139,17 +175,28 @@ class VulkanRenderer {
     bool isInitialized() const { return initialized; }
 
   private:
+#ifdef HyperEngine_ENABLE_VULKAN
     vk::Device device;
     vk::Queue graphicsQueue;
     vk::CommandPool commandPool;
     vk::SwapchainKHR swapchain;
+#else
+    void* device = nullptr;
+    void* graphicsQueue = nullptr;
+    void* commandPool = nullptr;
+    void* swapchain = nullptr;
+#endif
 
     ResourceManager* resourceManager = nullptr;
 
     // Компоненты рендеринга (будут созданы на следующих этапах)
+#ifdef CUDA_VULKAN_INTEROP_SUPPORTED
     std::unique_ptr<HyperEngine::CUDA::FlashGSSplatter> splatter;
+#endif
+#ifdef VULKAN_RENDERER_OPTIX_SUPPORT
     std::unique_ptr<HyperEngine::OptiX::OptiXRayTracer> rayTracer;
     std::unique_ptr<HyperEngine::OptiX::DenoiseModule> denoiseModule;
+#endif
     std::unique_ptr<HyperEngine::Upscaling::Upscaler> upscaler;
 
     bool initialized = false;
@@ -160,4 +207,3 @@ class VulkanRenderer {
 };
 
 }  // namespace HyperEngine::Vulkan
-

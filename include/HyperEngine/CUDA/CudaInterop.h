@@ -1,8 +1,13 @@
+
 #pragma once
 
 #include <memory>
 #include <unordered_map>
+#include <vector>
+
+#ifdef HyperEngine_ENABLE_VULKAN
 #include <vulkan/vulkan.hpp>
+#endif
 
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
 #include <cuda.h>
@@ -14,7 +19,10 @@
 #endif
 #include <windows.h>
 #define VK_USE_PLATFORM_WIN32_KHR
+#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
+#include <vulkan/vulkan.h>
 #include <vulkan/vulkan_win32.h>
+#endif
 // Дополнительные определения для external memory/semaphore
 #ifndef VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME
 #define VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME "VK_KHR_external_memory_win32"
@@ -45,8 +53,13 @@ namespace HyperEngine::CUDA {
  * @brief Shared ресурс между CUDA и Vulkan
  */
 struct SharedResource {
+#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
     vk::Buffer vulkanBuffer;
     vk::DeviceMemory vulkanMemory;
+#else
+    void* vulkanBuffer;
+    void* vulkanMemory;
+#endif
     cudaExternalMemory_t cudaExternalMemory;
     CUdeviceptr cudaDevicePtr;
     size_t size;
@@ -57,7 +70,11 @@ struct SharedResource {
  * @brief Синхронизация между CUDA и Vulkan
  */
 struct SyncObject {
+#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
     vk::Semaphore vulkanSemaphore;
+#else
+    void* vulkanSemaphore;
+#endif
     cudaExternalSemaphore_t cudaExternalSemaphore;
     bool isValid;
 };
@@ -87,9 +104,13 @@ class CudaInterop {
      * @param resourceManager Менеджер ресурсов Vulkan
      * @return true если инициализация успешна
      */
-    bool initializeInterop(vk::Device device,
-                           vk::PhysicalDevice physicalDevice,
-                           Vulkan::ResourceManager* resourceManager);
+#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
+    bool initializeInterop(vk::Device dev,
+                           vk::PhysicalDevice physDev,
+                           Vulkan::ResourceManager* resMgr);
+#else
+    bool initializeInterop(void* dev, void* physDev, void* resMgr);
+#endif
 
     /**
      * @brief Завершение работы interop
@@ -105,8 +126,21 @@ class CudaInterop {
      */
     std::shared_ptr<SharedResource> createSharedBuffer(
         size_t size,
+#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
         vk::BufferUsageFlags vulkanUsage = vk::BufferUsageFlagBits::eStorageBuffer,
+#else
+        uint32_t vulkanUsage = 0x00000008,  // VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+#endif
         unsigned int cudaFlags = cudaMemAttachGlobal);
+
+#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
+    std::shared_ptr<SharedResource> createSharedBuffer(
+        size_t size,
+        uint32_t vulkanUsage,
+        unsigned int cudaFlags = cudaMemAttachGlobal) {
+        return createSharedBuffer(size, static_cast<vk::BufferUsageFlags>(vulkanUsage), cudaFlags);
+    }
+#endif
 
     /**
      * @brief Освобождение shared ресурса
@@ -125,14 +159,19 @@ class CudaInterop {
      * @param syncObj Объект синхронизации
      * @param stream CUDA stream
      */
-    void signalVulkanToCuda(std::shared_ptr<SyncObject> syncObj, cudaStream_t stream = 0);
+    void signalVulkanToCuda(const std::shared_ptr<SyncObject>& syncObj, cudaStream_t stream = 0);
 
     /**
      * @brief Ожидание сигнала от CUDA в Vulkan
      * @param syncObj Объект синхронизации
      * @param commandBuffer Command buffer для вставки wait
      */
-    void waitCudaFromVulkan(std::shared_ptr<SyncObject> syncObj, vk::CommandBuffer commandBuffer);
+    void waitCudaFromVulkan(const std::shared_ptr<SyncObject>& syncObj,
+#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
+                            vk::CommandBuffer commandBuffer);
+#else
+                            void* commandBuffer);
+#endif
 
     /**
      * @brief Импорт Vulkan памяти в CUDA
@@ -140,7 +179,11 @@ class CudaInterop {
      * @param size Размер памяти
      * @return CUDA external memory
      */
+#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
     cudaExternalMemory_t importVulkanMemory(vk::DeviceMemory vulkanMemory, size_t size);
+#else
+    cudaExternalMemory_t importVulkanMemory(void* vulkanMemory, size_t size);
+#endif
 
     /**
      * @brief Экспорт CUDA памяти в Vulkan
@@ -148,7 +191,11 @@ class CudaInterop {
      * @param size Размер памяти
      * @return Vulkan память
      */
+#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
     vk::DeviceMemory exportCudaMemory(CUdeviceptr cudaPtr, size_t size);
+#else
+    void* exportCudaMemory(CUdeviceptr cudaPtr, size_t size);
+#endif
 
     /**
      * @brief Проверка поддержки interop
@@ -169,8 +216,13 @@ class CudaInterop {
     bool isInitialized() const { return initialized; }
 
   private:
+#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
     vk::Device device;
     vk::PhysicalDevice physicalDevice;
+#else
+    void* device;
+    void* physicalDevice;
+#endif
     Vulkan::ResourceManager* resourceManager = nullptr;
 
     CUcontext cudaContext = nullptr;
@@ -203,13 +255,17 @@ class CudaInterop {
 
     /**
      * @brief Проверка поддержки необходимых Vulkan расширений
-     * @return true если все необходимые расширения поддерживаются
+     * @return true если поддерживаются
      */
+#ifdef HyperEngine_ENABLE_VULKAN
     bool checkVulkanExtensionSupport();
+#else
+    bool checkVulkanExtensionSupport();
+#endif
 
     /**
-     * @brief Получение CUDA device из Vulkan физического устройства
-     * @return true если найдено совпадение
+     * @brief Поиск соответствующего CUDA device
+     * @return true если найден
      */
     bool findMatchingCudaDevice();
 
@@ -235,9 +291,7 @@ class CudaInterop {
     CudaInterop() = default;
     ~CudaInterop() = default;
 
-    bool initializeInterop(vk::Device, vk::PhysicalDevice, Vulkan::ResourceManager*) {
-        return false;
-    }
+    bool initializeInterop(void*, void*, void*) { return false; }
 
     void cleanup() {}
 

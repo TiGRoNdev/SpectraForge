@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <string>
@@ -135,4 +136,3 @@ class HardwareDetector {
 };
 
 }  // namespace HyperEngine::Vulkan
-

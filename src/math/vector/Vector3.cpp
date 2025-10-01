@@ -3,7 +3,7 @@
 #include <limits>
 #include <stdexcept>
 
-using namespace HyperEngine::Math;
+namespace HyperEngine::Math {
 
 // Операторы присваивания и арифметики
 Vector3& Vector3::operator=(const Vector3& other) {
@@ -260,8 +260,8 @@ std::istream& operator>>(std::istream& is, Vector3& vec) {
 }
 
 // Оператор для скалярного умножения слева
-namespace HyperEngine::Math {
 Vector3 operator*(float scalar, const Vector3& vec) {
     return vec * scalar;
 }
+
 }  // namespace HyperEngine::Math

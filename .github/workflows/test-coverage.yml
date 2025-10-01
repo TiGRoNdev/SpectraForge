@@ -1,0 +1,132 @@
+name: Test Coverage CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  coverage:
+    name: Code Coverage Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            llvm \
+            clang \
+            cmake \
+            ninja-build \
+            libglfw3-dev \
+            libglew-dev \
+            libglm-dev
+      
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: 'master'
+      
+      - name: Configure with coverage
+        run: |
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DENABLE_CODE_COVERAGE=ON \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
+      
+      - name: Build project
+        run: cmake --build build --parallel
+      
+      - name: Build tests
+        run: cmake --build build --target all
+      
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure --parallel 4
+      
+      - name: Collect coverage data
+        run: |
+          cd build
+          llvm-profdata merge -sparse *.profraw -o coverage.profdata
+      
+      - name: Generate coverage report
+        run: |
+          cd build
+          llvm-cov report tests/unit/simple_math_test \
+            -instr-profile=coverage.profdata \
+            --show-functions \
+            --show-instantiation-summary > coverage-report.txt
+          
+          cat coverage-report.txt
+      
+      - name: Check coverage threshold
+        run: |
+          cd build
+          COVERAGE=$(llvm-cov report tests/unit/simple_math_test \
+            -instr-profile=coverage.profdata | \
+            grep TOTAL | awk '{print $NF}' | sed 's/%//')
+          
+          echo "📊 Current coverage: ${COVERAGE}%"
+          
+          # CRITICAL: Minimum 80% coverage requirement
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ FAILED: Coverage ${COVERAGE}% is below 80% threshold"
+            echo "::error::Code coverage ${COVERAGE}% does not meet minimum requirement of 80%"
+            exit 1
+          else
+            echo "✅ PASSED: Coverage ${COVERAGE}% meets 80% threshold"
+          fi
+      
+      - name: Generate HTML coverage report
+        if: always()
+        run: |
+          cd build
+          llvm-cov show tests/unit/simple_math_test \
+            -instr-profile=coverage.profdata \
+            -format=html \
+            -output-dir=coverage-html
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: build/coverage.profdata
+          fail_ci_if_error: true
+          flags: unittests
+          name: HyperEngine-Coverage
+      
+      - name: Upload coverage HTML report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: coverage-report
+          path: build/coverage-html/
+      
+      - name: Comment PR with coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const coverageReport = fs.readFileSync('build/coverage-report.txt', 'utf8');
+            
+            const comment = `## 📊 Test Coverage Report
+            
+            ${coverageReport}
+            
+            ${coverage < 80 ? '❌ Coverage below 80% threshold - **PR BLOCKED**' : '✅ Coverage meets 80% requirement'}
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <memory>
@@ -189,4 +190,3 @@ class SceneManager {
 };
 
 }  // namespace HyperEngine::Vulkan
-

@@ -1,22 +1,22 @@
 #include "HyperEngine/Rendering/RendererAdapter.h"
-#include "HyperEngine/Rendering/Renderer3D.h"
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
 #include <iostream>
 #include <stdexcept>
+#include "HyperEngine/Core/Console.h"
+#include "HyperEngine/Core/SafeConsole.h"
+#include "HyperEngine/Rendering/Renderer3D.h"
 
 // Условная компиляция для Vulkan
 #ifdef ENGINE3D_ENABLE_VULKAN
 // #include "HyperEngine/Vulkan/VulkanEngine.h"
 // #include "HyperEngine/Vulkan/HardwareDetector.h"
-// Пока не включаем, так как Vulkan компоненты не собираются с Engine3D
+// Пока не включаем, так как Vulkan компоненты не собираются с HyperEngine
 #endif
 
 // Определение дефолтного backend на основе макросов компиляции
 #ifdef ENGINE3D_DEFAULT_BACKEND_VULKAN
-    #define DEFAULT_RENDER_BACKEND RenderBackend::VULKAN
+#define DEFAULT_RENDER_BACKEND RenderBackend::VULKAN
 #else
-    #define DEFAULT_RENDER_BACKEND RenderBackend::OPENGL
+#define DEFAULT_RENDER_BACKEND RenderBackend::OPENGL
 #endif
 
 using namespace HyperEngine::Rendering;
@@ -40,13 +40,13 @@ bool RendererAdapter::setBackend(RenderBackend backend) {
         std::cout << "[RendererAdapter] Backend уже установлен: " << getBackendName() << std::endl;
         return true;
     }
-    
+
     // Очищаем текущий адаптер
     if (currentAdapter) {
         currentAdapter->cleanup();
         currentAdapter.reset();
     }
-    
+
     // Создаем новый адаптер
     try {
         switch (backend) {
@@ -57,7 +57,7 @@ bool RendererAdapter::setBackend(RenderBackend backend) {
                 }
                 currentAdapter = createOpenGLAdapter();
                 break;
-                
+
             case RenderBackend::VULKAN:
                 if (!checkVulkanAvailability()) {
                     SAFE_ERROR("[RendererAdapter] Vulkan недоступен");
@@ -65,22 +65,23 @@ bool RendererAdapter::setBackend(RenderBackend backend) {
                 }
                 currentAdapter = createVulkanAdapter();
                 break;
-                
+
             case RenderBackend::AUTO:
                 backend = selectOptimalBackend();
                 return setBackend(backend);  // Рекурсивный вызов с конкретным backend
         }
-        
+
         if (currentAdapter) {
             currentBackend = backend;
-            std::cout << "[RendererAdapter] Переключен на backend: " << getBackendName() << std::endl;
+            std::cout << "[RendererAdapter] Переключен на backend: " << getBackendName()
+                      << std::endl;
             return true;
         }
-        
+
     } catch (const std::exception& e) {
         std::cerr << "[RendererAdapter] Ошибка создания адаптера: " << e.what() << std::endl;
     }
-    
+
     return false;
 }
 
@@ -103,28 +104,28 @@ bool RendererAdapter::isBackendAvailable(RenderBackend backend) const {
 RenderBackend RendererAdapter::selectOptimalBackend() const {
     // Сначала пробуем дефолтный backend из настроек компиляции
     RenderBackend defaultBackend = DEFAULT_RENDER_BACKEND;
-    
+
     if (defaultBackend == RenderBackend::VULKAN && checkVulkanAvailability()) {
         SAFE_PRINT_LINE("[RendererAdapter] Выбран дефолтный backend: Vulkan");
         return RenderBackend::VULKAN;
     }
-    
+
     if (defaultBackend == RenderBackend::OPENGL && checkOpenGLAvailability()) {
         SAFE_PRINT_LINE("[RendererAdapter] Выбран дефолтный backend: OpenGL");
         return RenderBackend::OPENGL;
     }
-    
+
     // Fallback: пробуем альтернативные backend'ы
     if (checkVulkanAvailability()) {
         SAFE_PRINT_LINE("[RendererAdapter] Fallback на Vulkan backend");
         return RenderBackend::VULKAN;
     }
-    
+
     if (checkOpenGLAvailability()) {
         SAFE_PRINT_LINE("[RendererAdapter] Fallback на OpenGL backend");
         return RenderBackend::OPENGL;
     }
-    
+
     throw std::runtime_error("Ни один графический API недоступен");
 }
 
@@ -150,59 +151,78 @@ bool RendererAdapter::isInitialized() const {
 }
 
 void RendererAdapter::beginFrame() {
-    if (currentAdapter) currentAdapter->beginFrame();
+    if (currentAdapter)
+        currentAdapter->beginFrame();
 }
 
 void RendererAdapter::endFrame() {
-    if (currentAdapter) currentAdapter->endFrame();
+    if (currentAdapter)
+        currentAdapter->endFrame();
 }
 
 void RendererAdapter::clear() {
-    if (currentAdapter) currentAdapter->clear();
+    if (currentAdapter)
+        currentAdapter->clear();
 }
 
 void RendererAdapter::setClearColor(float r, float g, float b, float a) {
-    if (currentAdapter) currentAdapter->setClearColor(r, g, b, a);
+    if (currentAdapter)
+        currentAdapter->setClearColor(r, g, b, a);
 }
 
 void RendererAdapter::setViewport(int x, int y, int width, int height) {
-    if (currentAdapter) currentAdapter->setViewport(x, y, width, height);
+    if (currentAdapter)
+        currentAdapter->setViewport(x, y, width, height);
 }
 
 void RendererAdapter::enableDepthTest(bool enable) {
-    if (currentAdapter) currentAdapter->enableDepthTest(enable);
+    if (currentAdapter)
+        currentAdapter->enableDepthTest(enable);
 }
 
 void RendererAdapter::enableBlending(bool enable) {
-    if (currentAdapter) currentAdapter->enableBlending(enable);
+    if (currentAdapter)
+        currentAdapter->enableBlending(enable);
 }
 
 void RendererAdapter::enableWireframe(bool enable) {
-    if (currentAdapter) currentAdapter->enableWireframe(enable);
+    if (currentAdapter)
+        currentAdapter->enableWireframe(enable);
 }
 
 void RendererAdapter::enableBackfaceCulling(bool enable) {
-    if (currentAdapter) currentAdapter->enableBackfaceCulling(enable);
+    if (currentAdapter)
+        currentAdapter->enableBackfaceCulling(enable);
 }
 
 void RendererAdapter::setMainCamera(std::shared_ptr<Camera3D> camera) {
-    if (currentAdapter) currentAdapter->setMainCamera(camera);
+    if (currentAdapter)
+        currentAdapter->setMainCamera(camera);
 }
 
 std::shared_ptr<Camera3D> RendererAdapter::getMainCamera() const {
     return currentAdapter ? currentAdapter->getMainCamera() : nullptr;
 }
 
-void RendererAdapter::renderMesh(const Mesh3D& mesh, const Matrix4& transform, const Shader3D& shader) {
-    if (currentAdapter) currentAdapter->renderMesh(mesh, transform, shader);
+void RendererAdapter::renderMesh(const Mesh3D& mesh,
+                                 const Matrix4& transform,
+                                 const Shader3D& shader) {
+    if (currentAdapter)
+        currentAdapter->renderMesh(mesh, transform, shader);
 }
 
-void RendererAdapter::renderMesh(std::shared_ptr<Mesh3D> mesh, const Matrix4& transform, std::shared_ptr<Shader3D> shader) {
-    if (currentAdapter) currentAdapter->renderMesh(mesh, transform, shader);
+void RendererAdapter::renderMesh(std::shared_ptr<Mesh3D> mesh,
+                                 const Matrix4& transform,
+                                 std::shared_ptr<Shader3D> shader) {
+    if (currentAdapter)
+        currentAdapter->renderMesh(mesh, transform, shader);
 }
 
-void RendererAdapter::renderWireframe(const Mesh3D& mesh, const Matrix4& transform, const Shader3D& shader) {
-    if (currentAdapter) currentAdapter->renderWireframe(mesh, transform, shader);
+void RendererAdapter::renderWireframe(const Mesh3D& mesh,
+                                      const Matrix4& transform,
+                                      const Shader3D& shader) {
+    if (currentAdapter)
+        currentAdapter->renderWireframe(mesh, transform, shader);
 }
 
 const char* RendererAdapter::getBackendName() const {
@@ -217,28 +237,36 @@ void RendererAdapter::printBackendInfo() const {
     SAFE_PRINT_LINE("\n=== Информация о рендерере ===");
     std::cout << "Текущий backend: " << getBackendName() << std::endl;
     std::cout << "Инициализирован: " << (isInitialized() ? "Да" : "Нет") << std::endl;
-    
+
     SAFE_PRINT_LINE("\nДоступные backend'ы:");
     for (auto backend : getAvailableBackends()) {
         const char* name = "";
         switch (backend) {
-            case RenderBackend::OPENGL: name = "OpenGL"; break;
-            case RenderBackend::VULKAN: name = "Vulkan"; break;
-            case RenderBackend::AUTO: name = "AUTO"; break;
+            case RenderBackend::OPENGL:
+                name = "OpenGL";
+                break;
+            case RenderBackend::VULKAN:
+                name = "Vulkan";
+                break;
+            case RenderBackend::AUTO:
+                name = "AUTO";
+                break;
         }
         std::cout << "  - " << name << std::endl;
     }
-    
+
     if (currentAdapter) {
         SAFE_PRINT_LINE("\nПоддерживаемые функции:");
-        std::vector<std::string> features = {
-            "ray_tracing", "gaussian_splatting", "compute_shaders", 
-            "tessellation", "geometry_shaders", "multi_draw_indirect"
-        };
-        
+        std::vector<std::string> features = {"ray_tracing",
+                                             "gaussian_splatting",
+                                             "compute_shaders",
+                                             "tessellation",
+                                             "geometry_shaders",
+                                             "multi_draw_indirect"};
+
         for (const auto& feature : features) {
-            std::cout << "  - " << feature << ": " 
-                      << (supportsFeature(feature) ? "Да" : "Нет") << std::endl;
+            std::cout << "  - " << feature << ": " << (supportsFeature(feature) ? "Да" : "Нет")
+                      << std::endl;
         }
     }
     SAFE_PRINT_LINE("==============================\n");
@@ -246,19 +274,19 @@ void RendererAdapter::printBackendInfo() const {
 
 std::vector<RenderBackend> RendererAdapter::getAvailableBackends() const {
     std::vector<RenderBackend> backends;
-    
+
     if (checkOpenGLAvailability()) {
         backends.push_back(RenderBackend::OPENGL);
     }
-    
+
     if (checkVulkanAvailability()) {
         backends.push_back(RenderBackend::VULKAN);
     }
-    
+
     if (!backends.empty()) {
         backends.push_back(RenderBackend::AUTO);
     }
-    
+
     return backends;
 }
 
@@ -294,8 +322,7 @@ bool RendererAdapter::checkVulkanAvailability() const {
 // OpenGLRendererAdapter Implementation
 // ============================================================================
 
-OpenGLRendererAdapter::OpenGLRendererAdapter() {
-}
+OpenGLRendererAdapter::OpenGLRendererAdapter() {}
 
 OpenGLRendererAdapter::~OpenGLRendererAdapter() {
     cleanup();
@@ -357,37 +384,43 @@ std::shared_ptr<Camera3D> OpenGLRendererAdapter::getMainCamera() const {
     return Renderer3D::getInstance().getMainCamera();
 }
 
-void OpenGLRendererAdapter::renderMesh(const Mesh3D& mesh, const Matrix4& transform, const Shader3D& shader) {
+void OpenGLRendererAdapter::renderMesh(const Mesh3D& mesh,
+                                       const Matrix4& transform,
+                                       const Shader3D& shader) {
     Renderer3D::getInstance().renderMesh(mesh, transform, shader);
 }
 
-void OpenGLRendererAdapter::renderMesh(std::shared_ptr<Mesh3D> mesh, const Matrix4& transform, std::shared_ptr<Shader3D> shader) {
+void OpenGLRendererAdapter::renderMesh(std::shared_ptr<Mesh3D> mesh,
+                                       const Matrix4& transform,
+                                       std::shared_ptr<Shader3D> shader) {
     Renderer3D::getInstance().renderMesh(mesh, transform, shader);
 }
 
-void OpenGLRendererAdapter::renderWireframe(const Mesh3D& mesh, const Matrix4& transform, const Shader3D& shader) {
+void OpenGLRendererAdapter::renderWireframe(const Mesh3D& mesh,
+                                            const Matrix4& transform,
+                                            const Shader3D& shader) {
     Renderer3D::getInstance().renderWireframe(mesh, transform, shader);
 }
 
 bool OpenGLRendererAdapter::supportsFeature(const std::string& feature) const {
     // OpenGL поддерживает базовые функции
-    if (feature == "basic_rendering" || feature == "wireframe" || 
-        feature == "depth_test" || feature == "blending") {
+    if (feature == "basic_rendering" || feature == "wireframe" || feature == "depth_test"
+        || feature == "blending") {
         return true;
     }
-    
+
     // Продвинутые функции не поддерживаются в базовой OpenGL реализации
-    if (feature == "ray_tracing" || feature == "gaussian_splatting" || 
-        feature == "ai_denoising" || feature == "dlss" || feature == "fsr") {
+    if (feature == "ray_tracing" || feature == "gaussian_splatting" || feature == "ai_denoising"
+        || feature == "dlss" || feature == "fsr") {
         return false;
     }
-    
+
     // Некоторые функции могут поддерживаться в зависимости от расширений
-    if (feature == "compute_shaders" || feature == "tessellation" || 
-        feature == "geometry_shaders") {
+    if (feature == "compute_shaders" || feature == "tessellation"
+        || feature == "geometry_shaders") {
         return false;  // Пока не реализовано
     }
-    
+
     return false;
 }
 
@@ -395,9 +428,7 @@ bool OpenGLRendererAdapter::supportsFeature(const std::string& feature) const {
 // VulkanRendererAdapter Implementation
 // ============================================================================
 
-VulkanRendererAdapter::VulkanRendererAdapter() 
-    : vulkanEngine(nullptr) {
-}
+VulkanRendererAdapter::VulkanRendererAdapter() : vulkanEngine(nullptr) {}
 
 VulkanRendererAdapter::~VulkanRendererAdapter() {
     cleanup();
@@ -409,21 +440,21 @@ bool VulkanRendererAdapter::initialize(int width, int height) {
         // TODO: Создание и инициализация VulkanEngine
         // vulkanEngine = new HyperEngine::Vulkan::VulkanEngine();
         // return vulkanEngine->init(instance);
-        
+
         // Пока заглушка
         settings.viewport[2] = width;
         settings.viewport[3] = height;
-        
+
         // Создаем камеру по умолчанию
         mainCamera = std::make_shared<Camera3D>();
         mainCamera->setPerspective(60.0f, (float)width / height, 0.1f, 1000.0f);
         mainCamera->setPosition(Vector3(0, 0, 5));
         mainCamera->lookAt(Vector3(0, 0, 5), Vector3(0, 0, 0), Vector3(0, 1, 0));
-        
+
         initialized = true;
         SAFE_PRINT_LINE("[VulkanRendererAdapter] Инициализация завершена (заглушка)");
         return true;
-        
+
     } catch (const std::exception& e) {
         std::cerr << "[VulkanRendererAdapter] Ошибка инициализации: " << e.what() << std::endl;
         return false;
@@ -451,22 +482,25 @@ bool VulkanRendererAdapter::isInitialized() const {
 }
 
 void VulkanRendererAdapter::beginFrame() {
-    if (!initialized) return;
-    
+    if (!initialized)
+        return;
+
     // TODO: Вызов vulkanEngine->beginFrame()
     SAFE_PRINT_LINE("[VulkanRendererAdapter] Begin frame (заглушка)");
 }
 
 void VulkanRendererAdapter::endFrame() {
-    if (!initialized) return;
-    
+    if (!initialized)
+        return;
+
     // TODO: Вызов vulkanEngine->endFrame()
     SAFE_PRINT_LINE("[VulkanRendererAdapter] End frame (заглушка)");
 }
 
 void VulkanRendererAdapter::clear() {
-    if (!initialized) return;
-    
+    if (!initialized)
+        return;
+
     // TODO: Очистка Vulkan framebuffer
     SAFE_PRINT_LINE("[VulkanRendererAdapter] Clear (заглушка)");
 }
@@ -512,49 +546,55 @@ std::shared_ptr<Camera3D> VulkanRendererAdapter::getMainCamera() const {
     return mainCamera;
 }
 
-void VulkanRendererAdapter::renderMesh(const Mesh3D& mesh, const Matrix4& transform, const Shader3D& shader) {
-    if (!initialized) return;
-    
+void VulkanRendererAdapter::renderMesh(const Mesh3D& mesh,
+                                       const Matrix4& transform,
+                                       const Shader3D& shader) {
+    if (!initialized)
+        return;
+
     // TODO: Рендеринг через Vulkan
-    std::cout << "[VulkanRendererAdapter] Render mesh with " << mesh.getTriangleCount() 
+    std::cout << "[VulkanRendererAdapter] Render mesh with " << mesh.getTriangleCount()
               << " triangles (заглушка)" << std::endl;
 }
 
-void VulkanRendererAdapter::renderMesh(std::shared_ptr<Mesh3D> mesh, const Matrix4& transform, std::shared_ptr<Shader3D> shader) {
+void VulkanRendererAdapter::renderMesh(std::shared_ptr<Mesh3D> mesh,
+                                       const Matrix4& transform,
+                                       std::shared_ptr<Shader3D> shader) {
     if (mesh && shader) {
         renderMesh(*mesh, transform, *shader);
     }
 }
 
-void VulkanRendererAdapter::renderWireframe(const Mesh3D& mesh, const Matrix4& transform, const Shader3D& shader) {
-    if (!initialized) return;
-    
+void VulkanRendererAdapter::renderWireframe(const Mesh3D& mesh,
+                                            const Matrix4& transform,
+                                            const Shader3D& shader) {
+    if (!initialized)
+        return;
+
     bool wasWireframe = settings.wireframe;
     settings.wireframe = true;
-    
+
     renderMesh(mesh, transform, shader);
-    
+
     settings.wireframe = wasWireframe;
 }
 
 bool VulkanRendererAdapter::supportsFeature(const std::string& feature) const {
     // Vulkan поддерживает все современные функции
-    if (feature == "basic_rendering" || feature == "wireframe" || 
-        feature == "depth_test" || feature == "blending" ||
-        feature == "compute_shaders" || feature == "tessellation" || 
-        feature == "geometry_shaders" || feature == "multi_draw_indirect") {
+    if (feature == "basic_rendering" || feature == "wireframe" || feature == "depth_test"
+        || feature == "blending" || feature == "compute_shaders" || feature == "tessellation"
+        || feature == "geometry_shaders" || feature == "multi_draw_indirect") {
         return true;
     }
-    
+
     // Продвинутые функции (будут реализованы в следующих этапах)
-    if (feature == "ray_tracing" || feature == "gaussian_splatting" || 
-        feature == "ai_denoising" || feature == "dlss" || feature == "fsr") {
+    if (feature == "ray_tracing" || feature == "gaussian_splatting" || feature == "ai_denoising"
+        || feature == "dlss" || feature == "fsr") {
         return true;  // Планируется поддержка
     }
-    
+
     return false;
 }
 
-} // namespace Rendering
-} // namespace HyperEngine
-
+}  // namespace Rendering
+}  // namespace HyperEngine

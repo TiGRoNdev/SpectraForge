@@ -11,7 +11,7 @@ mkdir -p build/coverage
 
 # Всегда используем альтернативный метод в Windows/bash окружении
 if true; then
-    echo "⚠️ gcov не найден или vcpkg недоступен. Используем альтернативный метод анализа."
+    echo "⚠️ gcov не найден. Используем альтернативный метод анализа."
     
     # Альтернативный метод - анализ исходного кода
     echo "📈 Анализ покрытия на основе исходного кода..."
@@ -119,7 +119,7 @@ gcov -r $(find . -name "*.gcno")
 if command -v lcov &> /dev/null; then
     lcov --capture --directory . --output-file coverage.info
     lcov --remove coverage.info '/usr/*' --output-file coverage.info
-    lcov --remove coverage.info '*/vcpkg_installed/*' --output-file coverage.info
+    lcov --remove coverage.info '*/build/*' --output-file coverage.info
     
     if command -v genhtml &> /dev/null; then
         genhtml coverage.info --output-directory coverage_html

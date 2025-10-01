@@ -2,10 +2,6 @@
 ---
 Language: Cpp
 BasedOnStyle: Google
-IndentWidth: 4
-TabWidth: 4
-UseTab: Never
-ColumnLimit: 100
 
 # Основные настройки
 AccessModifierOffset: -2
@@ -46,7 +42,7 @@ BreakStringLiterals: true
 ColumnLimit: 100
 
 # Комментарии
-CommentPragmas: '^ IWYU pragma:'
+CommentPragmas: "^ IWYU pragma:"
 
 # Конструкторы
 CompactNamespaces: false
@@ -73,9 +69,9 @@ IncludeCategories:
     Priority: 2
   - Regex: '^<.*\.h>'
     Priority: 1
-  - Regex: '^<.*'
+  - Regex: "^<.*"
     Priority: 2
-  - Regex: '.*'
+  - Regex: ".*"
     Priority: 3
 
 # Отступы
@@ -92,8 +88,8 @@ JavaScriptWrapImports: true
 KeepEmptyLinesAtTheStartOfBlocks: false
 
 # Макросы
-MacroBlockBegin: ''
-MacroBlockEnd: ''
+MacroBlockBegin: ""
+MacroBlockEnd: ""
 MaxEmptyLinesToKeep: 1
 
 # Namespace

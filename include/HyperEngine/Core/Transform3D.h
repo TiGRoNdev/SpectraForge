@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <vector>
@@ -16,7 +17,7 @@ namespace Core {
 class Transform3D : public UpdatableComponent, public ITransformable {
   public:
     Transform3D();
-    virtual ~Transform3D();
+    ~Transform3D() override;
 
     // Интерфейс Component
     std::string getComponentType() const override { return "Transform3D"; }
@@ -43,7 +44,7 @@ class Transform3D : public UpdatableComponent, public ITransformable {
     // Операции трансформации
     void translate(const Math::Vector3& translation);
     void rotate(const Math::Quaternion& rotation);
-    void scaleBy(const Math::Vector3& scale);
+    void scaleBy(const Math::Vector3& scl);
 
     // Геттеры мировых координат
     Math::Vector3 getWorldPosition() const;

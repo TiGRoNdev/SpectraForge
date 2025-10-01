@@ -449,4 +449,3 @@ TEST_F(CudaVulkanInteropTest, CudaSupportDisabled) {
 }
 
 #endif  // VULKAN_RENDERER_CUDA_SUPPORT
-

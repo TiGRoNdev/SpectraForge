@@ -1,0 +1,139 @@
+---
+description: HyperEngine architecture scheme - Vulkan/CUDA/OptiX rendering pipeline with strict guidelines
+globs: ["**/*.cpp", "**/*.h", "**/*.hpp"]
+alwaysApply: true
+priority: 850
+---
+
+# Engine Architecture Scheme for HyperEngine
+
+@context {
+  "type": "architecture_guidelines",
+  "purpose": "Define class relationships, dependencies, and rendering pipeline for Vulkan-based hybrid 3D/4D rendering engine",
+  "format_version": "2.0",
+  "priority": 850,
+  "applies_to": "All engine core files and architecture documentation",
+  "supported_technologies": ["Vulkan", "CUDA", "OptiX", "DLSS", "FSR"],
+  "ai_model": "Claude 4.5 Sonnet"
+}
+
+> **CLAUDE DIRECTIVE**: ALWAYS refer to UML diagrams and rendering pipeline steps when modifying engine architecture.
+
+## 1. Core Architecture Overview
+Always refer to the UML diagram for design and refactoring. This encapsulates class relationships and flow.
+
+@architecture_rules [
+  {
+    "id": "uml_reference",
+    "rule": "Always refer to the UML diagram when designing architecture or refactoring code.",
+    "severity": "high"
+  },
+  {
+    "id": "modular_setup",
+    "rule": "Use modular setup for runtime adaptation to hardware (e.g., DLSS for NVIDIA, FSR for others).",
+    "severity": "high"
+  }
+]
+
+- The Engine class coordinates subsystems like Renderer, SceneManager, ResourceManager, and HardwareDetector.
+
+## 2. Rendering Pipeline
+Details the core pipeline steps.
+
+@rendering_rules [
+  {
+    "id": "primary_rasterization",
+    "rule": "Use FlashGSSplatter for primary rasterization with CUDA acceleration.",
+    "severity": "high",
+    "example": "rasterizeGaussians(CameraParams params)"
+  },
+  {
+    "id": "secondary_ray_tracing",
+    "rule": "Employ OptiXRayTracer for secondary effects like reflections.",
+    "severity": "high",
+    "example": "traceRays(LaunchParams params)"
+  },
+  {
+    "id": "denoising",
+    "rule": "Apply AI denoising with OptixDenoiser.",
+    "severity": "medium"
+  },
+  {
+    "id": "upscaling",
+    "rule": "Use abstract Upscaler class for DLSS or FSR based on hardware.",
+    "severity": "high"
+  }
+]
+
+- Optimize for real-time performance in complex scenes.
+
+## 3. Scene and Resource Management
+Guidelines for loading and allocation.
+
+@management_rules [
+  {
+    "id": "scene_loading",
+    "rule": "Load scenes via SceneManager providing Gaussians for splatting.",
+    "severity": "medium"
+  },
+  {
+    "id": "resource_allocation",
+    "rule": "Use ResourceManager for Vulkan-CUDA interop and memory allocation.",
+    "severity": "high"
+  }
+]
+
+## 4. Hardware Detection
+Rules for vendor-specific paths.
+
+@hardware_rules [
+  {
+    "id": "vendor_detection",
+    "rule": "Detect vendor and features like ray tracing support.",
+    "severity": "high"
+  }
+]
+
+## 5. Tables for Quick Reference
+
+### Rendering Frame Steps
+| Step | Component Involved | Action | Dependencies | Performance Notes |
+|------|--------------------|--------|--------------|-------------------|
+| 1 | Engine, HardwareDetector | Detect vendor and init paths | VkPhysicalDeviceProperties | Ensures compatibility |
+| 2 | SceneManager, ResourceManager | Load data, allocate buffers | MultiViewImages, VkBuffer | Prepares Gaussians |
+| 3 | Renderer, FlashGSSplatter | Optimize and rasterize Gaussians | cudaStream_t | 4x speedup |
+| 4 | Renderer, OptiXRayTracer | Build AS, trace rays | OptixPipeline | Handles reflections |
+| 5 | Renderer, DenoiseModule | Apply AI denoiser | OptixDenoiser | Reduces samples |
+| 6 | Renderer, Upscaler | Super resolution | Streamline/FidelityFX | 2-8x FPS boost |
+| 7 | Renderer | Present via swapchain | VkSwapchainKHR | Final output |
+
+### Upscaling Paths Comparison
+| Upscaler | Integration | API | Vendor Support | Benefits | Limitations |
+|----------|-------------|-----|----------------|----------|-------------|
+| DLSS | Streamline plugins | Framework | NVIDIA RTX | Up to 8x FPS | NVIDIA-only |
+| FSR | FidelityFX dispatch | C++ HLSL | Broad | 2x FPS | Lower quality on non-AMD |
+
+## 6. Best Practices and Enforcement
+
+- Use Vulkan-Hpp for safe API calls
+- Implement with CMake, CUDA Toolkit, OptiX SDK
+- Prioritize energy efficiency with GPU-driven rendering
+- Enforce via code reviews and Cursor AI
+
+## 7. MCP Integration for Architecture
+
+@mcp_architecture [
+  {
+    "id": "architecture_research",
+    "mcp_tool": "mcp_perplexity-ask_perplexity_research",
+    "when": "Researching Vulkan/CUDA/OptiX best practices"
+  },
+  {
+    "id": "library_docs",
+    "mcp_tools": ["mcp_context7_resolve-library-id", "mcp_context7_get-library-docs"],
+    "when": "Need Vulkan, OptiX, or CUDA documentation"
+  }
+]
+
+---
+**Version**: 2.0 | **Optimized for**: Claude 4.5 Sonnet

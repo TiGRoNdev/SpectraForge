@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <memory>
@@ -95,4 +96,3 @@ class Mesh3D {
 
 }  // namespace Rendering
 }  // namespace HyperEngine
-

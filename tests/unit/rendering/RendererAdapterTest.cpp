@@ -17,8 +17,8 @@ class RendererAdapterTest : public HyperEngineTest {
     void SetUp() override {
         HyperEngineTest::SetUp();
 
-        // Создаем адаптер
-        adapter = std::make_unique<RendererAdapter>();
+        // Получаем ссылку на Singleton
+        adapter = &RendererAdapter::getInstance();
 
         // Создаем mock объекты
         mockOpenGL = MockFactory::createBasicRenderer();
@@ -33,7 +33,7 @@ class RendererAdapterTest : public HyperEngineTest {
         HyperEngineTest::TearDown();
     }
 
-    std::unique_ptr<RendererAdapter> adapter;
+    RendererAdapter* adapter;
     std::unique_ptr<MockRendererAdapter> mockOpenGL;
     std::unique_ptr<MockRendererAdapter> mockVulkan;
     std::unique_ptr<MockRendererAdapter> mockFailingRenderer;
@@ -43,7 +43,8 @@ class RendererAdapterTest : public HyperEngineTest {
 TEST_F(RendererAdapterTest, DefaultInitialization) {
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
-            bool result = adapter->initialize(RenderBackend::AUTO, 1920, 1080);
+            adapter->setBackend(RenderBackend::AUTO);
+            bool result = adapter->initialize(1920, 1080);
             EXPECT_TRUE(result);
         },
         "Инициализация с AUTO backend");
@@ -52,7 +53,8 @@ TEST_F(RendererAdapterTest, DefaultInitialization) {
 TEST_F(RendererAdapterTest, OpenGLInitialization) {
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
-            bool result = adapter->initialize(RenderBackend::OPENGL, 1920, 1080);
+            adapter->setBackend(RenderBackend::OPENGL);
+            bool result = adapter->initialize(1920, 1080);
             EXPECT_TRUE(result);
             EXPECT_EQ(adapter->getCurrentBackend(), RenderBackend::OPENGL);
         },
@@ -64,7 +66,8 @@ TEST_F(RendererAdapterTest, VulkanInitialization) {
     if (adapter->isBackendAvailable(RenderBackend::VULKAN)) {
         EXPECT_NO_THROW_WITH_MESSAGE(
             {
-                bool result = adapter->initialize(RenderBackend::VULKAN, 1920, 1080);
+                bool result = adapter->setBackend(RenderBackend::VULKAN);
+                adapter->initialize(1920, 1080);
                 EXPECT_TRUE(result);
                 EXPECT_EQ(adapter->getCurrentBackend(), RenderBackend::VULKAN);
             },
@@ -79,7 +82,8 @@ TEST_F(RendererAdapterTest, FailedInitialization) {
     EXPECT_FALSE(adapter->isInitialized());
 
     // Попытка инициализации с недопустимыми параметрами
-    bool result = adapter->initialize(RenderBackend::OPENGL, 0, 0);
+    bool result = adapter->setBackend(RenderBackend::OPENGL);
+    adapter->initialize(0, 0);
     EXPECT_FALSE(result);
     EXPECT_FALSE(adapter->isInitialized());
 }
@@ -87,14 +91,16 @@ TEST_F(RendererAdapterTest, FailedInitialization) {
 // Тесты переключения backend'ов
 TEST_F(RendererAdapterTest, BackendSwitching) {
     // Инициализируем с OpenGL
-    ASSERT_TRUE(adapter->initialize(RenderBackend::OPENGL, 1920, 1080));
+    ASSERT_TRUE(adapter->setBackend(RenderBackend::OPENGL));
+    ASSERT_TRUE(adapter->initialize(1920, 1080));
     EXPECT_EQ(adapter->getCurrentBackend(), RenderBackend::OPENGL);
 
     // Переключаемся на Vulkan (если доступен)
     if (adapter->isBackendAvailable(RenderBackend::VULKAN)) {
         EXPECT_NO_THROW_WITH_MESSAGE(
             {
-                bool result = adapter->switchBackend(RenderBackend::VULKAN);
+                adapter->setBackend(RenderBackend::VULKAN);
+                bool result = adapter->initialize(1920, 1080);
                 EXPECT_TRUE(result);
                 EXPECT_EQ(adapter->getCurrentBackend(), RenderBackend::VULKAN);
             },
@@ -116,7 +122,9 @@ TEST_F(RendererAdapterTest, BackendAvailability) {
 
 // Тесты рендеринга
 TEST_F(RendererAdapterTest, BasicRenderingOperations) {
-    ASSERT_TRUE(adapter->initialize(RenderBackend::OPENGL, 800, 600));
+    ASSERT_TRUE(adapter->setBackend(RenderBackend::OPENGL));
+
+    adapter->initialize(800, 600);
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
@@ -128,7 +136,9 @@ TEST_F(RendererAdapterTest, BasicRenderingOperations) {
 }
 
 TEST_F(RendererAdapterTest, RenderingSettings) {
-    ASSERT_TRUE(adapter->initialize(RenderBackend::OPENGL, 800, 600));
+    ASSERT_TRUE(adapter->setBackend(RenderBackend::OPENGL));
+
+    adapter->initialize(800, 600);
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
@@ -144,7 +154,9 @@ TEST_F(RendererAdapterTest, RenderingSettings) {
 
 // Тесты работы с камерой
 TEST_F(RendererAdapterTest, CameraManagement) {
-    ASSERT_TRUE(adapter->initialize(RenderBackend::OPENGL, 800, 600));
+    ASSERT_TRUE(adapter->setBackend(RenderBackend::OPENGL));
+
+    adapter->initialize(800, 600);
 
     // Создаем тестовую камеру
     auto camera = std::make_shared<Camera3D>();
@@ -164,7 +176,9 @@ TEST_F(RendererAdapterTest, CameraManagement) {
 
 // Тесты рендеринга мешей
 TEST_F(RendererAdapterTest, MeshRendering) {
-    ASSERT_TRUE(adapter->initialize(RenderBackend::OPENGL, 800, 600));
+    ASSERT_TRUE(adapter->setBackend(RenderBackend::OPENGL));
+
+    adapter->initialize(800, 600);
 
     // Создаем тестовые объекты
     Mesh3D testMesh;
@@ -181,7 +195,9 @@ TEST_F(RendererAdapterTest, MeshRendering) {
 }
 
 TEST_F(RendererAdapterTest, WireframeRendering) {
-    ASSERT_TRUE(adapter->initialize(RenderBackend::OPENGL, 800, 600));
+    ASSERT_TRUE(adapter->setBackend(RenderBackend::OPENGL));
+
+    adapter->initialize(800, 600);
 
     Mesh3D testMesh;
     Shader3D testShader;
@@ -200,7 +216,9 @@ TEST_F(RendererAdapterTest, WireframeRendering) {
 
 // Тесты производительности
 TEST_F(RendererAdapterTest, RenderingPerformance) {
-    ASSERT_TRUE(adapter->initialize(RenderBackend::OPENGL, 800, 600));
+    ASSERT_TRUE(adapter->setBackend(RenderBackend::OPENGL));
+
+    adapter->initialize(800, 600);
 
     const int frameCount = 100;
 
@@ -218,13 +236,15 @@ TEST_F(RendererAdapterTest, RenderingPerformance) {
 // Тесты множественных инициализаций
 TEST_F(RendererAdapterTest, MultipleInitializations) {
     // Первая инициализация
-    EXPECT_TRUE(adapter->initialize(RenderBackend::OPENGL, 800, 600));
+    EXPECT_TRUE(adapter->setBackend(RenderBackend::OPENGL));
+    EXPECT_TRUE(adapter->initialize(800, 600));
     EXPECT_TRUE(adapter->isInitialized());
 
     // Вторая инициализация должна работать (переинициализация)
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
-            bool result = adapter->initialize(RenderBackend::OPENGL, 1920, 1080);
+            bool result = adapter->setBackend(RenderBackend::OPENGL);
+            adapter->initialize(1920, 1080);
             EXPECT_TRUE(result);
             EXPECT_TRUE(adapter->isInitialized());
         },
@@ -233,7 +253,9 @@ TEST_F(RendererAdapterTest, MultipleInitializations) {
 
 // Тесты очистки ресурсов
 TEST_F(RendererAdapterTest, ProperCleanup) {
-    ASSERT_TRUE(adapter->initialize(RenderBackend::OPENGL, 800, 600));
+    ASSERT_TRUE(adapter->setBackend(RenderBackend::OPENGL));
+
+    adapter->initialize(800, 600);
     EXPECT_TRUE(adapter->isInitialized());
 
     EXPECT_NO_THROW_WITH_MESSAGE(
@@ -251,7 +273,9 @@ TEST_F(RendererAdapterTest, CleanupWithoutInitialization) {
 
 // Тесты информационных методов
 TEST_F(RendererAdapterTest, BackendInformation) {
-    ASSERT_TRUE(adapter->initialize(RenderBackend::OPENGL, 800, 600));
+    ASSERT_TRUE(adapter->setBackend(RenderBackend::OPENGL));
+
+    adapter->initialize(800, 600);
 
     EXPECT_NE(adapter->getBackendName(), nullptr);
     EXPECT_NE(std::string(adapter->getBackendName()), "");
@@ -264,7 +288,8 @@ TEST_F(RendererAdapterTest, BackendInformation) {
 TEST_F(RendererAdapterTest, AutoBackendSelection) {
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
-            bool result = adapter->initialize(RenderBackend::AUTO, 1920, 1080);
+            bool result = adapter->setBackend(RenderBackend::AUTO);
+            adapter->initialize(1920, 1080);
             EXPECT_TRUE(result);
 
             // AUTO должен выбрать один из доступных backend'ов
@@ -286,7 +311,8 @@ TEST_P(RendererAdapterResolutionTest, DifferentResolutions) {
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
-            bool result = adapter->initialize(RenderBackend::OPENGL, width, height);
+            adapter->setBackend(RenderBackend::OPENGL);
+            bool result = adapter->initialize(width, height);
             EXPECT_TRUE(result);
 
             adapter->setViewport(0, 0, width, height);
@@ -306,4 +332,3 @@ INSTANTIATE_TEST_SUITE_P(ResolutionTests,
                                            std::make_pair(1920, 1080),
                                            std::make_pair(2560, 1440),
                                            std::make_pair(3840, 2160)));
-

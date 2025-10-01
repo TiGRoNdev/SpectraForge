@@ -1,6 +1,31 @@
 #pragma once
 #include <gmock/gmock.h>
+
+// Условная компиляция для Vulkan
+#ifdef HyperEngine_ENABLE_VULKAN
 #include "HyperEngine/Vulkan/VulkanRenderer.h"
+using namespace HyperEngine::Vulkan;
+#else
+// Заглушки для случая без Vulkan
+namespace HyperEngine::Vulkan {
+struct Gaussians {
+    uint32_t count = 0;
+};
+struct PrimaryImage {
+    uint32_t width = 0;
+    uint32_t height = 0;
+};
+struct RawEffects {};
+struct DenoisedImage {};
+struct ResolutionTarget {
+    uint32_t width = 0;
+    uint32_t height = 0;
+    float scaleFactor = 1.0f;
+};
+struct FinalImage {};
+class ResourceManager {};
+}  // namespace HyperEngine::Vulkan
+#endif
 
 namespace HyperEngine::Testing::Mocks {
 
@@ -15,7 +40,11 @@ using namespace HyperEngine::Vulkan;
 class MockVulkanRenderer {
   public:
     // Основные методы жизненного цикла
+#ifdef HyperEngine_ENABLE_VULKAN
     MOCK_METHOD(bool, init, (vk::Device device, ResourceManager* resourceManager), ());
+#else
+    MOCK_METHOD(bool, init, (void* device, ResourceManager* resourceManager), ());
+#endif
     MOCK_METHOD(void, shutdown, (), ());
     MOCK_METHOD(bool, isInitialized, (), (const));
 
@@ -35,10 +64,8 @@ class MockVulkanRenderer {
  */
 class MockResourceManager {
   public:
+#ifdef HyperEngine_ENABLE_VULKAN
     MOCK_METHOD(bool, initialize, (vk::Device device, vk::PhysicalDevice physicalDevice), ());
-    MOCK_METHOD(void, cleanup, (), ());
-
-    // Управление буферами
     MOCK_METHOD(vk::Buffer,
                 createBuffer,
                 (vk::DeviceSize size,
@@ -46,19 +73,25 @@ class MockResourceManager {
                  vk::MemoryPropertyFlags properties),
                 ());
     MOCK_METHOD(void, destroyBuffer, (vk::Buffer buffer, vk::DeviceMemory memory), ());
-
-    // Управление изображениями
     MOCK_METHOD(vk::Image,
                 createImage,
                 (uint32_t width, uint32_t height, vk::Format format, vk::ImageUsageFlags usage),
                 ());
     MOCK_METHOD(void, destroyImage, (vk::Image image, vk::DeviceMemory memory), ());
-
-    // Интероперабельность CUDA-Vulkan
     MOCK_METHOD(void*, mapCudaMemory, (vk::DeviceMemory memory), ());
+#else
+    MOCK_METHOD(bool, initialize, (void* device, void* physicalDevice), ());
+    MOCK_METHOD(void*, createBuffer, (size_t size, uint32_t usage, uint32_t properties), ());
+    MOCK_METHOD(void, destroyBuffer, (void* buffer, void* memory), ());
+    MOCK_METHOD(void*,
+                createImage,
+                (uint32_t width, uint32_t height, uint32_t format, uint32_t usage),
+                ());
+    MOCK_METHOD(void, destroyImage, (void* image, void* memory), ());
+    MOCK_METHOD(void*, mapCudaMemory, (void* memory), ());
+#endif
+    MOCK_METHOD(void, cleanup, (), ());
     MOCK_METHOD(void, unmapCudaMemory, (void* cudaPtr), ());
-
-    // Статистика
     MOCK_METHOD(size_t, getAllocatedMemory, (), (const));
     MOCK_METHOD(size_t, getAvailableMemory, (), (const));
 };
@@ -259,4 +292,3 @@ class VulkanMockFactory {
 };
 
 }  // namespace HyperEngine::Testing::Mocks
-

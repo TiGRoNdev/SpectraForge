@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <functional>
@@ -419,4 +420,3 @@ class NeuralUpscaler {
 
 }  // namespace Rendering
 }  // namespace HyperEngine
-

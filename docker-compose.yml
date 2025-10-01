@@ -1,12 +1,78 @@
 version: '3.8'
 
 services:
-  engine4d:
-    build: .
-    container_name: engine4d-demo
+  # CI/CD runner service - for running quality checks and tests
+  ci-runner:
+    build:
+      context: .
+      target: ci-runner
+      args:
+        CPPCHECK_VERSION: "2.13.0"
+    image: hyperengine-ci:latest
+    container_name: hyperengine-ci
+    volumes:
+      - .:/workspace
+      - ccache:/ccache
+    working_dir: /workspace
+    environment:
+      - CCACHE_DIR=/ccache
+      - PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig
+    command: /bin/bash
+    tty: true
+    stdin_open: true
+
+  # Builder service - for compilation and building
+  builder:
+    build:
+      context: .
+      target: builder
+    image: hyperengine-builder:latest
+    container_name: hyperengine-builder
+    volumes:
+      - .:/workspace
+      - build-output:/workspace/build
+      - ccache:/ccache
+    working_dir: /workspace
+    environment:
+      - CCACHE_DIR=/ccache
+      - PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig
+
+  # Development environment - for interactive development
+  dev:
+    build:
+      context: .
+      target: development
+    image: hyperengine-dev:latest
+    container_name: hyperengine-dev
+    volumes:
+      - .:/workspace
+      - ccache:/ccache
+    working_dir: /workspace
+    environment:
+      - CCACHE_DIR=/ccache
+      - PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig
+    command: /bin/bash
+    tty: true
+    stdin_open: true
+
+  # Demo service - for running demos with GUI
+  demo:
+    build:
+      context: .
+      target: builder
+    image: hyperengine-demo:latest
+    container_name: hyperengine-demo
     environment:
       - DISPLAY=${DISPLAY}
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - .:/workspace
     network_mode: host
-    command: ["./build/Engine4D_Demo"]
+    working_dir: /workspace/build
+    command: ["./HyperEngine_Demo"]
+
+volumes:
+  ccache:
+    driver: local
+  build-output:
+    driver: local

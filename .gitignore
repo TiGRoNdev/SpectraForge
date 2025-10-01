@@ -186,3 +186,4 @@ config.ini
 # Refactoring temporary files
 docs/refactoring/temp/
 *.refactor.bak
+.cursor/mcp.json

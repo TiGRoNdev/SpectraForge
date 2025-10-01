@@ -1,3 +1,4 @@
+
 #pragma once
 
 #ifdef VULKAN_RENDERER_OPTIX_SUPPORT

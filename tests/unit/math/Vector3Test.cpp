@@ -274,4 +274,3 @@ TEST_F(Vector3Test, SmallValues) {
     Vector3 normalized = small.normalized();
     EXPECT_NORMALIZED(normalized);
 }
-

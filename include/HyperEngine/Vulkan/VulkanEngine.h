@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <glm/glm.hpp>
@@ -138,4 +139,3 @@ class VulkanEngine {
 };
 
 }  // namespace HyperEngine::Vulkan
-

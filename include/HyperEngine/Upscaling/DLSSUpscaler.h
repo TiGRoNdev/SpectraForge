@@ -1,3 +1,4 @@
+
 #pragma once
 
 #ifdef VULKAN_RENDERER_DLSS_SUPPORT
@@ -206,4 +207,3 @@ class DLSSUpscaler : public Upscaler {
 }  // namespace HyperEngine::Upscaling
 
 #endif  // VULKAN_RENDERER_DLSS_SUPPORT
-

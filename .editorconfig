@@ -1,0 +1,56 @@
+# EditorConfig для HyperEngine
+# https://editorconfig.org/
+
+root = true
+
+# Настройки по умолчанию для всех файлов
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Настройки для C++ файлов
+[*.{cpp,h,hpp,c,cc,cxx}]
+indent_style = space
+indent_size = 4
+max_line_length = 100
+
+# Настройки для CUDA файлов
+[*.{cu,cuh}]
+indent_style = space
+indent_size = 4
+max_line_length = 100
+
+# Настройки для CMake файлов
+[{CMakeLists.txt,*.cmake}]
+indent_style = space
+indent_size = 2
+
+# Настройки для YAML файлов
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Настройки для JSON файлов
+[*.json]
+indent_style = space
+indent_size = 2
+
+# Настройки для Markdown файлов
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = 80
+
+# Настройки для batch файлов
+[*.bat]
+end_of_line = crlf
+
+# Настройки для shell скриптов
+[*.sh]
+end_of_line = lf
+
+# Настройки для GLSL шейдеров
+[*.{glsl,vert,frag,geom,comp}]
+indent_style = space
+indent_size = 2

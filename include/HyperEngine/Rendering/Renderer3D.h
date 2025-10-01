@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <memory>
@@ -107,8 +108,8 @@ class Renderer3D {
 
   protected:
     // Singleton
-    Renderer3D() = default;
-    ~Renderer3D() = default;
+    Renderer3D();
+    ~Renderer3D();
     Renderer3D(const Renderer3D&) = delete;
     Renderer3D& operator=(const Renderer3D&) = delete;
 
@@ -142,4 +143,3 @@ class Renderer3D {
 
 }  // namespace Rendering
 }  // namespace HyperEngine
-

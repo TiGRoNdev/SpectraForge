@@ -249,4 +249,3 @@ TEST(OptiXStubTest, OptiXNotSupported) {
 }
 
 #endif  // VULKAN_RENDERER_OPTIX_SUPPORT
-

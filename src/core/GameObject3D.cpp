@@ -1,7 +1,7 @@
 #include "HyperEngine/Core/GameObject3D.h"
-#include "HyperEngine/Core/Component.h"
 #include <algorithm>
 #include <iostream>
+#include "HyperEngine/Core/Component.h"
 
 using namespace HyperEngine::Core;
 using namespace HyperEngine::Math;
@@ -14,16 +14,11 @@ std::vector<GameObject3D*> GameObject3D::allObjects;
 
 // Конструкторы и деструкторы
 GameObject3D::GameObject3D(const std::string& name)
-    : name(name)
-    , tag("")
-    , active(true)
-    , staticObject(false)
-    , started(false) {
-    
+    : name(name), tag(""), active(true), staticObject(false), started(false) {
     // Создаем компонент трансформации
     transform = std::make_shared<Transform3D>();
     transform->setGameObject(this);
-    
+
     // Добавляем объект в реестр
     addToAllObjects();
 }
@@ -35,11 +30,12 @@ GameObject3D::~GameObject3D() {
 
 // Реализация ILifecycle
 void GameObject3D::start() {
-    if (started) return;
-    
+    if (started)
+        return;
+
     started = true;
     transform->start();
-    
+
     for (auto& component : components) {
         if (component && component->isEnabled()) {
             component->start();
@@ -53,11 +49,11 @@ void GameObject3D::cleanup() {
             component->cleanup();
         }
     }
-    
+
     if (transform) {
         transform->cleanup();
     }
-    
+
     components.clear();
     transform.reset();
 }
@@ -74,36 +70,37 @@ void GameObject3D::destroy() {
 
 // Удаление компонента по типу
 void GameObject3D::removeComponent(const std::string& componentType) {
-    components.erase(
-        std::remove_if(components.begin(), components.end(),
-            [&componentType](const std::shared_ptr<Component3D>& comp) {
-                return comp && comp->getComponentType() == componentType;
-            }),
-        components.end()
-    );
+    components.erase(std::remove_if(components.begin(),
+                                    components.end(),
+                                    [&componentType](const std::shared_ptr<Component3D>& comp) {
+                                        return comp && comp->getComponentType() == componentType;
+                                    }),
+                     components.end());
 }
 
 // Системные обновления
 void GameObject3D::update(float deltaTime) {
-    if (!active) return;
-    
+    if (!active)
+        return;
+
     // Запускаем объект, если еще не запущен
     if (!started) {
         start();
     }
-    
+
     // Обновляем трансформацию
     if (transform) {
         transform->update(deltaTime);
     }
-    
+
     // Обновляем компоненты
     updateComponents(deltaTime);
 }
 
 void GameObject3D::render() {
-    if (!active) return;
-    
+    if (!active)
+        return;
+
     // Рендерим компоненты
     renderComponents();
 }
@@ -143,11 +140,11 @@ GameObject3D* GameObject3D::create(const std::string& name) {
 
 GameObject3D* GameObject3D::createPrimitive(const std::string& type) {
     GameObject3D* obj = create("Primitive_" + type);
-    
+
     // Добавляем MeshRenderer компонент
     auto* meshRenderer = obj->addComponent<MeshRenderer3D>();
-    (void)meshRenderer; // Подавление предупреждения о неиспользуемой переменной
-    
+    (void)meshRenderer;  // Подавление предупреждения о неиспользуемой переменной
+
     // TODO: Реализовать создание примитивных мешей
     if (type == "Cube") {
         // meshRenderer->setMesh(MeshFactory::createCube());
@@ -156,7 +153,7 @@ GameObject3D* GameObject3D::createPrimitive(const std::string& type) {
     } else if (type == "Plane") {
         // meshRenderer->setMesh(MeshFactory::createPlane());
     }
-    
+
     return obj;
 }
 
@@ -164,13 +161,13 @@ GameObject3D* GameObject3D::createPrimitive(const std::string& type) {
 void GameObject3D::clearAllObjects() {
     // Создаем копию списка, чтобы избежать проблем при удалении
     std::vector<GameObject3D*> objectsToDelete = allObjects;
-    
+
     for (GameObject3D* obj : objectsToDelete) {
         if (obj) {
             delete obj;
         }
     }
-    
+
     allObjects.clear();
 }
 
@@ -184,10 +181,7 @@ void GameObject3D::addToAllObjects() {
 }
 
 void GameObject3D::removeFromAllObjects() {
-    allObjects.erase(
-        std::remove(allObjects.begin(), allObjects.end(), this),
-        allObjects.end()
-    );
+    allObjects.erase(std::remove(allObjects.begin(), allObjects.end(), this), allObjects.end());
 }
 
 void GameObject3D::updateComponents(float deltaTime) {
@@ -215,17 +209,14 @@ void GameObject3D::renderComponents() {
 // Реализация компонентов
 
 // MeshRenderer3D
-MeshRenderer3D::MeshRenderer3D() 
-    : color(1.0f, 1.0f, 1.0f)
-    , castShadows(true)
-    , receiveShadows(true) {
-}
+MeshRenderer3D::MeshRenderer3D()
+    : color(1.0f, 1.0f, 1.0f), castShadows(true), receiveShadows(true) {}
 
 void MeshRenderer3D::render() {
     if (!mesh || !shader) {
         return;
     }
-    
+
     // TODO: Реализовать рендеринг через систему рендеринга
     std::cout << "Rendering mesh for object: " << gameObject->getName() << std::endl;
 }
@@ -243,9 +234,7 @@ void MeshRenderer3D::setColor(const Vector3& newColor) {
 }
 
 // Collider3DComponent
-Collider3DComponent::Collider3DComponent() 
-    : trigger(false) {
-}
+Collider3DComponent::Collider3DComponent() : trigger(false) {}
 
 void Collider3DComponent::setCollider(std::shared_ptr<Physics::Collider3D> newCollider) {
     collider = newCollider;
@@ -259,22 +248,20 @@ bool Collider3DComponent::checkCollision(const Collider3DComponent& other) const
     if (!collider || !other.collider) {
         return false;
     }
-    
+
     // TODO: Реализовать проверку столкновений
     return false;
 }
 
 // RigidBody3DComponent
-RigidBody3DComponent::RigidBody3DComponent() 
-    : useGravity(true) {
-}
+RigidBody3DComponent::RigidBody3DComponent() : useGravity(true) {}
 
 void RigidBody3DComponent::update(float deltaTime) {
-    (void)deltaTime; // Подавление предупреждения о неиспользуемом параметре
+    (void)deltaTime;  // Подавление предупреждения о неиспользуемом параметре
     if (!rigidBody) {
         return;
     }
-    
+
     // TODO: Обновление физического тела
     // rigidBody->update(deltaTime);
 }
@@ -288,7 +275,7 @@ void RigidBody3DComponent::setUseGravity(bool use) {
 }
 
 void RigidBody3DComponent::addForce(const Vector3& force) {
-    (void)force; // Подавление предупреждения о неиспользуемом параметре
+    (void)force;  // Подавление предупреждения о неиспользуемом параметре
     if (rigidBody) {
         // TODO: Применение силы
         // rigidBody->applyForce(force);
@@ -296,7 +283,7 @@ void RigidBody3DComponent::addForce(const Vector3& force) {
 }
 
 void RigidBody3DComponent::addTorque(const Vector3& torque) {
-    (void)torque; // Подавление предупреждения о неиспользуемом параметре
+    (void)torque;  // Подавление предупреждения о неиспользуемом параметре
     if (rigidBody) {
         // TODO: Применение момента силы
         // rigidBody->applyTorque(torque);
@@ -304,7 +291,7 @@ void RigidBody3DComponent::addTorque(const Vector3& torque) {
 }
 
 void RigidBody3DComponent::addImpulse(const Vector3& impulse) {
-    (void)impulse; // Подавление предупреждения о неиспользуемом параметре
+    (void)impulse;  // Подавление предупреждения о неиспользуемом параметре
     if (rigidBody) {
         // TODO: Применение импульса
         // rigidBody->applyImpulse(impulse);
@@ -312,7 +299,7 @@ void RigidBody3DComponent::addImpulse(const Vector3& impulse) {
 }
 
 void RigidBody3DComponent::addAngularImpulse(const Vector3& impulse) {
-    (void)impulse; // Подавление предупреждения о неиспользуемом параметре
+    (void)impulse;  // Подавление предупреждения о неиспользуемом параметре
     if (rigidBody) {
         // TODO: Применение углового импульса
         // rigidBody->applyAngularImpulse(impulse);
@@ -320,18 +307,15 @@ void RigidBody3DComponent::addAngularImpulse(const Vector3& impulse) {
 }
 
 // Camera3DComponent
-Camera3DComponent::Camera3DComponent() 
-    : mainCamera(false)
-    , fieldOfView(60.0f)
-    , nearPlane(0.1f)
-    , farPlane(1000.0f) {
+Camera3DComponent::Camera3DComponent()
+    : mainCamera(false), fieldOfView(60.0f), nearPlane(0.1f), farPlane(1000.0f) {
     // TODO: Создание камеры
     // camera = std::make_shared<Rendering::Camera3D>();
 }
 
 void Camera3DComponent::setMainCamera(bool main) {
     mainCamera = main;
-    
+
     // TODO: Установка главной камеры в системе рендеринга
     if (main && camera) {
         // Renderer::getInstance().setMainCamera(camera);
@@ -383,13 +367,10 @@ Matrix4 Camera3DComponent::getViewProjectionMatrix() const {
 }
 
 // ParticleSystem3DComponent
-ParticleSystem3DComponent::ParticleSystem3DComponent() 
-    : autoPlay(true)
-    , emissionRate(10.0f) {
-}
+ParticleSystem3DComponent::ParticleSystem3DComponent() : autoPlay(true), emissionRate(10.0f) {}
 
 void ParticleSystem3DComponent::update(float deltaTime) {
-    (void)deltaTime; // Подавление предупреждения о неиспользуемом параметре
+    (void)deltaTime;  // Подавление предупреждения о неиспользуемом параметре
     if (particleSystem && autoPlay) {
         // TODO: Обновление системы частиц
         // particleSystem->update(deltaTime);
@@ -403,7 +384,8 @@ void ParticleSystem3DComponent::render() {
     }
 }
 
-void ParticleSystem3DComponent::setParticleSystem(std::shared_ptr<Physics::ParticleSystem3D> system) {
+void ParticleSystem3DComponent::setParticleSystem(
+    std::shared_ptr<Physics::ParticleSystem3D> system) {
     particleSystem = system;
 }
 
@@ -434,13 +416,12 @@ void ParticleSystem3DComponent::stop() {
 }
 
 void ParticleSystem3DComponent::emit(int count) {
-    (void)count; // Подавление предупреждения о неиспользуемом параметре
+    (void)count;  // Подавление предупреждения о неиспользуемом параметре
     if (particleSystem) {
         // TODO: Эмиссия частиц
         // particleSystem->emit(count);
     }
 }
 
-} // namespace Core
-} // namespace HyperEngine
-
+}  // namespace Core
+}  // namespace HyperEngine

@@ -1,5 +1,7 @@
+
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include "../Math/Matrix4.h"
@@ -99,4 +101,3 @@ class ShaderManager {
 
 }  // namespace Rendering
 }  // namespace HyperEngine
-

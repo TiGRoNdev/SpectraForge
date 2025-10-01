@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <memory>
@@ -73,6 +74,22 @@ class IRenderer {
      * @return true если рендерер готов к работе
      */
     virtual bool isReady() const = 0;
+
+    /**
+     * @brief Проверить инициализацию рендерера
+     * @return true если рендерер инициализирован
+     */
+    virtual bool isInitialized() const = 0;
+
+    /**
+     * @brief Начать рендеринг кадра
+     */
+    virtual void beginFrame() = 0;
+
+    /**
+     * @brief Завершить рендеринг кадра
+     */
+    virtual void endFrame() = 0;
 
     /**
      * @brief Получить статистику производительности

@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "../Math/Matrix4.h"
@@ -115,4 +116,3 @@ class Camera3D {
 
 }  // namespace Rendering
 }  // namespace HyperEngine
-

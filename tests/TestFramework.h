@@ -1,6 +1,14 @@
 #pragma once
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+// GMock опционален - подключаем только если доступен
+#ifdef __has_include
+#if __has_include(<gmock/gmock.h>)
+#include <gmock/gmock.h>
+#define HYPERENGINE_HAS_GMOCK 1
+#endif
+#endif
+
 #include <chrono>
 #include <iostream>
 #include <stdexcept>
@@ -59,24 +67,28 @@ class HyperEngineTest : public ::testing::Test {
 
 /**
  * @brief Проверяет, что блок кода не выбрасывает исключений
- * @param statement Блок кода для выполнения
- * @param message Сообщение для вывода в случае исключения
+ * @param ... Блок кода для выполнения и сообщение (variadic для поддержки запятых)
  */
-#define EXPECT_NO_THROW_WITH_MESSAGE(statement, message) \
-    try {                                                \
-        statement;                                       \
-    } catch (const std::exception& e) {                  \
-        FAIL() << message << ": " << e.what();           \
-    } catch (...) {                                      \
-        FAIL() << message << ": Неизвестное исключение"; \
+#define EXPECT_NO_THROW_WITH_MESSAGE(...) \
+    EXPECT_NO_THROW_WITH_MESSAGE_IMPL(__VA_ARGS__)
+    
+#define EXPECT_NO_THROW_WITH_MESSAGE_IMPL(statement, message) \
+    try {                                                      \
+        statement;                                             \
+    } catch (const std::exception& e) {                        \
+        FAIL() << message << ": " << e.what();                 \
+    } catch (...) {                                            \
+        FAIL() << message << ": Неизвестное исключение";       \
     }
 
 /**
  * @brief Проверяет, что операция выполняется за указанное время
- * @param statement Блок кода для выполнения
- * @param max_milliseconds Максимальное время выполнения в миллисекундах
+ * @param ... Блок кода для выполнения и максимальное время (variadic для поддержки запятых)
  */
-#define EXPECT_PERFORMANCE_UNDER(statement, max_milliseconds)                                   \
+#define EXPECT_PERFORMANCE_UNDER(...) \
+    EXPECT_PERFORMANCE_UNDER_IMPL(__VA_ARGS__)
+
+#define EXPECT_PERFORMANCE_UNDER_IMPL(statement, max_milliseconds)                              \
     {                                                                                           \
         auto start = std::chrono::high_resolution_clock::now();                                 \
         statement;                                                                              \
@@ -133,6 +145,8 @@ class TestUtils {
      * @return Путь к созданному файлу
      */
     static std::string createTempFile(const std::string& content) {
+        // Подавляем предупреждение о неиспользуемом параметре
+        (void)content;
         // Реализация создания временного файла
         // (упрощенная версия для демонстрации)
         return "temp_test_file.tmp";
@@ -143,6 +157,8 @@ class TestUtils {
      * @param filepath Путь к файлу
      */
     static void removeTempFile(const std::string& filepath) {
+        // Подавляем предупреждение о неиспользуемом параметре
+        (void)filepath;
         // Реализация удаления файла
     }
 };

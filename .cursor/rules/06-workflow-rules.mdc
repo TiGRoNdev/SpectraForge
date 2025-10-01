@@ -1,0 +1,102 @@
+---
+description: Feature development workflow - TDD, branching, quality checks, PR process with MCP automation
+globs: ["**/*.cpp", "**/*.h", "**/*.hpp", "**/*.md"]
+alwaysApply: true
+priority: 500
+---
+
+# Feature Development Workflow for HyperEngine
+
+@context {
+  "type": "workflow_guidelines",
+  "purpose": "Define the development process including branching, TDD, code quality checks, and PRs using MCP commands",
+  "format_version": "2.0",
+  "priority": 500,
+  "applies_to": "All development files and workflows",
+  "supported_tools": ["Git", "clang-format", "clang-tidy", "ctest"],
+  "ai_model": "Claude 4.5 Sonnet"
+}
+
+> **CLAUDE DIRECTIVE**: ALWAYS follow TDD workflow - Write test BEFORE implementation code.
+
+## 1. Development Workflow Steps
+
+Follow these steps for new features.
+
+@workflow_rules [
+  {
+    "id": "create_branch",
+    "rule": "Create a feature branch from main.",
+    "severity": "high",
+    "example": "git checkout -b feature/my-new-feature"
+  },
+  {
+    "id": "tdd",
+    "rule": "Use Test-Driven Development: Write test, implement code, refactor.",
+    "severity": "high"
+  },
+  {
+    "id": "code_quality",
+    "rule": "Run formatters, analyzers, and tests before committing.",
+    "severity": "high",
+    "example": "clang-format -i src/**/*.cpp include/**/*.h\nclang-tidy src/**/*.cpp\ncd build && ctest --output-on-failure"
+  },
+  {
+    "id": "create_pr",
+    "rule": "Create PR to https://github.com/TiGRoNdev/HyperEngine using MCP tools.",
+    "severity": "high",
+    "example": "Ensure tests pass, update docs, describe changes."
+  }
+]
+
+- Use mcp_github_create_branch for branching.
+- Link PRs to issues with mcp_github_create_pull_request.
+
+## 2. Tables for Quick Reference
+
+### Workflow Steps Summary
+
+| Step | Description | Tools/Command |
+|------|-------------|---------------|
+| 1 | Create branch | git checkout -b |
+| 2 | TDD cycle | Write test, code, refactor |
+| 3 | Quality check | clang-format, clang-tidy, ctest |
+| 4 | Create PR | mcp_github_create_pull_request |
+
+## 3. MCP Workflow Automation
+
+@mcp_workflow [
+  {
+    "id": "create_branch",
+    "mcp_tool": "mcp_github_create_branch",
+    "step": 1,
+    "params": {"owner": "TiGRoNdev", "repo": "HyperEngine", "branch": "feature/[name]", "from_branch": "main"}
+  },
+  {
+    "id": "push_changes",
+    "mcp_tool": "mcp_github_push_files",
+    "step": 3,
+    "params": {"owner": "TiGRoNdev", "repo": "HyperEngine", "files": [], "message": "feat: [description]"}
+  },
+  {
+    "id": "create_pr",
+    "mcp_tool": "mcp_github_create_pull_request",
+    "step": 4,
+    "params": {"owner": "TiGRoNdev", "repo": "HyperEngine", "head": "feature/[name]", "base": "main"}
+  },
+  {
+    "id": "request_review",
+    "mcp_tool": "mcp_github_request_copilot_review",
+    "step": 5
+  }
+]
+
+## 4. Best Practices and Enforcement
+
+- Atomic commits with semantic messages
+- Require PR approvals before merge
+- Integrate with GitHub Actions for automated testing
+- Use MCP tools for all GitHub operations
+
+---
+**Version**: 2.0 | **Optimized for**: Claude 4.5 Sonnet

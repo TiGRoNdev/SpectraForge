@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <memory>
@@ -94,7 +95,7 @@ class TileBasedRasterizer {
     TileBasedRasterizer();
     ~TileBasedRasterizer();
 
-    bool init(uint32_t width, uint32_t height, uint32_t tileSize = 16);
+    bool init(uint32_t w, uint32_t h, uint32_t tSize = 16);
     void shutdown();
 
     void rasterize(const GaussianParams& params, const CameraParams& camera);
@@ -146,7 +147,7 @@ class FlashGSSplatter {
      * @param params Параметры камеры
      * @return Первичное изображение
      */
-    Vulkan::PrimaryImage rasterizeGaussians(const CameraParams& params);
+    Vulkan::PrimaryImage rasterizeGaussians(const CameraParams& camera);
 
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
     /**
@@ -228,17 +229,13 @@ class FlashGSSplatter {
      * @brief Получение текущих параметров гауссианов (legacy API)
      * @return Параметры гауссианов
      */
-    const GaussianParams& getGaussianParams() const {
-        return legacyParams;
-    }
+    const GaussianParams& getGaussianParams() const { return legacyParams; }
 
     /**
      * @brief Проверка инициализации
      * @return true если инициализирован
      */
-    bool isInitialized() const {
-        return initialized;
-    }
+    bool isInitialized() const { return initialized; }
 
   private:
     // Legacy API

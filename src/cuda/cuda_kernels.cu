@@ -17,6 +17,6 @@ __global__ void processBufferKernel(float* data, size_t size, float multiplier) 
 extern "C" void launchProcessBufferKernel(float* data, size_t size, float multiplier) {
     const int blockSize = 256;
     const int gridSize = (size + blockSize - 1) / blockSize;
-    
+
     processBufferKernel<<<gridSize, blockSize>>>(data, size, multiplier);
 }

@@ -5,13 +5,11 @@ file(GLOB_RECURSE CORE_SOURCES "core/*.cpp" "core/*.h")
 add_library(HyperEngine_Core STATIC ${CORE_SOURCES})
 
 # Math модуль
-file(GLOB_RECURSE MATH_SOURCES "math/*.cpp" "math/*.h")
-add_library(HyperEngine_Math STATIC ${MATH_SOURCES})
+add_subdirectory(math)
 
 # Rendering модули
 file(GLOB_RECURSE RENDERING_COMMON_SOURCES "rendering/common/*.cpp" "rendering/common/*.h")
 file(GLOB_RECURSE RENDERING_OPENGL_SOURCES "rendering/opengl/*.cpp" "rendering/opengl/*.h")
-file(GLOB_RECURSE RENDERING_VULKAN_SOURCES "rendering/vulkan/*.cpp" "rendering/vulkan/*.h")
 
 # Создаем библиотеки только если есть исходные файлы
 if(RENDERING_COMMON_SOURCES)
@@ -22,8 +20,9 @@ if(RENDERING_OPENGL_SOURCES)
     add_library(HyperEngine_OpenGL STATIC ${RENDERING_OPENGL_SOURCES})
 endif()
 
-if(RENDERING_VULKAN_SOURCES)
-    add_library(HyperEngine_Vulkan STATIC ${RENDERING_VULKAN_SOURCES})
+# Vulkan модуль с отдельным CMakeLists.txt
+if(BUILD_VULKAN_RENDERER AND ENABLE_VULKAN_BACKEND)
+    add_subdirectory(rendering/vulkan)
 endif()
 
 # Physics модуль
@@ -61,18 +60,11 @@ if(TARGET HyperEngine_OpenGL)
         GLEW::GLEW
         glfw
         glm::glm
+        OpenGL::GL
     )
 endif()
 
-if(TARGET HyperEngine_Vulkan)
-    target_link_libraries(HyperEngine_Vulkan PUBLIC 
-        HyperEngine_Core 
-        HyperEngine_Math
-        Vulkan::Vulkan
-        GPUOpen::VulkanMemoryAllocator
-        glm::glm
-    )
-endif()
+# Vulkan зависимости настраиваются в его собственном CMakeLists.txt
 
 target_link_libraries(HyperEngine_Physics PUBLIC HyperEngine_Math)
 target_link_libraries(HyperEngine_Input PUBLIC HyperEngine_Core glfw)
@@ -107,9 +99,15 @@ if(BUILD_WITH_CUDA)
     target_link_libraries(HyperEngine_CUDA PUBLIC 
         HyperEngine_Core 
         HyperEngine_Math
-        Vulkan::Vulkan
-        GPUOpen::VulkanMemoryAllocator
     )
+    
+    # Добавляем Vulkan зависимости только если Vulkan включен
+    if(BUILD_VULKAN_RENDERER)
+        target_link_libraries(HyperEngine_CUDA PUBLIC Vulkan::Vulkan)
+        if(TARGET VulkanMemoryAllocator::VulkanMemoryAllocator)
+            target_link_libraries(HyperEngine_CUDA PUBLIC VulkanMemoryAllocator::VulkanMemoryAllocator)
+        endif()
+    endif()
     
     # Добавляем CUDA include директории
     find_package(CUDAToolkit REQUIRED)
