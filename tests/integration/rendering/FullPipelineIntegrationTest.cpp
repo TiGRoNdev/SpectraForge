@@ -187,7 +187,8 @@ TEST_F(FullPipelineIntegrationTest, PipelineFrameTime) {
 
             // Primary Rasterization (ожидается ~5ms для 10K гауссианов)
             struct PrimaryImage {
-                uint32_t width, height;
+                uint32_t width;
+                uint32_t height;
             } primary;
             primary.width = sceneWidth;
             primary.height = sceneHeight;
@@ -232,7 +233,8 @@ TEST_F(FullPipelineIntegrationTest, MultiFramePipelinePerformance) {
             for (int frame = 0; frame < frameCount; ++frame) {
                 // Полный pipeline для каждого кадра
                 struct {
-                    uint32_t w, h;
+                    uint32_t w;
+                    uint32_t h;
                 } img = {sceneWidth, sceneHeight};
                 (void)img;
             }
@@ -269,7 +271,8 @@ TEST_F(FullPipelineIntegrationTest, PipelineDifferentResolutions) {
 
                 // Primary Rasterization
                 struct PrimaryImage {
-                    uint32_t w, h;
+                    uint32_t w;
+                    uint32_t h;
                 } primary;
                 primary.w = res.width;
                 primary.h = res.height;
@@ -288,7 +291,8 @@ TEST_F(FullPipelineIntegrationTest, PipelineDifferentResolutions) {
 
                 // Upscaling 2x
                 struct UpscaledImage {
-                    uint32_t w, h;
+                    uint32_t w;
+                    uint32_t h;
                 } upscaled;
                 upscaled.w = res.width * 2;
                 upscaled.h = res.height * 2;
@@ -366,7 +370,8 @@ TEST_F(FullPipelineIntegrationTest, PipelineErrorRecovery) {
 
                 // Fallback: используем только primary rasterization
                 struct PrimaryImage {
-                    uint32_t w, h;
+                    uint32_t w;
+                    uint32_t h;
                 } primary;
                 primary.w = sceneWidth;
                 primary.h = sceneHeight;
@@ -374,7 +379,8 @@ TEST_F(FullPipelineIntegrationTest, PipelineErrorRecovery) {
                 // Пропускаем Ray Tracing и Denoising
                 // Сразу идем к Upscaling
                 struct UpscaledImage {
-                    uint32_t w, h;
+                    uint32_t w;
+                    uint32_t h;
                 } upscaled;
                 upscaled.w = primary.w * 2;
                 upscaled.h = primary.h * 2;
@@ -468,7 +474,8 @@ TEST_F(FullPipelineIntegrationTest, PipelineStressTest) {
                 try {
                     // Полный pipeline
                     struct {
-                        uint32_t w, h;
+                        uint32_t w;
+                        uint32_t h;
                     } img = {sceneWidth, sceneHeight};
                     struct {
                         void* data;
@@ -477,7 +484,8 @@ TEST_F(FullPipelineIntegrationTest, PipelineStressTest) {
                         void* data;
                     } denoised = {reinterpret_cast<void*>(0x2000)};
                     struct {
-                        uint32_t w, h;
+                        uint32_t w;
+                        uint32_t h;
                     } upscaled = {img.w * 2, img.h * 2};
 
                     if (upscaled.w > 0 && upscaled.h > 0) {
