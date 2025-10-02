@@ -40,6 +40,9 @@ std::unique_ptr<IFrequencyBackend> BackendFactory::create(BackendType type) {
             SAFE_PRINT_LINE("[BackendFactory] Создан Simple backend");
             return std::make_unique<Backends::SimpleDctBackend>();
 
+        case BackendType::Auto:
+            // Fallthrough to default
+            [[fallthrough]];
         default:
             SAFE_ERROR("[BackendFactory] Неизвестный тип бэкенда");
             return nullptr;

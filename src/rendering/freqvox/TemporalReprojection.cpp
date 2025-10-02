@@ -35,9 +35,7 @@ bool TemporalReprojection::initialize(uint32_t width, uint32_t height,
     initialized_ = true;
     hasHistory_ = false;
 
-    SAFE_PRINT_LINE("[TemporalReprojection] Инициализирован: " 
-                    << width_ << "x" << height_ 
-                    << ", blend=" << params_.blendFactor);
+    SAFE_PRINT_LINE("[TemporalReprojection] Инициализирован");
     return true;
 }
 
@@ -134,7 +132,7 @@ void TemporalReprojection::resetHistory() {
 
 void TemporalReprojection::updateParams(const TemporalReprojectionParams& params) {
     params_ = params;
-    SAFE_PRINT_LINE("[TemporalReprojection] Параметры обновлены: blend=" << params_.blendFactor);
+    SAFE_PRINT_LINE("[TemporalReprojection] Параметры обновлены");
 }
 
 bool TemporalReprojection::validateMotionVector(const Math::Vector3& mv, 

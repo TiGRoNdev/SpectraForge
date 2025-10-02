@@ -12,15 +12,6 @@
 namespace HyperEngine::Rendering::FreqVox {
 
 /**
- * @brief Параметры фовеированной выборки
- */
-struct FoveatedParams {
-    float sigma_deg = 5.0f;  ///< параметр гаусса в градусах
-    float fine_radius_m = 10.0f;
-    float fine_cone_deg = 10.0f;
-};
-
-/**
  * @brief Селектор активных вокселей с учетом фовеации и LOD
  */
 class FoveatedSelector {

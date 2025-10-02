@@ -10,7 +10,7 @@ namespace HyperEngine::Rendering::FreqVox {
 static inline float deg_to_rad(float deg) { return deg * 3.14159265358979323846f / 180.0f; }
 
 void FoveatedSelector::select(const std::vector<Voxel>& all_voxels,
-                              const FoveatedParams& params,
+                              const FoveatedParams& /*params*/,
                               std::vector<Voxel>& out_selected,
                               float& out_effective_count) const {
     out_selected.clear();

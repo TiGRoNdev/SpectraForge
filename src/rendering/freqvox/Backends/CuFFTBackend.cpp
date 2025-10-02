@@ -44,15 +44,14 @@ bool CuFFTBackend::initialize(const DctBlockConfig& config) {
         return false;
     }
 
-    size_t required_size = cfg_.batch_count * cfg_.block_width * cfg_.block_height * sizeof(float);
+    size_t required_size = cfg_.batch_size * cfg_.width * cfg_.height * sizeof(float);
     if (!setupDeviceMemory(required_size)) {
         shutdown();
         return false;
     }
 
     initialized_ = true;
-    SAFE_PRINT_LINE("[CuFFTBackend] Инициализирован: блоки " << cfg_.block_width << "x" << cfg_.block_height
-                    << ", батчей=" << cfg_.batch_count);
+    SAFE_PRINT_LINE("[CuFFTBackend] Инициализирован");
     return true;
 #endif
 }
@@ -163,12 +162,12 @@ bool CuFFTBackend::transform_inverse(std::vector<float>& io_block_batched) {
 #ifdef HYPERENGINE_CUDA_AVAILABLE
 bool CuFFTBackend::createPlans() {
     // Создаём план для батчированного 2D FFT
-    int n[2] = {static_cast<int>(cfg_.block_height), static_cast<int>(cfg_.block_width)};
+    int n[2] = {static_cast<int>(cfg_.height), static_cast<int>(cfg_.width)};
     
     cufftResult res = cufftPlanMany(&plan_forward_, 2, n,
                                     nullptr, 1, 0,
                                     nullptr, 1, 0,
-                                    CUFFT_R2C, cfg_.batch_count);
+                                    CUFFT_R2C, static_cast<int>(cfg_.batch_size));
     if (res != CUFFT_SUCCESS) {
         SAFE_ERROR("[CuFFTBackend] Ошибка создания forward плана: " + std::to_string(res));
         return false;
@@ -177,7 +176,7 @@ bool CuFFTBackend::createPlans() {
     res = cufftPlanMany(&plan_inverse_, 2, n,
                        nullptr, 1, 0,
                        nullptr, 1, 0,
-                       CUFFT_C2R, cfg_.batch_count);
+                       CUFFT_C2R, static_cast<int>(cfg_.batch_size));
     if (res != CUFFT_SUCCESS) {
         SAFE_ERROR("[CuFFTBackend] Ошибка создания inverse плана: " + std::to_string(res));
         cufftDestroy(plan_forward_);
@@ -213,7 +212,7 @@ bool CuFFTBackend::setupDeviceMemory(size_t required_size) {
     }
 
     buffer_size_ = alloc_size;
-    SAFE_PRINT_LINE("[CuFFTBackend] Выделено GPU памяти: " << alloc_size << " байт");
+    SAFE_PRINT_LINE("[CuFFTBackend] Выделено GPU памяти");
     return true;
 }
 #endif

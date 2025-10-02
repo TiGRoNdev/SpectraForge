@@ -4,7 +4,7 @@
 
 #include "HyperEngine/Rendering/FreqVox/Backends/SimpleDctBackend.h"
 
-namespace HyperEngine::Rendering::FreqVox {
+namespace HyperEngine::Rendering::FreqVox::Backends {
 
 bool SimpleDctBackend::initialize(const DctBlockConfig& config) {
     cfg_ = config;
@@ -24,6 +24,6 @@ bool SimpleDctBackend::transform_inverse(std::vector<float>& io_block_batched) {
     return initialized_;
 }
 
-}  // namespace HyperEngine::Rendering::FreqVox
+}  // namespace HyperEngine::Rendering::FreqVox::Backends
 
 

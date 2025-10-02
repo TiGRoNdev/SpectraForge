@@ -45,11 +45,7 @@ bool NeuralUpscaler::initialize(UpscalerType type,
     // Сейчас - заглушка с билинейной интерполяцией
 
     initialized_ = true;
-    SAFE_PRINT_LINE("[NeuralUpscaler] Инициализирован: " 
-                    << getActiveName() 
-                    << " | " << input_width_ << "x" << input_height_
-                    << " -> " << output_width_ << "x" << output_height_
-                    << " (factor=" << params_.upscaleFactor << ")");
+    SAFE_PRINT_LINE("[NeuralUpscaler] Инициализирован");
     return true;
 }
 
@@ -74,8 +70,7 @@ bool NeuralUpscaler::upscale(const std::vector<float>& input_image,
 
     size_t expected_input_size = input_width_ * input_height_ * 3; // RGB
     if (input_image.size() != expected_input_size) {
-        SAFE_ERROR("[NeuralUpscaler] Некорректный размер входного изображения: "
-                   << input_image.size() << " (ожидалось " << expected_input_size << ")");
+        SAFE_ERROR("[NeuralUpscaler] Некорректный размер входного изображения");
         return false;
     }
 

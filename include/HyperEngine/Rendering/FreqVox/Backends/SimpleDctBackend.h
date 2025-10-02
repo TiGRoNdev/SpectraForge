@@ -7,7 +7,7 @@
 
 #include "HyperEngine/Rendering/FreqVox/FrequencyShading.h"
 
-namespace HyperEngine::Rendering::FreqVox {
+namespace HyperEngine::Rendering::FreqVox::Backends {
 
 /**
  * @brief Заглушка-бэкенд, выполняющая тождественные преобразования
@@ -24,6 +24,6 @@ class SimpleDctBackend : public IFrequencyBackend {
     bool initialized_ = false;
 };
 
-}  // namespace HyperEngine::Rendering::FreqVox
+}  // namespace HyperEngine::Rendering::FreqVox::Backends
 
 

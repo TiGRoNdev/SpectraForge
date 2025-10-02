@@ -26,7 +26,6 @@ public:
     void shutdown() override;
     bool transform_forward(std::vector<float>& io_block_batched) override;
     bool transform_inverse(std::vector<float>& io_block_batched) override;
-    std::string getName() const override { return "VkFFTBackend"; }
 
 private:
     DctBlockConfig cfg_;

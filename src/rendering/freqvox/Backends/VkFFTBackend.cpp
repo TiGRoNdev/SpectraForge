@@ -27,9 +27,7 @@ bool VkFFTBackend::initialize(const DctBlockConfig& config) {
     // Сейчас - минимальная заглушка для сборки
     
     initialized_ = true;
-    SAFE_PRINT_LINE("[VkFFTBackend] Инициализирован (заглушка): блоки " 
-                    << cfg_.block_width << "x" << cfg_.block_height
-                    << ", батчей=" << cfg_.batch_count);
+    SAFE_PRINT_LINE("[VkFFTBackend] Инициализирован (заглушка)");
     return true;
 }
 
@@ -47,7 +45,7 @@ bool VkFFTBackend::transform_forward(std::vector<float>& io_block_batched) {
     }
 
     // Заглушка: тождественное преобразование
-    SAFE_PRINT_LINE("[VkFFTBackend] Forward DCT (заглушка): " << io_block_batched.size() << " элементов");
+    (void)io_block_batched;
     return true;
 }
 
@@ -58,7 +56,7 @@ bool VkFFTBackend::transform_inverse(std::vector<float>& io_block_batched) {
     }
 
     // Заглушка: тождественное преобразование
-    SAFE_PRINT_LINE("[VkFFTBackend] Inverse DCT (заглушка): " << io_block_batched.size() << " элементов");
+    (void)io_block_batched;
     return true;
 }
 
