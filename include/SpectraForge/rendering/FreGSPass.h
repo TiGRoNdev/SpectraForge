@@ -20,6 +20,7 @@
 #include <vulkan/vulkan.hpp>
 #include <glm/glm.hpp>
 #include <vector>
+#include <cstddef> // for offsetof in static_asserts
 
 namespace spectraforge {
 namespace rendering {
@@ -131,11 +132,17 @@ private:
         float freqScale;
         uint32_t subbandLevel;
         float foveaRadius;
+        uint32_t padding0; // std140 padding to align subsequent vec2 to 8 bytes
         glm::vec2 foveaCenter;
         uint32_t maxGaussians;
     } pushConstants_;
+
+    // Compile-time layout validation for std140 expectations
+    static_assert(offsetof(PushConstants, foveaCenter) == 24,
+                  "PushConstants::foveaCenter must be 8-byte aligned (offset 24) for std140");
+    static_assert(offsetof(PushConstants, maxGaussians) == 32,
+                  "PushConstants::maxGaussians must follow foveaCenter at offset 32");
 };
 
 } // namespace rendering
 } // namespace spectraforge
-
