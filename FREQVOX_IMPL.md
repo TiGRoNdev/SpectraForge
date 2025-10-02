@@ -1,6 +1,6 @@
 # FreqVox Renderer (AFS-NVR) — Алгоритм, стратегия внедрения и дальнейшие действия
 
-Документ фиксирует целевой алгоритм FreqVox, архитектурную стратегию его интеграции в HyperEngine и детальный план работ. Основано на: `docs/concept/FreqVox Renderer.md`, `docs/concept/FreqVox Renderer Math.md`.
+Документ фиксирует целевой алгоритм FreqVox, архитектурную стратегию его интеграции в SpectraForge и детальный план работ. Основано на: `docs/concept/FreqVox Renderer.md`, `docs/concept/FreqVox Renderer Math.md`.
 
 
 ## 1) Цели и критерии готовности
@@ -15,7 +15,7 @@
 ## 2) Архитектура и точки интеграции
 
 - Новые модули (созданы):
-  - `include/HyperEngine/Rendering/FreqVox/` — заголовки модели данных и этапов
+  - `include/SpectraForge/Rendering/FreqVox/` — заголовки модели данных и этапов
     - `FreqVoxTypes.h` — SH9, `Voxel`, `DctBlockConfig`
     - `FoveatedSelector.h` — интерфейс фовеированной выборки
     - `FrequencyShading.h` — абстракция `IFrequencyBackend` и `FrequencyShadingPipeline`
@@ -26,10 +26,10 @@
     - `FoveatedSelector.cpp`, `FreqVoxRenderStage.cpp`, `FreqVoxStrategy.cpp`
     - `Backends/SimpleDctBackend.cpp`
 - Подключение в сборку:
-  - `CMakeLists.txt`: флаг `ENABLE_FREQVOX` + линковка `HyperEngine_FreqVox` к `HyperEngine` при наличии.
-  - `src/CMakeLists.txt`: цель `HyperEngine_FreqVox` при `ENABLE_FREQVOX`.
+  - `CMakeLists.txt`: флаг `ENABLE_FREQVOX` + линковка `SpectraForge_FreqVox` к `SpectraForge` при наличии.
+  - `src/CMakeLists.txt`: цель `SpectraForge_FreqVox` при `ENABLE_FREQVOX`.
 - Выбор стратегии:
-  - `StrategyFactory`: `create_strategy_by_name("freqvox")` → `FreqVoxStrategy` (при `HyperEngine_ENABLE_FREQVOX`).
+  - `StrategyFactory`: `create_strategy_by_name("freqvox")` → `FreqVoxStrategy` (при `SpectraForge_ENABLE_FREQVOX`).
   - Интеграция в место создания `ModernRenderer3D` (через фабрику/DI): передать `FreqVoxStrategy` в конструктор либо вызвать `setRenderStrategy(...)`.
 
 

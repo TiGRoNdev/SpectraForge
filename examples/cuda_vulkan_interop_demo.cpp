@@ -10,16 +10,16 @@
 #include <iostream>
 #include <memory>
 #include <vector>
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
 // Основные заголовки движка
-#include "HyperEngine/CUDA/CudaInterop.h"
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Vulkan/HardwareDetector.h"
-#include "HyperEngine/Vulkan/ResourceManager.h"
-#include "HyperEngine/Vulkan/VulkanEngine.h"
+#include "SpectraForge/CUDA/CudaInterop.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Vulkan/HardwareDetector.h"
+#include "SpectraForge/Vulkan/ResourceManager.h"
+#include "SpectraForge/Vulkan/VulkanEngine.h"
 
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Core;
 
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
 #include <cuda.h>
@@ -29,8 +29,8 @@ using namespace HyperEngine::Core;
 // extern "C" void launchProcessBufferKernel(float* data, size_t size, float multiplier);
 #endif
 
-using namespace HyperEngine;
-using namespace HyperEngine::Core;
+using namespace SpectraForge;
+using namespace SpectraForge::Core;
 
 class CudaVulkanInteropDemo {
   public:
@@ -373,7 +373,7 @@ class CudaVulkanInteropDemo {
             vk::ApplicationInfo appInfo{};
             appInfo.pApplicationName = "CUDA-Vulkan Interop Demo";
             appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-            appInfo.pEngineName = "HyperEngine";
+            appInfo.pEngineName = "SpectraForge";
             appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.apiVersion = VK_API_VERSION_1_2;
 

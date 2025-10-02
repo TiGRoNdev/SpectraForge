@@ -1,16 +1,16 @@
-# Платформо-зависимый код HyperEngine
+# Платформо-зависимый код SpectraForge
 cmake_minimum_required(VERSION 3.16)
 
-message(STATUS "Настройка HyperEngine_Platform")
+message(STATUS "Настройка SpectraForge_Platform")
 
 # Пока заглушка - будет реализовано в следующих этапах
-add_library(HyperEngine_Platform INTERFACE)
+add_library(SpectraForge_Platform INTERFACE)
 
-target_include_directories(HyperEngine_Platform 
+target_include_directories(SpectraForge_Platform 
     INTERFACE ${CMAKE_SOURCE_DIR}/include
 )
 
 # Создание alias
-add_library(HyperEngine::Platform ALIAS HyperEngine_Platform)
+add_library(SpectraForge::Platform ALIAS SpectraForge_Platform)
 
-message(STATUS "HyperEngine_Platform заглушка создана")
+message(STATUS "SpectraForge_Platform заглушка создана")

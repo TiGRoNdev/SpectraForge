@@ -1,10 +1,10 @@
 #!/bin/bash
-# Скрипт сборки HyperEngine для Linux
+# Скрипт сборки SpectraForge для Linux
 # Автоматически определяет доступные SDK и настраивает сборку
 
 set -e
 
-echo "🚀 HyperEngine - Скрипт сборки для Linux"
+echo "🚀 SpectraForge - Скрипт сборки для Linux"
 echo "=========================================="
 echo ""
 
@@ -98,6 +98,7 @@ echo "⚙️  Конфигурация CMake..."
 cmake -B "$BUILD_DIR" -G Ninja \
     -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    -DENABLE_FREQVOX=ON \
     -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
     -DBUILD_WITH_CUDA="$BUILD_WITH_CUDA" \
     -DBUILD_WITH_OPTIX="$BUILD_WITH_OPTIX" \

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Скрипт проверки include guards для HyperEngine
+# Скрипт проверки include guards для SpectraForge
 
 set -e
 

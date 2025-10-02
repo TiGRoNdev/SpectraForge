@@ -1,19 +1,19 @@
 ---
-description: HyperEngine architecture scheme - Vulkan/CUDA/OptiX rendering pipeline with strict guidelines
+description: SpectraForge architecture scheme - Spectral processing with Vulkan/CUDA/OptiX pipeline
 globs: ["**/*.cpp", "**/*.h", "**/*.hpp"]
 alwaysApply: true
 priority: 850
 ---
 
-# Engine Architecture Scheme for HyperEngine
+# Engine Architecture Scheme for SpectraForge
 
 @context {
   "type": "architecture_guidelines",
-  "purpose": "Define class relationships, dependencies, and rendering pipeline for Vulkan-based hybrid 3D/4D rendering engine",
+  "purpose": "Define class relationships, dependencies, and spectral processing pipeline for frequency-domain rendering with Vulkan/CUDA/OptiX",
   "format_version": "2.0",
   "priority": 850,
   "applies_to": "All engine core files and architecture documentation",
-  "supported_technologies": ["Vulkan", "CUDA", "OptiX", "DLSS", "FSR"],
+  "supported_technologies": ["Vulkan", "CUDA", "OptiX", "DLSS", "FSR", "FreqVox"],
   "ai_model": "Claude 4.5 Sonnet"
 }
 

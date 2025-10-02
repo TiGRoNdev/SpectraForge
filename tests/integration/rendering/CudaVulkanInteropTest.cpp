@@ -6,8 +6,8 @@
 #include <vulkan/vulkan.hpp>
 #endif
 
-using namespace HyperEngine::Testing;
-using namespace HyperEngine::Testing::Mocks;
+using namespace SpectraForge::Testing;
+using namespace SpectraForge::Testing::Mocks;
 
 /**
  * @brief Интеграционные тесты для CUDA-Vulkan interoperability
@@ -18,10 +18,10 @@ using namespace HyperEngine::Testing::Mocks;
  * - Совместного использования памяти
  * - Синхронизации между API
  */
-class CudaVulkanInteropTest : public HyperEngineTest {
+class CudaVulkanInteropTest : public SpectraForgeTest {
   protected:
     void SetUp() override {
-        HyperEngineTest::SetUp();
+        SpectraForgeTest::SetUp();
 
 #ifdef VULKAN_RENDERER_CUDA_SUPPORT
         setupCudaContext();
@@ -38,7 +38,7 @@ class CudaVulkanInteropTest : public HyperEngineTest {
         cleanupVulkanContext();
         cleanupCudaContext();
 #endif
-        HyperEngineTest::TearDown();
+        SpectraForgeTest::TearDown();
     }
 
   private:
@@ -63,7 +63,7 @@ class CudaVulkanInteropTest : public HyperEngineTest {
         // Создание минимального Vulkan контекста для тестов
         vk::ApplicationInfo appInfo{"CudaVulkanInteropTest",
                                     VK_MAKE_VERSION(1, 0, 0),
-                                    "HyperEngine",
+                                    "SpectraForge",
                                     VK_MAKE_VERSION(1, 0, 0),
                                     VK_API_VERSION_1_2};
 
@@ -239,7 +239,7 @@ TEST_F(CudaVulkanInteropTest, FlashGSIntegration) {
                 float cameraPos[3];
             } cameraParams;
 
-            HyperEngine::Vulkan::PrimaryImage expectedImage;
+            SpectraForge::Vulkan::PrimaryImage expectedImage;
             expectedImage.width = testImageWidth;
             expectedImage.height = testImageHeight;
 
@@ -283,7 +283,7 @@ TEST_F(CudaVulkanInteropTest, OptiXIntegration) {
             launchParams.height = testImageHeight;
             launchParams.maxDepth = 4;
 
-            HyperEngine::Vulkan::RawEffects expectedEffects;
+            SpectraForge::Vulkan::RawEffects expectedEffects;
             EXPECT_CALL(*mockOptiX, traceRays(testing::_))
                 .WillOnce(testing::Return(expectedEffects));
 
@@ -419,7 +419,7 @@ TEST_F(CudaVulkanInteropTest, InteropStressTest) {
                 try {
                     // Симуляция интенсивного использования interop
                     struct CameraParams cameraParams;
-                    HyperEngine::Vulkan::PrimaryImage mockImage;
+                    SpectraForge::Vulkan::PrimaryImage mockImage;
                     mockImage.width = testImageWidth;
                     mockImage.height = testImageHeight;
 

@@ -1,12 +1,12 @@
-#include "HyperEngine/Math/Quaternion.h"
+#include "SpectraForge/Math/Quaternion.h"
 #include <algorithm>
 #include <cmath>
-#include "HyperEngine/Math/MathConstants.h"
-#include "HyperEngine/Math/Matrix4.h"
+#include "SpectraForge/Math/MathConstants.h"
+#include "SpectraForge/Math/Matrix4.h"
 
-using namespace HyperEngine::Math;
+using namespace SpectraForge::Math;
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace Math {
 
 // Конструкторы
@@ -409,4 +409,4 @@ Quaternion operator*(float scalar, const Quaternion& q) {
 }
 
 }  // namespace Math
-}  // namespace HyperEngine
+}  // namespace SpectraForge

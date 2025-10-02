@@ -1,11 +1,11 @@
 ---
-description: SOLID principles, architecture patterns, and comprehensive development standards for HyperEngine
+description: SOLID principles, architecture patterns, and comprehensive development standards for SpectraForge
 globs: ["**/*.cpp", "**/*.h", "**/*.hpp"]
 alwaysApply: true
 priority: 900
 ---
 
-# HyperEngine Architecture Rules
+# SpectraForge Architecture Rules
 
 @context {
   "type": "architecture_guidelines",
@@ -368,7 +368,7 @@ Document and approve exceptions.
     "id": "github_issues",
     "mcp_tool": "mcp_github_create_issue",
     "when": "Architecture violations or technical debt detected",
-    "params": {"owner": "TiGRoNdev", "repo": "HyperEngine", "labels": ["architecture", "technical-debt"]}
+    "params": {"owner": "TiGRoNdev", "repo": "SpectraForge", "labels": ["architecture", "technical-debt"]}
   },
   {
     "id": "research",

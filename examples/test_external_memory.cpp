@@ -3,10 +3,10 @@
  * @brief Простой тест для проверки реальных Vulkan external memory handles
  */
 
-#include "HyperEngine/CUDA/CudaInterop.h"
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Vulkan/VulkanEngine.h"
+#include "SpectraForge/CUDA/CudaInterop.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Vulkan/VulkanEngine.h"
 
 #include <cstdint>
 #include <iostream>
@@ -19,10 +19,10 @@
 #include <windows.h>
 #endif
 
-using namespace HyperEngine;
-using namespace HyperEngine::Core;
-using namespace HyperEngine::Vulkan;
-using namespace HyperEngine::CUDA;
+using namespace SpectraForge;
+using namespace SpectraForge::Core;
+using namespace SpectraForge::Vulkan;
+using namespace SpectraForge::CUDA;
 
 int main() {
     try {
@@ -34,7 +34,7 @@ int main() {
         vk::ApplicationInfo appInfo{};
         appInfo.pApplicationName = "External Memory Test";
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.pEngineName = "HyperEngine";
+        appInfo.pEngineName = "SpectraForge";
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.apiVersion = VK_API_VERSION_1_2;
 

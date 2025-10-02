@@ -3,17 +3,17 @@
  * @brief Реализация основного класса движка согласно SOLID принципам
  */
 
-#include "HyperEngine/Core/EngineCore.h"
+#include "SpectraForge/Core/EngineCore.h"
 #include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <stdexcept>
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
-using namespace HyperEngine::Core;
-using namespace HyperEngine::Core::Interfaces;
+using namespace SpectraForge::Core;
+using namespace SpectraForge::Core::Interfaces;
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace Core {
 
 // Конструктор с dependency injection (DIP)
@@ -190,7 +190,7 @@ bool EngineCore::handleEvent(const std::shared_ptr<IEvent>& event) {
     return false;
 }
 
-bool EngineCore::canHandle(const char* eventType) const {
+bool EngineCore::canHandle(const char* /*eventType*/) const {
     // TODO: Определить типы событий, которые может обработать движок
     return false;
 }
@@ -331,4 +331,4 @@ void EngineCore::renderFrame() {
 }
 
 }  // namespace Core
-}  // namespace HyperEngine
+}  // namespace SpectraForge

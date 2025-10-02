@@ -13,15 +13,15 @@
 #include <iostream>
 #include <stdexcept>
 
-namespace HyperEngine::Testing {
+namespace SpectraForge::Testing {
 
 /**
- * @brief Базовый класс для всех тестов HyperEngine
+ * @brief Базовый класс для всех тестов SpectraForge
  *
  * Предоставляет общую инфраструктуру для инициализации и очистки
  * тестовой среды. Включает настройку консоли и логирования.
  */
-class HyperEngineTest : public ::testing::Test {
+class SpectraForgeTest : public ::testing::Test {
   protected:
     void SetUp() override {
         // Инициализация тестовой среды
@@ -166,10 +166,10 @@ class TestUtils {
 /**
  * @brief Базовый класс для тестов производительности
  */
-class PerformanceTest : public HyperEngineTest {
+class PerformanceTest : public SpectraForgeTest {
   protected:
     void SetUp() override {
-        HyperEngineTest::SetUp();
+        SpectraForgeTest::SetUp();
         warmupSystem();
     }
 
@@ -190,9 +190,9 @@ class PerformanceTest : public HyperEngineTest {
  * @brief Параметризованные тесты для тестирования с различными входными данными
  */
 template <typename T>
-class ParameterizedTest : public HyperEngineTest, public ::testing::WithParamInterface<T> {
+class ParameterizedTest : public SpectraForgeTest, public ::testing::WithParamInterface<T> {
   protected:
     T getParam() { return ::testing::WithParamInterface<T>::GetParam(); }
 };
 
-}  // namespace HyperEngine::Testing
+}  // namespace SpectraForge::Testing

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Скрипт проверки заголовков авторских прав для HyperEngine
+# Скрипт проверки заголовков авторских прав для SpectraForge
 
 set -e
 
@@ -11,9 +11,9 @@ NC='\033[0m' # No Color
 
 # Ожидаемый заголовок авторских прав
 EXPECTED_COPYRIGHT="/**
- * Copyright (c) 2024 HyperEngine Team
+ * Copyright (c) 2024 SpectraForge Team
  * 
- * This file is part of HyperEngine, a modern 3D/4D rendering engine.
+ * This file is part of SpectraForge, a modern 3D/4D rendering engine.
  * 
  * Licensed under the MIT License. See LICENSE file in the project root
  * for full license information.
@@ -46,7 +46,7 @@ check_file() {
     head_content=$(head -n 10 "$file" 2>/dev/null || echo "")
     
     # Проверяем наличие заголовка авторских прав
-    if [[ "$head_content" =~ "Copyright".*(2024|2023|2025).*"HyperEngine" ]]; then
+    if [[ "$head_content" =~ "Copyright".*(2024|2023|2025).*"SpectraForge" ]]; then
         files_with_copyright=$((files_with_copyright + 1))
         echo -e "${GREEN}✓${NC} $file"
         return 0

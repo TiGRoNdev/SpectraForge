@@ -10,22 +10,22 @@
 #include <iostream>
 #include <memory>
 #include <vector>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
 #ifdef VULKAN_RENDERER_OPTIX_SUPPORT
 #include <cuda_runtime.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "HyperEngine/OptiX/OptiXRayTracer.h"
+#include "SpectraForge/OptiX/OptiXRayTracer.h"
 #endif
 
 using namespace std;
 using namespace glm;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Core;
 
 #ifdef VULKAN_RENDERER_OPTIX_SUPPORT
-using namespace HyperEngine::OptiX;
+using namespace SpectraForge::OptiX;
 
 /**
  * @brief Создание тестовой геометрии - простой куб

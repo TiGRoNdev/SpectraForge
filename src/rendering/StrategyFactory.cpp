@@ -2,10 +2,10 @@
  * @file StrategyFactory.cpp
  */
 
-#include "HyperEngine/Rendering/StrategyFactory.h"
-#include "HyperEngine/Rendering/FreqVox/FreqVoxStrategy.h"
+#include "SpectraForge/Rendering/StrategyFactory.h"
+#include "SpectraForge/Rendering/FreqVox/FreqVoxStrategy.h"
 
-namespace HyperEngine::Rendering {
+namespace SpectraForge::Rendering {
 
 std::shared_ptr<IRenderStrategy> create_strategy_by_name(const std::string& name) {
     if (name == "freqvox") {
@@ -18,6 +18,6 @@ std::shared_ptr<IRenderStrategy> create_strategy_by_name(const std::string& name
     return nullptr;
 }
 
-}  // namespace HyperEngine::Rendering
+}  // namespace SpectraForge::Rendering
 
 

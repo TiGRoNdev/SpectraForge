@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
-#include "HyperEngine/Rendering/FreqVox/FreqVoxStrategy.h"
+#include "SpectraForge/Rendering/FreqVox/FreqVoxStrategy.h"
 
-using namespace HyperEngine::Rendering;
-using namespace HyperEngine::Rendering::FreqVox;
+using namespace SpectraForge::Rendering;
+using namespace SpectraForge::Rendering::FreqVox;
 
 TEST(FreqVoxStrategy, Lifecycle) {
     FreqVoxStrategy strat;

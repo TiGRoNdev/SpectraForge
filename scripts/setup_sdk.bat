@@ -1,9 +1,9 @@
 @echo off
-REM setup_sdk.bat - Автоматическая настройка SDK для HyperEngine
+REM setup_sdk.bat - Автоматическая настройка SDK для SpectraForge
 REM Этот скрипт проверяет наличие необходимых SDK и помогает с их настройкой
 
 echo ========================================
-echo HyperEngine SDK Setup Script
+echo SpectraForge SDK Setup Script
 echo ========================================
 echo.
 

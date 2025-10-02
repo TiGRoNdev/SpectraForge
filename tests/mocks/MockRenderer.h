@@ -1,13 +1,13 @@
 #pragma once
 #include <gmock/gmock.h>
-#include "HyperEngine/Core/GameObject3D.h"
-#include "HyperEngine/Core/Interfaces.h"
-#include "HyperEngine/Rendering/RendererAdapter.h"
+#include "SpectraForge/Core/GameObject3D.h"
+#include "SpectraForge/Core/Interfaces.h"
+#include "SpectraForge/Rendering/RendererAdapter.h"
 
-namespace HyperEngine::Testing::Mocks {
+namespace SpectraForge::Testing::Mocks {
 
-using namespace HyperEngine::Rendering;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Rendering;
+using namespace SpectraForge::Core;
 
 /**
  * @brief Mock объект для IRendererAdapter
@@ -45,19 +45,19 @@ class MockRendererAdapter : public IRendererAdapter {
     MOCK_METHOD(void,
                 renderMesh,
                 (const Mesh3D& mesh,
-                 const HyperEngine::Math::Matrix4& transform,
+                 const SpectraForge::Math::Matrix4& transform,
                  const Shader3D& shader),
                 (override));
     MOCK_METHOD(void,
                 renderMesh,
                 (std::shared_ptr<Mesh3D> mesh,
-                 const HyperEngine::Math::Matrix4& transform,
+                 const SpectraForge::Math::Matrix4& transform,
                  std::shared_ptr<Shader3D> shader),
                 (override));
     MOCK_METHOD(void,
                 renderWireframe,
                 (const Mesh3D& mesh,
-                 const HyperEngine::Math::Matrix4& transform,
+                 const SpectraForge::Math::Matrix4& transform,
                  const Shader3D& shader),
                 (override));
 
@@ -96,9 +96,9 @@ class MockLifecycle : public ILifecycle {
  */
 class MockTransformable : public ITransformable {
   public:
-    MOCK_METHOD(HyperEngine::Math::Vector3, getPosition, (), (const override));
-    MOCK_METHOD(void, setPosition, (const HyperEngine::Math::Vector3& position), (override));
-    MOCK_METHOD(HyperEngine::Math::Matrix4, getTransformMatrix, (), (const override));
+    MOCK_METHOD(SpectraForge::Math::Vector3, getPosition, (), (const override));
+    MOCK_METHOD(void, setPosition, (const SpectraForge::Math::Vector3& position), (override));
+    MOCK_METHOD(SpectraForge::Math::Matrix4, getTransformMatrix, (), (const override));
 };
 
 /**
@@ -125,10 +125,10 @@ class MockPrimitiveFactory : public IPrimitiveFactory {
  */
 class MockProjectionStrategy : public IProjectionStrategy {
   public:
-    MOCK_METHOD(HyperEngine::Math::Matrix4, getProjectionMatrix, (), (const override));
-    MOCK_METHOD(HyperEngine::Math::Vector3,
+    MOCK_METHOD(SpectraForge::Math::Matrix4, getProjectionMatrix, (), (const override));
+    MOCK_METHOD(SpectraForge::Math::Vector3,
                 project,
-                (const HyperEngine::Math::Vector3& point),
+                (const SpectraForge::Math::Vector3& point),
                 (const override));
 };
 
@@ -178,8 +178,8 @@ class MockFactory {
     static std::unique_ptr<MockTransformable> createBasicTransformable() {
         auto mock = std::make_unique<MockTransformable>();
 
-        HyperEngine::Math::Vector3 defaultPosition(0.0f, 0.0f, 0.0f);
-        HyperEngine::Math::Matrix4 identityMatrix = HyperEngine::Math::Matrix4::identity();
+        SpectraForge::Math::Vector3 defaultPosition(0.0f, 0.0f, 0.0f);
+        SpectraForge::Math::Matrix4 identityMatrix = SpectraForge::Math::Matrix4::identity();
 
         EXPECT_CALL(*mock, getPosition()).WillRepeatedly(testing::Return(defaultPosition));
         EXPECT_CALL(*mock, getTransformMatrix()).WillRepeatedly(testing::Return(identityMatrix));
@@ -189,4 +189,4 @@ class MockFactory {
     }
 };
 
-}  // namespace HyperEngine::Testing::Mocks
+}  // namespace SpectraForge::Testing::Mocks

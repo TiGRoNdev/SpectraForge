@@ -2,13 +2,13 @@
 #include "mocks/MockVulkanRenderer.h"
 
 // Условная компиляция для Vulkan тестов
-#ifdef HyperEngine_ENABLE_VULKAN
-#include "HyperEngine/Vulkan/VulkanRenderer.h"
-using namespace HyperEngine::Vulkan;
+#ifdef SpectraForge_ENABLE_VULKAN
+#include "SpectraForge/Vulkan/VulkanRenderer.h"
+using namespace SpectraForge::Vulkan;
 #endif
 
-using namespace HyperEngine::Testing;
-using namespace HyperEngine::Testing::Mocks;
+using namespace SpectraForge::Testing;
+using namespace SpectraForge::Testing::Mocks;
 
 /**
  * @brief Unit тесты для VulkanRenderer
@@ -16,10 +16,10 @@ using namespace HyperEngine::Testing::Mocks;
  * Тестирует гибридный rendering pipeline согласно UML архитектуре:
  * Primary rasterization -> Secondary ray tracing -> AI denoising -> Upscaling
  */
-class VulkanRendererTest : public HyperEngineTest {
+class VulkanRendererTest : public SpectraForgeTest {
   protected:
     void SetUp() override {
-        HyperEngineTest::SetUp();
+        SpectraForgeTest::SetUp();
 
         // Создаем mock объекты для всех компонентов
         mockRenderer = VulkanMockFactory::createInitializedRenderer();
@@ -35,7 +35,7 @@ class VulkanRendererTest : public HyperEngineTest {
         if (mockRenderer) {
             mockRenderer->shutdown();
         }
-        HyperEngineTest::TearDown();
+        SpectraForgeTest::TearDown();
     }
 
   private:
@@ -61,7 +61,7 @@ class VulkanRendererTest : public HyperEngineTest {
 
 // Тесты инициализации
 TEST_F(VulkanRendererTest, SuccessfulInitialization) {
-#ifdef HyperEngine_ENABLE_VULKAN
+#ifdef SpectraForge_ENABLE_VULKAN
     vk::Device mockDevice;  // Заглушка для Vulkan device
 #else
     // Заглушка для случая без Vulkan
@@ -83,7 +83,7 @@ TEST_F(VulkanRendererTest, SuccessfulInitialization) {
 
 TEST_F(VulkanRendererTest, FailedInitialization) {
     auto failingRenderer = VulkanMockFactory::createFailingRenderer();
-#ifdef HyperEngine_ENABLE_VULKAN
+#ifdef SpectraForge_ENABLE_VULKAN
     vk::Device mockDevice;
 #else
     void* mockDevice = nullptr;

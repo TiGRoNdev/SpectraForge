@@ -1,7 +1,7 @@
 #!/bin/bash
-# Установка и настройка инструментов качества кода для HyperEngine
+# Установка и настройка инструментов качества кода для SpectraForge
 
-echo "🔧 Установка инструментов качества кода HyperEngine..."
+echo "🔧 Установка инструментов качества кода SpectraForge..."
 
 # Определить операционную систему
 OS="unknown"
@@ -199,7 +199,7 @@ fi
 if [ ! -f "cppcheck.cfg" ]; then
     log_info "Создание базовой конфигурации cppcheck..."
     cat > cppcheck.cfg << 'EOF'
-# Конфигурация cppcheck для HyperEngine
+# Конфигурация cppcheck для SpectraForge
 # Подавление ложных срабатываний
 missingIncludeSystem
 unusedFunction
@@ -236,8 +236,8 @@ git diff --cached --name-only | grep -E '\.(cpp|h|hpp)$' | while read file; do
     
     # Проверка namespace
     if [ "${file##*.}" = "h" ] || [ "${file##*.}" = "hpp" ]; then
-        if ! grep -q "namespace HyperEngine" "$file"; then
-            echo "⚠️ Файл $file может не использовать namespace HyperEngine"
+        if ! grep -q "namespace SpectraForge" "$file"; then
+            echo "⚠️ Файл $file может не использовать namespace SpectraForge"
         fi
     fi
 done
@@ -281,7 +281,7 @@ echo ""
 echo "📚 Создание документации..."
 
 cat > docs/guides/QUALITY_TOOLS.md << 'EOF'
-# Инструменты качества кода HyperEngine
+# Инструменты качества кода SpectraForge
 
 ## Установленные инструменты
 

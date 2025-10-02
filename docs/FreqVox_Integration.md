@@ -2,7 +2,7 @@
 
 ## Обзор
 
-FreqVox (Adaptive Frequency-Domain Sparse Neural-Voxel Rendering) - это инновационный алгоритм рендеринга, реализованный в HyperEngine. Он сочетает фовеированную выборку вокселей, частотное шейдинг, временную репроекцию и нейронный апскейлинг для достижения высокой производительности при сохранении качества изображения.
+FreqVox (Adaptive Frequency-Domain Sparse Neural-Voxel Rendering) - это инновационный алгоритм рендеринга, реализованный в SpectraForge. Он сочетает фовеированную выборку вокселей, частотное шейдинг, временную репроекцию и нейронный апскейлинг для достижения высокой производительности при сохранении качества изображения.
 
 ## Архитектура
 
@@ -68,9 +68,9 @@ ctest --output-on-failure
 ### Пример 1: Базовая инициализация
 
 ```cpp
-#include "HyperEngine/Rendering/FreqVox/FreqVoxStrategy.h"
+#include "SpectraForge/Rendering/FreqVox/FreqVoxStrategy.h"
 
-using namespace HyperEngine::Rendering::FreqVox;
+using namespace SpectraForge::Rendering::FreqVox;
 
 // Создание стратегии
 auto strategy = std::make_shared<FreqVoxStrategy>();
@@ -92,7 +92,7 @@ strategy->shutdown();
 ### Пример 2: Выбор FFT бэкенда
 
 ```cpp
-#include "HyperEngine/Rendering/FreqVox/BackendFactory.h"
+#include "SpectraForge/Rendering/FreqVox/BackendFactory.h"
 
 // Автовыбор лучшего бэкенда
 auto backend = BackendFactory::create(BackendFactory::BackendType::Auto);
@@ -121,7 +121,7 @@ auto vkBackend = BackendFactory::create(BackendFactory::BackendType::VkFFT);
 Фабрика FFT/DCT бэкендов:
 
 ```cpp
-namespace HyperEngine::Rendering::FreqVox {
+namespace SpectraForge::Rendering::FreqVox {
 
 class BackendFactory {
 public:
@@ -271,7 +271,7 @@ make coverage
 - [FreqVox Концепция](concept/FreqVox%20Renderer.md)
 - [Математическая модель](concept/FreqVox%20Renderer%20Math.md)
 - [План реализации](../FREQVOX_IMPL.md)
-- [Архитектура HyperEngine](architecture/)
+- [Архитектура SpectraForge](architecture/)
 
 ## Лицензия
 

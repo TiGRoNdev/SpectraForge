@@ -1,4 +1,4 @@
-# Руководство разработчика HyperEngine
+# Руководство разработчика SpectraForge
 
 ## 🚀 Быстрый старт
 
@@ -14,8 +14,8 @@
 
 1. **Клонирование репозитория:**
 ```bash
-git clone https://github.com/TiGRoNdev/HyperEngine.git
-cd HyperEngine
+git clone https://github.com/TiGRoNdev/SpectraForge.git
+cd SpectraForge
 git submodule update --init --recursive
 ```
 
@@ -35,7 +35,7 @@ cmake --build . --config Release
 ### Структура проекта
 
 ```
-HyperEngine/
+SpectraForge/
 ├── 📁 src/                     # Исходный код
 │   ├── core/                   # Основные компоненты
 │   ├── math/                   # Математическая библиотека
@@ -52,7 +52,7 @@ HyperEngine/
 │   └── cuda_kernels.cu        # CUDA ядра
 ├── 📁 include/                 # Публичные заголовки
 │   ├── Engine3D/              # Заголовки 3D движка
-│   └── HyperEngine/           # Основные заголовки
+│   └── SpectraForge/           # Основные заголовки
 ├── 📁 tests/                   # Тесты
 │   ├── unit/                   # Модульные тесты
 │   ├── integration/            # Интеграционные тесты
@@ -108,7 +108,7 @@ int frameCount;
 const int MAX_VERTEX_COUNT = 1000;
 
 // Namespace: PascalCase
-namespace HyperEngine::Rendering {}
+namespace SpectraForge::Rendering {}
 ```
 
 #### Структура классов
@@ -159,7 +159,7 @@ int myFunction(int input, std::string& output);
 
 #### Безопасный вывод в консоль
 ```cpp
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
 // Всегда используйте SAFE_TO_STRING для вывода переменных
 std::cout << "Значение: " << SAFE_TO_STRING(myVariable) << std::endl;
@@ -173,20 +173,20 @@ std::cout << "Значение: " << SAFE_TO_STRING(myVariable) << std::endl;
 ### Структура тестов
 ```cpp
 #include "TestFramework.h"
-#include "HyperEngine/Math/Vector3.h"
+#include "SpectraForge/Math/Vector3.h"
 
-using namespace HyperEngine::Testing;
+using namespace SpectraForge::Testing;
 
-class Vector3Test : public HyperEngineTest {
+class Vector3Test : public SpectraForgeTest {
 protected:
     void SetUp() override {
-        HyperEngineTest::SetUp();
+        SpectraForgeTest::SetUp();
         // Настройка для тестов
     }
     
     void TearDown() override {
         // Очистка после тестов
-        HyperEngineTest::TearDown();
+        SpectraForgeTest::TearDown();
     }
     
     Math::Vector3 testVector{1.0f, 2.0f, 3.0f};
@@ -329,7 +329,7 @@ git push origin v1.2.0
 
 ### Использование встроенного профайлера
 ```cpp
-#include "HyperEngine/Core/Profiler.h"
+#include "SpectraForge/Core/Profiler.h"
 
 void myFunction() {
     PROFILE_SCOPE("MyFunction");
@@ -348,7 +348,7 @@ void myFunction() {
 cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_PROFILING=ON
 
 # Запуск с профайлером
-./HyperEngine_Demo --profile --profile-output=profile.json
+./SpectraForge_Demo --profile --profile-output=profile.json
 
 # Анализ результатов
 python tools/analyze_profile.py profile.json
@@ -360,7 +360,7 @@ python tools/analyze_profile.py profile.json
 nvcc -g -G -O0 src/cuda_kernels.cu
 
 # Использование cuda-gdb
-cuda-gdb ./HyperEngine_Demo
+cuda-gdb ./SpectraForge_Demo
 ```
 
 ### Отладка Vulkan
@@ -370,7 +370,7 @@ export VK_LAYER_PATH=/path/to/vulkan/layers
 export VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation
 
 # Запуск с RenderDoc для анализа кадров
-renderdoc ./HyperEngine_Demo
+renderdoc ./SpectraForge_Demo
 ```
 
 ## 🔧 Инструменты разработки
@@ -431,8 +431,8 @@ glslc shaders/vertex.vert -o shaders/vertex.spv
 
 ### Сообщество
 
-- [GitHub Issues](https://github.com/TiGRoNdev/HyperEngine/issues) - Сообщения об ошибках и запросы функций
-- [GitHub Discussions](https://github.com/TiGRoNdev/HyperEngine/discussions) - Общие вопросы и обсуждения
+- [GitHub Issues](https://github.com/TiGRoNdev/SpectraForge/issues) - Сообщения об ошибках и запросы функций
+- [GitHub Discussions](https://github.com/TiGRoNdev/SpectraForge/discussions) - Общие вопросы и обсуждения
 
 ---
 

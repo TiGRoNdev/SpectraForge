@@ -1,10 +1,10 @@
-#include "HyperEngine/Math/Vector4.h"
+#include "SpectraForge/Math/Vector4.h"
 #include <algorithm>
 #include <limits>
 #include <stdexcept>
-#include "HyperEngine/Math/Vector3.h"
+#include "SpectraForge/Math/Vector3.h"
 
-namespace HyperEngine::Math {
+namespace SpectraForge::Math {
 
 // Операторы присваивания и арифметики
 Vector4& Vector4::operator=(const Vector4& other) {
@@ -232,4 +232,4 @@ std::ostream& operator<<(std::ostream& os, const Vector4& v) {
     return os;
 }
 
-}  // namespace HyperEngine::Math
+}  // namespace SpectraForge::Math

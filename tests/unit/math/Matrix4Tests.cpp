@@ -1,19 +1,19 @@
-#include "HyperEngine/Math/Matrix4.h"
-#include "HyperEngine/Math/Vector4.h"
+#include "SpectraForge/Math/Matrix4.h"
+#include "SpectraForge/Math/Vector4.h"
 #include "TestFramework.h"
 
-using namespace HyperEngine::Testing;
-using namespace HyperEngine::Math;
+using namespace SpectraForge::Testing;
+using namespace SpectraForge::Math;
 
 /**
  * @brief Unit тесты для Matrix4
  *
- * Тестирует 4x4 матричные операции согласно архитектуре HyperEngine
+ * Тестирует 4x4 матричные операции согласно архитектуре SpectraForge
  */
-class Matrix4Test : public HyperEngineTest {
+class Matrix4Test : public SpectraForgeTest {
   protected:
     void SetUp() override {
-        HyperEngineTest::SetUp();
+        SpectraForgeTest::SetUp();
 
         // Создаем тестовые матрицы
         identity = Matrix4::identity();

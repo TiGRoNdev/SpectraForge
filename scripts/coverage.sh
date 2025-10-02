@@ -3,7 +3,7 @@
 
 set -e
 
-echo "📊 Проверка покрытия кода HyperEngine"
+echo "📊 Проверка покрытия кода SpectraForge"
 echo "====================================="
 
 # Создать директорию для отчетов о покрытии
@@ -39,7 +39,7 @@ if true; then
 <!DOCTYPE html>
 <html>
 <head>
-    <title>HyperEngine Code Coverage Report</title>
+    <title>SpectraForge Code Coverage Report</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         .header { background-color: #f0f0f0; padding: 10px; border-radius: 5px; }
@@ -49,7 +49,7 @@ if true; then
 </head>
 <body>
     <div class="header">
-        <h1>HyperEngine Code Coverage Report</h1>
+        <h1>SpectraForge Code Coverage Report</h1>
         <p>Дата: $(date)</p>
     </div>
     

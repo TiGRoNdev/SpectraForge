@@ -1,4 +1,4 @@
-# API Reference - HyperEngine v1.0.0
+# API Reference - SpectraForge v1.0.0
 
 ## Содержание
 

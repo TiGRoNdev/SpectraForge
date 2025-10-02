@@ -15,7 +15,7 @@ add_performance_test(math_performance_tests
     SOURCES
         math/MathPerformanceTest.cpp
     LIBS
-        # Здесь будет HyperEngine_Math когда он будет создан
+        # Здесь будет SpectraForge_Math когда он будет создан
 )
 
 # Тесты производительности для системы рендеринга
@@ -28,14 +28,14 @@ add_performance_test(rendering_performance_tests
 )
 
 # Тесты производительности FreqVox (не требует Google Benchmark)
-if(ENABLE_FREQVOX AND TARGET HyperEngine_FreqVox)
+if(ENABLE_FREQVOX AND TARGET SpectraForge_FreqVox)
     add_executable(freqvox_benchmark
         FreqVoxBenchmark.cpp
     )
     target_link_libraries(freqvox_benchmark PRIVATE
-        HyperEngine_FreqVox
-        HyperEngine_Core
-        HyperEngine_Math
+        SpectraForge_FreqVox
+        SpectraForge_Core
+        SpectraForge_Math
     )
     target_include_directories(freqvox_benchmark PRIVATE
         ${CMAKE_SOURCE_DIR}/include

@@ -1,4 +1,4 @@
-# Зависимости HyperEngine
+# Зависимости SpectraForge
 
 > **Версия:** 2.0  
 > **Дата обновления:** 2025-10-01  
@@ -6,7 +6,7 @@
 
 ## 📋 Обзор
 
-HyperEngine - это современный 3D/4D движок с поддержкой передовых технологий рендеринга:
+SpectraForge - это современный 3D/4D движок с поддержкой передовых технологий рендеринга:
 - **Vulkan** - современный графический API
 - **CUDA** - вычисления на GPU (NVIDIA)
 - **OptiX** - трассировка лучей (NVIDIA)
@@ -19,7 +19,7 @@ HyperEngine - это современный 3D/4D движок с поддерж
 
 ```bash
 # Переход в директорию проекта
-cd /home/tigron/Documents/GITHUB/HyperEngine
+cd /home/tigron/Documents/GITHUB/SpectraForge
 
 # Запуск скрипта установки
 ./scripts/install_dependencies.sh
@@ -132,7 +132,7 @@ echo 'export PATH=$VCPKG_ROOT:$PATH' >> ~/.bashrc
 source ~/.bashrc
 
 # Переход в директорию проекта
-cd /home/tigron/Documents/GITHUB/HyperEngine
+cd /home/tigron/Documents/GITHUB/SpectraForge
 
 # Установка зависимостей проекта
 $VCPKG_ROOT/vcpkg install \
@@ -474,7 +474,7 @@ git pull --recurse-submodules
 
 При возникновении проблем:
 1. Проверьте раздел [Устранение проблем](#-устранение-проблем)
-2. Создайте issue на GitHub: https://github.com/TiGRoNdev/HyperEngine/issues
+2. Создайте issue на GitHub: https://github.com/TiGRoNdev/SpectraForge/issues
 3. Приложите логи сборки и вывод `cmake ..`
 
 ---

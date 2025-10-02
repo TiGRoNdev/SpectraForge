@@ -1,7 +1,7 @@
-#include "HyperEngine/Core/Component.h"
-#include "HyperEngine/Core/GameObject3D.h"
+#include "SpectraForge/Core/Component.h"
+#include "SpectraForge/Core/GameObject3D.h"
 
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Core;
 
 Component3D::Component3D() : gameObject(nullptr), enabled(true) {}
 

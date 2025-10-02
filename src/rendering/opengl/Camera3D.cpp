@@ -1,10 +1,10 @@
-#include "HyperEngine/Rendering/Camera3D.h"
+#include "SpectraForge/Rendering/Camera3D.h"
 #include <cmath>
 
-using namespace HyperEngine::Math;
-using namespace HyperEngine::Rendering;
+using namespace SpectraForge::Math;
+using namespace SpectraForge::Rendering;
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace Rendering {
 
 // Конструктор
@@ -325,4 +325,4 @@ void Camera3D::updateProjectionMatrix() const {
 }
 
 }  // namespace Rendering
-}  // namespace HyperEngine
+}  // namespace SpectraForge

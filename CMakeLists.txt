@@ -42,7 +42,7 @@ option(ENABLE_VULKAN_BACKEND "Enable Vulkan rendering backend" ON)
 option(DEFAULT_BACKEND_VULKAN "Use Vulkan as default backend (otherwise OpenGL)" ON)
 
 # Создаем проект с поддерживаемыми языками
-project(HyperEngine VERSION 1.0.0 LANGUAGES ${PROJECT_LANGUAGES})
+project(SpectraForge VERSION 1.0.0 LANGUAGES ${PROJECT_LANGUAGES})
 
 # Включаем CUDA если нужно
 if(BUILD_WITH_CUDA AND CUDA_COMPILER_AVAILABLE)
@@ -117,15 +117,15 @@ endif()
 
 # Определение макросов для адаптеров рендеринга
 if(ENABLE_OPENGL_BACKEND)
-    add_compile_definitions(HyperEngine_ENABLE_OPENGL)
+    add_compile_definitions(SpectraForge_ENABLE_OPENGL)
     message(STATUS "OpenGL backend enabled")
 endif()
 
 if(DEFAULT_BACKEND_VULKAN)
-    add_compile_definitions(HyperEngine_DEFAULT_BACKEND_VULKAN)
+    add_compile_definitions(SpectraForge_DEFAULT_BACKEND_VULKAN)
     message(STATUS "Vulkan set as default backend")
 else()
-    add_compile_definitions(HyperEngine_DEFAULT_BACKEND_OPENGL)
+    add_compile_definitions(SpectraForge_DEFAULT_BACKEND_OPENGL)
     message(STATUS "OpenGL set as default backend")
 endif()
 
@@ -173,7 +173,23 @@ if(BUILD_ENGINE_4D OR BUILD_VULKAN_RENDERER)
 endif()
 
 # Find GLFW3 (window and input library)
+# ВАЖНО: Принудительно используем vcpkg версию для совместимости с vcpkg Vulkan  
+# Приоритет vcpkg пакетов
+if(EXISTS "${CMAKE_SOURCE_DIR}/build/vcpkg_installed")
+    list(PREPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build/vcpkg_installed/${VCPKG_TARGET_TRIPLET}")
+    message(STATUS "vcpkg packages path добавлен в CMAKE_PREFIX_PATH")
+endif()
+
 find_package(glfw3 CONFIG REQUIRED)
+
+# Принудительно линкуем со статической vcpkg версией GLFW
+if(TARGET glfw)
+    set(GLFW_TARGET glfw)
+else()
+    message(FATAL_ERROR "GLFW target 'glfw' not found!")
+endif()
+
+message(STATUS "GLFW target: ${GLFW_TARGET}")
 
 # Find GLEW (OpenGL extension loader)
 find_package(GLEW REQUIRED)
@@ -288,59 +304,59 @@ endif()
 # ============================================================
 if(BUILD_ENGINE_3D)
     if(ENABLE_VULKAN_BACKEND AND BUILD_VULKAN_RENDERER)
-        add_compile_definitions(HyperEngine_ENABLE_VULKAN)
+        add_compile_definitions(SpectraForge_ENABLE_VULKAN)
     endif()
 
-    message(STATUS "Building HyperEngine with modular architecture...")
+    message(STATUS "Building SpectraForge with modular architecture...")
 
     # Подключаем новую модульную структуру
     add_subdirectory(src)
 
-    # Создаем основную библиотеку HyperEngine, объединяющую все модули
-    add_library(HyperEngine INTERFACE)
+    # Создаем основную библиотеку SpectraForge, объединяющую все модули
+    add_library(SpectraForge INTERFACE)
 
     # Подключаем все модули к основной библиотеке
-    target_link_libraries(HyperEngine INTERFACE
-        HyperEngine_Core
-        HyperEngine_Math
-        HyperEngine_OpenGL
-        HyperEngine_Physics
-        HyperEngine_Input
+    target_link_libraries(SpectraForge INTERFACE
+        SpectraForge_Core
+        SpectraForge_Math
+        SpectraForge_OpenGL
+        SpectraForge_Physics
+        SpectraForge_Input
     )
 
     # Подключаем FreqVox модуль, если он собран
-    if(ENABLE_FREQVOX AND TARGET HyperEngine_FreqVox)
-        target_link_libraries(HyperEngine INTERFACE HyperEngine_FreqVox)
-        add_compile_definitions(HyperEngine_ENABLE_FREQVOX)
+    if(ENABLE_FREQVOX AND TARGET SpectraForge_FreqVox)
+        target_link_libraries(SpectraForge INTERFACE SpectraForge_FreqVox)
+        add_compile_definitions(SpectraForge_ENABLE_FREQVOX)
     endif()
 
     # Подключаем Vulkan модуль если включен
     if(ENABLE_VULKAN_BACKEND AND BUILD_VULKAN_RENDERER)
-        target_link_libraries(HyperEngine INTERFACE HyperEngine_Vulkan)
-        target_include_directories(HyperEngine INTERFACE ${VMA_INCLUDE_DIR})
+        target_link_libraries(SpectraForge INTERFACE SpectraForge_Vulkan)
+        target_include_directories(SpectraForge INTERFACE ${VMA_INCLUDE_DIR})
     endif()
 
     # Подключаем опциональные модули
     if(BUILD_WITH_CUDA)
-        target_link_libraries(HyperEngine INTERFACE HyperEngine_CUDA)
+        target_link_libraries(SpectraForge INTERFACE SpectraForge_CUDA)
     endif()
 
     if(BUILD_WITH_OPTIX)
-        target_link_libraries(HyperEngine INTERFACE HyperEngine_OptiX)
+        target_link_libraries(SpectraForge INTERFACE SpectraForge_OptiX)
     endif()
 
     # Подключение внешних библиотек
-    target_link_libraries(HyperEngine INTERFACE
+    target_link_libraries(SpectraForge INTERFACE
         glfw
         GLEW::GLEW
         glm::glm
     )
 
     # Определения компилятора для 3D
-    target_compile_definitions(HyperEngine INTERFACE ENGINE_3D_BUILD)
+    target_compile_definitions(SpectraForge INTERFACE ENGINE_3D_BUILD)
 
     # Установка 3D движка
-    install(TARGETS HyperEngine
+    install(TARGETS SpectraForge
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
@@ -349,42 +365,66 @@ if(BUILD_ENGINE_3D)
     # Создание демо для 3D
     if(BUILD_EXAMPLES)
         # Оригинальное 3D демо
-        add_executable(HyperEngine_Demo
+        add_executable(SpectraForge_Demo
             examples/3d_demo.cpp
         )
-        target_link_libraries(HyperEngine_Demo PRIVATE HyperEngine)
+        target_link_libraries(SpectraForge_Demo PRIVATE SpectraForge)
 
         # Новое демо оптимального рендерера
         add_executable(OptimalRenderer_Demo
             examples/optimal_renderer_demo.cpp
         )
-        target_link_libraries(OptimalRenderer_Demo PRIVATE HyperEngine)
+        target_link_libraries(OptimalRenderer_Demo PRIVATE SpectraForge)
 
         # FreqVox Renderer демо (если включен)
-        if(ENABLE_FREQVOX AND TARGET HyperEngine_FreqVox)
+        if(ENABLE_FREQVOX AND TARGET SpectraForge_FreqVox)
             add_executable(FreqVox_Demo
                 examples/freqvox_demo.cpp
             )
-            target_link_libraries(FreqVox_Demo PRIVATE HyperEngine HyperEngine_FreqVox)
+            target_link_libraries(FreqVox_Demo PRIVATE SpectraForge SpectraForge_FreqVox)
+
+            # FreqVox Sponza - полнофункциональное демо с загрузкой сцены
+            add_executable(FreqVox_Sponza_Demo
+                examples/freqvox_sponza_demo.cpp
+            )
+            target_link_libraries(FreqVox_Sponza_Demo PRIVATE 
+                SpectraForge 
+                SpectraForge_FreqVox
+                glfw
+                glm::glm
+            )
+            
+            # Линковка с VulkanRenderer для Hardware Detection
+            if(BUILD_VULKAN_RENDERER)
+                # VulkanRenderer будет создан позже, используем отложенную линковку
+                target_compile_definitions(FreqVox_Sponza_Demo PRIVATE VULKAN_RENDERER_BUILD=1)
+                # Добавляем зависимости Vulkan напрямую
+                target_link_libraries(FreqVox_Sponza_Demo PRIVATE Vulkan::Vulkan)
+                message(STATUS "FreqVox Sponza Demo: Vulkan Hardware Detection включен")
+            else()
+                message(STATUS "FreqVox Sponza Demo: Vulkan Hardware Detection отключен (BUILD_VULKAN_RENDERER=OFF)")
+            endif()
+            
+            message(STATUS "FreqVox Sponza Demo будет собран")
         endif()
 
         # Демо UTF-8 консоли
         add_executable(UTF8Console_Demo
             examples/utf8_console_demo.cpp
         )
-        target_link_libraries(UTF8Console_Demo PRIVATE HyperEngine)
+        target_link_libraries(UTF8Console_Demo PRIVATE SpectraForge)
 
         # Демо адаптеров рендеринга
         add_executable(RendererAdapter_Demo
             examples/renderer_adapter_demo.cpp
         )
-        target_link_libraries(RendererAdapter_Demo PRIVATE HyperEngine)
+        target_link_libraries(RendererAdapter_Demo PRIVATE SpectraForge)
 
         # Демо безопасной консоли
         add_executable(SafeConsole_Demo
             examples/safe_console_demo.cpp
         )
-        target_link_libraries(SafeConsole_Demo PRIVATE HyperEngine)
+        target_link_libraries(SafeConsole_Demo PRIVATE SpectraForge)
 
         # SOLID Principles Demo
         add_executable(SOLIDPrinciples_Demo
@@ -393,7 +433,7 @@ if(BUILD_ENGINE_3D)
             src/core/Logger.cpp
             src/rendering/ModernRenderer3D.cpp
         )
-        target_link_libraries(SOLIDPrinciples_Demo PRIVATE HyperEngine)
+        target_link_libraries(SOLIDPrinciples_Demo PRIVATE SpectraForge)
     endif()
 endif()
 
@@ -520,7 +560,7 @@ if(BUILD_VULKAN_RENDERER)
         target_compile_definitions(VulkanRenderer PUBLIC VK_USE_PLATFORM_WIN32_KHR)
     endif()
 
-    target_compile_definitions(VulkanRenderer PUBLIC HyperEngine_ENABLE_VULKAN)
+    target_compile_definitions(VulkanRenderer PUBLIC SpectraForge_ENABLE_VULKAN)
 
     # Устанавливаем CUDA файлы как CUDA язык если доступен
     if(CUDA_AVAILABLE AND VULKAN_CUDA_CU_SOURCES)
@@ -589,11 +629,11 @@ if(BUILD_VULKAN_RENDERER)
     # Подключение заголовочных файлов
     target_include_directories(VulkanRenderer PUBLIC
         ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/include/HyperEngine
-        ${CMAKE_SOURCE_DIR}/include/HyperEngine/Vulkan
-        ${CMAKE_SOURCE_DIR}/include/HyperEngine/CUDA
-        ${CMAKE_SOURCE_DIR}/include/HyperEngine/OptiX
-        ${CMAKE_SOURCE_DIR}/include/HyperEngine/Upscaling
+        ${CMAKE_SOURCE_DIR}/include/SpectraForge
+        ${CMAKE_SOURCE_DIR}/include/SpectraForge/Vulkan
+        ${CMAKE_SOURCE_DIR}/include/SpectraForge/CUDA
+        ${CMAKE_SOURCE_DIR}/include/SpectraForge/OptiX
+        ${CMAKE_SOURCE_DIR}/include/SpectraForge/Upscaling
         ${VMA_INCLUDE_DIR}
     )
 
@@ -622,19 +662,19 @@ if(BUILD_VULKAN_RENDERER)
 
     # Базовые библиотеки для Vulkan рендерера
     target_link_libraries(VulkanRenderer PUBLIC
-        HyperEngine_Core
-        HyperEngine_Math
-        HyperEngine_Physics
-        HyperEngine_Input
-        HyperEngine_Upscaling
+        SpectraForge_Core
+        SpectraForge_Math
+        SpectraForge_Physics
+        SpectraForge_Input
+        SpectraForge_Upscaling
         Vulkan::Vulkan
         glfw
         glm::glm
     )
     
     # Опционально линкуем OpenGL если он доступен
-    if(TARGET HyperEngine_OpenGL)
-        target_link_libraries(VulkanRenderer PUBLIC HyperEngine_OpenGL)
+    if(TARGET SpectraForge_OpenGL)
+        target_link_libraries(VulkanRenderer PUBLIC SpectraForge_OpenGL)
     endif()
 
     # Опциональные зависимости Vulkan
@@ -701,7 +741,7 @@ if(BUILD_VULKAN_RENDERER)
         )
         target_link_libraries(VulkanRenderer_Demo PRIVATE
             VulkanRenderer
-            HyperEngine
+            SpectraForge
         )
 
         # Добавляем OptiX include directories если OptiX доступен
@@ -723,7 +763,7 @@ if(BUILD_VULKAN_RENDERER)
         )
         target_link_libraries(VulkanBasic_Demo PRIVATE
             VulkanRenderer
-            HyperEngine
+            SpectraForge
         )
 
         # Добавляем CUDA библиотеки к VulkanBasic_Demo если CUDA доступна
@@ -739,7 +779,7 @@ if(BUILD_VULKAN_RENDERER)
             )
             target_link_libraries(CudaVulkanInterop_Demo PRIVATE
                 VulkanRenderer
-                HyperEngine
+                SpectraForge
                 CUDA::cudart
                 CUDA::cuda_driver
             )
@@ -753,7 +793,7 @@ if(BUILD_VULKAN_RENDERER)
             )
             target_link_libraries(ExternalMemory_Test PRIVATE
                 VulkanRenderer
-                HyperEngine
+                SpectraForge
                 CUDA::cudart
                 CUDA::cuda_driver
             )
@@ -765,7 +805,7 @@ if(BUILD_VULKAN_RENDERER)
             )
             target_link_libraries(FlashGS_Demo PRIVATE
                 VulkanRenderer
-                HyperEngine
+                SpectraForge
                 CUDA::cudart
                 CUDA::cuda_driver
             )
@@ -780,7 +820,7 @@ if(BUILD_VULKAN_RENDERER)
                 )
                 target_link_libraries(OptiXRayTracer_Demo PRIVATE
                     VulkanRenderer
-                    HyperEngine
+                    SpectraForge
                     CUDA::cudart
                     CUDA::cuda_driver
                 )
@@ -802,6 +842,12 @@ if(BUILD_VULKAN_RENDERER)
         else()
             message(STATUS "CUDA демо отключены - CUDA не доступна или отключена")
         endif()
+        
+        # Линковка FreqVox_Sponza_Demo с VulkanRenderer для Hardware Detection
+        if(TARGET FreqVox_Sponza_Demo)
+            target_link_libraries(FreqVox_Sponza_Demo PRIVATE VulkanRenderer)
+            message(STATUS "FreqVox_Sponza_Demo: добавлена линковка с VulkanRenderer")
+        endif()
     endif()
 endif()
 
@@ -821,7 +867,7 @@ endif()
 # Установка заголовочных файлов
 # ============================================================
 if(BUILD_ENGINE_3D)
-    install(DIRECTORY include/HyperEngine/ DESTINATION include/HyperEngine)
+    install(DIRECTORY include/SpectraForge/ DESTINATION include/SpectraForge)
 endif()
 
 if(BUILD_ENGINE_4D)
@@ -832,7 +878,7 @@ endif()
 # Информация о сборке
 # ============================================================
 message(STATUS "")
-message(STATUS "=== HyperEngine Build Configuration ===")
+message(STATUS "=== SpectraForge Build Configuration ===")
 message(STATUS "Build 3D Engine: ${BUILD_ENGINE_3D}")
 message(STATUS "Build 4D Engine: ${BUILD_ENGINE_4D}")
 message(STATUS "Build Vulkan Renderer: ${BUILD_VULKAN_RENDERER}")

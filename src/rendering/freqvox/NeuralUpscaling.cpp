@@ -2,12 +2,12 @@
  * @file NeuralUpscaling.cpp
  */
 
-#include "HyperEngine/Rendering/FreqVox/NeuralUpscaling.h"
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Rendering/FreqVox/NeuralUpscaling.h"
+#include "SpectraForge/Core/SafeConsole.h"
 #include <algorithm>
 #include <cmath>
 
-namespace HyperEngine::Rendering::FreqVox {
+namespace SpectraForge::Rendering::FreqVox {
 
 NeuralUpscaler::NeuralUpscaler() {
     SAFE_PRINT_LINE("[NeuralUpscaler] Создан");
@@ -158,5 +158,5 @@ bool NeuralUpscaler::upscaleBilinear(const std::vector<float>& input,
     return true;
 }
 
-} // namespace HyperEngine::Rendering::FreqVox
+} // namespace SpectraForge::Rendering::FreqVox
 

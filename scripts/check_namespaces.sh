@@ -1,5 +1,5 @@
 #!/bin/bash
-# Скрипт проверки консистентности namespaces для HyperEngine
+# Скрипт проверки консистентности namespaces для SpectraForge
 
 set -e
 
@@ -19,18 +19,18 @@ files_without_ns=0
 
 # Карта путей к ожидаемым namespace'ам
 declare -A path_to_namespace
-path_to_namespace["src/math/"]="HyperEngine::Math"
-path_to_namespace["include/HyperEngine/Math/"]="HyperEngine::Math"
-path_to_namespace["src/rendering/"]="HyperEngine::Rendering"
-path_to_namespace["include/HyperEngine/Rendering/"]="HyperEngine::Rendering"
-path_to_namespace["src/physics/"]="HyperEngine::Physics"
-path_to_namespace["include/HyperEngine/Physics/"]="HyperEngine::Physics"
-path_to_namespace["src/input/"]="HyperEngine::Input"
-path_to_namespace["include/HyperEngine/Input/"]="HyperEngine::Input"
-path_to_namespace["src/core/"]="HyperEngine::Core"
-path_to_namespace["include/HyperEngine/Core/"]="HyperEngine::Core"
-path_to_namespace["src/testing/"]="HyperEngine::Testing"
-path_to_namespace["include/HyperEngine/Testing/"]="HyperEngine::Testing"
+path_to_namespace["src/math/"]="SpectraForge::Math"
+path_to_namespace["include/SpectraForge/Math/"]="SpectraForge::Math"
+path_to_namespace["src/rendering/"]="SpectraForge::Rendering"
+path_to_namespace["include/SpectraForge/Rendering/"]="SpectraForge::Rendering"
+path_to_namespace["src/physics/"]="SpectraForge::Physics"
+path_to_namespace["include/SpectraForge/Physics/"]="SpectraForge::Physics"
+path_to_namespace["src/input/"]="SpectraForge::Input"
+path_to_namespace["include/SpectraForge/Input/"]="SpectraForge::Input"
+path_to_namespace["src/core/"]="SpectraForge::Core"
+path_to_namespace["include/SpectraForge/Core/"]="SpectraForge::Core"
+path_to_namespace["src/testing/"]="SpectraForge::Testing"
+path_to_namespace["include/SpectraForge/Testing/"]="SpectraForge::Testing"
 
 # Функция определения ожидаемого namespace
 get_expected_namespace() {
@@ -46,7 +46,7 @@ get_expected_namespace() {
     done
     
     # Если путь не найден, возвращаем базовый namespace
-    echo "HyperEngine"
+    echo "SpectraForge"
 }
 
 # Функция извлечения namespace из файла
@@ -148,11 +148,11 @@ if [ $exit_code -ne 0 ]; then
     echo
     echo -e "${RED}Некоторые файлы имеют проблемы с namespace!${NC}"
     echo -e "${YELLOW}Структура namespace'ов:${NC}"
-    echo "  src/math/ -> HyperEngine::Math"
-    echo "  src/rendering/ -> HyperEngine::Rendering"
-    echo "  src/physics/ -> HyperEngine::Physics"
-    echo "  src/input/ -> HyperEngine::Input"
-    echo "  src/core/ -> HyperEngine::Core"
+    echo "  src/math/ -> SpectraForge::Math"
+    echo "  src/rendering/ -> SpectraForge::Rendering"
+    echo "  src/physics/ -> SpectraForge::Physics"
+    echo "  src/input/ -> SpectraForge::Input"
+    echo "  src/core/ -> SpectraForge::Core"
 fi
 
 exit $exit_code

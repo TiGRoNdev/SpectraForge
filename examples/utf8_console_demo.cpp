@@ -1,6 +1,6 @@
 /**
  * @file utf8_console_demo.cpp
- * @brief Демонстрация поддержки UTF-8 символов в консоли HyperEngine
+ * @brief Демонстрация поддержки UTF-8 символов в консоли SpectraForge
  *
  * Этот пример показывает:
  * - Инициализацию UTF-8 консоли
@@ -14,14 +14,14 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/GameObject3D.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Math/Vector3.h"
-#include "HyperEngine/Rendering/Renderer3D.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/GameObject3D.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Math/Vector3.h"
+#include "SpectraForge/Rendering/Renderer3D.h"
 
-using namespace HyperEngine::Core;
-using namespace HyperEngine::Math;
+using namespace SpectraForge::Core;
+using namespace SpectraForge::Math;
 
 class UTF8Demo {
   public:
@@ -43,7 +43,7 @@ class UTF8Demo {
 
   private:
     void showWelcomeMessage() {
-        Console::setTitle("🚀 HyperEngine UTF-8 Demo");
+        Console::setTitle("🚀 SpectraForge UTF-8 Demo");
         Console::clear();
 
         std::cout << std::endl;
@@ -165,7 +165,7 @@ class UTF8Demo {
         SAFE_PRINT_LINE("═══════════════════════════════");
 
         // Имитация инициализации движка
-        Console::info("🔧 Инициализация HyperEngine 3D...");
+        Console::info("🔧 Инициализация SpectraForge 3D...");
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         Console::info("📚 Загрузка математических библиотек...");
@@ -206,7 +206,7 @@ class UTF8Demo {
         SAFE_PRINT_LINE("🎉═══════════════════════════════════════════════════════════════🎉");
         std::cout << std::endl;
 
-        SAFE_PRINT_LINE("🚀 HyperEngine теперь полностью поддерживает:");
+        SAFE_PRINT_LINE("🚀 SpectraForge теперь полностью поддерживает:");
         SAFE_PRINT_LINE("   ✅ Отображение всех Unicode UTF-8 символов");
         SAFE_PRINT_LINE("   ✅ Эмодзи в консольном выводе");
         SAFE_PRINT_LINE("   ✅ Цветной текст для лучшей читаемости");
@@ -215,7 +215,7 @@ class UTF8Demo {
 
         std::cout << std::endl;
         SAFE_PRINT_LINE("💡 Теперь вы можете использовать любые символы в своих проектах!");
-        SAFE_PRINT_LINE("🔗 Спасибо за использование HyperEngine!");
+        SAFE_PRINT_LINE("🔗 Спасибо за использование SpectraForge!");
 
         std::cout << std::endl;
         SAFE_PRINT_LINE("Нажмите Enter для выхода...");

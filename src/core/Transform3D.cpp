@@ -1,9 +1,9 @@
-#include "HyperEngine/Core/Transform3D.h"
+#include "SpectraForge/Core/Transform3D.h"
 #include <algorithm>
 
-using namespace HyperEngine::Math;
+using namespace SpectraForge::Math;
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace Core {
 
 Transform3D::Transform3D()
@@ -169,4 +169,4 @@ void Transform3D::updateWorldMatrix() const {
 }
 
 }  // namespace Core
-}  // namespace HyperEngine
+}  // namespace SpectraForge

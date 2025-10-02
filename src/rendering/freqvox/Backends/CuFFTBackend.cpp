@@ -2,11 +2,11 @@
  * @file CuFFTBackend.cpp
  */
 
-#include "HyperEngine/Rendering/FreqVox/Backends/CuFFTBackend.h"
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Rendering/FreqVox/Backends/CuFFTBackend.h"
+#include "SpectraForge/Core/SafeConsole.h"
 #include <stdexcept>
 
-namespace HyperEngine::Rendering::FreqVox::Backends {
+namespace SpectraForge::Rendering::FreqVox::Backends {
 
 CuFFTBackend::CuFFTBackend() {
 #ifdef HYPERENGINE_CUDA_AVAILABLE
@@ -20,7 +20,7 @@ CuFFTBackend::~CuFFTBackend() {
     shutdown();
 }
 
-bool CuFFTBackend::initialize(const DctBlockConfig& config) {
+bool CuFFTBackend::initialize([[maybe_unused]] const DctBlockConfig& config) {
 #ifndef HYPERENGINE_CUDA_AVAILABLE
     SAFE_ERROR("[CuFFTBackend] CUDA недоступна - сборка без BUILD_WITH_CUDA");
     return false;
@@ -44,7 +44,7 @@ bool CuFFTBackend::initialize(const DctBlockConfig& config) {
         return false;
     }
 
-    size_t required_size = cfg_.batch_size * cfg_.width * cfg_.height * sizeof(float);
+    size_t required_size = cfg_.batchCount * cfg_.blockSize * cfg_.blockSize * sizeof(float);
     if (!setupDeviceMemory(required_size)) {
         shutdown();
         return false;
@@ -162,12 +162,12 @@ bool CuFFTBackend::transform_inverse(std::vector<float>& io_block_batched) {
 #ifdef HYPERENGINE_CUDA_AVAILABLE
 bool CuFFTBackend::createPlans() {
     // Создаём план для батчированного 2D FFT
-    int n[2] = {static_cast<int>(cfg_.height), static_cast<int>(cfg_.width)};
+    int n[2] = {static_cast<int>(cfg_.blockSize), static_cast<int>(cfg_.blockSize)};
     
     cufftResult res = cufftPlanMany(&plan_forward_, 2, n,
                                     nullptr, 1, 0,
                                     nullptr, 1, 0,
-                                    CUFFT_R2C, static_cast<int>(cfg_.batch_size));
+                                    CUFFT_R2C, static_cast<int>(cfg_.batchCount));
     if (res != CUFFT_SUCCESS) {
         SAFE_ERROR("[CuFFTBackend] Ошибка создания forward плана: " + std::to_string(res));
         return false;
@@ -176,7 +176,7 @@ bool CuFFTBackend::createPlans() {
     res = cufftPlanMany(&plan_inverse_, 2, n,
                        nullptr, 1, 0,
                        nullptr, 1, 0,
-                       CUFFT_C2R, static_cast<int>(cfg_.batch_size));
+                       CUFFT_C2R, static_cast<int>(cfg_.batchCount));
     if (res != CUFFT_SUCCESS) {
         SAFE_ERROR("[CuFFTBackend] Ошибка создания inverse плана: " + std::to_string(res));
         cufftDestroy(plan_forward_);
@@ -217,5 +217,5 @@ bool CuFFTBackend::setupDeviceMemory(size_t required_size) {
 }
 #endif
 
-} // namespace HyperEngine::Rendering::FreqVox::Backends
+} // namespace SpectraForge::Rendering::FreqVox::Backends
 

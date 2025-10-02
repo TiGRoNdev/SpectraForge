@@ -2,12 +2,12 @@
  * @file TemporalReprojection.cpp
  */
 
-#include "HyperEngine/Rendering/FreqVox/TemporalReprojection.h"
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Rendering/FreqVox/TemporalReprojection.h"
+#include "SpectraForge/Core/SafeConsole.h"
 #include <algorithm>
 #include <cmath>
 
-namespace HyperEngine::Rendering::FreqVox {
+namespace SpectraForge::Rendering::FreqVox {
 
 TemporalReprojection::TemporalReprojection() {
     SAFE_PRINT_LINE("[TemporalReprojection] Создан");
@@ -166,5 +166,5 @@ float TemporalReprojection::calculateBlendFactor(const Math::Vector3& mv,
     return params_.blendFactor + (1.0f - params_.blendFactor) * combined_factor;
 }
 
-} // namespace HyperEngine::Rendering::FreqVox
+} // namespace SpectraForge::Rendering::FreqVox
 

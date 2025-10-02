@@ -1,11 +1,11 @@
 #include <benchmark/benchmark.h>
 #include <random>
 #include <vector>
-#include "HyperEngine/Math/Matrix4.h"
-#include "HyperEngine/Math/Quaternion.h"
-#include "HyperEngine/Math/Vector3.h"
+#include "SpectraForge/Math/Matrix4.h"
+#include "SpectraForge/Math/Quaternion.h"
+#include "SpectraForge/Math/Vector3.h"
 
-using namespace HyperEngine::Math;
+using namespace SpectraForge::Math;
 
 // Глобальные переменные для тестов
 std::random_device rd;
@@ -415,7 +415,7 @@ int main(int argc, char** argv) {
 
     // Информация о системе
     benchmark::AddCustomContext("CPU", "Test CPU");
-    benchmark::AddCustomContext("Math Library", "HyperEngine Math");
+    benchmark::AddCustomContext("Math Library", "SpectraForge Math");
 
     if (benchmark::ReportUnrecognizedArguments(argc, argv)) {
         return 1;

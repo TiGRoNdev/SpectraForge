@@ -1,8 +1,8 @@
-# HyperEngine Docker CI/CD Guide
+# SpectraForge Docker CI/CD Guide
 
 ## 📦 Overview
 
-This guide explains how to use the Docker-based CI/CD infrastructure for HyperEngine development and automated testing.
+This guide explains how to use the Docker-based CI/CD infrastructure for SpectraForge development and automated testing.
 
 ## 🏗️ Multi-Stage Docker Architecture
 
@@ -418,7 +418,7 @@ The final images only contain necessary tools. Build artifacts are not included 
 - [Docker Documentation](https://docs.docker.com/)
 - [vcpkg Documentation](https://vcpkg.io/)
 - [GitHub Actions Docker](https://docs.github.com/en/actions/creating-actions/creating-a-docker-container-action)
-- [HyperEngine Build Instructions](../BUILD_INSTRUCTIONS.md)
+- [SpectraForge Build Instructions](../BUILD_INSTRUCTIONS.md)
 
 ---
 

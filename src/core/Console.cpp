@@ -21,8 +21,8 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
 #ifdef __linux__
 #include <sys/ioctl.h>
@@ -34,7 +34,7 @@
 #include <cstdlib>
 #endif
 
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Core;
 
 // Инициализация статических переменных
 bool Console::initialized = false;

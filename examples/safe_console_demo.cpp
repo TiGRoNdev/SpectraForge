@@ -12,10 +12,10 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Core;
 
 class SafeConsoleDemo {
   public:

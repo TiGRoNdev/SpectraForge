@@ -1,24 +1,24 @@
-#include "HyperEngine/Rendering/OptimalRenderer3D.h"
+#include "SpectraForge/Rendering/OptimalRenderer3D.h"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <fstream>
 #include <functional>
 #include <iostream>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Math/Matrix4.h"
-#include "HyperEngine/Rendering/Camera3D.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Math/Matrix4.h"
+#include "SpectraForge/Rendering/Camera3D.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
-using namespace HyperEngine::Math;
-using namespace HyperEngine::Rendering;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Math;
+using namespace SpectraForge::Rendering;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace Rendering {
 
 // === HardwareConfig Implementation ===
@@ -1226,4 +1226,4 @@ void AdaptiveLOD::applyMotionBasedLOD(GaussianField3D& field, const Vector3& vel
 }
 
 }  // namespace Rendering
-}  // namespace HyperEngine
+}  // namespace SpectraForge

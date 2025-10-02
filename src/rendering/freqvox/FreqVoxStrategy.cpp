@@ -2,10 +2,10 @@
  * @file FreqVoxStrategy.cpp
  */
 
-#include "HyperEngine/Rendering/FreqVox/FreqVoxStrategy.h"
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Rendering/FreqVox/FreqVoxStrategy.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
-namespace HyperEngine::Rendering::FreqVox {
+namespace SpectraForge::Rendering::FreqVox {
 
 FreqVoxStrategy::FreqVoxStrategy() = default;
 FreqVoxStrategy::~FreqVoxStrategy() { shutdown(); }
@@ -46,6 +46,6 @@ bool FreqVoxStrategy::supportsFeature(RenderingFeature feature) const {
     return true;
 }
 
-}  // namespace HyperEngine::Rendering::FreqVox
+}  // namespace SpectraForge::Rendering::FreqVox
 
 

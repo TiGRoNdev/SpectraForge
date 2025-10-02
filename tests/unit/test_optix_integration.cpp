@@ -13,9 +13,9 @@
 #include <cuda_runtime.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "HyperEngine/OptiX/OptiXRayTracer.h"
+#include "SpectraForge/OptiX/OptiXRayTracer.h"
 
-using namespace HyperEngine::OptiX;
+using namespace SpectraForge::OptiX;
 using namespace glm;
 
 class OptiXTest : public ::testing::Test {

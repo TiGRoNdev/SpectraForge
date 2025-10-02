@@ -5,7 +5,7 @@ alwaysApply: true
 priority: 500
 ---
 
-# Feature Development Workflow for HyperEngine
+# Feature Development Workflow for SpectraForge
 
 @context {
   "type": "workflow_guidelines",
@@ -43,7 +43,7 @@ Follow these steps for new features.
   },
   {
     "id": "create_pr",
-    "rule": "Create PR to https://github.com/TiGRoNdev/HyperEngine using MCP tools.",
+    "rule": "Create PR to https://github.com/TiGRoNdev/SpectraForge using MCP tools.",
     "severity": "high",
     "example": "Ensure tests pass, update docs, describe changes."
   }
@@ -70,19 +70,19 @@ Follow these steps for new features.
     "id": "create_branch",
     "mcp_tool": "mcp_github_create_branch",
     "step": 1,
-    "params": {"owner": "TiGRoNdev", "repo": "HyperEngine", "branch": "feature/[name]", "from_branch": "main"}
+    "params": {"owner": "TiGRoNdev", "repo": "SpectraForge", "branch": "feature/[name]", "from_branch": "main"}
   },
   {
     "id": "push_changes",
     "mcp_tool": "mcp_github_push_files",
     "step": 3,
-    "params": {"owner": "TiGRoNdev", "repo": "HyperEngine", "files": [], "message": "feat: [description]"}
+    "params": {"owner": "TiGRoNdev", "repo": "SpectraForge", "files": [], "message": "feat: [description]"}
   },
   {
     "id": "create_pr",
     "mcp_tool": "mcp_github_create_pull_request",
     "step": 4,
-    "params": {"owner": "TiGRoNdev", "repo": "HyperEngine", "head": "feature/[name]", "base": "main"}
+    "params": {"owner": "TiGRoNdev", "repo": "SpectraForge", "head": "feature/[name]", "base": "main"}
   },
   {
     "id": "request_review",

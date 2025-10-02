@@ -2,14 +2,14 @@
  * @file FullPipelineIntegrationTest.cpp
  * @brief Интеграционные тесты для полного rendering pipeline
  * @priority CRITICAL - Required for 80% test coverage
- * @note Integration тест согласно UML архитектуре HyperEngine
+ * @note Integration тест согласно UML архитектуре SpectraForge
  */
 
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/SafeConsole.h"
 #include "TestFramework.h"
 
-using namespace HyperEngine::Testing;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Testing;
+using namespace SpectraForge::Core;
 
 /**
  * @brief Integration тесты для полного rendering pipeline
@@ -21,10 +21,10 @@ using namespace HyperEngine::Core;
  * 4. Upscaling (DLSS/FSR)
  * 5. Present (Vulkan Swapchain)
  */
-class FullPipelineIntegrationTest : public HyperEngineTest {
+class FullPipelineIntegrationTest : public SpectraForgeTest {
   protected:
     void SetUp() override {
-        HyperEngineTest::SetUp();
+        SpectraForgeTest::SetUp();
 
         initializePipelineComponents();
         setupTestScene();
@@ -32,7 +32,7 @@ class FullPipelineIntegrationTest : public HyperEngineTest {
 
     void TearDown() override {
         cleanupPipeline();
-        HyperEngineTest::TearDown();
+        SpectraForgeTest::TearDown();
     }
 
   private:

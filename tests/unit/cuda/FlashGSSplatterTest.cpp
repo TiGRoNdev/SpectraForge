@@ -5,29 +5,29 @@
  */
 
 #include <vector>
-#include "HyperEngine/CUDA/FlashGSSplatter.h"
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/CUDA/FlashGSSplatter.h"
+#include "SpectraForge/Core/SafeConsole.h"
 #include "TestFramework.h"
 
-using namespace HyperEngine::Testing;
-using namespace HyperEngine::CUDA;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Testing;
+using namespace SpectraForge::CUDA;
+using namespace SpectraForge::Core;
 
 /**
  * @brief Unit тесты для FlashGSSplatter
  * @note RICE Score: 12.0 (High priority для test coverage)
  */
-class FlashGSSplatterTest : public HyperEngineTest {
+class FlashGSSplatterTest : public SpectraForgeTest {
   protected:
     void SetUp() override {
-        HyperEngineTest::SetUp();
+        SpectraForgeTest::SetUp();
 
         // Инициализация тестовых данных
         setupTestGaussians();
         setupCameraParams();
     }
 
-    void TearDown() override { HyperEngineTest::TearDown(); }
+    void TearDown() override { SpectraForgeTest::TearDown(); }
 
   private:
     void setupTestGaussians() {

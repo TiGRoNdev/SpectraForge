@@ -5,26 +5,26 @@
  * @note RICE Score: 16.2 (Highest priority)
  */
 
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Vulkan/ResourceManager.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Vulkan/ResourceManager.h"
 #include "TestFramework.h"
 
-using namespace HyperEngine::Testing;
-using namespace HyperEngine::Vulkan;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Testing;
+using namespace SpectraForge::Vulkan;
+using namespace SpectraForge::Core;
 
 /**
  * @brief Unit тесты для ResourceManager
  * @details Тестирует управление Vulkan ресурсами, аллокацию памяти, RAII
  */
-class ResourceManagerTest : public HyperEngineTest {
+class ResourceManagerTest : public SpectraForgeTest {
   protected:
     void SetUp() override {
-        HyperEngineTest::SetUp();
+        SpectraForgeTest::SetUp();
         // ResourceManager тесты используют mock Vulkan device
     }
 
-    void TearDown() override { HyperEngineTest::TearDown(); }
+    void TearDown() override { SpectraForgeTest::TearDown(); }
 };
 
 // ============================================================================

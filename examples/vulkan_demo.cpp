@@ -9,35 +9,35 @@
 #include <chrono>
 #include <iostream>
 #include <memory>
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Core;
 
 #ifdef VULKAN_RENDERER_BUILD
-#include <HyperEngine/Vulkan/HardwareDetector.h>
-#include <HyperEngine/Vulkan/ResourceManager.h>
-#include <HyperEngine/Vulkan/VulkanEngine.h>
+#include <SpectraForge/Vulkan/HardwareDetector.h>
+#include <SpectraForge/Vulkan/ResourceManager.h>
+#include <SpectraForge/Vulkan/VulkanEngine.h>
 
 #ifdef VULKAN_RENDERER_CUDA_SUPPORT
-#include <HyperEngine/CUDA/FlashGSSplatter.h>
+#include <SpectraForge/CUDA/FlashGSSplatter.h>
 #endif
 
 #ifdef VULKAN_RENDERER_OPTIX_SUPPORT
-#include <HyperEngine/OptiX/OptiXRayTracer.h>
+#include <SpectraForge/OptiX/OptiXRayTracer.h>
 #endif
 
-#include <HyperEngine/Upscaling/DLSSUpscaler.h>
-#include <HyperEngine/Upscaling/Upscaler.h>
+#include <SpectraForge/Upscaling/DLSSUpscaler.h>
+#include <SpectraForge/Upscaling/Upscaler.h>
 #endif
 
 #include <GLFW/glfw3.h>
-#include <HyperEngine/Core/Console.h>
+#include <SpectraForge/Core/Console.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vulkan/vulkan.hpp>
 
-using namespace HyperEngine;
-using namespace HyperEngine::Core;
+using namespace SpectraForge;
+using namespace SpectraForge::Core;
 
 /**
  * @brief Класс демо-приложения
@@ -206,7 +206,7 @@ class VulkanDemo {
             vk::ApplicationInfo appInfo{};
             appInfo.pApplicationName = "Vulkan Hybrid Renderer Demo";
             appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-            appInfo.pEngineName = "HyperEngine";
+            appInfo.pEngineName = "SpectraForge";
             appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.apiVersion = VK_API_VERSION_1_3;
 

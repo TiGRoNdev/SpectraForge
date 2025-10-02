@@ -1,5 +1,5 @@
 #!/bin/bash
-# Комплексная проверка качества кода HyperEngine
+# Комплексная проверка качества кода SpectraForge
 
 # НЕ используем set -e, так как хотим продолжить проверку даже при ошибках
 
@@ -10,7 +10,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # Переходим в корневую директорию проекта
 cd "$PROJECT_ROOT" || exit 1
 
-echo "🎯 Комплексная проверка качества кода HyperEngine"
+echo "🎯 Комплексная проверка качества кода SpectraForge"
 echo "================================================"
 echo "📁 Корневая директория: $PROJECT_ROOT"
 echo ""
@@ -197,10 +197,10 @@ echo ""
 echo "📋 Проверка стандартов кодирования..."
 
 # Проверка namespace'ов
-if grep -r "namespace HyperEngine" include/ > /dev/null 2>&1; then
-    log_success "Namespace'ы обновлены на HyperEngine"
+if grep -r "namespace SpectraForge" include/ > /dev/null 2>&1; then
+    log_success "Namespace'ы обновлены на SpectraForge"
 else
-    log_warning "Не все namespace'ы обновлены на HyperEngine"
+    log_warning "Не все namespace'ы обновлены на SpectraForge"
 fi
 
 # Проверка include guards
@@ -226,7 +226,7 @@ done
 echo ""
 echo "📋 Создание сводного отчета..."
 cat > build/quality-reports/summary.md << EOF
-# Отчет о качестве кода HyperEngine
+# Отчет о качестве кода SpectraForge
 
 **Дата:** $(date)
 

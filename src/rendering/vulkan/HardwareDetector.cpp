@@ -6,16 +6,16 @@
  * согласно UML архитектуре из FEATURE_PLAN.
  */
 
-#include "HyperEngine/Vulkan/HardwareDetector.h"
+#include "SpectraForge/Vulkan/HardwareDetector.h"
 #include <algorithm>
 #include <iostream>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
-using namespace HyperEngine::Vulkan;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Vulkan;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine::Vulkan {
+namespace SpectraForge::Vulkan {
 
 HardwareDetector::HardwareDetector() {
     // Инициализация в init()
@@ -250,4 +250,4 @@ void HardwareDetector::loadAvailableExtensions() {
     }
 }
 
-}  // namespace HyperEngine::Vulkan
+}  // namespace SpectraForge::Vulkan

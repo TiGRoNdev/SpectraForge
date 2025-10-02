@@ -1,4 +1,4 @@
-# CMakeLists.txt для системы тестирования HyperEngine
+# CMakeLists.txt для системы тестирования SpectraForge
 cmake_minimum_required(VERSION 3.16)
 
 # Настройка тестирования

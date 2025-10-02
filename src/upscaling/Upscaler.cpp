@@ -2,10 +2,10 @@
 // Временная заглушка для этапа 1.2 настройки SDK
 
 #include <iostream>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace Upscaling {
 
 class Upscaler {
@@ -41,13 +41,13 @@ class FSRUpscaler : public Upscaler {
 };
 
 }  // namespace Upscaling
-}  // namespace HyperEngine
+}  // namespace SpectraForge
 
 // Экспортируемая функция для тестирования
 extern "C" {
 void upscaler_test() {
-    HyperEngine::Upscaling::DLSSUpscaler dlss;
-    HyperEngine::Upscaling::FSRUpscaler fsr;
+    SpectraForge::Upscaling::DLSSUpscaler dlss;
+    SpectraForge::Upscaling::FSRUpscaler fsr;
 
     dlss.initialize();
     fsr.initialize();

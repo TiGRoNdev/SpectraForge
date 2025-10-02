@@ -6,18 +6,18 @@
  * данные для рендеринга согласно UML архитектуре из FEATURE_PLAN.
  */
 
-#include "HyperEngine/Vulkan/SceneManager.h"
+#include "SpectraForge/Vulkan/SceneManager.h"
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Vulkan/VulkanRenderer.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Vulkan/VulkanRenderer.h"
 
-using namespace HyperEngine::Vulkan;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Vulkan;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine::Vulkan {
+namespace SpectraForge::Vulkan {
 
 SceneManager::SceneManager() {
     // Инициализация в init()
@@ -281,4 +281,4 @@ void SceneManager::updatePhysics(float deltaTime) {
     }
 }
 
-}  // namespace HyperEngine::Vulkan
+}  // namespace SpectraForge::Vulkan

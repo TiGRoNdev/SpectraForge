@@ -3,15 +3,15 @@
  * @brief Реализация современного рендерера согласно SOLID принципам
  */
 
-#include "HyperEngine/Rendering/ModernRenderer3D.h"
+#include "SpectraForge/Rendering/ModernRenderer3D.h"
 #include <algorithm>
 #include <stdexcept>
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
-using namespace HyperEngine::Rendering;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Rendering;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine::Rendering {
+namespace SpectraForge::Rendering {
 
 // Конструктор с dependency injection (DIP)
 ModernRenderer3D::ModernRenderer3D(const std::shared_ptr<IRenderStrategy>& renderStrategy,
@@ -347,4 +347,4 @@ void ModernRenderer3D::applyPostProcessEffects() {
     }
 }
 
-}  // namespace HyperEngine::Rendering
+}  // namespace SpectraForge::Rendering

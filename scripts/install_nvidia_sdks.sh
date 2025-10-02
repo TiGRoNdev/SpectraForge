@@ -1,5 +1,5 @@
 #!/bin/bash
-# install_nvidia_sdks.sh - Автоматическая установка NVIDIA SDK для HyperEngine
+# install_nvidia_sdks.sh - Автоматическая установка NVIDIA SDK для SpectraForge
 # Поддержка: CUDA Toolkit, OptiX SDK, DLSS (Streamline)
 
 set -e  # Прервать выполнение при ошибке
@@ -65,7 +65,7 @@ CUDA_SHORT_VERSION="12-8"
 OPTIX_VERSION="7.7.0"
 
 echo "========================================"
-echo "HyperEngine NVIDIA SDK Auto-Installer"
+echo "SpectraForge NVIDIA SDK Auto-Installer"
 echo "========================================"
 echo
 
@@ -426,8 +426,8 @@ log_success "===== Установка завершена ====="
 log_info "ВАЖНО: Перезапустите терминал или выполните:"
 echo "source ~/.bashrc"
 echo
-log_info "Для сборки HyperEngine со всеми функциями:"
-echo "cd /home/tigron/Documents/GITHUB/HyperEngine"
+log_info "Для сборки SpectraForge со всеми функциями:"
+echo "cd /home/tigron/Documents/GITHUB/SpectraForge"
 echo "cmake -B build -G Ninja \\"
 echo "  -DCMAKE_TOOLCHAIN_FILE=\$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake \\"
 echo "  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \\"

@@ -10,9 +10,9 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include <math.h>
-#include "HyperEngine/CUDA/FlashGSSplatter.h"
+#include "SpectraForge/CUDA/FlashGSSplatter.h"
 
-namespace HyperEngine::CUDA {
+namespace SpectraForge::CUDA {
 
 /**
  * @brief Параметры камеры для проекции
@@ -384,4 +384,4 @@ cudaError_t launchTileRasterization(const ProjectedGaussian* d_projected,
 
 // Временная заглушка удалена - теперь используется реальная CUB сортировка из depth_sorting.cu
 
-}  // namespace HyperEngine::CUDA
+}  // namespace SpectraForge::CUDA

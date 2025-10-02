@@ -1,19 +1,19 @@
 #include <cmath>
-#include "HyperEngine/Math/Vector3.h"
+#include "SpectraForge/Math/Vector3.h"
 #include "TestFramework.h"
 
-using namespace HyperEngine::Testing;
-using namespace HyperEngine::Math;
+using namespace SpectraForge::Testing;
+using namespace SpectraForge::Math;
 
 /**
  * @brief Unit тесты для класса Vector3
  *
  * Тестирует базовые математические операции с 3D векторами
  */
-class Vector3Test : public HyperEngineTest {
+class Vector3Test : public SpectraForgeTest {
   protected:
     void SetUp() override {
-        HyperEngineTest::SetUp();
+        SpectraForgeTest::SetUp();
 
         // Инициализация тестовых векторов
         v1 = Vector3(1.0f, 2.0f, 3.0f);

@@ -3,18 +3,18 @@
  * @brief Бенчмарки производительности FreqVox Renderer
  */
 
-#include "HyperEngine/Rendering/FreqVox/BackendFactory.h"
-#include "HyperEngine/Rendering/FreqVox/FoveatedSelector.h"
-#include "HyperEngine/Rendering/FreqVox/TemporalReprojection.h"
-#include "HyperEngine/Rendering/FreqVox/NeuralUpscaling.h"
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Rendering/FreqVox/BackendFactory.h"
+#include "SpectraForge/Rendering/FreqVox/FoveatedSelector.h"
+#include "SpectraForge/Rendering/FreqVox/TemporalReprojection.h"
+#include "SpectraForge/Rendering/FreqVox/NeuralUpscaling.h"
+#include "SpectraForge/Core/SafeConsole.h"
 #include <chrono>
 #include <vector>
 #include <iostream>
 #include <iomanip>
 
-using namespace HyperEngine::Rendering::FreqVox;
-using namespace HyperEngine::Math;
+using namespace SpectraForge::Rendering::FreqVox;
+using namespace SpectraForge::Math;
 using namespace std::chrono;
 
 struct BenchmarkResult {

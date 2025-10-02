@@ -1,24 +1,24 @@
-#include "HyperEngine/Input/Input3D.h"
+#include "SpectraForge/Input/Input3D.h"
 #include <cmath>
 #include <iostream>
-#include "HyperEngine/Math/MathConstants.h"
+#include "SpectraForge/Math/MathConstants.h"
 
 // GLFW headers
 #ifdef _WIN32
 #include <GLFW/glfw3.h>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
 #else
 #include <GLFW/glfw3.h>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
 #endif
 
-using namespace HyperEngine::Math;
-using namespace HyperEngine::Input;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Math;
+using namespace SpectraForge::Input;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace Input {
 
 // InputAction3D implementation
@@ -693,4 +693,4 @@ void OrbitController::updateOrbitPosition() {
 }
 
 }  // namespace Input
-}  // namespace HyperEngine
+}  // namespace SpectraForge

@@ -5,25 +5,25 @@
  * Реализует гибридный рендеринг согласно UML архитектуре из FEATURE_PLAN.
  */
 
-#include "HyperEngine/Vulkan/VulkanRenderer.h"
+#include "SpectraForge/Vulkan/VulkanRenderer.h"
 #include <iostream>
 #include <stdexcept>
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
-#include "HyperEngine/CUDA/FlashGSSplatter.h"
+#include "SpectraForge/CUDA/FlashGSSplatter.h"
 #endif
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
 #ifdef VULKAN_RENDERER_OPTIX_SUPPORT
-#include "HyperEngine/OptiX/DenoiseModule.h"
-#include "HyperEngine/OptiX/OptiXRayTracer.h"
+#include "SpectraForge/OptiX/DenoiseModule.h"
+#include "SpectraForge/OptiX/OptiXRayTracer.h"
 #endif
-#include "HyperEngine/Upscaling/Upscaler.h"
-#include "HyperEngine/Vulkan/ResourceManager.h"
+#include "SpectraForge/Upscaling/Upscaler.h"
+#include "SpectraForge/Vulkan/ResourceManager.h"
 
-using namespace HyperEngine::Vulkan;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Vulkan;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine::Vulkan {
+namespace SpectraForge::Vulkan {
 
 VulkanRenderer::VulkanRenderer() {
     // Инициализация в init()
@@ -35,7 +35,13 @@ VulkanRenderer::~VulkanRenderer() {
     }
 }
 
-bool VulkanRenderer::init(vk::Device logDevice, ResourceManager* resMgr) {
+bool VulkanRenderer::init(
+#if defined(VULKAN_RENDERER_BUILD) || defined(SpectraForge_ENABLE_VULKAN)
+    vk::Device logDevice,
+#else
+    void* logDevice,
+#endif
+    ResourceManager* resMgr) {
     try {
         this->device = logDevice;
         this->resourceManager = resMgr;
@@ -92,6 +98,7 @@ void VulkanRenderer::shutdown() {
 #endif
 
     // Освобождаем Vulkan объекты
+#ifdef HyperEngine_ENABLE_VULKAN
     if (commandPool) {
         device.destroyCommandPool(commandPool);
         commandPool = vk::CommandPool{};
@@ -101,6 +108,14 @@ void VulkanRenderer::shutdown() {
         device.destroySwapchainKHR(swapchain);
         swapchain = vk::SwapchainKHR{};
     }
+#else
+    if (commandPool) {
+        commandPool = nullptr;
+    }
+    if (swapchain) {
+        swapchain = nullptr;
+    }
+#endif
 
     initialized = false;
     SAFE_PRINT_LINE("[VulkanRenderer] Завершение работы завершено");
@@ -260,4 +275,4 @@ void VulkanRenderer::presentFinalImage() {
     SAFE_PRINT_LINE("[VulkanRenderer] Презентация завершена (заглушка)");
 }
 
-}  // namespace HyperEngine::Vulkan
+}  // namespace SpectraForge::Vulkan

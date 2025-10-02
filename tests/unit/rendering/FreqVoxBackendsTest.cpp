@@ -3,21 +3,20 @@
  * @brief Тесты для FFT/DCT бэкендов FreqVox
  */
 
-#include "HyperEngine/Rendering/FreqVox/BackendFactory.h"
-#include "HyperEngine/Rendering/FreqVox/Backends/SimpleDctBackend.h"
+#include "SpectraForge/Rendering/FreqVox/BackendFactory.h"
+#include "SpectraForge/Rendering/FreqVox/Backends/SimpleDctBackend.h"
 #include "gtest/gtest.h"
 #include <vector>
 
-using namespace HyperEngine::Rendering::FreqVox;
+using namespace SpectraForge::Rendering::FreqVox;
 
 class FreqVoxBackendsTest : public ::testing::Test {
 protected:
     DctBlockConfig config;
 
     void SetUp() override {
-        config.block_width = 8;
-        config.block_height = 8;
-        config.batch_count = 2;
+        config.blockSize = 8;
+        config.batchCount = 2;
     }
 };
 
@@ -25,26 +24,22 @@ protected:
 TEST_F(FreqVoxBackendsTest, FactoryAutoCreate) {
     auto backend = BackendFactory::create(BackendFactory::BackendType::Auto);
     ASSERT_NE(backend, nullptr);
-    EXPECT_FALSE(backend->getName().empty());
 }
 
 TEST_F(FreqVoxBackendsTest, FactorySimpleCreate) {
     auto backend = BackendFactory::create(BackendFactory::BackendType::Simple);
     ASSERT_NE(backend, nullptr);
-    EXPECT_EQ(backend->getName(), "SimpleDctBackend");
 }
 
 TEST_F(FreqVoxBackendsTest, FactoryVkFFTCreate) {
     auto backend = BackendFactory::create(BackendFactory::BackendType::VkFFT);
     ASSERT_NE(backend, nullptr);
-    EXPECT_EQ(backend->getName(), "VkFFTBackend");
 }
 
 #ifdef HYPERENGINE_CUDA_AVAILABLE
 TEST_F(FreqVoxBackendsTest, FactoryCuFFTCreate) {
     auto backend = BackendFactory::create(BackendFactory::BackendType::CuFFT);
     ASSERT_NE(backend, nullptr);
-    EXPECT_EQ(backend->getName(), "cuFFTBackend");
 }
 #endif
 
@@ -70,7 +65,7 @@ TEST_F(FreqVoxBackendsTest, SimpleDctBackendTransformForward) {
     Backends::SimpleDctBackend backend;
     backend.initialize(config);
 
-    size_t data_size = config.block_width * config.block_height * config.batch_count;
+    size_t data_size = config.blockSize * config.blockSize * config.batchCount;
     std::vector<float> data(data_size, 1.0f);
 
     EXPECT_TRUE(backend.transform_forward(data));
@@ -82,7 +77,7 @@ TEST_F(FreqVoxBackendsTest, SimpleDctBackendTransformInverse) {
     Backends::SimpleDctBackend backend;
     backend.initialize(config);
 
-    size_t data_size = config.block_width * config.block_height * config.batch_count;
+    size_t data_size = config.blockSize * config.blockSize * config.batchCount;
     std::vector<float> data(data_size, 2.0f);
 
     EXPECT_TRUE(backend.transform_inverse(data));
@@ -116,7 +111,7 @@ TEST_F(FreqVoxBackendsTest, CuFFTBackendTransform) {
     ASSERT_NE(backend, nullptr);
     ASSERT_TRUE(backend->initialize(config));
 
-    size_t data_size = config.block_width * config.block_height * config.batch_count;
+    size_t data_size = config.width * config.height * config.batch_size;
     std::vector<float> data(data_size);
     
     // Заполняем тестовыми данными

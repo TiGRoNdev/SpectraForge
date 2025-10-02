@@ -1,6 +1,6 @@
-# Настройки Doxygen для HyperEngine
+# Настройки Doxygen для SpectraForge
 
-PROJECT_NAME           = "HyperEngine"
+PROJECT_NAME           = "SpectraForge"
 PROJECT_NUMBER         = "v1.0.0"
 PROJECT_BRIEF          = "Современный игровой движок с поддержкой 3D и экспериментального 4D рендеринга"
 

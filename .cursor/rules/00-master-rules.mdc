@@ -1,11 +1,11 @@
 ---
-description: MASTER RULES - Coordination and strict enforcement for all HyperEngine development rules with Claude 4.5 Sonnet optimization
+description: MASTER RULES - Coordination and strict enforcement for all SpectraForge development rules with Claude 4.5 Sonnet optimization
 globs: ["**/*"]
 alwaysApply: true
 priority: 1000
 ---
 
-# 🎯 MASTER RULES - HyperEngine Project
+# 🎯 MASTER RULES - SpectraForge Project
 
 @context {
   "type": "master_coordinator",
@@ -185,8 +185,8 @@ STEP 6: Report compliance status
 ```yaml
 REPOSITORY:
   owner: "TiGRoNdev"
-  repo: "HyperEngine"
-  url: "https://github.com/TiGRoNdev/HyperEngine"
+  repo: "SpectraForge"
+  url: "https://github.com/TiGRoNdev/SpectraForge"
   
 DEVELOPMENT:
   main_branch: "main"
@@ -196,8 +196,8 @@ DEVELOPMENT:
   hotfix_prefix: "hotfix/"
   
 PROJECT:
-  name: "HyperEngine"
-  type: "C++ Vulkan/CUDA Rendering Engine"
+  name: "SpectraForge"
+  type: "Spectral Processing Engine Combining Transform Rendering And Frequency Optimized Radiance Gaussian Encoding"
   language: "C++17/20"
   build_system: "CMake 3.16+"
 ```
