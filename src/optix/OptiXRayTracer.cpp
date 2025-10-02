@@ -6,21 +6,21 @@
  * с использованием NVIDIA OptiX 7.x и поддержкой Shader Execution Reordering.
  */
 
-#include "HyperEngine/OptiX/OptiXRayTracer.h"
+#include "SpectraForge/OptiX/OptiXRayTracer.h"
 #include <cuda_runtime.h>
 #include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
 #ifdef VULKAN_RENDERER_OPTIX_SUPPORT
 
-using namespace HyperEngine::OptiX;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::OptiX;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine::OptiX {
+namespace SpectraForge::OptiX {
 
 // PTX код для ray generation shader (будет загружаться из файла)
 extern "C" const char embedded_ptx_code[];
@@ -629,6 +629,6 @@ void OptiXRayTracer::logCallback(unsigned int level,
     std::cout << "[OptiX][" << tag << "][" << level << "] " << message << std::endl;
 }
 
-}  // namespace HyperEngine::OptiX
+}  // namespace SpectraForge::OptiX
 
 #endif  // VULKAN_RENDERER_OPTIX_SUPPORT

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================================================
-# Автоматическая установка ВСЕХ зависимостей HyperEngine
+# Автоматическая установка ВСЕХ зависимостей SpectraForge
 # ============================================================================
 # Версия: 2.0
 # Дата: 2025-10-01
@@ -62,7 +62,7 @@ detect_distro() {
     print_info "Обнаружен дистрибутив: $DISTRO $DISTRO_VERSION"
 }
 
-print_header "🚀 Автоматическая установка ВСЕХ зависимостей HyperEngine 🚀"
+print_header "🚀 Автоматическая установка ВСЕХ зависимостей SpectraForge 🚀"
 
 check_sudo
 detect_distro
@@ -313,7 +313,7 @@ echo -e "\n${YELLOW}Следующие шаги:${NC}"
 echo "1. Перезапустите терминал или выполните: source ~/.bashrc"
 echo "2. Для OptiX и DLSS: скачайте SDK вручную и установите переменные окружения"
 echo "3. Соберите проект:"
-echo "   cd /home/tigron/Documents/GITHUB/HyperEngine"
+echo "   cd /home/tigron/Documents/GITHUB/SpectraForge"
 echo "   mkdir -p build && cd build"
 echo "   cmake .. -DCMAKE_TOOLCHAIN_FILE=\$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake -GNinja"
 echo "   cmake --build . --config Release -j\$(nproc)"

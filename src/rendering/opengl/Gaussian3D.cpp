@@ -1,19 +1,19 @@
-#include "HyperEngine/Rendering/Gaussian3D.h"
+#include "SpectraForge/Rendering/Gaussian3D.h"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <iostream>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Math/Matrix4.h"
-#include "HyperEngine/Rendering/Mesh3D.h"
-#include "HyperEngine/Rendering/Shader3D.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Math/Matrix4.h"
+#include "SpectraForge/Rendering/Mesh3D.h"
+#include "SpectraForge/Rendering/Shader3D.h"
 
-using namespace HyperEngine::Math;
-using namespace HyperEngine::Rendering;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Math;
+using namespace SpectraForge::Rendering;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace Rendering {
 
 // === Gaussian3D Implementation ===
@@ -515,4 +515,4 @@ void GaussianRenderer3D::setupGaussianShader(const Matrix4& viewMatrix, const Ma
 }
 
 }  // namespace Rendering
-}  // namespace HyperEngine
+}  // namespace SpectraForge

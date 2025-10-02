@@ -9,7 +9,7 @@
 
 #include <cstddef>
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace CUDA {
 
 // Типы данных CUDA
@@ -101,4 +101,4 @@ cudaError_t cudaGetDeviceProperties(cudaDeviceProp* prop, int device);
 const char* cudaGetErrorString(cudaError_t error);
 
 }  // namespace CUDA
-}  // namespace HyperEngine
+}  // namespace SpectraForge

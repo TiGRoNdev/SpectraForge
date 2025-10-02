@@ -1,14 +1,14 @@
-#include "HyperEngine/Rendering/RendererAdapter.h"
+#include "SpectraForge/Rendering/RendererAdapter.h"
 #include <iostream>
 #include <stdexcept>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Rendering/Renderer3D.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Rendering/Renderer3D.h"
 
 // Условная компиляция для Vulkan
 #ifdef ENGINE3D_ENABLE_VULKAN
-// #include "HyperEngine/Vulkan/VulkanEngine.h"
-// #include "HyperEngine/Vulkan/HardwareDetector.h"
+// #include "SpectraForge/Vulkan/VulkanEngine.h"
+// #include "SpectraForge/Vulkan/HardwareDetector.h"
 // Пока не включаем, так как Vulkan компоненты не собираются с HyperEngine
 #endif
 
@@ -19,11 +19,11 @@
 #define DEFAULT_RENDER_BACKEND RenderBackend::OPENGL
 #endif
 
-using namespace HyperEngine::Rendering;
-using namespace HyperEngine::Core;
-using namespace HyperEngine::Math;
+using namespace SpectraForge::Rendering;
+using namespace SpectraForge::Core;
+using namespace SpectraForge::Math;
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace Rendering {
 
 // ============================================================================
@@ -438,7 +438,7 @@ bool VulkanRendererAdapter::initialize(int width, int height) {
 #ifdef ENGINE3D_ENABLE_VULKAN
     try {
         // TODO: Создание и инициализация VulkanEngine
-        // vulkanEngine = new HyperEngine::Vulkan::VulkanEngine();
+        // vulkanEngine = new SpectraForge::Vulkan::VulkanEngine();
         // return vulkanEngine->init(instance);
 
         // Пока заглушка
@@ -597,4 +597,4 @@ bool VulkanRendererAdapter::supportsFeature(const std::string& feature) const {
 }
 
 }  // namespace Rendering
-}  // namespace HyperEngine
+}  // namespace SpectraForge

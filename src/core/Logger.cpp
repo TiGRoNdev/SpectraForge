@@ -3,16 +3,16 @@
  * @brief Реализация логгера
  */
 
-#include "HyperEngine/Core/Logger.h"
+#include "SpectraForge/Core/Logger.h"
 #include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace Core {
 
 Logger::Logger(const std::string& logFile, LogLevel level)
@@ -120,4 +120,4 @@ std::string Logger::getCurrentTime() const {
 }
 
 }  // namespace Core
-}  // namespace HyperEngine
+}  // namespace SpectraForge

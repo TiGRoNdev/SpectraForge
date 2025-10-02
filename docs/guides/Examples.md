@@ -1,4 +1,4 @@
-# Руководство по использованию HyperEngine
+# Руководство по использованию SpectraForge
 
 ## Содержание
 
@@ -30,7 +30,7 @@ int main() {
     
     // Инициализация UTF-8 консоли
     Core::Console::initialize();
-    Core::Console::info("🚀 Запуск HyperEngine...");
+    Core::Console::info("🚀 Запуск SpectraForge...");
     
     // Инициализация рендерера
     auto& renderer = Rendering::Renderer3D::getInstance();
@@ -764,7 +764,7 @@ public:
         
         // Инициализация
         Console::initialize();
-        Console::setTitle("🎮 HyperEngine - UTF-8 Console Demo");
+        Console::setTitle("🎮 SpectraForge - UTF-8 Console Demo");
         
         // Различные типы сообщений
         Console::info("ℹ️ Информационное сообщение");
@@ -1023,8 +1023,8 @@ private:
 ### FlashGS Gaussian Splatting
 
 ```cpp
-#include "HyperEngine/Rendering/CudaVulkanInterop.h"
-#include "HyperEngine/Rendering/FlashGSSplatter.h"
+#include "SpectraForge/Rendering/CudaVulkanInterop.h"
+#include "SpectraForge/Rendering/FlashGSSplatter.h"
 
 class GaussianSplattingDemo {
 public:
@@ -1215,7 +1215,7 @@ private:
 ### DLSS интеграция
 
 ```cpp
-#include "HyperEngine/Rendering/DLSSUpscaler.h"
+#include "SpectraForge/Rendering/DLSSUpscaler.h"
 
 class DLSSDemo {
 public:
@@ -1286,7 +1286,7 @@ private:
 ### FSR интеграция (универсальная)
 
 ```cpp
-#include "HyperEngine/Rendering/FSRUpscaler.h"
+#include "SpectraForge/Rendering/FSRUpscaler.h"
 
 class FSRDemo {
 public:
@@ -1334,7 +1334,7 @@ private:
 ### OptiX Ray Tracing и Denoising
 
 ```cpp
-#include "HyperEngine/Rendering/OptiXRayTracer.h"
+#include "SpectraForge/Rendering/OptiXRayTracer.h"
 
 class OptiXDemo {
 public:
@@ -1415,7 +1415,7 @@ private:
 ### Встроенная система профилирования
 
 ```cpp
-#include "HyperEngine/Core/Profiler.h"
+#include "SpectraForge/Core/Profiler.h"
 
 class ProfilingDemo {
 public:
@@ -1609,7 +1609,7 @@ private:
 ### Использование SAFE_TO_STRING
 
 ```cpp
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
 class SafeConsoleDemo {
 public:
@@ -1679,7 +1679,7 @@ private:
 };
 
 // Специализация SAFE_TO_STRING для пользовательского типа
-namespace HyperEngine::Core {
+namespace SpectraForge::Core {
     template<>
     std::string SafeConsole::toString(const SafeConsoleDemo::RenderStats& stats) {
         return "RenderStats{drawCalls: " + std::to_string(stats.drawCalls) +
@@ -1727,7 +1727,7 @@ private:
 
 ## Заключение
 
-Это расширенное руководство демонстрирует современные возможности HyperEngine v1.0.0 и показывает, как эффективно использовать передовые технологии для создания высокопроизводительных 3D приложений.
+Это расширенное руководство демонстрирует современные возможности SpectraForge v1.0.0 и показывает, как эффективно использовать передовые технологии для создания высокопроизводительных 3D приложений.
 
 ### Ключевые возможности v1.0.0:
 
@@ -1753,4 +1753,4 @@ private:
 - [Coding Standards](CODING_STANDARDS.md) - Стандарты разработки
 - [Developer Guide](../DEVELOPER_GUIDE.md) - Руководство разработчика
 
-**HyperEngine v1.0.0** предоставляет все инструменты для создания современных игр и интерактивных 3D приложений с использованием передовых технологий GPU computing, AI-ускорения и высокопроизводительного рендеринга.
+**SpectraForge v1.0.0** предоставляет все инструменты для создания современных игр и интерактивных 3D приложений с использованием передовых технологий GPU computing, AI-ускорения и высокопроизводительного рендеринга.

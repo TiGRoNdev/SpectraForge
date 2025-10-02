@@ -1,9 +1,9 @@
 #!/bin/bash
-# setup_sdk.sh - Автоматическая настройка SDK для HyperEngine
+# setup_sdk.sh - Автоматическая настройка SDK для SpectraForge
 # Этот скрипт проверяет наличие необходимых SDK и помогает с их настройкой
 
 echo "========================================"
-echo "HyperEngine SDK Setup Script"
+echo "SpectraForge SDK Setup Script"
 echo "========================================"
 echo
 

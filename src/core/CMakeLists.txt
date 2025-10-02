@@ -1,7 +1,7 @@
-# Основные компоненты движка HyperEngine
+# Основные компоненты движка SpectraForge
 cmake_minimum_required(VERSION 3.16)
 
-message(STATUS "Настройка HyperEngine_Core")
+message(STATUS "Настройка SpectraForge_Core")
 
 # Определить корневую директорию проекта
 get_filename_component(PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
@@ -13,15 +13,15 @@ set(CORE_SOURCES
 
 # Заголовочные файлы ядра
 set(CORE_HEADERS
-    ${PROJECT_ROOT}/include/HyperEngine/Core/Console.h
-    ${PROJECT_ROOT}/include/HyperEngine/Core/DependencyInjection/Container.h
+    ${PROJECT_ROOT}/include/SpectraForge/Core/Console.h
+    ${PROJECT_ROOT}/include/SpectraForge/Core/DependencyInjection/Container.h
 )
 
 # Создание статической библиотеки
-add_library(HyperEngine_Core STATIC ${CORE_SOURCES} ${CORE_HEADERS})
+add_library(SpectraForge_Core STATIC ${CORE_SOURCES} ${CORE_HEADERS})
 
 # Настройка include директорий
-target_include_directories(HyperEngine_Core 
+target_include_directories(SpectraForge_Core 
     PUBLIC 
         ${PROJECT_ROOT}/include
     PRIVATE 
@@ -29,23 +29,23 @@ target_include_directories(HyperEngine_Core
 )
 
 # Требования к стандарту C++
-target_compile_features(HyperEngine_Core PUBLIC cxx_std_20)
+target_compile_features(SpectraForge_Core PUBLIC cxx_std_20)
 
 # Настройки компилятора
 if(MSVC)
-    target_compile_options(HyperEngine_Core PRIVATE /W4)
+    target_compile_options(SpectraForge_Core PRIVATE /W4)
 else()
-    target_compile_options(HyperEngine_Core PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(SpectraForge_Core PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 # Установка свойств
-set_target_properties(HyperEngine_Core PROPERTIES
-    OUTPUT_NAME "HyperEngine_Core"
+set_target_properties(SpectraForge_Core PROPERTIES
+    OUTPUT_NAME "SpectraForge_Core"
     DEBUG_POSTFIX "_d"
-    FOLDER "HyperEngine/Libraries"
+    FOLDER "SpectraForge/Libraries"
 )
 
 # Создание alias
-add_library(HyperEngine::Core ALIAS HyperEngine_Core)
+add_library(SpectraForge::Core ALIAS SpectraForge_Core)
 
-message(STATUS "HyperEngine_Core библиотека настроена")
+message(STATUS "SpectraForge_Core библиотека настроена")

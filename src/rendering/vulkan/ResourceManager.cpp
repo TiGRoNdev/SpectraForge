@@ -6,12 +6,12 @@
  * Поддерживает CUDA-Vulkan interop для гибридного рендеринга.
  */
 
-#include "HyperEngine/Vulkan/ResourceManager.h"
+#include "SpectraForge/Vulkan/ResourceManager.h"
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Core/Console.h"
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -24,10 +24,10 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif
 
-using namespace HyperEngine::Vulkan;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Vulkan;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine::Vulkan {
+namespace SpectraForge::Vulkan {
 
 ResourceManager::ResourceManager() {
     // Инициализация в init()
@@ -386,4 +386,4 @@ void ResourceManager::endSingleTimeCommands(vk::CommandBuffer commandBuffer) {
     // TODO: Завершение single-time command buffer
 }
 
-}  // namespace HyperEngine::Vulkan
+}  // namespace SpectraForge::Vulkan

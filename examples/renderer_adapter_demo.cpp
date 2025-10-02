@@ -6,23 +6,23 @@
  * OpenGL и Vulkan backend'ами без изменения клиентского кода.
  */
 
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Math/Matrix4.h"
-#include "HyperEngine/Math/Vector3.h"
-#include "HyperEngine/Rendering/Camera3D.h"
-#include "HyperEngine/Rendering/Mesh3D.h"
-#include "HyperEngine/Rendering/RendererAdapter.h"
-#include "HyperEngine/Rendering/Shader3D.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Math/Matrix4.h"
+#include "SpectraForge/Math/Vector3.h"
+#include "SpectraForge/Rendering/Camera3D.h"
+#include "SpectraForge/Rendering/Mesh3D.h"
+#include "SpectraForge/Rendering/RendererAdapter.h"
+#include "SpectraForge/Rendering/Shader3D.h"
 
 #include <chrono>
 #include <iostream>
 #include <memory>
 #include <thread>
 
-using namespace HyperEngine::Rendering;
-using namespace HyperEngine::Math;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Rendering;
+using namespace SpectraForge::Math;
+using namespace SpectraForge::Core;
 
 /**
  * @brief Демонстрация базового рендеринга с адаптером
@@ -231,7 +231,7 @@ void demonstrateErrorHandling() {
 int main() {
     Console::initialize();
     SAFE_PRINT_LINE("=== Демонстрация RendererAdapter ===");
-    SAFE_PRINT_LINE("Версия движка: HyperEngine v1.0.0");
+    SAFE_PRINT_LINE("Версия движка: SpectraForge v1.0.0");
     SAFE_PRINT_LINE("Этап разработки: 2.2 Интеграция с существующим кодом");
 
     try {

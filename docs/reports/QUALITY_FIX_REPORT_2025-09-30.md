@@ -100,7 +100,7 @@ cmake -B build/quality-check \
 ## 📈 Результаты проверки качества
 
 ```
-🎯 Комплексная проверка качества кода HyperEngine
+🎯 Комплексная проверка качества кода SpectraForge
 ================================================
 
 🎨 Форматирование кода...           ✅ PASSED
@@ -108,7 +108,7 @@ cmake -B build/quality-check \
 🔨 Проверка сборки...               ⚠️  SKIPPED (нет системных зависимостей)
 🧪 Запуск тестов...                 ✅ PASSED (из build-vcpkg)
 📋 Стандарты кодирования...         ✅ PASSED
-   - Namespace HyperEngine           ✅ Используется
+   - Namespace SpectraForge           ✅ Используется
    - Include guards (#pragma once)   ✅ Везде присутствуют
 🏗️ Структура проекта...             ✅ PASSED
    - src/                            ✅ Существует
@@ -231,7 +231,7 @@ cd build && ctest --output-on-failure
 
 ## 📚 Полезные ссылки
 
-- **Репозиторий:** https://github.com/TiGRoNdev/HyperEngine
+- **Репозиторий:** https://github.com/TiGRoNdev/SpectraForge
 - **Ветка с изменениями:** `refactoring/solid-principles-implementation`
 - **Документация зависимостей:** [docs/DEPENDENCIES_INSTALL.md](../DEPENDENCIES_INSTALL.md)
 - **Правила Cursor:** [.cursor/rules/](.cursor/rules/)

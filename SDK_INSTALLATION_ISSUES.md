@@ -1,11 +1,11 @@
-# 🔧 Решение проблем установки SDK для HyperEngine
+# 🔧 Решение проблем установки SDK для SpectraForge
 
 > **Дата:** 1 октября 2025  
 > **Версия:** 1.0
 
 ## 📊 Краткое резюме проблем
 
-При попытке сборки HyperEngine со всеми включенными параметрами (`BUILD_WITH_CUDA=ON`, `BUILD_WITH_OPTIX=ON`, `BUILD_WITH_DLSS=ON`, `BUILD_WITH_FSR=ON`) возникают следующие ошибки:
+При попытке сборки SpectraForge со всеми включенными параметрами (`BUILD_WITH_CUDA=ON`, `BUILD_WITH_OPTIX=ON`, `BUILD_WITH_DLSS=ON`, `BUILD_WITH_FSR=ON`) возникают следующие ошибки:
 
 ```
 CMake Warning: CUDA compiler not found. CUDA support will be disabled.
@@ -35,7 +35,7 @@ Could NOT find FSR (missing: FSR_ROOT_DIR FSR_INCLUDE_DIR FSR_API_LIBRARY)
 
 ```bash
 # Запустите скрипт автоматической установки
-cd /home/tigron/Documents/GITHUB/HyperEngine
+cd /home/tigron/Documents/GITHUB/SpectraForge
 chmod +x scripts/install_nvidia_sdks.sh
 ./scripts/install_nvidia_sdks.sh
 
@@ -172,7 +172,7 @@ ls $FIDELITYFX_ROOT/sdk/include/FidelityFX/host/ffx_fsr2.h
 ### Шаг 3: Запуск скрипта проверки
 
 ```bash
-cd /home/tigron/Documents/GITHUB/HyperEngine
+cd /home/tigron/Documents/GITHUB/SpectraForge
 ./scripts/setup_sdk.sh
 ```
 
@@ -199,7 +199,7 @@ Cuda compilation tools, release 12.8, V12.8.0
 После установки всех SDK пересоберите проект:
 
 ```bash
-cd /home/tigron/Documents/GITHUB/HyperEngine
+cd /home/tigron/Documents/GITHUB/SpectraForge
 
 # Очистка старой конфигурации (опционально)
 rm -rf build
@@ -249,12 +249,12 @@ ls -lh build/*.a build/*_Demo
 -- Found OptiX: /home/tigron/nvidia-sdks/optix-7.7.0 (version 7.7.0)
 -- Found DLSS: /home/tigron/nvidia-sdks/streamline (version 2.5.1)
 -- Found FSR: /home/tigron/nvidia-sdks/FidelityFX-FSR2 (version 2.2.1)
--- Building HyperEngine with modular architecture...
+-- Building SpectraForge with modular architecture...
 -- Building Vulkan Hybrid Renderer...
 -- VulkanRenderer: CUDA поддержка включена
 -- CUDA demo включены
 -- 
--- === HyperEngine Build Configuration ===
+-- === SpectraForge Build Configuration ===
 -- Build 3D Engine: ON
 -- Build 4D Engine: OFF
 -- Build Vulkan Renderer: ON
@@ -306,7 +306,7 @@ cmake --build build --config Release
 ### Вариант C: Docker (если локальная установка проблематична)
 
 ```bash
-cd /home/tigron/Documents/GITHUB/HyperEngine
+cd /home/tigron/Documents/GITHUB/SpectraForge
 
 # Сборка Docker образа (все SDK включены)
 docker-compose build
@@ -340,7 +340,7 @@ docker-compose run --rm ci-runner
 Если после выполнения всех шагов проблемы сохраняются:
 
 1. Проверьте журналы сборки: `cmake -B build ... 2>&1 | tee cmake_log.txt`
-2. Создайте issue на GitHub: https://github.com/TiGRoNdev/HyperEngine/issues
+2. Создайте issue на GitHub: https://github.com/TiGRoNdev/SpectraForge/issues
 3. Укажите в issue:
    - Версию ОС
    - Вывод `nvcc --version` и `nvidia-smi`

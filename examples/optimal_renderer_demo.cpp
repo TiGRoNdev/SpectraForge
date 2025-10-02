@@ -11,23 +11,23 @@
  */
 
 #include <iostream>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Math/Matrix4.h"
-#include "HyperEngine/Math/Vector3.h"
-#include "HyperEngine/Rendering/Gaussian3D.h"
-#include "HyperEngine/Rendering/Mesh3D.h"
-#include "HyperEngine/Rendering/OptimalRenderer3D.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Math/Matrix4.h"
+#include "SpectraForge/Math/Vector3.h"
+#include "SpectraForge/Rendering/Gaussian3D.h"
+#include "SpectraForge/Rendering/Mesh3D.h"
+#include "SpectraForge/Rendering/OptimalRenderer3D.h"
 
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Core;
 #include <chrono>
 #include <memory>
 #include <thread>
 #include <vector>
 
-using namespace HyperEngine::Rendering;
-using namespace HyperEngine::Math;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Rendering;
+using namespace SpectraForge::Math;
+using namespace SpectraForge::Core;
 
 /**
  * @brief Создает демонстрационную сцену с гауссианами и мешами

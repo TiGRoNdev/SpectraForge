@@ -1,9 +1,9 @@
-#include "HyperEngine/Core/DependencyInjection/Container.h"
+#include "SpectraForge/Core/DependencyInjection/Container.h"
 
-namespace HyperEngine::Core::DI {
+namespace SpectraForge::Core::DI {
 
 // Определения статических членов ServiceLocator
 std::unique_ptr<Container> ServiceLocator::instance_ = nullptr;
 std::mutex ServiceLocator::mutex_;
 
-}  // namespace HyperEngine::Core::DI
+}  // namespace SpectraForge::Core::DI

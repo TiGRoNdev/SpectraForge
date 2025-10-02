@@ -1,12 +1,12 @@
-#include "HyperEngine/Core/GameObject3D.h"
+#include "SpectraForge/Core/GameObject3D.h"
 #include <algorithm>
 #include <iostream>
-#include "HyperEngine/Core/Component.h"
+#include "SpectraForge/Core/Component.h"
 
-using namespace HyperEngine::Core;
-using namespace HyperEngine::Math;
+using namespace SpectraForge::Core;
+using namespace SpectraForge::Math;
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace Core {
 
 // Статический реестр объектов
@@ -424,4 +424,4 @@ void ParticleSystem3DComponent::emit(int count) {
 }
 
 }  // namespace Core
-}  // namespace HyperEngine
+}  // namespace SpectraForge

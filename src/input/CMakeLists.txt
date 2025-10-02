@@ -1,16 +1,16 @@
-# Система ввода HyperEngine
+# Система ввода SpectraForge
 cmake_minimum_required(VERSION 3.16)
 
-message(STATUS "Настройка HyperEngine_Input")
+message(STATUS "Настройка SpectraForge_Input")
 
 # Пока заглушка - будет реализовано в следующих этапах
-add_library(HyperEngine_Input INTERFACE)
+add_library(SpectraForge_Input INTERFACE)
 
-target_include_directories(HyperEngine_Input 
+target_include_directories(SpectraForge_Input 
     INTERFACE ${CMAKE_SOURCE_DIR}/include
 )
 
 # Создание alias
-add_library(HyperEngine::Input ALIAS HyperEngine_Input)
+add_library(SpectraForge::Input ALIAS SpectraForge_Input)
 
-message(STATUS "HyperEngine_Input заглушка создана")
+message(STATUS "SpectraForge_Input заглушка создана")

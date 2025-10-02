@@ -1,10 +1,10 @@
 #pragma once
 #include <gmock/gmock.h>
-#include "HyperEngine/Upscaling/Upscaler.h"
+#include "SpectraForge/Upscaling/Upscaler.h"
 
-namespace HyperEngine::Testing::Mocks {
+namespace SpectraForge::Testing::Mocks {
 
-using namespace HyperEngine::Upscaling;
+using namespace SpectraForge::Upscaling;
 
 /**
  * @brief Mock объект для базового класса Upscaler
@@ -240,4 +240,4 @@ class UpscalingMockFactory {
     }
 };
 
-}  // namespace HyperEngine::Testing::Mocks
+}  // namespace SpectraForge::Testing::Mocks

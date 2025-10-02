@@ -1,10 +1,10 @@
-# Vulkan рендерер HyperEngine
+# Vulkan рендерер SpectraForge
 cmake_minimum_required(VERSION 3.16)
 
-message(STATUS "Настройка HyperEngine_Vulkan")
+message(STATUS "Настройка SpectraForge_Vulkan")
 
 # Создаем библиотеку Vulkan рендерера
-add_library(HyperEngine_Vulkan STATIC
+add_library(SpectraForge_Vulkan STATIC
     VulkanRenderer.cpp
     VulkanEngine.cpp
     ResourceManager.cpp
@@ -13,10 +13,10 @@ add_library(HyperEngine_Vulkan STATIC
 )
 
 # Устанавливаем стандарт C++
-target_compile_features(HyperEngine_Vulkan PRIVATE cxx_std_17)
+target_compile_features(SpectraForge_Vulkan PRIVATE cxx_std_17)
 
 # Включаем директории
-target_include_directories(HyperEngine_Vulkan
+target_include_directories(SpectraForge_Vulkan
     PUBLIC
         ${CMAKE_SOURCE_DIR}/include
         ${VMA_INCLUDE_DIR}
@@ -26,56 +26,56 @@ target_include_directories(HyperEngine_Vulkan
 
 # Подключаем зависимости
 if(TARGET Vulkan::Vulkan)
-    target_link_libraries(HyperEngine_Vulkan PUBLIC Vulkan::Vulkan)
+    target_link_libraries(SpectraForge_Vulkan PUBLIC Vulkan::Vulkan)
 endif()
 
 # Опциональные зависимости Vulkan
 if(TARGET VulkanMemoryAllocator::VulkanMemoryAllocator)
-    target_link_libraries(HyperEngine_Vulkan PUBLIC VulkanMemoryAllocator::VulkanMemoryAllocator)
-    target_compile_definitions(HyperEngine_Vulkan PRIVATE VULKAN_MEMORY_ALLOCATOR_AVAILABLE)
+    target_link_libraries(SpectraForge_Vulkan PUBLIC VulkanMemoryAllocator::VulkanMemoryAllocator)
+    target_compile_definitions(SpectraForge_Vulkan PRIVATE VULKAN_MEMORY_ALLOCATOR_AVAILABLE)
 endif()
 
 if(TARGET spirv_cross_core::spirv_cross_core)
-    target_link_libraries(HyperEngine_Vulkan PUBLIC spirv_cross_core::spirv_cross_core)
-    target_compile_definitions(HyperEngine_Vulkan PRIVATE SPIRV_CROSS_AVAILABLE)
+    target_link_libraries(SpectraForge_Vulkan PUBLIC spirv_cross_core::spirv_cross_core)
+    target_compile_definitions(SpectraForge_Vulkan PRIVATE SPIRV_CROSS_AVAILABLE)
 endif()
 
 if(TARGET unofficial::shaderc::shaderc)
-    target_link_libraries(HyperEngine_Vulkan PUBLIC unofficial::shaderc::shaderc)
-    target_compile_definitions(HyperEngine_Vulkan PRIVATE SHADERC_AVAILABLE)
+    target_link_libraries(SpectraForge_Vulkan PUBLIC unofficial::shaderc::shaderc)
+    target_compile_definitions(SpectraForge_Vulkan PRIVATE SHADERC_AVAILABLE)
 endif()
 
 # Подключаем математическую библиотеку
-if(TARGET HyperEngine_Math)
-    target_link_libraries(HyperEngine_Vulkan PUBLIC HyperEngine_Math)
+if(TARGET SpectraForge_Math)
+    target_link_libraries(SpectraForge_Vulkan PUBLIC SpectraForge_Math)
 endif()
 
 # Подключаем Core библиотеку
-if(TARGET HyperEngine_Core)
-    target_link_libraries(HyperEngine_Vulkan PUBLIC HyperEngine_Core)
+if(TARGET SpectraForge_Core)
+    target_link_libraries(SpectraForge_Vulkan PUBLIC SpectraForge_Core)
 endif()
 
 # Определения компилятора
-target_compile_definitions(HyperEngine_Vulkan
+target_compile_definitions(SpectraForge_Vulkan
     PUBLIC
-        HyperEngine_ENABLE_VULKAN
+        SpectraForge_ENABLE_VULKAN
     PRIVATE
         VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
 )
 
 # Платформо-зависимые определения
 if(WIN32)
-    target_compile_definitions(HyperEngine_Vulkan PUBLIC VK_USE_PLATFORM_WIN32_KHR)
+    target_compile_definitions(SpectraForge_Vulkan PUBLIC VK_USE_PLATFORM_WIN32_KHR)
 endif()
 
 # Настройки компилятора
 if(MSVC)
-    target_compile_options(HyperEngine_Vulkan PRIVATE /W4)
+    target_compile_options(SpectraForge_Vulkan PRIVATE /W4)
 else()
-    target_compile_options(HyperEngine_Vulkan PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(SpectraForge_Vulkan PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 # Создание alias
-add_library(HyperEngine::Vulkan ALIAS HyperEngine_Vulkan)
+add_library(SpectraForge::Vulkan ALIAS SpectraForge_Vulkan)
 
-message(STATUS "HyperEngine_Vulkan настроен")
+message(STATUS "SpectraForge_Vulkan настроен")

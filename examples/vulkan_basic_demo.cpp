@@ -10,23 +10,23 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
 // Vulkan headers
 #include <vulkan/vulkan.hpp>
 
 // Engine headers
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Vulkan/HardwareDetector.h"
-#include "HyperEngine/Vulkan/ResourceManager.h"
-#include "HyperEngine/Vulkan/SceneManager.h"
-#include "HyperEngine/Vulkan/VulkanEngine.h"
-#include "HyperEngine/Vulkan/VulkanRenderer.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Vulkan/HardwareDetector.h"
+#include "SpectraForge/Vulkan/ResourceManager.h"
+#include "SpectraForge/Vulkan/SceneManager.h"
+#include "SpectraForge/Vulkan/VulkanEngine.h"
+#include "SpectraForge/Vulkan/VulkanRenderer.h"
 
-using namespace HyperEngine;
-using namespace HyperEngine::Core;
-using namespace HyperEngine::Vulkan;
-using namespace HyperEngine::Core;
+using namespace SpectraForge;
+using namespace SpectraForge::Core;
+using namespace SpectraForge::Vulkan;
+using namespace SpectraForge::Core;
 
 /**
  * @brief Создание базового Vulkan instance
@@ -37,7 +37,7 @@ vk::Instance createVulkanInstance() {
         vk::ApplicationInfo appInfo{};
         appInfo.pApplicationName = "Vulkan Basic Demo";
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.pEngineName = "HyperEngine";
+        appInfo.pEngineName = "SpectraForge";
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.apiVersion = VK_API_VERSION_1_2;
 
@@ -74,7 +74,7 @@ int main() {
 
         // Создание Vulkan instance
         SAFE_PRINT_LINE("=== Vulkan Basic Demo ===");
-        SAFE_PRINT_LINE("Демонстрация основных Vulkan классов HyperEngine");
+        SAFE_PRINT_LINE("Демонстрация основных Vulkan классов SpectraForge");
         std::cout << std::endl;
 
         // 1. Создаем Vulkan instance

@@ -21,8 +21,8 @@ git diff --cached --name-only | grep -E '\.(cpp|h|hpp)$' | while read file; do
     
     # Проверка namespace
     if [ "${file##*.}" = "h" ] || [ "${file##*.}" = "hpp" ]; then
-        if ! grep -q "namespace HyperEngine" "$file"; then
-            echo "⚠️ Файл $file может не использовать namespace HyperEngine"
+        if ! grep -q "namespace SpectraForge" "$file"; then
+            echo "⚠️ Файл $file может не использовать namespace SpectraForge"
         fi
     fi
 done

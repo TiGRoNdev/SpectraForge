@@ -2,7 +2,7 @@
 
 **Дата:** 30 сентября 2025  
 **Автор:** AI Assistant (Claude 4.5 Sonnet)  
-**Связанная задача:** [GitHub Actions PR #6 - Quality Checks Failed](https://github.com/TiGRoNdev/HyperEngine/actions/runs/18121089625/job/51565811794?pr=6)
+**Связанная задача:** [GitHub Actions PR #6 - Quality Checks Failed](https://github.com/TiGRoNdev/SpectraForge/actions/runs/18121089625/job/51565811794?pr=6)
 
 ## 🔴 Обнаруженная проблема
 
@@ -145,7 +145,7 @@ sudo apt-get install -y libglm-dev libgtest-dev
 
 ## 🔗 Ссылки
 
-- [Провалившийся workflow run](https://github.com/TiGRoNdev/HyperEngine/actions/runs/18121089625/job/51565811794?pr=6)
+- [Провалившийся workflow run](https://github.com/TiGRoNdev/SpectraForge/actions/runs/18121089625/job/51565811794?pr=6)
 - [GLM GitHub Repository](https://github.com/g-truc/glm)
 - [Google Test Documentation](https://google.github.io/googletest/)
 

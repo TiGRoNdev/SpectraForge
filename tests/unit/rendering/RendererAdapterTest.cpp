@@ -1,10 +1,10 @@
-#include "HyperEngine/Rendering/RendererAdapter.h"
+#include "SpectraForge/Rendering/RendererAdapter.h"
 #include "TestFramework.h"
 #include "mocks/MockRenderer.h"
 
-using namespace HyperEngine::Testing;
-using namespace HyperEngine::Testing::Mocks;
-using namespace HyperEngine::Rendering;
+using namespace SpectraForge::Testing;
+using namespace SpectraForge::Testing::Mocks;
+using namespace SpectraForge::Rendering;
 
 /**
  * @brief Unit тесты для RendererAdapter
@@ -12,10 +12,10 @@ using namespace HyperEngine::Rendering;
  * Тестирует переключение между различными графическими API
  * и корректность работы адаптера
  */
-class RendererAdapterTest : public HyperEngineTest {
+class RendererAdapterTest : public SpectraForgeTest {
   protected:
     void SetUp() override {
-        HyperEngineTest::SetUp();
+        SpectraForgeTest::SetUp();
 
         // Получаем ссылку на Singleton
         adapter = &RendererAdapter::getInstance();
@@ -30,7 +30,7 @@ class RendererAdapterTest : public HyperEngineTest {
         if (adapter) {
             adapter->cleanup();
         }
-        HyperEngineTest::TearDown();
+        SpectraForgeTest::TearDown();
     }
 
     RendererAdapter* adapter;
@@ -160,10 +160,10 @@ TEST_F(RendererAdapterTest, CameraManagement) {
 
     // Создаем тестовую камеру
     auto camera = std::make_shared<Camera3D>();
-    camera->setPosition(HyperEngine::Math::Vector3(0, 0, 5));
-    camera->lookAt(HyperEngine::Math::Vector3(0, 0, 5),
-                   HyperEngine::Math::Vector3(0, 0, 0),
-                   HyperEngine::Math::Vector3(0, 1, 0));
+    camera->setPosition(SpectraForge::Math::Vector3(0, 0, 5));
+    camera->lookAt(SpectraForge::Math::Vector3(0, 0, 5),
+                   SpectraForge::Math::Vector3(0, 0, 0),
+                   SpectraForge::Math::Vector3(0, 1, 0));
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
@@ -183,7 +183,7 @@ TEST_F(RendererAdapterTest, MeshRendering) {
     // Создаем тестовые объекты
     Mesh3D testMesh;
     Shader3D testShader;
-    HyperEngine::Math::Matrix4 transform = HyperEngine::Math::Matrix4::identity();
+    SpectraForge::Math::Matrix4 transform = SpectraForge::Math::Matrix4::identity();
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {
@@ -201,7 +201,7 @@ TEST_F(RendererAdapterTest, WireframeRendering) {
 
     Mesh3D testMesh;
     Shader3D testShader;
-    HyperEngine::Math::Matrix4 transform = HyperEngine::Math::Matrix4::identity();
+    SpectraForge::Math::Matrix4 transform = SpectraForge::Math::Matrix4::identity();
 
     EXPECT_NO_THROW_WITH_MESSAGE(
         {

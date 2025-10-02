@@ -5,17 +5,17 @@
  * Координирует работу всех подсистем согласно UML архитектуре из FEATURE_PLAN.
  */
 
-#include "HyperEngine/Vulkan/VulkanEngine.h"
-#include "HyperEngine/Vulkan/HardwareDetector.h"
-#include "HyperEngine/Vulkan/ResourceManager.h"
-#include "HyperEngine/Vulkan/SceneManager.h"
-#include "HyperEngine/Vulkan/VulkanRenderer.h"
+#include "SpectraForge/Vulkan/VulkanEngine.h"
+#include "SpectraForge/Vulkan/HardwareDetector.h"
+#include "SpectraForge/Vulkan/ResourceManager.h"
+#include "SpectraForge/Vulkan/SceneManager.h"
+#include "SpectraForge/Vulkan/VulkanRenderer.h"
 
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Core/Console.h"
 
 // Define Vulkan-Hpp default dispatcher storage (required for dynamic loader)
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
@@ -31,10 +31,10 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 #include <vulkan/vulkan_win32.h>
 #endif
 
-using namespace HyperEngine::Vulkan;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Vulkan;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine::Vulkan {
+namespace SpectraForge::Vulkan {
 
 VulkanEngine::VulkanEngine() {
     // Инициализация в init()
@@ -274,4 +274,4 @@ vk::Device VulkanEngine::createLogicalDevice() {
     }
 }
 
-}  // namespace HyperEngine::Vulkan
+}  // namespace SpectraForge::Vulkan

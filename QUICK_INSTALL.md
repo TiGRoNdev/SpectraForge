@@ -1,4 +1,4 @@
-# 🚀 Быстрая установка HyperEngine
+# 🚀 Быстрая установка SpectraForge
 
 > **Последнее обновление:** 2025-10-01  
 > **Поддерживаемые ОС:** Ubuntu 20.04+, Fedora 35+, WSL2
@@ -26,8 +26,8 @@
 
 ```bash
 # Клонирование репозитория
-git clone https://github.com/TiGRoNdev/HyperEngine.git
-cd HyperEngine
+git clone https://github.com/TiGRoNdev/SpectraForge.git
+cd SpectraForge
 
 # Запуск автоматической установки всех SDK
 chmod +x scripts/install_nvidia_sdks.sh
@@ -60,9 +60,9 @@ sudo apt-get install -y build-essential cmake git ninja-build \
 git clone https://github.com/Microsoft/vcpkg.git $HOME/vcpkg
 $HOME/vcpkg/bootstrap-vcpkg.sh
 
-# 3. Клонирование HyperEngine
-git clone https://github.com/TiGRoNdev/HyperEngine.git
-cd HyperEngine
+# 3. Клонирование SpectraForge
+git clone https://github.com/TiGRoNdev/SpectraForge.git
+cd SpectraForge
 
 # 4. Базовая сборка (без CUDA/OptiX/DLSS/FSR)
 cmake -B build -G Ninja \
@@ -294,8 +294,8 @@ sudo apt install vulkan-sdk
 
 ## 🆘 Поддержка
 
-- **Issues:** https://github.com/TiGRoNdev/HyperEngine/issues
-- **Discussions:** https://github.com/TiGRoNdev/HyperEngine/discussions
+- **Issues:** https://github.com/TiGRoNdev/SpectraForge/issues
+- **Discussions:** https://github.com/TiGRoNdev/SpectraForge/discussions
 - **Email:** tigron.dev@gmail.com
 
 ---

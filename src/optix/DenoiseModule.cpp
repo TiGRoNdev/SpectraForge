@@ -5,16 +5,16 @@
  * Заглушка для этапа 2.1. Полная реализация будет на этапе 5.
  */
 
-#include "HyperEngine/OptiX/DenoiseModule.h"
+#include "SpectraForge/OptiX/DenoiseModule.h"
 #include <iostream>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Vulkan/VulkanRenderer.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Vulkan/VulkanRenderer.h"
 
-using namespace HyperEngine::OptiX;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::OptiX;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine::OptiX {
+namespace SpectraForge::OptiX {
 
 // AutoencoderModel implementation
 AutoencoderModel::AutoencoderModel() {
@@ -181,4 +181,4 @@ void DenoiseModule::cleanupOptiX() {
     denoiser = nullptr;
 }
 
-}  // namespace HyperEngine::OptiX
+}  // namespace SpectraForge::OptiX

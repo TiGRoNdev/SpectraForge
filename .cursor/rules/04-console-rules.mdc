@@ -1,5 +1,5 @@
 ---
-description: Rules for safe console output in HyperEngine projects using Cursor IDE.
+description: Rules for safe console output in SpectraForge projects using Cursor IDE.
 globs: ["**/*.cpp", "**/*.h"]
 alwaysApply: true
 priority: 700

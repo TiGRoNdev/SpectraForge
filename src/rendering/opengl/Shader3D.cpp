@@ -1,15 +1,15 @@
-#include "HyperEngine/Rendering/Shader3D.h"
+#include "SpectraForge/Rendering/Shader3D.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
-using namespace HyperEngine::Math;
-using namespace HyperEngine::Rendering;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Math;
+using namespace SpectraForge::Rendering;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace Rendering {
 
 // Конструктор и деструктор
@@ -357,4 +357,4 @@ void ShaderManager::loadDefaultShaders() {
 }
 
 }  // namespace Rendering
-}  // namespace HyperEngine
+}  // namespace SpectraForge

@@ -1,9 +1,9 @@
 @echo off
 chcp 65001 >nul
-REM Автоматическое исправление форматирования кода HyperEngine
+REM Автоматическое исправление форматирования кода SpectraForge
 setlocal enabledelayedexpansion
 
-echo 🎨 Исправление форматирования кода HyperEngine
+echo 🎨 Исправление форматирования кода SpectraForge
 echo =============================================
 
 REM Путь к clang-format

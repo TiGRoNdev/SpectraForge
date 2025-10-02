@@ -1,14 +1,14 @@
-#include "HyperEngine/Rendering/Mesh3D.h"
+#include "SpectraForge/Rendering/Mesh3D.h"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
-#include "HyperEngine/Math/MathConstants.h"
-#include "HyperEngine/Math/Matrix4.h"
+#include "SpectraForge/Math/MathConstants.h"
+#include "SpectraForge/Math/Matrix4.h"
 
-using namespace HyperEngine::Math;
-using namespace HyperEngine::Rendering;
+using namespace SpectraForge::Math;
+using namespace SpectraForge::Rendering;
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace Rendering {
 
 // Конструктор и деструктор
@@ -339,4 +339,4 @@ void Mesh3D::calculateBoundingBox() {
 }
 
 }  // namespace Rendering
-}  // namespace HyperEngine
+}  // namespace SpectraForge

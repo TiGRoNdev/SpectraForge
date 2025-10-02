@@ -1,18 +1,18 @@
-#include "HyperEngine/Math/Vector4.h"
+#include "SpectraForge/Math/Vector4.h"
 #include "TestFramework.h"
 
-using namespace HyperEngine::Testing;
-using namespace HyperEngine::Math;
+using namespace SpectraForge::Testing;
+using namespace SpectraForge::Math;
 
 /**
  * @brief Unit тесты для Vector4
  *
- * Тестирует 4D векторные операции согласно архитектуре HyperEngine
+ * Тестирует 4D векторные операции согласно архитектуре SpectraForge
  */
-class Vector4Test : public HyperEngineTest {
+class Vector4Test : public SpectraForgeTest {
   protected:
     void SetUp() override {
-        HyperEngineTest::SetUp();
+        SpectraForgeTest::SetUp();
 
         // Создаем тестовые векторы
         v1 = Vector4(1.0f, 2.0f, 3.0f, 4.0f);

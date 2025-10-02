@@ -1,8 +1,8 @@
-# Стандарты кодирования HyperEngine
+# Стандарты кодирования SpectraForge
 
 ## 📋 Обзор
 
-Данный документ определяет стандарты кодирования для проекта HyperEngine, основанные на принципах SOLID, современных практиках C++ и требованиях безопасности. Соблюдение этих стандартов обеспечивает читаемость, поддерживаемость и надежность кода.
+Данный документ определяет стандарты кодирования для проекта SpectraForge, основанные на принципах SOLID, современных практиках C++ и требованиях безопасности. Соблюдение этих стандартов обеспечивает читаемость, поддерживаемость и надежность кода.
 
 ## 🎯 Основные принципы
 
@@ -92,7 +92,7 @@ const int maxTextureSize = 4096;  // camelCase
 ### Пространства имен
 ```cpp
 // ✅ Правильно: PascalCase
-namespace HyperEngine {
+namespace SpectraForge {
     namespace Rendering {
         namespace Vulkan {
             // ...
@@ -131,10 +131,10 @@ namespace hyper_engine { } // snake_case
 #include <glm/glm.hpp>
 
 // Внутренние заголовки
-#include "HyperEngine/Core/Object.h"
-#include "HyperEngine/Math/Vector3.h"
+#include "SpectraForge/Core/Object.h"
+#include "SpectraForge/Math/Vector3.h"
 
-namespace HyperEngine::Rendering {
+namespace SpectraForge::Rendering {
 
 /**
  * @brief Vulkan-based renderer for high-performance 3D rendering
@@ -187,20 +187,20 @@ private:
     std::unique_ptr<VulkanContext> m_context;
 };
 
-} // namespace HyperEngine::Rendering
+} // namespace SpectraForge::Rendering
 ```
 
 ### Исходные файлы (.cpp)
 ```cpp
-#include "HyperEngine/Rendering/VulkanRenderer.h"
+#include "SpectraForge/Rendering/VulkanRenderer.h"
 
 // Дополнительные заголовки
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/Profiler.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/Profiler.h"
 
 // Использование пространств имен
-using namespace HyperEngine::Rendering;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Rendering;
+using namespace SpectraForge::Core;
 
 VulkanRenderer::VulkanRenderer() {
     Console::debug("VulkanRenderer создан");
@@ -459,9 +459,9 @@ void complexFunction() {
 ### Структура тестов
 ```cpp
 #include <gtest/gtest.h>
-#include "HyperEngine/Math/Vector3.h"
+#include "SpectraForge/Math/Vector3.h"
 
-using namespace HyperEngine::Math;
+using namespace SpectraForge::Math;
 
 class Vector3Test : public ::testing::Test {
 protected:

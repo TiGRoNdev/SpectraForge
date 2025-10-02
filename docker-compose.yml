@@ -69,7 +69,7 @@ services:
       - .:/workspace
     network_mode: host
     working_dir: /workspace/build
-    command: ["./HyperEngine_Demo"]
+    command: ["./SpectraForge_Demo"]
 
 volumes:
   ccache:

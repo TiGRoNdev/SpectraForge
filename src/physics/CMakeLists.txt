@@ -1,16 +1,16 @@
-# Физическая система HyperEngine
+# Физическая система SpectraForge
 cmake_minimum_required(VERSION 3.16)
 
-message(STATUS "Настройка HyperEngine_Physics")
+message(STATUS "Настройка SpectraForge_Physics")
 
 # Пока заглушка - будет реализовано в следующих этапах
-add_library(HyperEngine_Physics INTERFACE)
+add_library(SpectraForge_Physics INTERFACE)
 
-target_include_directories(HyperEngine_Physics 
+target_include_directories(SpectraForge_Physics 
     INTERFACE ${CMAKE_SOURCE_DIR}/include
 )
 
 # Создание alias
-add_library(HyperEngine::Physics ALIAS HyperEngine_Physics)
+add_library(SpectraForge::Physics ALIAS SpectraForge_Physics)
 
-message(STATUS "HyperEngine_Physics заглушка создана")
+message(STATUS "SpectraForge_Physics заглушка создана")

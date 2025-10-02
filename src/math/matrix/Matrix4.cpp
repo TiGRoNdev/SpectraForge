@@ -1,12 +1,12 @@
-#include "HyperEngine/Math/Matrix4.h"
+#include "SpectraForge/Math/Matrix4.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <stdexcept>
-#include "HyperEngine/Math/Quaternion.h"
-#include "HyperEngine/Math/Vector4.h"
+#include "SpectraForge/Math/Quaternion.h"
+#include "SpectraForge/Math/Vector4.h"
 
-using namespace HyperEngine::Math;
+using namespace SpectraForge::Math;
 
 // Конструкторы
 /**
@@ -569,7 +569,7 @@ Matrix4 Matrix4::zero() {
 }
 
 // Операторы ввода/вывода
-namespace HyperEngine::Math {
+namespace SpectraForge::Math {
 std::ostream& operator<<(std::ostream& os, const Matrix4& mat) {
     os << "Matrix4:\n";
     for (int i = 0; i < 4; ++i) {
@@ -598,4 +598,4 @@ Matrix4 operator*(float scalar, const Matrix4& mat) {
     return mat * scalar;
 }
 
-}  // namespace HyperEngine::Math
+}  // namespace SpectraForge::Math

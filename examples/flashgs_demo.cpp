@@ -14,17 +14,17 @@
 #include <memory>
 #include <random>
 #include <vector>
-#include "HyperEngine/Core/SafeConsole.h"
+#include "SpectraForge/Core/SafeConsole.h"
 
 // Core Engine includes
-#include <HyperEngine/Core/Console.h>
+#include <SpectraForge/Core/Console.h>
 
-using namespace HyperEngine::Core;
-#include <HyperEngine/CUDA/CudaInterop.h>
-#include <HyperEngine/CUDA/FlashGSSplatter.h>
-#include <HyperEngine/Vulkan/HardwareDetector.h>
-#include <HyperEngine/Vulkan/SceneManager.h>
-#include <HyperEngine/Vulkan/VulkanRenderer.h>
+using namespace SpectraForge::Core;
+#include <SpectraForge/CUDA/CudaInterop.h>
+#include <SpectraForge/CUDA/FlashGSSplatter.h>
+#include <SpectraForge/Vulkan/HardwareDetector.h>
+#include <SpectraForge/Vulkan/SceneManager.h>
+#include <SpectraForge/Vulkan/VulkanRenderer.h>
 
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
 #include <cuda_runtime.h>
@@ -43,8 +43,8 @@ struct float4 {
 };
 #endif
 
-using namespace HyperEngine;
-using namespace HyperEngine::CUDA;
+using namespace SpectraForge;
+using namespace SpectraForge::CUDA;
 
 /**
  * @brief Генерация тестового точечного облака
@@ -138,7 +138,7 @@ void performanceTest(FlashGSSplatter& splatter, const std::vector<float4>& point
     // Тест оптимизации
     SAFE_PRINT_LINE("🔄 Запуск оптимизации (50 итераций)...");
 
-    HyperEngine::Vulkan::MultiViewImages testImages;
+    SpectraForge::Vulkan::MultiViewImages testImages;
     testImages.viewCount = 4;
 
     start = std::chrono::high_resolution_clock::now();

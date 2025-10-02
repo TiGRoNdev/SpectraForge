@@ -1,14 +1,14 @@
 #include <benchmark/benchmark.h>
 #include <memory>
 #include <vector>
-#include "HyperEngine/Rendering/RendererAdapter.h"
+#include "SpectraForge/Rendering/RendererAdapter.h"
 #include "TestFramework.h"
 #include "mocks/MockRenderer.h"
 #include "mocks/MockVulkanRenderer.h"
 
-using namespace HyperEngine::Testing;
-using namespace HyperEngine::Testing::Mocks;
-using namespace HyperEngine::Rendering;
+using namespace SpectraForge::Testing;
+using namespace SpectraForge::Testing::Mocks;
+using namespace SpectraForge::Rendering;
 
 // Глобальные переменные для бенчмарков
 class RenderingBenchmarkFixture : public benchmark::Fixture {
@@ -20,14 +20,14 @@ class RenderingBenchmarkFixture : public benchmark::Fixture {
         // Создание тестовых данных
         testMesh = std::make_shared<Mesh3D>();
         testShader = std::make_shared<Shader3D>();
-        testTransform = HyperEngine::Math::Matrix4::identity();
+        testTransform = SpectraForge::Math::Matrix4::identity();
 
         // Создание камеры
         testCamera = std::make_shared<Camera3D>();
-        testCamera->setPosition(HyperEngine::Math::Vector3(0, 0, 5));
-        testCamera->lookAt(HyperEngine::Math::Vector3(0, 0, 5),
-                           HyperEngine::Math::Vector3(0, 0, 0),
-                           HyperEngine::Math::Vector3(0, 1, 0));
+        testCamera->setPosition(SpectraForge::Math::Vector3(0, 0, 5));
+        testCamera->lookAt(SpectraForge::Math::Vector3(0, 0, 5),
+                           SpectraForge::Math::Vector3(0, 0, 0),
+                           SpectraForge::Math::Vector3(0, 1, 0));
     }
 
     void TearDown(const ::benchmark::State& state) override {
@@ -42,7 +42,7 @@ class RenderingBenchmarkFixture : public benchmark::Fixture {
     std::shared_ptr<Mesh3D> testMesh;
     std::shared_ptr<Shader3D> testShader;
     std::shared_ptr<Camera3D> testCamera;
-    HyperEngine::Math::Matrix4 testTransform;
+    SpectraForge::Math::Matrix4 testTransform;
 };
 
 // Бенчмарк инициализации рендерера
@@ -107,9 +107,9 @@ BENCHMARK_F(RenderingBenchmarkFixture, BM_MultipleObjectRendering)(benchmark::St
     renderer->setMainCamera(testCamera);
 
     // Подготовка трансформаций для объектов
-    std::vector<HyperEngine::Math::Matrix4> transforms(objectCount);
+    std::vector<SpectraForge::Math::Matrix4> transforms(objectCount);
     for (int i = 0; i < objectCount; ++i) {
-        transforms[i] = HyperEngine::Math::Matrix4::translation(
+        transforms[i] = SpectraForge::Math::Matrix4::translation(
             static_cast<float>(i % 10) - 5.0f, static_cast<float>(i / 10) - 5.0f, 0.0f);
     }
 
@@ -143,7 +143,7 @@ BENCHMARK_F(RenderingBenchmarkFixture, BM_WireframeRendering)(benchmark::State& 
         renderer->enableWireframe(true);
 
         for (int i = 0; i < objectCount; ++i) {
-            HyperEngine::Math::Matrix4 transform = HyperEngine::Math::Matrix4::translation(
+            SpectraForge::Math::Matrix4 transform = SpectraForge::Math::Matrix4::translation(
                 static_cast<float>(i % 10), static_cast<float>(i / 10), 0.0f);
             renderer->renderWireframe(*testMesh, transform, *testShader);
         }
@@ -168,10 +168,10 @@ static void BM_DifferentResolutions(benchmark::State& state) {
     auto testShader = std::make_shared<Shader3D>();
     auto testCamera = std::make_shared<Camera3D>();
 
-    testCamera->setPosition(HyperEngine::Math::Vector3(0, 0, 5));
-    testCamera->lookAt(HyperEngine::Math::Vector3(0, 0, 5),
-                       HyperEngine::Math::Vector3(0, 0, 0),
-                       HyperEngine::Math::Vector3(0, 1, 0));
+    testCamera->setPosition(SpectraForge::Math::Vector3(0, 0, 5));
+    testCamera->lookAt(SpectraForge::Math::Vector3(0, 0, 5),
+                       SpectraForge::Math::Vector3(0, 0, 0),
+                       SpectraForge::Math::Vector3(0, 1, 0));
 
     renderer->initialize(RenderBackend::OPENGL, width, height);
     renderer->setMainCamera(testCamera);
@@ -183,8 +183,8 @@ static void BM_DifferentResolutions(benchmark::State& state) {
 
         // Рендерим несколько объектов для реалистичной нагрузки
         for (int i = 0; i < 10; ++i) {
-            HyperEngine::Math::Matrix4 transform =
-                HyperEngine::Math::Matrix4::translation(static_cast<float>(i - 5), 0.0f, 0.0f);
+            SpectraForge::Math::Matrix4 transform =
+                SpectraForge::Math::Matrix4::translation(static_cast<float>(i - 5), 0.0f, 0.0f);
             renderer->renderMesh(testMesh, transform, testShader);
         }
 
@@ -247,7 +247,7 @@ BENCHMARK_F(RenderingBenchmarkFixture, BM_CameraManagement)(benchmark::State& st
     std::vector<std::shared_ptr<Camera3D>> cameras;
     for (int i = 0; i < 10; ++i) {
         auto camera = std::make_shared<Camera3D>();
-        camera->setPosition(HyperEngine::Math::Vector3(static_cast<float>(i), 0.0f, 5.0f));
+        camera->setPosition(SpectraForge::Math::Vector3(static_cast<float>(i), 0.0f, 5.0f));
         cameras.push_back(camera);
     }
 
@@ -315,7 +315,7 @@ static void BM_LongRunningRendering(benchmark::State& state) {
     auto testShader = std::make_shared<Shader3D>();
     auto testCamera = std::make_shared<Camera3D>();
 
-    testCamera->setPosition(HyperEngine::Math::Vector3(0, 0, 5));
+    testCamera->setPosition(SpectraForge::Math::Vector3(0, 0, 5));
 
     renderer->initialize(RenderBackend::OPENGL, 1920, 1080);
     renderer->setMainCamera(testCamera);
@@ -326,7 +326,7 @@ static void BM_LongRunningRendering(benchmark::State& state) {
         renderer->beginFrame();
 
         for (int i = 0; i < objectsPerFrame; ++i) {
-            HyperEngine::Math::Matrix4 transform = HyperEngine::Math::Matrix4::translation(
+            SpectraForge::Math::Matrix4 transform = SpectraForge::Math::Matrix4::translation(
                 std::sin(static_cast<float>(i) * 0.1f) * 5.0f,
                 std::cos(static_cast<float>(i) * 0.1f) * 5.0f,
                 0.0f);
@@ -367,7 +367,7 @@ static void BM_MemoryUsage(benchmark::State& state) {
         // Используем объекты
         renderer->beginFrame();
         for (int i = 0; i < objectCount; ++i) {
-            HyperEngine::Math::Matrix4 transform = HyperEngine::Math::Matrix4::identity();
+            SpectraForge::Math::Matrix4 transform = SpectraForge::Math::Matrix4::identity();
             renderer->renderMesh(meshes[i], transform, shaders[i]);
         }
         renderer->endFrame();
@@ -395,7 +395,7 @@ int main(int argc, char** argv) {
     benchmark::Initialize(&argc, argv);
 
     // Добавляем контекст о системе
-    benchmark::AddCustomContext("Engine", "HyperEngine");
+    benchmark::AddCustomContext("Engine", "SpectraForge");
     benchmark::AddCustomContext("Graphics API", "OpenGL/Vulkan");
     benchmark::AddCustomContext("Test Type", "Rendering Performance");
 

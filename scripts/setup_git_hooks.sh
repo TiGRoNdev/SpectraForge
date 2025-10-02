@@ -1,9 +1,9 @@
 #!/bin/bash
-# Скрипт для установки локальных git hooks для HyperEngine
+# Скрипт для установки локальных git hooks для SpectraForge
 
 set -e
 
-echo "🔧 Настройка git hooks для HyperEngine..."
+echo "🔧 Настройка git hooks для SpectraForge..."
 echo "========================================"
 
 # Проверяем, что мы в git репозитории
@@ -26,7 +26,7 @@ create_hook() {
     
     cat > "$hook_path" << EOF
 #!/bin/bash
-# $hook_name hook для HyperEngine
+# $hook_name hook для SpectraForge
 # Автоматически создан скриптом setup_git_hooks.sh
 
 $hook_content

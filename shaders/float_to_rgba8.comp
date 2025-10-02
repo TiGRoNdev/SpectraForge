@@ -1,0 +1,65 @@
+#version 450
+
+// Compute shader для конвертации RGB float → RGBA8 с масштабированием
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+// Binding 0: Input storage buffer (RGB float - packed as float array)
+layout(set = 0, binding = 0) readonly buffer InputBuffer {
+    float data[]; // Линейный массив: R,G,B, R,G,B, ...
+} inputBuffer;
+
+// Binding 1: Output storage image (RGBA8 unorm)
+layout(set = 0, binding = 1, rgba8) uniform image2D outputImage;
+
+// Push constants для размеров
+layout(push_constant) uniform PushConstants {
+    uint srcWidth;   // Ширина входного буфера
+    uint srcHeight;  // Высота входного буфера
+    uint dstWidth;   // Ширина выходного изображения
+    uint dstHeight;  // Высота выходного изображения
+} pushConstants;
+
+void main() {
+    // Координаты в выходном изображении
+    uvec2 dstCoord = gl_GlobalInvocationID.xy;
+    
+    // Проверка границ
+    if (dstCoord.x >= pushConstants.dstWidth || dstCoord.y >= pushConstants.dstHeight) {
+        return;
+    }
+    
+    // Билинейная интерполяция для масштабирования
+    // Вычисляем координаты в исходном буфере (float для интерполяции)
+    float srcX = (float(dstCoord.x) + 0.5) * float(pushConstants.srcWidth) / float(pushConstants.dstWidth) - 0.5;
+    float srcY = (float(dstCoord.y) + 0.5) * float(pushConstants.srcHeight) / float(pushConstants.dstHeight) - 0.5;
+    
+    // Границы для безопасности
+    srcX = clamp(srcX, 0.0, float(pushConstants.srcWidth - 1));
+    srcY = clamp(srcY, 0.0, float(pushConstants.srcHeight - 1));
+    
+    // Целые координаты для nearest-neighbor sampling (для простоты)
+    uint srcXi = uint(srcX);
+    uint srcYi = uint(srcY);
+    
+    // Индекс в линейном буфере (RGB = 3 компонента на пиксель)
+    uint pixelIndex = srcYi * pushConstants.srcWidth + srcXi;
+    uint bufferIndex = pixelIndex * 3; // R,G,B
+    
+    // Чтение RGB данных из input buffer
+    float r = inputBuffer.data[bufferIndex + 0];
+    float g = inputBuffer.data[bufferIndex + 1];
+    float b = inputBuffer.data[bufferIndex + 2];
+    
+    // Конвертация: float [0.0, 1.0] → unorm8 [0, 255]
+    // RGBA8 формат автоматически нормализует значения
+    vec4 outputColor = vec4(
+        clamp(r, 0.0, 1.0),
+        clamp(g, 0.0, 1.0),
+        clamp(b, 0.0, 1.0),
+        1.0  // Альфа всегда 1.0
+    );
+    
+    // Запись в storage image
+    imageStore(outputImage, ivec2(dstCoord), outputColor);
+}

@@ -1,5 +1,5 @@
 ---
-description: C++ Coding Standards for HyperEngine with GitHub MCP integration
+description: C++ Coding Standards for SpectraForge with GitHub MCP integration
 globs: ["**/*.cpp", "**/*.h", "**/*.hpp"]
 alwaysApply: true
 priority: 800
@@ -143,7 +143,7 @@ priority: 800
     "id": "issues",
     "mcp_tool": "mcp_github_create_issue",
     "when": "Bug reports, features",
-    "params": {"owner": "TiGRoNdev", "repo": "HyperEngine"}
+    "params": {"owner": "TiGRoNdev", "repo": "SpectraForge"}
   },
   {
     "id": "branches",
@@ -155,7 +155,7 @@ priority: 800
     "id": "pull_requests",
     "mcp_tool": "mcp_github_create_pull_request",
     "when": "Code ready for review",
-    "params": {"owner": "TiGRoNdev", "repo": "HyperEngine"}
+    "params": {"owner": "TiGRoNdev", "repo": "SpectraForge"}
   },
   {
     "id": "copilot_review",

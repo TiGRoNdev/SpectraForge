@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Скрипт для исправления API вызовов в тестах HyperEngine
+Скрипт для исправления API вызовов в тестах SpectraForge
 """
 
 import re

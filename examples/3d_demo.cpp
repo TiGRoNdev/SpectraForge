@@ -1,6 +1,6 @@
 /**
  * @file 3d_demo.cpp
- * @brief Демонстрация возможностей 3D движка HyperEngine
+ * @brief Демонстрация возможностей 3D движка SpectraForge
  *
  * Этот пример показывает основные возможности 3D движка:
  * - Инициализация рендерера
@@ -9,30 +9,30 @@
  * - Основы физики и рендеринга
  */
 
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/GameObject3D.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Input/Input3D.h"
-#include "HyperEngine/Math/Math.h"
-#include "HyperEngine/Math/MathConstants.h"
-#include "HyperEngine/Math/Quaternion.h"
-#include "HyperEngine/Physics/Physics3D.h"
-#include "HyperEngine/Rendering/Camera3D.h"
-#include "HyperEngine/Rendering/Mesh3D.h"
-#include "HyperEngine/Rendering/Renderer3D.h"
-#include "HyperEngine/Rendering/Shader3D.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/GameObject3D.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Input/Input3D.h"
+#include "SpectraForge/Math/Math.h"
+#include "SpectraForge/Math/MathConstants.h"
+#include "SpectraForge/Math/Quaternion.h"
+#include "SpectraForge/Physics/Physics3D.h"
+#include "SpectraForge/Rendering/Camera3D.h"
+#include "SpectraForge/Rendering/Mesh3D.h"
+#include "SpectraForge/Rendering/Renderer3D.h"
+#include "SpectraForge/Rendering/Shader3D.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <memory>
 
-using namespace HyperEngine;
-using namespace HyperEngine::Core;
-using namespace HyperEngine::Rendering;
-using namespace HyperEngine::Input;
-using namespace HyperEngine::Physics;
-using namespace HyperEngine::Math;
+using namespace SpectraForge;
+using namespace SpectraForge::Core;
+using namespace SpectraForge::Rendering;
+using namespace SpectraForge::Input;
+using namespace SpectraForge::Physics;
+using namespace SpectraForge::Math;
 
 class Demo3D {
   public:
@@ -41,7 +41,7 @@ class Demo3D {
     bool initialize() {
         // Инициализация UTF-8 консоли
         Console::initialize();
-        Console::setTitle("🚀 HyperEngine 3D Demo");
+        Console::setTitle("🚀 SpectraForge 3D Demo");
 
         SAFE_PRINT_LINE("🌟═══════════════════════════════════════════🌟");
         SAFE_PRINT_LINE("          🚀 HYPERENGINE 3D ДЕМО 🚀");
@@ -59,7 +59,7 @@ class Demo3D {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
         // Создание окна
-        window = glfwCreateWindow(1280, 720, "🚀 HyperEngine 3D Demo", nullptr, nullptr);
+        window = glfwCreateWindow(1280, 720, "🚀 SpectraForge 3D Demo", nullptr, nullptr);
         if (!window) {
             Console::error("❌ Не удалось создать окно GLFW");
             glfwTerminate();

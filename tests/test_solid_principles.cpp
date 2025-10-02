@@ -5,12 +5,12 @@
 
 #include <gtest/gtest.h>
 #include <memory>
-#include "HyperEngine/Core/EngineCore.h"
-#include "HyperEngine/Core/Logger.h"
-#include "HyperEngine/Rendering/ModernRenderer3D.h"
+#include "SpectraForge/Core/EngineCore.h"
+#include "SpectraForge/Core/Logger.h"
+#include "SpectraForge/Rendering/ModernRenderer3D.h"
 
-using namespace HyperEngine::Core;
-using namespace HyperEngine::Rendering;
+using namespace SpectraForge::Core;
+using namespace SpectraForge::Rendering;
 
 /**
  * @brief Мок-реализации для тестирования

@@ -6,20 +6,20 @@
  * через external memory и semaphore extensions.
  */
 
-#include "HyperEngine/CUDA/CudaInterop.h"
+#include "SpectraForge/CUDA/CudaInterop.h"
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#ifdef HyperEngine_ENABLE_VULKAN
-#include "HyperEngine/Vulkan/ResourceManager.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#if defined(VULKAN_RENDERER_BUILD) || defined(SpectraForge_ENABLE_VULKAN)
+#include "SpectraForge/Vulkan/ResourceManager.h"
 using namespace vk;
 #endif
 
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Core;
 
 #ifdef _WIN32
 #include <windows.h>
@@ -30,10 +30,10 @@ using namespace HyperEngine::Core;
 // Windows-specific interop включен
 // #define DISABLE_WIN32_INTEROP
 
-using namespace HyperEngine::CUDA;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::CUDA;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine::CUDA {
+namespace SpectraForge::CUDA {
 
 CudaInterop::CudaInterop()
     : device(nullptr),
@@ -50,7 +50,7 @@ CudaInterop::~CudaInterop() {
     }
 }
 
-#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
+#if defined(VULKAN_RENDERER_BUILD) || defined(SpectraForge_ENABLE_VULKAN)
 bool CudaInterop::initializeInterop(vk::Device dev,
                                     vk::PhysicalDevice physDev,
                                     Vulkan::ResourceManager* resMgr) {
@@ -138,7 +138,7 @@ void CudaInterop::cleanup() {
     for (auto& syncObj : syncObjects) {
         if (syncObj != nullptr && syncObj->isValid) {
             if (syncObj->vulkanSemaphore) {
-#ifdef HyperEngine_ENABLE_VULKAN
+#if defined(VULKAN_RENDERER_BUILD) || defined(SpectraForge_ENABLE_VULKAN)
                 device.destroySemaphore(syncObj->vulkanSemaphore);
 #endif
             }
@@ -161,7 +161,7 @@ void CudaInterop::cleanup() {
 }
 
 std::shared_ptr<SharedResource> CudaInterop::createSharedBuffer(size_t size,
-#ifdef HyperEngine_ENABLE_VULKAN
+#if defined(VULKAN_RENDERER_BUILD) || defined(SpectraForge_ENABLE_VULKAN)
                                                                 vk::BufferUsageFlags vulkanUsage,
 #else
                                                                 uint32_t vulkanUsage,
@@ -172,7 +172,7 @@ std::shared_ptr<SharedResource> CudaInterop::createSharedBuffer(size_t size,
         return nullptr;
     }
 
-#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
+#if defined(VULKAN_RENDERER_BUILD) || defined(SpectraForge_ENABLE_VULKAN)
     try {
         auto resource = std::make_shared<SharedResource>();
         resource->size = size;
@@ -381,7 +381,7 @@ void CudaInterop::signalVulkanToCuda(const std::shared_ptr<SyncObject>& syncObj,
     }
 }
 
-#if defined(BUILD_VULKAN_RENDERER) || defined(HyperEngine_ENABLE_VULKAN)
+#if defined(VULKAN_RENDERER_BUILD) || defined(SpectraForge_ENABLE_VULKAN)
 void CudaInterop::waitCudaFromVulkan(const std::shared_ptr<SyncObject>& syncObj,
                                      vk::CommandBuffer commandBuffer) {
 #else
@@ -395,7 +395,7 @@ void CudaInterop::waitCudaFromVulkan(const std::shared_ptr<SyncObject>& syncObj,
 
     (void)commandBuffer;
 
-#ifdef HyperEngine_ENABLE_VULKAN
+#if defined(VULKAN_RENDERER_BUILD) || defined(SpectraForge_ENABLE_VULKAN)
     vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eAllCommands;
     (void)waitStage;
 
@@ -406,7 +406,7 @@ void CudaInterop::waitCudaFromVulkan(const std::shared_ptr<SyncObject>& syncObj,
 #endif
 }
 
-#ifdef HyperEngine_ENABLE_VULKAN
+#if defined(VULKAN_RENDERER_BUILD) || defined(SpectraForge_ENABLE_VULKAN)
 cudaExternalMemory_t CudaInterop::importVulkanMemory(vk::DeviceMemory vulkanMemory, size_t size) {
     try {
         // Подавляем предупреждение о неиспользуемом параметре
@@ -474,7 +474,7 @@ vk::DeviceMemory CudaInterop::exportCudaMemory(CUdeviceptr cudaPtr, size_t size)
     (void)cudaPtr;
     (void)size;
 
-#ifdef HyperEngine_ENABLE_VULKAN
+#if defined(VULKAN_RENDERER_BUILD) || defined(SpectraForge_ENABLE_VULKAN)
     std::cout << "[CudaInterop] Экспорт CUDA памяти в Vulkan (пока не реализован)" << std::endl;
     return vk::DeviceMemory{};
 #else
@@ -709,7 +709,7 @@ bool CudaInterop::checkExternalSemaphoreSupport() {
 }
 
 bool CudaInterop::checkVulkanExtensionSupport() {
-#ifdef HyperEngine_ENABLE_VULKAN
+#if defined(VULKAN_RENDERER_BUILD) || defined(SpectraForge_ENABLE_VULKAN)
     try {
         std::cout << "[CudaInterop] Проверка поддержки Vulkan расширений..." << std::endl;
 
@@ -775,16 +775,16 @@ bool CudaInterop::findMatchingCudaDevice() {
     return false;
 }
 
-}  // namespace HyperEngine::CUDA
+}  // namespace SpectraForge::CUDA
 
 // Экспортируемая функция для тестирования
 extern "C" {
 void cuda_interop_test() {
     std::cout << "[CudaInterop Test] Тестирование CUDA-Vulkan interop..." << std::endl;
 
-    HyperEngine::CUDA::CudaInterop interop;
+    SpectraForge::CUDA::CudaInterop interop;
 
-    if (HyperEngine::CUDA::CudaInterop::isInteropSupported()) {
+    if (SpectraForge::CUDA::CudaInterop::isInteropSupported()) {
         std::cout << "[CudaInterop Test] Interop поддерживается" << std::endl;
 
         // TODO: Добавить более детальное тестирование при наличии Vulkan контекста

@@ -1,8 +1,8 @@
 @echo off
 chcp 65001 >nul
-REM Скрипт для установки локальных git hooks для HyperEngine (Windows)
+REM Скрипт для установки локальных git hooks для SpectraForge (Windows)
 
-echo 🔧 Настройка git hooks для HyperEngine...
+echo 🔧 Настройка git hooks для SpectraForge...
 echo ========================================
 
 REM Проверяем, что мы в git репозитории
@@ -20,7 +20,7 @@ echo 📝 Создание pre-commit hook...
 REM Pre-commit hook
 (
 echo #!/bin/bash
-echo # pre-commit hook для HyperEngine
+echo # pre-commit hook для SpectraForge
 echo # Автоматически создан скриптом setup_git_hooks.bat
 echo.
 echo echo "🚀 Запуск pre-commit проверок..."
@@ -69,7 +69,7 @@ echo 📝 Создание pre-push hook...
 REM Pre-push hook
 (
 echo #!/bin/bash
-echo # pre-push hook для HyperEngine
+echo # pre-push hook для SpectraForge
 echo # Автоматически создан скриптом setup_git_hooks.bat
 echo.
 echo echo "🚀 Запуск pre-push проверок..."
@@ -110,7 +110,7 @@ echo 📝 Создание commit-msg hook...
 REM Commit-msg hook
 (
 echo #!/bin/bash
-echo # commit-msg hook для HyperEngine
+echo # commit-msg hook для SpectraForge
 echo # Автоматически создан скриптом setup_git_hooks.bat
 echo.
 echo # Проверка формата commit message

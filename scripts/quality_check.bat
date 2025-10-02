@@ -1,9 +1,9 @@
 @echo off
 chcp 65001 >nul
-REM Комплексная проверка качества кода HyperEngine для Windows
+REM Комплексная проверка качества кода SpectraForge для Windows
 setlocal enabledelayedexpansion
 
-echo 🎯 Комплексная проверка качества кода HyperEngine
+echo 🎯 Комплексная проверка качества кода SpectraForge
 echo ================================================
 
 REM Счетчики
@@ -97,7 +97,7 @@ REM 5. Создание сводного отчета
 echo.
 echo 📋 Создание сводного отчета...
 (
-echo # Отчет о качестве кода HyperEngine
+echo # Отчет о качестве кода SpectraForge
 echo.
 echo **Дата:** %date% %time%
 echo.

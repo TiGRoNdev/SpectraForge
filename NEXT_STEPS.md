@@ -1,4 +1,4 @@
-# 🎯 Следующие шаги для завершения установки HyperEngine
+# 🎯 Следующие шаги для завершения установки SpectraForge
 
 > **Статус:** SDK не установлены  
 > **Дата:** 1 октября 2025
@@ -24,7 +24,7 @@
 ### Шаг 1: Запустите установщик
 
 ```bash
-cd /home/tigron/Documents/GITHUB/HyperEngine
+cd /home/tigron/Documents/GITHUB/SpectraForge
 chmod +x scripts/install_nvidia_sdks.sh
 ./scripts/install_nvidia_sdks.sh
 ```
@@ -63,7 +63,7 @@ source ~/.bashrc
 ### Шаг 5: Пересоберите проект
 
 ```bash
-cd /home/tigron/Documents/GITHUB/HyperEngine
+cd /home/tigron/Documents/GITHUB/SpectraForge
 
 cmake -B build -G Ninja \
   -DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake \
@@ -169,7 +169,7 @@ source ~/.bashrc
 Если вам не нужны CUDA, OptiX, DLSS или FSR, соберите базовую версию:
 
 ```bash
-cd /home/tigron/Documents/GITHUB/HyperEngine
+cd /home/tigron/Documents/GITHUB/SpectraForge
 
 cmake -B build -G Ninja \
   -DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake \
@@ -191,7 +191,7 @@ cmake --build build --config Release -j$(nproc)
 После установки SDK запустите:
 
 ```bash
-cd /home/tigron/Documents/GITHUB/HyperEngine
+cd /home/tigron/Documents/GITHUB/SpectraForge
 ./scripts/setup_sdk.sh
 ```
 
@@ -272,13 +272,13 @@ Cuda compilation tools, release 12.8, V12.8.0
    ```
 
 3. **Создайте issue на GitHub:**
-   - URL: https://github.com/TiGRoNdev/HyperEngine/issues
+   - URL: https://github.com/TiGRoNdev/SpectraForge/issues
    - Приложите вывод команд выше
 
 ### Контакты:
 
-- **GitHub Issues:** https://github.com/TiGRoNdev/HyperEngine/issues
-- **GitHub Discussions:** https://github.com/TiGRoNdev/HyperEngine/discussions
+- **GitHub Issues:** https://github.com/TiGRoNdev/SpectraForge/issues
+- **GitHub Discussions:** https://github.com/TiGRoNdev/SpectraForge/discussions
 - **Email:** tigron.dev@gmail.com
 
 ---
@@ -287,7 +287,7 @@ Cuda compilation tools, release 12.8, V12.8.0
 
 ### Для автоматической установки:
 ```bash
-cd /home/tigron/Documents/GITHUB/HyperEngine
+cd /home/tigron/Documents/GITHUB/SpectraForge
 ./scripts/install_nvidia_sdks.sh  # Выбрать опцию 5
 source ~/.bashrc
 cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake -DBUILD_WITH_CUDA=ON -DBUILD_WITH_OPTIX=ON -DBUILD_WITH_DLSS=ON -DBUILD_WITH_FSR=ON
@@ -296,7 +296,7 @@ cmake --build build --config Release -j$(nproc)
 
 ### Для быстрой сборки (без SDK):
 ```bash
-cd /home/tigron/Documents/GITHUB/HyperEngine
+cd /home/tigron/Documents/GITHUB/SpectraForge
 cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake -DBUILD_WITH_CUDA=OFF -DBUILD_WITH_OPTIX=OFF -DBUILD_WITH_DLSS=OFF -DBUILD_WITH_FSR=OFF
 cmake --build build --config Release -j$(nproc)
 ```

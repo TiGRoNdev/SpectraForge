@@ -1,8 +1,8 @@
 {
-  "name": "hyperengine",
+  "name": "spectraforge",
   "version": "0.1.0",
-  "description": "HyperEngine - Modern 3D/4D Game Engine with advanced rendering capabilities",
-  "homepage": "https://github.com/TiGRoNdev/HyperEngine",
+  "description": "SpectraForge - Spectral Processing Engine Combining Transform Rendering And Frequency Optimized Radiance Gaussian Encoding",
+  "homepage": "https://github.com/TiGRoNdev/SpectraForge",
   "license": "MIT",
   "dependencies": [
     {
@@ -10,9 +10,6 @@
     },
     {
       "name": "glew"
-    },
-    {
-      "name": "vulkan"
     },
     {
       "name": "vulkan-memory-allocator"
@@ -38,6 +35,12 @@
     },
     {
       "name": "glm"
+    },
+    {
+      "name": "vkfft"
+    },
+    {
+      "name": "glslang"
     },
     {
       "name": "gtest"

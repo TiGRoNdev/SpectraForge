@@ -1,15 +1,15 @@
-#include "HyperEngine/Rendering/Renderer3D.h"
+#include "SpectraForge/Rendering/Renderer3D.h"
 #include <chrono>
 #include <iostream>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Math/Matrix4.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Math/Matrix4.h"
 
-using namespace HyperEngine::Math;
-using namespace HyperEngine::Rendering;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Math;
+using namespace SpectraForge::Rendering;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace Rendering {
 
 Renderer3D::Renderer3D() : renderStats() {}
@@ -290,4 +290,4 @@ void Renderer3D::updateRenderStats(const Mesh3D& mesh) {
 }
 
 }  // namespace Rendering
-}  // namespace HyperEngine
+}  // namespace SpectraForge

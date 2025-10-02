@@ -5,7 +5,7 @@ alwaysApply: true
 priority: 400
 ---
 
-# Test Automation Framework for HyperEngine
+# Test Automation Framework for SpectraForge
 
 @context {
   "type": "testing_guidelines",

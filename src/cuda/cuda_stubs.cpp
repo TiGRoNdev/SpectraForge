@@ -7,7 +7,7 @@
 
 #include "cuda_stubs.h"
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace CUDA {
 
 // Заглушки для CUDA функций
@@ -57,4 +57,4 @@ const char* cudaGetErrorString(cudaError_t error) {
 }
 
 }  // namespace CUDA
-}  // namespace HyperEngine
+}  // namespace SpectraForge

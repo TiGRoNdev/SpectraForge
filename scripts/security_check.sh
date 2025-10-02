@@ -1,7 +1,7 @@
 #!/bin/bash
-# Проверка безопасности кода HyperEngine
+# Проверка безопасности кода SpectraForge
 
-echo "🔒 Запуск проверки безопасности HyperEngine..."
+echo "🔒 Запуск проверки безопасности SpectraForge..."
 
 # Создать директорию для отчетов
 mkdir -p build/security-reports
@@ -192,7 +192,7 @@ fi
 echo ""
 echo "📋 Создание сводного отчета безопасности..."
 cat > build/security-reports/security-summary.md << EOF
-# Отчет о безопасности HyperEngine
+# Отчет о безопасности SpectraForge
 
 **Дата:** $(date)
 

@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <cmath>
-#include "HyperEngine/Math/Math.h"
+#include "SpectraForge/Math/Math.h"
 
-using namespace HyperEngine::Math;
+using namespace SpectraForge::Math;
 
 // Тесты Vector3
 class Vector3Test : public ::testing::Test {

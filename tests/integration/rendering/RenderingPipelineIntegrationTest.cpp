@@ -1,13 +1,13 @@
-#include "HyperEngine/Rendering/RendererAdapter.h"
-#include "HyperEngine/Vulkan/VulkanRenderer.h"
+#include "SpectraForge/Rendering/RendererAdapter.h"
+#include "SpectraForge/Vulkan/VulkanRenderer.h"
 #include "TestFramework.h"
 #include "mocks/MockUpscaling.h"
 #include "mocks/MockVulkanRenderer.h"
 
-using namespace HyperEngine::Testing;
-using namespace HyperEngine::Testing::Mocks;
-using namespace HyperEngine::Rendering;
-using namespace HyperEngine::Vulkan;
+using namespace SpectraForge::Testing;
+using namespace SpectraForge::Testing::Mocks;
+using namespace SpectraForge::Rendering;
+using namespace SpectraForge::Vulkan;
 
 /**
  * @brief Интеграционные тесты для полного rendering pipeline
@@ -20,10 +20,10 @@ using namespace HyperEngine::Vulkan;
  * - DenoiseModule
  * - Upscaler (DLSS/FSR)
  */
-class RenderingPipelineIntegrationTest : public HyperEngineTest {
+class RenderingPipelineIntegrationTest : public SpectraForgeTest {
   protected:
     void SetUp() override {
-        HyperEngineTest::SetUp();
+        SpectraForgeTest::SetUp();
 
         // Создаем адаптер рендеринга
         rendererAdapter = std::make_unique<RendererAdapter>();
@@ -39,7 +39,7 @@ class RenderingPipelineIntegrationTest : public HyperEngineTest {
         if (rendererAdapter && rendererAdapter->isInitialized()) {
             rendererAdapter->cleanup();
         }
-        HyperEngineTest::TearDown();
+        SpectraForgeTest::TearDown();
     }
 
   private:
@@ -50,7 +50,7 @@ class RenderingPipelineIntegrationTest : public HyperEngineTest {
 
         // Создаем upscaler в зависимости от "оборудования"
         auto vendor = mockHardwareDetector->detectVendor();
-        if (vendor == HyperEngine::Upscaling::HardwareConfig::VendorType::NVIDIA) {
+        if (vendor == SpectraForge::Upscaling::HardwareConfig::VendorType::NVIDIA) {
             mockUpscaler = UpscalingMockFactory::createDLSSUpscaler();
         } else {
             mockUpscaler = UpscalingMockFactory::createFSRUpscaler();
@@ -60,15 +60,15 @@ class RenderingPipelineIntegrationTest : public HyperEngineTest {
     void setupTestData() {
         // Настройка тестовой камеры
         testCamera = std::make_shared<Camera3D>();
-        testCamera->setPosition(HyperEngine::Math::Vector3(0, 0, 5));
-        testCamera->lookAt(HyperEngine::Math::Vector3(0, 0, 5),
-                           HyperEngine::Math::Vector3(0, 0, 0),
-                           HyperEngine::Math::Vector3(0, 1, 0));
+        testCamera->setPosition(SpectraForge::Math::Vector3(0, 0, 5));
+        testCamera->lookAt(SpectraForge::Math::Vector3(0, 0, 5),
+                           SpectraForge::Math::Vector3(0, 0, 0),
+                           SpectraForge::Math::Vector3(0, 1, 0));
 
         // Настройка тестовых объектов
         testMesh = std::make_shared<Mesh3D>();
         testShader = std::make_shared<Shader3D>();
-        testTransform = HyperEngine::Math::Matrix4::identity();
+        testTransform = SpectraForge::Math::Matrix4::identity();
 
         // Настройка параметров рендеринга
         renderWidth = 1920;
@@ -85,7 +85,7 @@ class RenderingPipelineIntegrationTest : public HyperEngineTest {
     std::shared_ptr<Camera3D> testCamera;
     std::shared_ptr<Mesh3D> testMesh;
     std::shared_ptr<Shader3D> testShader;
-    HyperEngine::Math::Matrix4 testTransform;
+    SpectraForge::Math::Matrix4 testTransform;
 
     int renderWidth, renderHeight;
     float targetFPS;
@@ -192,8 +192,8 @@ TEST_F(RenderingPipelineIntegrationTest, FullPipelinePerformance) {
 
                 // Рендерим несколько объектов для реалистичной нагрузки
                 for (int obj = 0; obj < 10; ++obj) {
-                    HyperEngine::Math::Matrix4 objTransform =
-                        HyperEngine::Math::Matrix4::translation(
+                    SpectraForge::Math::Matrix4 objTransform =
+                        SpectraForge::Math::Matrix4::translation(
                             static_cast<float>(obj - 5), 0.0f, 0.0f);
                     rendererAdapter->renderMesh(testMesh, objTransform, testShader);
                 }
@@ -269,7 +269,7 @@ TEST_F(RenderingPipelineIntegrationTest, ResourceManagement) {
             for (int i = 0; i < objectCount; ++i) {
                 auto mesh = std::make_shared<Mesh3D>();
                 auto shader = std::make_shared<Shader3D>();
-                HyperEngine::Math::Matrix4 transform = HyperEngine::Math::Matrix4::translation(
+                SpectraForge::Math::Matrix4 transform = SpectraForge::Math::Matrix4::translation(
                     static_cast<float>(i % 10), static_cast<float>(i / 10), 0.0f);
 
                 rendererAdapter->beginFrame();
@@ -301,15 +301,15 @@ TEST_F(RenderingPipelineIntegrationTest, DifferentObjectTypes) {
 
             // Wireframe
             rendererAdapter->enableWireframe(true);
-            HyperEngine::Math::Matrix4 wireTransform =
-                HyperEngine::Math::Matrix4::translation(2.0f, 0.0f, 0.0f);
+            SpectraForge::Math::Matrix4 wireTransform =
+                SpectraForge::Math::Matrix4::translation(2.0f, 0.0f, 0.0f);
             rendererAdapter->renderWireframe(*testMesh, wireTransform, *testShader);
             rendererAdapter->enableWireframe(false);
 
             // С blending
             rendererAdapter->enableBlending(true);
-            HyperEngine::Math::Matrix4 blendTransform =
-                HyperEngine::Math::Matrix4::translation(-2.0f, 0.0f, 0.0f);
+            SpectraForge::Math::Matrix4 blendTransform =
+                SpectraForge::Math::Matrix4::translation(-2.0f, 0.0f, 0.0f);
             rendererAdapter->renderMesh(testMesh, blendTransform, testShader);
             rendererAdapter->enableBlending(false);
 
@@ -335,8 +335,8 @@ TEST_F(RenderingPipelineIntegrationTest, StabilityStressTest) {
                     // Варьируем нагрузку
                     int objectCount = (frame % 20) + 1;
                     for (int obj = 0; obj < objectCount; ++obj) {
-                        HyperEngine::Math::Matrix4 transform =
-                            HyperEngine::Math::Matrix4::translation(
+                        SpectraForge::Math::Matrix4 transform =
+                            SpectraForge::Math::Matrix4::translation(
                                 std::sin(frame * 0.01f + obj), std::cos(frame * 0.01f + obj), 0.0f);
                         rendererAdapter->renderMesh(testMesh, transform, testShader);
                     }

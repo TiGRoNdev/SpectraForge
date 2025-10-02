@@ -1,6 +1,6 @@
 /**
  * @file solid_principles_demo.cpp
- * @brief Демонстрация применения SOLID принципов в HyperEngine
+ * @brief Демонстрация применения SOLID принципов в SpectraForge
  *
  * Этот пример показывает:
  * - Использование dependency injection (DIP)
@@ -14,15 +14,15 @@
 #include <iostream>
 #include <memory>
 #include <thread>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/EngineCore.h"
-#include "HyperEngine/Core/Logger.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Math/Matrix4.h"
-#include "HyperEngine/Rendering/ModernRenderer3D.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/EngineCore.h"
+#include "SpectraForge/Core/Logger.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Math/Matrix4.h"
+#include "SpectraForge/Rendering/ModernRenderer3D.h"
 
-using namespace HyperEngine::Core;
-using namespace HyperEngine::Rendering;
+using namespace SpectraForge::Core;
+using namespace SpectraForge::Rendering;
 
 /**
  * @brief Простая реализация стратегии рендеринга для демонстрации
@@ -34,7 +34,7 @@ class DemoRenderStrategy : public IRenderStrategy {
         return true;
     }
 
-    void render(const FrameData& frameData) override {
+    void render([[maybe_unused]] const FrameData& frameData) override {
         SAFE_PRINT_LINE("🎨 Рендеринг кадра #" + SAFE_TO_STRING(frameData.timing.frameNumber));
     }
 
@@ -58,17 +58,17 @@ class DemoLightingSystem : public ILightingSystem {
         return true;
     }
 
-    void updateLighting(const FrameData& frameData) override {
+    void updateLighting([[maybe_unused]] const FrameData& frameData) override {
         // Демонстрация обновления освещения
     }
 
     void shutdown() override { SAFE_PRINT_LINE("🔄 DemoLightingSystem завершена"); }
 
-    void addLight(std::shared_ptr<class ILight> light) override {
+    void addLight([[maybe_unused]] std::shared_ptr<class ILight> light) override {
         SAFE_PRINT_LINE("💡 Добавлен источник света");
     }
 
-    void removeLight(std::shared_ptr<class ILight> light) override {
+    void removeLight([[maybe_unused]] std::shared_ptr<class ILight> light) override {
         SAFE_PRINT_LINE("💡 Удален источник света");
     }
 };
@@ -83,18 +83,18 @@ class DemoCameraSystem : public ICameraSystem {
         return true;
     }
 
-    void updateCamera(const FrameData& frameData) override {
+    void updateCamera([[maybe_unused]] const FrameData& frameData) override {
         // Демонстрация обновления камеры
     }
 
     void shutdown() override { SAFE_PRINT_LINE("🔄 DemoCameraSystem завершена"); }
 
-    HyperEngine::Math::Matrix4 getViewMatrix() const override {
-        return HyperEngine::Math::Matrix4();  // Заглушка
+    SpectraForge::Math::Matrix4 getViewMatrix() const override {
+        return SpectraForge::Math::Matrix4();  // Заглушка
     }
 
-    HyperEngine::Math::Matrix4 getProjectionMatrix() const override {
-        return HyperEngine::Math::Matrix4();  // Заглушка
+    SpectraForge::Math::Matrix4 getProjectionMatrix() const override {
+        return SpectraForge::Math::Matrix4();  // Заглушка
     }
 };
 
@@ -145,41 +145,46 @@ class DemoResourceManager : public IResourceManager {
     bool isInitialized() const { return true; }
 
     // Реализация всех абстрактных методов IResourceManager
-    BufferHandle createBuffer(const BufferDesc& desc) override {
+    BufferHandle createBuffer([[maybe_unused]] const BufferDesc& desc) override {
         return BufferHandle{1};  // Заглушка
     }
 
-    void updateBuffer(BufferHandle handle,
-                      const void* data,
-                      size_t size,
-                      size_t offset = 0) override {
+    void updateBuffer([[maybe_unused]] BufferHandle handle,
+                      [[maybe_unused]] const void* data,
+                      [[maybe_unused]] size_t size,
+                      [[maybe_unused]] size_t offset = 0) override {
         // Заглушка
     }
 
-    void readBuffer(BufferHandle handle, void* data, size_t size, size_t offset = 0) override {
+    void readBuffer([[maybe_unused]] BufferHandle handle, 
+                    [[maybe_unused]] void* data, 
+                    [[maybe_unused]] size_t size, 
+                    [[maybe_unused]] size_t offset = 0) override {
         // Заглушка
     }
 
-    TextureHandle createTexture(const TextureDesc& desc) override {
+    TextureHandle createTexture([[maybe_unused]] const TextureDesc& desc) override {
         return TextureHandle{1};  // Заглушка
     }
 
-    void updateTexture(TextureHandle handle,
-                       const void* data,
-                       uint32_t width,
-                       uint32_t height) override {
+    void updateTexture([[maybe_unused]] TextureHandle handle,
+                       [[maybe_unused]] const void* data,
+                       [[maybe_unused]] uint32_t width,
+                       [[maybe_unused]] uint32_t height) override {
         // Заглушка
     }
 
-    ShaderHandle createShader(const std::string& source, ShaderType type) override {
+    ShaderHandle createShader([[maybe_unused]] const std::string& source, 
+                              [[maybe_unused]] ShaderType type) override {
         return ShaderHandle{1};  // Заглушка
     }
 
-    ShaderHandle createShaderFromFile(const std::string& filename, ShaderType type) override {
+    ShaderHandle createShaderFromFile([[maybe_unused]] const std::string& filename, 
+                                      [[maybe_unused]] ShaderType type) override {
         return ShaderHandle{1};  // Заглушка
     }
 
-    void releaseResource(ResourceHandle handle) override {
+    void releaseResource([[maybe_unused]] ResourceHandle handle) override {
         // Заглушка
     }
 
@@ -187,11 +192,11 @@ class DemoResourceManager : public IResourceManager {
         // Заглушка
     }
 
-    bool isValid(ResourceHandle handle) const override {
+    bool isValid([[maybe_unused]] ResourceHandle handle) const override {
         return true;  // Заглушка
     }
 
-    size_t getResourceSize(ResourceHandle handle) const override {
+    size_t getResourceSize([[maybe_unused]] ResourceHandle handle) const override {
         return 0;  // Заглушка
     }
 
@@ -291,7 +296,7 @@ int main() {
             RendererType getType() const override {
                 return RendererType::OpenGL;  // Заглушка
             }
-            bool supportsFeature(RenderingFeature feature) const override {
+            bool supportsFeature([[maybe_unused]] RenderingFeature feature) const override {
                 return false;  // Заглушка
             }
             std::string getName() const override {

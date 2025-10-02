@@ -6,15 +6,15 @@ set(ALL_INTEGRATION_TESTS "" PARENT_SCOPE)
 
 # Простой интеграционный тест
 set(INTEGRATION_TEST_LIBS
-    HyperEngine_Math
-    HyperEngine_Core
+    SpectraForge_Math
+    SpectraForge_Core
     glm::glm
 )
 
 # Добавляем Vulkan зависимости только если Vulkan доступен
-if(TARGET HyperEngine_Vulkan AND TARGET Vulkan::Vulkan)
+if(TARGET SpectraForge_Vulkan AND TARGET Vulkan::Vulkan)
     list(APPEND INTEGRATION_TEST_LIBS
-        HyperEngine_Vulkan
+        SpectraForge_Vulkan
         Vulkan::Vulkan
     )
     
@@ -27,9 +27,9 @@ if(TARGET HyperEngine_Vulkan AND TARGET Vulkan::Vulkan)
 endif()
 
 # Добавляем CUDA зависимости только если CUDA доступна
-if(BUILD_WITH_CUDA AND TARGET HyperEngine_CUDA)
+if(BUILD_WITH_CUDA AND TARGET SpectraForge_CUDA)
     list(APPEND INTEGRATION_TEST_LIBS
-        HyperEngine_CUDA
+        SpectraForge_CUDA
         CUDA::cudart
         CUDA::cuda_driver
     )

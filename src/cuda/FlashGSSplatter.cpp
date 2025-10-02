@@ -6,27 +6,27 @@
  * для высокопроизводительного рендеринга гауссианов.
  */
 
-#include "HyperEngine/CUDA/FlashGSSplatter.h"
+#include "SpectraForge/CUDA/FlashGSSplatter.h"
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
-#include "HyperEngine/CUDA/CudaInterop.h"
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Vulkan/SceneManager.h"
-#include "HyperEngine/Vulkan/VulkanRenderer.h"
+#include "SpectraForge/CUDA/CudaInterop.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Vulkan/SceneManager.h"
+#include "SpectraForge/Vulkan/VulkanRenderer.h"
 
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
 // Объявления внешних CUDA kernel функций с C linkage
 extern "C" {
 // Из gaussian_optimization.cu
 cudaError_t launchGaussianInitialization(const float4* d_points,
-                                         HyperEngine::CUDA::GPUGaussian* d_gaussians,
+                                         SpectraForge::CUDA::GPUGaussian* d_gaussians,
                                          int numPoints,
                                          float baseScale,
                                          cudaStream_t stream);
 
-cudaError_t launchGradientComputation(const HyperEngine::CUDA::GPUGaussian* d_gaussians,
+cudaError_t launchGradientComputation(const SpectraForge::CUDA::GPUGaussian* d_gaussians,
                                       const float4* d_imageTarget,
                                       const float4* d_imageRendered,
                                       float4* d_gradients,
@@ -35,27 +35,27 @@ cudaError_t launchGradientComputation(const HyperEngine::CUDA::GPUGaussian* d_ga
                                       int numGaussians,
                                       cudaStream_t stream);
 
-cudaError_t launchParameterUpdate(HyperEngine::CUDA::GPUGaussian* d_gaussians,
+cudaError_t launchParameterUpdate(SpectraForge::CUDA::GPUGaussian* d_gaussians,
                                   const float4* d_gradients,
-                                  HyperEngine::CUDA::OptimizationParams params,
+                                  SpectraForge::CUDA::OptimizationParams params,
                                   int numGaussians,
                                   cudaStream_t stream);
 
 // Из tile_rasterization.cu
-cudaError_t launchGaussianProjection(const HyperEngine::CUDA::GPUGaussian* d_gaussians,
-                                     HyperEngine::CUDA::CameraMatrix camera,
-                                     HyperEngine::CUDA::ProjectedGaussian* d_projected,
+cudaError_t launchGaussianProjection(const SpectraForge::CUDA::GPUGaussian* d_gaussians,
+                                     SpectraForge::CUDA::CameraMatrix camera,
+                                     SpectraForge::CUDA::ProjectedGaussian* d_projected,
                                      int numGaussians,
                                      cudaStream_t stream);
 
-cudaError_t launchTileAssignment(const HyperEngine::CUDA::ProjectedGaussian* d_projected,
+cudaError_t launchTileAssignment(const SpectraForge::CUDA::ProjectedGaussian* d_projected,
                                  uint32_t* d_tileAssignments,
                                  int numGaussians,
                                  int screenWidth,
                                  int screenHeight,
                                  cudaStream_t stream);
 
-cudaError_t launchTileRasterization(const HyperEngine::CUDA::ProjectedGaussian* d_projected,
+cudaError_t launchTileRasterization(const SpectraForge::CUDA::ProjectedGaussian* d_projected,
                                     const uint32_t* d_sortedIndices,
                                     const uint32_t* d_tileOffsets,
                                     float4* d_framebuffer,
@@ -65,12 +65,12 @@ cudaError_t launchTileRasterization(const HyperEngine::CUDA::ProjectedGaussian* 
                                     cudaStream_t stream);
 
 // Из depth_sorting.cu (будет исправлен позднее)
-cudaError_t launchCubRadixSort(const HyperEngine::CUDA::ProjectedGaussian* d_projected,
+cudaError_t launchCubRadixSort(const SpectraForge::CUDA::ProjectedGaussian* d_projected,
                                uint32_t* d_sortedIndices,
                                int numGaussians,
                                cudaStream_t stream);
 
-cudaError_t launchTileAwareSorting(const HyperEngine::CUDA::ProjectedGaussian* d_projected,
+cudaError_t launchTileAwareSorting(const SpectraForge::CUDA::ProjectedGaussian* d_projected,
                                    const uint32_t* d_tileAssignments,
                                    uint32_t* d_sortedIndices,
                                    uint32_t* d_tileOffsets,
@@ -80,10 +80,10 @@ cudaError_t launchTileAwareSorting(const HyperEngine::CUDA::ProjectedGaussian* d
 }
 #endif
 
-using namespace HyperEngine::CUDA;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::CUDA;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine::CUDA {
+namespace SpectraForge::CUDA {
 
 // TileBasedRasterizer implementation
 TileBasedRasterizer::TileBasedRasterizer()
@@ -766,4 +766,4 @@ float FlashGSSplatter::getLastRenderTime() const {
 
 #endif  // CUDA_VULKAN_INTEROP_SUPPORTED
 
-}  // namespace HyperEngine::CUDA
+}  // namespace SpectraForge::CUDA

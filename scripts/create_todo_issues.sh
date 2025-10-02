@@ -5,7 +5,7 @@
 set -e
 
 REPO_OWNER="TiGRoNdev"
-REPO_NAME="HyperEngine"
+REPO_NAME="SpectraForge"
 SOURCE_DIR="./src"
 
 echo "🔍 Сканирование TODO/FIXME маркеров в проекте..."

@@ -1,20 +1,20 @@
-#include "HyperEngine/Rendering/HybridRenderer3D.h"
+#include "SpectraForge/Rendering/HybridRenderer3D.h"
 #include <algorithm>
 #include <chrono>
 #include <functional>
 #include <iostream>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Math/Matrix4.h"
-#include "HyperEngine/Rendering/Camera3D.h"
-#include "HyperEngine/Rendering/Mesh3D.h"
-#include "HyperEngine/Rendering/Shader3D.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Math/Matrix4.h"
+#include "SpectraForge/Rendering/Camera3D.h"
+#include "SpectraForge/Rendering/Mesh3D.h"
+#include "SpectraForge/Rendering/Shader3D.h"
 
-using namespace HyperEngine::Math;
-using namespace HyperEngine::Rendering;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Math;
+using namespace SpectraForge::Rendering;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace Rendering {
 
 // === HybridRenderer3D Implementation ===
@@ -766,4 +766,4 @@ void NeuralUpscaler::applyEdgeEnhancedUpscaling(unsigned int input,
 }
 
 }  // namespace Rendering
-}  // namespace HyperEngine
+}  // namespace SpectraForge

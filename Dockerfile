@@ -1,5 +1,5 @@
 # =============================================================================
-# HyperEngine CI/CD Docker Image (No vcpkg - System Packages Only)
+# SpectraForge CI/CD Docker Image (No vcpkg - System Packages Only)
 # Multi-stage build for optimal caching and size optimization
 # =============================================================================
 
@@ -240,7 +240,7 @@ RUN mkdir -p \
     /workspace/build/test-results
 
 # Set default command to show available tools
-CMD ["/bin/bash", "-c", "echo '=== HyperEngine CI/CD Environment (No vcpkg) ===' && \
+CMD ["/bin/bash", "-c", "echo '=== SpectraForge CI/CD Environment (No vcpkg) ===' && \
      echo 'CMake: ' && cmake --version && \
      echo 'Clang: ' && clang --version && \
      echo 'Clang-Tidy: ' && clang-tidy --version && \
@@ -269,9 +269,9 @@ RUN cd /workspace/build && ctest --output-on-failure --parallel $(nproc) || true
 # Labels and Metadata
 # -----------------------------------------------------------------------------
 LABEL maintainer="TiGRoNdev <https://github.com/TiGRoNdev>" \
-      org.opencontainers.image.title="HyperEngine CI/CD (System Packages)" \
-      org.opencontainers.image.description="Docker image for HyperEngine CI/CD using system packages (no vcpkg)" \
-      org.opencontainers.image.url="https://github.com/TiGRoNdev/HyperEngine" \
-      org.opencontainers.image.source="https://github.com/TiGRoNdev/HyperEngine" \
+      org.opencontainers.image.title="SpectraForge CI/CD (System Packages)" \
+      org.opencontainers.image.description="Docker image for SpectraForge CI/CD using system packages (no vcpkg)" \
+      org.opencontainers.image.url="https://github.com/TiGRoNdev/SpectraForge" \
+      org.opencontainers.image.source="https://github.com/TiGRoNdev/SpectraForge" \
       org.opencontainers.image.vendor="TiGRoNdev" \
       org.opencontainers.image.version="0.1.0"

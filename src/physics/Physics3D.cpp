@@ -1,16 +1,16 @@
-#include "HyperEngine/Physics/Physics3D.h"
+#include "SpectraForge/Physics/Physics3D.h"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
-#include "HyperEngine/Core/Console.h"
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/Math/MathConstants.h"
+#include "SpectraForge/Core/Console.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/Math/MathConstants.h"
 
-using namespace HyperEngine::Math;
-using namespace HyperEngine::Physics;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Math;
+using namespace SpectraForge::Physics;
+using namespace SpectraForge::Core;
 
-namespace HyperEngine {
+namespace SpectraForge {
 namespace Physics {
 
 // AABB methods
@@ -904,4 +904,4 @@ void PhysicsWorld3D::integratePositions(float deltaTime) {
 }
 
 }  // namespace Physics
-}  // namespace HyperEngine
+}  // namespace SpectraForge

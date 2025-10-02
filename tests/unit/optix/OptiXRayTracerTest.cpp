@@ -5,31 +5,31 @@
  * @note RICE Score: 9.0 (P1 priority)
  */
 
-#include "HyperEngine/Core/SafeConsole.h"
-#include "HyperEngine/OptiX/OptiXRayTracer.h"
+#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/OptiX/OptiXRayTracer.h"
 #include "TestFramework.h"
 
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
 #include <cuda_runtime.h>
 #endif
 
-using namespace HyperEngine::Testing;
-using namespace HyperEngine::OptiX;
-using namespace HyperEngine::Core;
+using namespace SpectraForge::Testing;
+using namespace SpectraForge::OptiX;
+using namespace SpectraForge::Core;
 
 /**
  * @brief Unit тесты для OptiXRayTracer
  * @details Тестирует OptiX ray tracing pipeline для вторичных эффектов
  */
-class OptiXRayTracerTest : public HyperEngineTest {
+class OptiXRayTracerTest : public SpectraForgeTest {
   protected:
     void SetUp() override {
-        HyperEngineTest::SetUp();
+        SpectraForgeTest::SetUp();
         setupTestImage();
         setupLaunchParams();
     }
 
-    void TearDown() override { HyperEngineTest::TearDown(); }
+    void TearDown() override { SpectraForgeTest::TearDown(); }
 
   private:
     void setupTestImage() {

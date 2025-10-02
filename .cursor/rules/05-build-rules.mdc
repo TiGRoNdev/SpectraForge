@@ -1,15 +1,15 @@
 ---
-description: Build system rules for HyperEngine - vcpkg, CMake, CI/CD with GitHub MCP integration
+description: Build system rules for SpectraForge - vcpkg, CMake, CI/CD with GitHub MCP integration
 globs: ["**/*.bat", "**/*.cmake", "**/*.md", "**/CMakeLists.txt"]
 alwaysApply: true
 priority: 600
 ---
 
-# Build Instructions for HyperEngine
+# Build Instructions for SpectraForge
 
 @context {
   "type": "build_guidelines",
-  "purpose": "Ensure consistent build processes and dependency management for HyperEngine",
+  "purpose": "Ensure consistent build processes and dependency management for SpectraForge",
   "format_version": "2.0",
   "priority": 600,
   "applies_to": "All build scripts, CMake files, and related documentation",
@@ -146,8 +146,8 @@ Overview of directory layout.
 Expected build artifacts.
 
 @output_rules {
-  "library": "HyperEngine.lib - Static library",
-  "demo": "HyperEngine_Demo.exe - Demo application"
+  "library": "SpectraForge.lib - Static library",
+  "demo": "SpectraForge_Demo.exe - Demo application"
 }
 
 ## 8. Tables for Quick Reference
@@ -163,7 +163,7 @@ Expected build artifacts.
 | Command | Description | Usage Example |
 |---------|-------------|---------------|
 | mcp_github_run_workflow | Run build workflow | Trigger CI/CD for builds |
-| mcp_github_download_workflow_run_artifact | Download build artifacts | Access HyperEngine.lib |
+| mcp_github_download_workflow_run_artifact | Download build artifacts | Access SpectraForge.lib |
 | mcp_github_create_issue | Report build failures | Log errors with logs |
 
 ## 9. MCP Integration for Builds
@@ -173,7 +173,7 @@ Expected build artifacts.
     "id": "trigger_workflow",
     "mcp_tool": "mcp_github_run_workflow",
     "when": "Trigger CI/CD builds",
-    "params": {"owner": "TiGRoNdev", "repo": "HyperEngine", "workflow_id": "ci.yml", "ref": "main"}
+    "params": {"owner": "TiGRoNdev", "repo": "SpectraForge", "workflow_id": "ci.yml", "ref": "main"}
   },
   {
     "id": "download_artifacts",

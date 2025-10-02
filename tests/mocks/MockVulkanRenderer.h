@@ -2,12 +2,12 @@
 #include <gmock/gmock.h>
 
 // Условная компиляция для Vulkan
-#ifdef HyperEngine_ENABLE_VULKAN
-#include "HyperEngine/Vulkan/VulkanRenderer.h"
-using namespace HyperEngine::Vulkan;
+#ifdef SpectraForge_ENABLE_VULKAN
+#include "SpectraForge/Vulkan/VulkanRenderer.h"
+using namespace SpectraForge::Vulkan;
 #else
 // Заглушки для случая без Vulkan
-namespace HyperEngine::Vulkan {
+namespace SpectraForge::Vulkan {
 struct Gaussians {
     uint32_t count = 0;
 };
@@ -24,12 +24,12 @@ struct ResolutionTarget {
 };
 struct FinalImage {};
 class ResourceManager {};
-}  // namespace HyperEngine::Vulkan
+}  // namespace SpectraForge::Vulkan
 #endif
 
-namespace HyperEngine::Testing::Mocks {
+namespace SpectraForge::Testing::Mocks {
 
-using namespace HyperEngine::Vulkan;
+using namespace SpectraForge::Vulkan;
 
 /**
  * @brief Mock объект для VulkanRenderer
@@ -40,7 +40,7 @@ using namespace HyperEngine::Vulkan;
 class MockVulkanRenderer {
   public:
     // Основные методы жизненного цикла
-#ifdef HyperEngine_ENABLE_VULKAN
+#ifdef SpectraForge_ENABLE_VULKAN
     MOCK_METHOD(bool, init, (vk::Device device, ResourceManager* resourceManager), ());
 #else
     MOCK_METHOD(bool, init, (void* device, ResourceManager* resourceManager), ());
@@ -64,7 +64,7 @@ class MockVulkanRenderer {
  */
 class MockResourceManager {
   public:
-#ifdef HyperEngine_ENABLE_VULKAN
+#ifdef SpectraForge_ENABLE_VULKAN
     MOCK_METHOD(bool, initialize, (vk::Device device, vk::PhysicalDevice physicalDevice), ());
     MOCK_METHOD(vk::Buffer,
                 createBuffer,
@@ -291,4 +291,4 @@ class VulkanMockFactory {
     }
 };
 
-}  // namespace HyperEngine::Testing::Mocks
+}  // namespace SpectraForge::Testing::Mocks

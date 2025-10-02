@@ -1,8 +1,8 @@
-# Стандарты кодирования HyperEngine
+# Стандарты кодирования SpectraForge
 
 ## Обзор
 
-Этот документ описывает стандарты кодирования для проекта HyperEngine. Соблюдение этих стандартов обеспечивает читаемость, поддерживаемость и качество кода.
+Этот документ описывает стандарты кодирования для проекта SpectraForge. Соблюдение этих стандартов обеспечивает читаемость, поддерживаемость и качество кода.
 
 ## Содержание
 
@@ -128,7 +128,7 @@ static const char* kDefaultShaderPath;     // kPascalCase
 
 ### Пространства имен
 ```cpp
-namespace HyperEngine {
+namespace SpectraForge {
     namespace Vulkan {
         class Renderer { /* ... */ };
     }
@@ -150,10 +150,10 @@ namespace HyperEngine {
 #include <glfw/glfw3.h>
 
 // Локальные заголовки
-#include "HyperEngine/Core/Base.h"
-#include "HyperEngine/Renderer/Buffer.h"
+#include "SpectraForge/Core/Base.h"
+#include "SpectraForge/Renderer/Buffer.h"
 
-namespace HyperEngine {
+namespace SpectraForge {
 
 /**
  * @brief Краткое описание класса
@@ -173,12 +173,12 @@ private:
     int m_privateVariable;
 };
 
-} // namespace HyperEngine
+} // namespace SpectraForge
 ```
 
 ### Исходные файлы (.cpp)
 ```cpp
-#include "HyperEngine/MyClass.h"
+#include "SpectraForge/MyClass.h"
 
 // Системные заголовки
 #include <iostream>
@@ -188,9 +188,9 @@ private:
 #include <spdlog/spdlog.h>
 
 // Локальные заголовки
-#include "HyperEngine/Core/Logger.h"
+#include "SpectraForge/Core/Logger.h"
 
-using namespace HyperEngine;
+using namespace SpectraForge;
 
 MyClass::MyClass() : m_privateVariable(0) {
     // Инициализация

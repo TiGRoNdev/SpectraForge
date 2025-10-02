@@ -1,9 +1,9 @@
-#include "HyperEngine/Math/Vector3.h"
+#include "SpectraForge/Math/Vector3.h"
 #include <algorithm>
 #include <limits>
 #include <stdexcept>
 
-namespace HyperEngine::Math {
+namespace SpectraForge::Math {
 
 // Операторы присваивания и арифметики
 Vector3& Vector3::operator=(const Vector3& other) {
@@ -264,4 +264,4 @@ Vector3 operator*(float scalar, const Vector3& vec) {
     return vec * scalar;
 }
 
-}  // namespace HyperEngine::Math
+}  // namespace SpectraForge::Math

@@ -1,9 +1,9 @@
 @echo off
 chcp 65001 >nul
-REM Комплексный статический анализ кода HyperEngine для Windows
+REM Комплексный статический анализ кода SpectraForge для Windows
 setlocal enabledelayedexpansion
 
-echo 🔍 Запуск статического анализа кода HyperEngine...
+echo 🔍 Запуск статического анализа кода SpectraForge...
 
 REM Создать директорию для отчетов
 if not exist "build\static-analysis" mkdir "build\static-analysis"
@@ -111,7 +111,7 @@ REM 5. Создание сводного отчета
 echo.
 echo 📋 Создание сводного отчета...
 (
-echo # Отчет статического анализа кода HyperEngine
+echo # Отчет статического анализа кода SpectraForge
 echo.
 echo **Дата:** %date% %time%
 echo.
