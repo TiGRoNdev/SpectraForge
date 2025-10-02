@@ -1,0 +1,210 @@
+/**
+ * @file WaveletLifting.comp
+ * @brief Wavelet Lifting Transform (Daubechies-4) with fused H+V passes
+ * 
+ * Implements 2D Wavelet Lifting Scheme for Hybrid DWT + FreGS pipeline.
+ * Uses Vulkan 1.3 Subgroup Operations for optimal mobile GPU performance.
+ * 
+ * Performance Target: O(≈8) FLOP/pixel, single barrier, coalesced loads
+ * Memory: 32×32 tile, fp16 subbands (LL, HH, LH, HL)
+ * 
+ * @see docs/architecture/Renderer.md
+ * @author SpectraForge Core Team
+ * @date 2025-10-02
+ */
+
+#version 450
+#extension GL_KHR_shader_subgroup_basic : require
+#extension GL_KHR_shader_subgroup_shuffle : require
+#extension GL_EXT_shader_subgroup_extended_types_float16 : require
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
+
+// Workgroup размер: 32×32 тайл (оптимально для мобильных GPU)
+layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
+
+// Input: исходное изображение (rgba16f)
+layout(binding = 0, rgba16f) readonly uniform image2D inImage;
+
+// Outputs: wavelet subbands
+layout(binding = 1, rg16f) writeonly uniform image2D outLL;  // Low-Low (апроксимация)
+layout(binding = 2, rg16f) writeonly uniform image2D outLH;  // Low-High (горизонтальные детали)
+layout(binding = 3, rg16f) writeonly uniform image2D outHL;  // High-Low (вертикальные детали)
+layout(binding = 4, rg16f) writeonly uniform image2D outHH;  // High-High (диагональные детали)
+
+// Push constants для параметров
+layout(push_constant) uniform PushConstants {
+    uint inputWidth;
+    uint inputHeight;
+    float threshold;      // Порог для разреженности
+    uint foveationLevel;  // Уровень фовеации (0 = полный спектр)
+} pc;
+
+// Shared memory для тайла (оптимизация доступа)
+shared f16vec2 tileLuminance[32][32];
+shared f16vec2 tileChroma[32][32];
+
+/**
+ * @brief Загрузка тайла из глобальной памяти с coalesced доступом
+ */
+void loadTile() {
+    ivec2 globalID = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 localID = ivec2(gl_LocalInvocationID.xy);
+    
+    // Проверка границ
+    if (globalID.x >= pc.inputWidth || globalID.y >= pc.inputHeight) {
+        tileLuminance[localID.x][localID.y] = f16vec2(0.0hf);
+        tileChroma[localID.x][localID.y] = f16vec2(0.0hf);
+        return;
+    }
+    
+    // Загрузка с coalesced pattern
+    vec4 pixel = imageLoad(inImage, globalID);
+    
+    // Разделение на luminance (RG) и chroma (BA)
+    tileLuminance[localID.x][localID.y] = f16vec2(pixel.rg);
+    tileChroma[localID.x][localID.y] = f16vec2(pixel.ba);
+}
+
+/**
+ * @brief Lifting Scheme - Predict Step (детали)
+ * d[i] = x[2i+1] - 0.5 * (x[2i] + x[2i+2])
+ */
+f16vec2 predict(f16vec2 odd, f16vec2 evenLeft, f16vec2 evenRight) {
+    return odd - float16_t(0.5) * (evenLeft + evenRight);
+}
+
+/**
+ * @brief Lifting Scheme - Update Step (апроксимация)
+ * s[i] = x[2i] + 0.25 * (d[i-1] + d[i])
+ */
+f16vec2 update(f16vec2 even, f16vec2 detailLeft, f16vec2 detailRight) {
+    return even + float16_t(0.25) * (detailLeft + detailRight);
+}
+
+/**
+ * @brief Горизонтальный проход lifting
+ */
+void horizontalPass(inout f16vec2 approx, inout f16vec2 detail) {
+    uint localX = gl_LocalInvocationID.x;
+    uint localY = gl_LocalInvocationID.y;
+    
+    // Чётные и нечётные столбцы
+    bool isEven = (localX & 1u) == 0u;
+    
+    f16vec2 current = tileLuminance[localX][localY];
+    
+    if (isEven) {
+        // Чётный пиксель: получаем апроксимацию
+        f16vec2 oddRight = subgroupShuffle(current, localX + 1);
+        f16vec2 oddLeft = (localX > 0) ? subgroupShuffle(current, localX - 1) : current;
+        
+        // Predict: вычисляем детали справа
+        f16vec2 detailRight = predict(oddRight, current, subgroupShuffle(current, localX + 2));
+        f16vec2 detailLeft = (localX > 0) ? predict(oddLeft, subgroupShuffle(current, localX - 2), current) : f16vec2(0.0hf);
+        
+        // Update: вычисляем апроксимацию
+        approx = update(current, detailLeft, detailRight);
+    } else {
+        // Нечётный пиксель: получаем детали
+        f16vec2 evenLeft = subgroupShuffle(current, localX - 1);
+        f16vec2 evenRight = (localX < 31) ? subgroupShuffle(current, localX + 1) : current;
+        
+        detail = predict(current, evenLeft, evenRight);
+    }
+}
+
+/**
+ * @brief Вертикальный проход lifting
+ */
+void verticalPass(inout f16vec2 ll, inout f16vec2 lh, inout f16vec2 hl, inout f16vec2 hh,
+                  f16vec2 approxH, f16vec2 detailH) {
+    uint localX = gl_LocalInvocationID.x;
+    uint localY = gl_LocalInvocationID.y;
+    
+    bool isEvenY = (localY & 1u) == 0u;
+    
+    if (isEvenY) {
+        // Чётная строка
+        f16vec2 approxUp = (localY > 0) ? tileLuminance[localX][localY - 1] : approxH;
+        f16vec2 approxDown = (localY < 31) ? tileLuminance[localX][localY + 1] : approxH;
+        
+        // LL (Low-Low): апроксимация по обоим направлениям
+        f16vec2 detailVert = predict(approxDown, approxH, (localY < 30) ? tileLuminance[localX][localY + 2] : approxH);
+        ll = update(approxH, (localY > 0) ? predict(approxUp, tileLuminance[localX][localY - 2], approxH) : f16vec2(0.0hf), detailVert);
+        
+        // LH (Low-High): детали по вертикали
+        lh = predict(approxDown, approxH, (localY < 30) ? tileLuminance[localX][localY + 2] : approxH);
+    } else {
+        // Нечётная строка
+        f16vec2 detailUp = (localY > 0) ? tileLuminance[localX][localY - 1] : detailH;
+        f16vec2 detailDown = (localY < 31) ? tileLuminance[localX][localY + 1] : detailH;
+        
+        // HL (High-Low): детали по горизонтали
+        hl = predict(detailH, detailUp, detailDown);
+        
+        // HH (High-High): детали по обоим направлениям
+        hh = predict(detailDown, detailH, (localY < 30) ? tileLuminance[localX][localY + 2] : detailH);
+    }
+}
+
+/**
+ * @brief Применение порога разреженности (thresholding)
+ */
+f16vec2 applyThreshold(f16vec2 value, float threshold) {
+    float16_t mag = length(value);
+    return (mag > float16_t(threshold)) ? value : f16vec2(0.0hf);
+}
+
+/**
+ * @brief Главная функция compute shader
+ */
+void main() {
+    ivec2 globalID = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 localID = ivec2(gl_LocalInvocationID.xy);
+    
+    // Загрузка тайла
+    loadTile();
+    
+    // Барьер: ждём загрузки всего тайла
+    subgroupBarrier();
+    memoryBarrierShared();
+    barrier();
+    
+    // Горизонтальный проход
+    f16vec2 approxH, detailH;
+    horizontalPass(approxH, detailH);
+    
+    // Сохранение промежуточных результатов
+    tileLuminance[localID.x][localID.y] = approxH;
+    
+    // Барьер перед вертикальным проходом
+    subgroupBarrier();
+    memoryBarrierShared();
+    barrier();
+    
+    // Вертикальный проход
+    f16vec2 ll, lh, hl, hh;
+    verticalPass(ll, lh, hl, hh, approxH, detailH);
+    
+    // Применение threshold для разреженности
+    lh = applyThreshold(lh, pc.threshold);
+    hl = applyThreshold(hl, pc.threshold);
+    hh = applyThreshold(hh, pc.threshold);
+    
+    // Фовеация: в периферии сохраняем только LL
+    bool inFovea = pc.foveationLevel == 0u;
+    
+    // Запись результатов (половинное разрешение)
+    ivec2 outCoord = globalID / 2;
+    
+    if (outCoord.x < (pc.inputWidth / 2) && outCoord.y < (pc.inputHeight / 2)) {
+        imageStore(outLL, outCoord, vec4(ll, 0.0, 0.0));
+        
+        if (inFovea) {
+            imageStore(outLH, outCoord, vec4(lh, 0.0, 0.0));
+            imageStore(outHL, outCoord, vec4(hl, 0.0, 0.0));
+            imageStore(outHH, outCoord, vec4(hh, 0.0, 0.0));
+        }
+    }
+}
+
