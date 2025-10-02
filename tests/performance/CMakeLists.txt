@@ -27,6 +27,24 @@ add_performance_test(rendering_performance_tests
         # Библиотеки рендеринга
 )
 
+# Тесты производительности FreqVox (не требует Google Benchmark)
+if(ENABLE_FREQVOX AND TARGET HyperEngine_FreqVox)
+    add_executable(freqvox_benchmark
+        FreqVoxBenchmark.cpp
+    )
+    target_link_libraries(freqvox_benchmark PRIVATE
+        HyperEngine_FreqVox
+        HyperEngine_Core
+        HyperEngine_Math
+    )
+    target_include_directories(freqvox_benchmark PRIVATE
+        ${CMAKE_SOURCE_DIR}/include
+    )
+    target_compile_features(freqvox_benchmark PRIVATE cxx_std_20)
+    
+    message(STATUS "FreqVox benchmark добавлен (не требует Google Benchmark)")
+endif()
+
 # Добавляем все тесты в глобальный список
 set(ALL_PERFORMANCE_TESTS
     math_performance_tests
