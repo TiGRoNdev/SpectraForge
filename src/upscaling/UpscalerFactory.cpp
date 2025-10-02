@@ -9,7 +9,7 @@
 #include "SpectraForge/upscaling/UpscalerFactory.h"
 #include "SpectraForge/upscaling/NativeUpscaler.h"
 #include "SpectraForge/upscaling/DLSSUpscaler.h"
-// #include "SpectraForge/upscaling/FSR2Upscaler.h"      // Phase 4 Part 3 TODO
+#include "SpectraForge/upscaling/FSR2Upscaler.h"
 #include <iostream>
 
 namespace spectraforge {
@@ -41,13 +41,9 @@ std::unique_ptr<IUpscaler> UpscalerFactory::create(
             // Note: DLSSUpscaler will return error in initialize() if SDK unavailable
             
         case UpscalerType::FSR2:
-            #ifdef SPECTRAFORGE_FSR2_AVAILABLE
             std::cout << "Creating FSR2 upscaler\n";
-            return std::make_unique<FSR2Upscaler>(config);
-            #else
-            std::cerr << "FSR2 not compiled in, falling back to native\n";
-            // Fall through to NONE
-            #endif
+            return std::make_unique<FSR2Upscaler>();
+            // Note: FSR2Upscaler will return error in initialize() if SDK unavailable
             
         case UpscalerType::NONE:
         default:
