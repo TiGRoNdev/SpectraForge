@@ -11,6 +11,7 @@
 
 #include "SpectraForge/rendering/WaveletPass.h"
 #include "SpectraForge/core/VulkanContext.h"
+#include "SpectraForge/core/VMAMemoryManager.h"
 #include <fstream>
 #include <stdexcept>
 #include <iostream>
@@ -170,8 +171,7 @@ void WaveletPass::cleanup() {
         return;
     }
 
-    vk::Device device = {}; // TODO: Get from context
-    // Note: In real implementation, we need to store device reference
+    vk::Device device = context_->getDevice();
 
     // Cleanup in reverse order of creation
     if (pipeline_) {
@@ -194,10 +194,33 @@ void WaveletPass::cleanup() {
         descriptorSetLayout_ = nullptr;
     }
 
-    // Cleanup subband images
-    // TODO: Implement proper VMA deallocation
+    // Cleanup VMA image views (images auto-cleanup via RAII)
+    if (subbands_.viewLL) {
+        device.destroyImageView(subbands_.viewLL);
+        subbands_.viewLL = nullptr;
+    }
+    if (subbands_.viewLH) {
+        device.destroyImageView(subbands_.viewLH);
+        subbands_.viewLH = nullptr;
+    }
+    if (subbands_.viewHL) {
+        device.destroyImageView(subbands_.viewHL);
+        subbands_.viewHL = nullptr;
+    }
+    if (subbands_.viewHH) {
+        device.destroyImageView(subbands_.viewHH);
+        subbands_.viewHH = nullptr;
+    }
+
+    // VMA images cleanup automatically via RAII (VMAImage destructor)
+    subbands_.vmaImageLL = core::VMAImage();
+    subbands_.vmaImageLH = core::VMAImage();
+    subbands_.vmaImageHL = core::VMAImage();
+    subbands_.vmaImageHH = core::VMAImage();
 
     initialized_ = false;
+    
+    std::cout << "WaveletPass cleaned up\n";
 }
 
 void WaveletPass::setInputImage(vk::Image image, vk::ImageView view) {
@@ -216,11 +239,15 @@ void WaveletPass::updateConfig(const WaveletPassConfig& config) {
 }
 
 bool WaveletPass::createSubbandImages(const VulkanContext& context) {
+    // Store context for cleanup
+    context_ = &context;
+    
     // Output resolution: half of input
     uint32_t outWidth = config_.inputWidth / 2;
     uint32_t outHeight = config_.inputHeight / 2;
 
     // Create 4 subband images (LL, LH, HL, HH) with rg16f format
+    // CRITICAL: Use TRANSIENT pool for short-lived resources (1-2 frames)
     vk::ImageCreateInfo imageInfo;
     imageInfo.imageType = vk::ImageType::e2D;
     imageInfo.format = vk::Format::eR16G16Sfloat; // rg16f
@@ -235,15 +262,20 @@ bool WaveletPass::createSubbandImages(const VulkanContext& context) {
 
     vk::Device device = context.getDevice();
 
-    // Create images
     try {
-        subbands_.imageLL = device.createImage(imageInfo);
-        subbands_.imageLH = device.createImage(imageInfo);
-        subbands_.imageHL = device.createImage(imageInfo);
-        subbands_.imageHH = device.createImage(imageInfo);
-
-        // TODO: Allocate memory with VMA
-        // For now, just create images (memory allocation needed)
+        // Create images using VMA transient pool (optimal for 1-2 frame lifetime)
+        auto& vma = core::VMAMemoryManager::getInstance();
+        
+        subbands_.vmaImageLL = vma.createTransientImage(imageInfo);
+        subbands_.vmaImageLH = vma.createTransientImage(imageInfo);
+        subbands_.vmaImageHL = vma.createTransientImage(imageInfo);
+        subbands_.vmaImageHH = vma.createTransientImage(imageInfo);
+        
+        // Get Vulkan images from VMA wrappers
+        subbands_.imageLL = subbands_.vmaImageLL.getImage();
+        subbands_.imageLH = subbands_.vmaImageLH.getImage();
+        subbands_.imageHL = subbands_.vmaImageHL.getImage();
+        subbands_.imageHH = subbands_.vmaImageHH.getImage();
 
         // Create image views
         vk::ImageViewCreateInfo viewInfo;
@@ -267,9 +299,16 @@ bool WaveletPass::createSubbandImages(const VulkanContext& context) {
         viewInfo.image = subbands_.imageHH;
         subbands_.viewHH = device.createImageView(viewInfo);
 
+        // Estimate memory usage
+        size_t imageSize = outWidth * outHeight * 4; // rg16f = 4 bytes per pixel
+        size_t totalMemory = imageSize * 4; // 4 subbands
+        
+        std::cout << "WaveletPass: Created 4 transient subbands (" 
+                  << (totalMemory / 1024 / 1024) << " MB from transient pool)\n";
+
         return true;
 
-    } catch (const vk::SystemError& e) {
+    } catch (const std::exception& e) {
         std::cerr << "Failed to create subband images: " << e.what() << "\n";
         return false;
     }

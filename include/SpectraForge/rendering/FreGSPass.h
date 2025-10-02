@@ -17,6 +17,7 @@
 
 #include "RenderPass.h"
 #include "WaveletPass.h"
+#include "SpectraForge/core/VMAMemoryManager.h"
 #include <vulkan/vulkan.hpp>
 #include <glm/glm.hpp>
 #include <vector>
@@ -111,15 +112,18 @@ private:
     // Input subbands
     const WaveletSubbands* inputSubbands_ = nullptr;
     
-    // Output accumulator
-    vk::Image outputImage_;
+    // Output accumulator (VMA managed)
+    vk::Image outputImage_;           // Extracted from VMA for descriptor binding
     vk::ImageView outputView_;
-    vk::DeviceMemory outputMemory_;
+    core::VMAImage vmaOutputImage_;   // RAII wrapper for automatic cleanup
     
-    // Gaussian buffer
-    vk::Buffer gaussianBuffer_;
-    vk::DeviceMemory gaussianMemory_;
+    // Gaussian buffer (VMA managed)
+    vk::Buffer gaussianBuffer_;       // Extracted from VMA for descriptor binding
+    core::VMABuffer vmaGaussianBuffer_; // RAII wrapper with map/unmap support
     uint32_t gaussianCount_ = 0;
+    
+    // Vulkan context (stored for cleanup)
+    const VulkanContext* context_ = nullptr;
     
     // Descriptors
     vk::DescriptorPool descriptorPool_;

@@ -16,6 +16,7 @@
 #pragma once
 
 #include "RenderPass.h"
+#include "SpectraForge/core/VMAMemoryManager.h"
 #include <vulkan/vulkan.hpp>
 #include <array>
 
@@ -37,6 +38,7 @@ struct WaveletPassConfig {
  * @brief Wavelet subband outputs
  */
 struct WaveletSubbands {
+    // Vulkan images (extracted from VMA wrappers for descriptor binding)
     vk::Image imageLL;  // Low-Low (approximation)
     vk::Image imageLH;  // Low-High (horizontal details)
     vk::Image imageHL;  // High-Low (vertical details)
@@ -47,8 +49,11 @@ struct WaveletSubbands {
     vk::ImageView viewHL;
     vk::ImageView viewHH;
     
-    // VMA allocations (RAII via unique_ptr with custom deleter)
-    std::array<vk::DeviceMemory, 4> memories;
+    // VMA RAII wrappers (automatic memory management)
+    core::VMAImage vmaImageLL;
+    core::VMAImage vmaImageLH;
+    core::VMAImage vmaImageHL;
+    core::VMAImage vmaImageHH;
 };
 
 /**
@@ -106,6 +111,9 @@ private:
     // Input
     vk::Image inputImage_;
     vk::ImageView inputView_;
+    
+    // Vulkan context (stored for cleanup)
+    const VulkanContext* context_ = nullptr;
     
     // Descriptors
     vk::DescriptorPool descriptorPool_;

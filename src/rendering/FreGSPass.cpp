@@ -11,6 +11,7 @@
 
 #include "SpectraForge/rendering/FreGSPass.h"
 #include "SpectraForge/core/VulkanContext.h"
+#include "SpectraForge/core/VMAMemoryManager.h"
 #include <fstream>
 #include <stdexcept>
 #include <iostream>
@@ -188,7 +189,7 @@ void FreGSPass::cleanup() {
         return;
     }
 
-    vk::Device device = {}; // TODO: Get from context
+    vk::Device device = context_->getDevice();
 
     if (pipeline_) {
         device.destroyPipeline(pipeline_);
@@ -210,9 +211,19 @@ void FreGSPass::cleanup() {
         descriptorSetLayout_ = nullptr;
     }
 
-    // TODO: Cleanup images and buffers with VMA
+    // Cleanup image view (image auto-cleanup via RAII)
+    if (outputView_) {
+        device.destroyImageView(outputView_);
+        outputView_ = nullptr;
+    }
+
+    // VMA resources cleanup automatically via RAII
+    vmaOutputImage_ = core::VMAImage();
+    vmaGaussianBuffer_ = core::VMABuffer();
 
     initialized_ = false;
+    
+    std::cout << "FreGSPass cleaned up\n";
 }
 
 void FreGSPass::setInputSubbands(const WaveletSubbands& subbands) {
@@ -227,9 +238,25 @@ void FreGSPass::uploadGaussians(const std::vector<GaussianSplat>& gaussians) {
 
     gaussianCount_ = static_cast<uint32_t>(gaussians.size());
     
-    // TODO: Implement actual buffer upload with VMA
-    // For now, just store count
-    std::cout << "Uploaded " << gaussianCount_ << " Gaussians\n";
+    // Upload to VMA buffer (CPU_TO_GPU for frequent updates)
+    if (vmaGaussianBuffer_.getBuffer()) {
+        void* mappedData = vmaGaussianBuffer_.map();
+        if (mappedData) {
+            // Write header (count + padding for std140)
+            uint32_t header[4] = { gaussianCount_, 0, 0, 0 };
+            std::memcpy(mappedData, header, sizeof(header));
+            
+            // Write Gaussian data
+            void* gaussData = static_cast<char*>(mappedData) + sizeof(header);
+            size_t dataSize = gaussians.size() * sizeof(GaussianSplat);
+            std::memcpy(gaussData, gaussians.data(), dataSize);
+            
+            vmaGaussianBuffer_.unmap();
+            
+            std::cout << "Uploaded " << gaussianCount_ << " Gaussians (" 
+                     << (dataSize / 1024) << " KB)\n";
+        }
+    }
     
     // Update push constants
     pushConstants_.maxGaussians = std::min(gaussianCount_, config_.maxGaussians);
@@ -241,6 +268,9 @@ void FreGSPass::updateFoveation(glm::vec2 gazePoint, float radius) {
 }
 
 bool FreGSPass::createOutputImage(const VulkanContext& context) {
+    // Store context for cleanup
+    context_ = &context;
+    
     vk::ImageCreateInfo imageInfo;
     imageInfo.imageType = vk::ImageType::e2D;
     imageInfo.format = vk::Format::eR16G16B16A16Sfloat; // rgba16f
@@ -256,9 +286,12 @@ bool FreGSPass::createOutputImage(const VulkanContext& context) {
     vk::Device device = context.getDevice();
 
     try {
-        outputImage_ = device.createImage(imageInfo);
-
-        // TODO: Allocate memory with VMA
+        // Create image using VMA (GPU_ONLY for accumulator)
+        auto& vma = core::VMAMemoryManager::getInstance();
+        vmaOutputImage_ = vma.createImage(imageInfo, core::ResourceUsage::GPU_ONLY);
+        
+        // Get Vulkan image from VMA wrapper
+        outputImage_ = vmaOutputImage_.getImage();
 
         // Create image view
         vk::ImageViewCreateInfo viewInfo;
@@ -273,9 +306,14 @@ bool FreGSPass::createOutputImage(const VulkanContext& context) {
 
         outputView_ = device.createImageView(viewInfo);
 
+        // Estimate memory
+        size_t imageSize = config_.outputWidth * config_.outputHeight * 8; // rgba16f = 8 bytes
+        std::cout << "FreGSPass: Created output accumulator (" 
+                  << (imageSize / 1024 / 1024) << " MB GPU_ONLY)\n";
+
         return true;
 
-    } catch (const vk::SystemError& e) {
+    } catch (const std::exception& e) {
         std::cerr << "Failed to create output image: " << e.what() << "\n";
         return false;
     }
@@ -287,22 +325,25 @@ bool FreGSPass::createGaussianBuffer(const VulkanContext& context) {
     size_t bufferSize = sizeof(uint32_t) * 4 + // header with padding
                        sizeof(GaussianSplat) * config_.maxGaussians;
 
-    vk::BufferCreateInfo bufferInfo;
-    bufferInfo.size = bufferSize;
-    bufferInfo.usage = vk::BufferUsageFlagBits::eStorageBuffer |
-                      vk::BufferUsageFlagBits::eTransferDst;
-    bufferInfo.sharingMode = vk::SharingMode::eExclusive;
-
-    vk::Device device = context.getDevice();
-
     try {
-        gaussianBuffer_ = device.createBuffer(bufferInfo);
+        // Create buffer using VMA (CPU_TO_GPU for frequent updates)
+        auto& vma = core::VMAMemoryManager::getInstance();
+        
+        vmaGaussianBuffer_ = vma.createBuffer(
+            bufferSize,
+            vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
+            core::ResourceUsage::CPU_TO_GPU  // Mapped, sequential write
+        );
+        
+        // Get Vulkan buffer from VMA wrapper
+        gaussianBuffer_ = vmaGaussianBuffer_.getBuffer();
 
-        // TODO: Allocate memory with VMA
+        std::cout << "FreGSPass: Created Gaussian buffer (" 
+                  << (bufferSize / 1024) << " KB CPU_TO_GPU)\n";
 
         return true;
 
-    } catch (const vk::SystemError& e) {
+    } catch (const std::exception& e) {
         std::cerr << "Failed to create Gaussian buffer: " << e.what() << "\n";
         return false;
     }
