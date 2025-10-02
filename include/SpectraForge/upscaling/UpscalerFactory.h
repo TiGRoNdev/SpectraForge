@@ -126,47 +126,6 @@ private:
     }
 };
 
-/**
- * @brief No-op upscaler (native resolution, pass-through)
- */
-class NativeUpscaler : public IUpscaler {
-public:
-    explicit NativeUpscaler(const UpscalerConfig& config);
-    ~NativeUpscaler() override = default;
-    
-    bool initialize(
-        const VulkanContext& context,
-        const UpscaleConfig& config
-    ) override;
-    
-    void execute(
-        vk::CommandBuffer commandBuffer,
-        const UpscaleResources& resources,
-        uint32_t frameIndex,
-        float jitterX,
-        float jitterY
-    ) override;
-    
-    void cleanup() override;
-    
-    bool resize(
-        uint32_t newInputWidth,
-        uint32_t newInputHeight,
-        uint32_t newOutputWidth,
-        uint32_t newOutputHeight
-    ) override;
-    
-    void getJitterOffset(uint32_t frameIndex, float& outX, float& outY) const override;
-    
-    const char* getName() const override { return "Native (No Upscaling)"; }
-    bool isInitialized() const override { return initialized_; }
-
-private:
-    bool initialized_ = false;
-    uint32_t inputWidth_ = 0;
-    uint32_t inputHeight_ = 0;
-};
-
 } // namespace upscaling
 } // namespace spectraforge
 

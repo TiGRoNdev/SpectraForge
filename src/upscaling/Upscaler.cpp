@@ -1,58 +1,95 @@
-// Upscaler.cpp - Система upscaling
-// Временная заглушка для этапа 1.2 настройки SDK
+/**
+ * @file Upscaler.cpp
+ * @brief Base implementation for upscalers
+ *
+ * @author SpectraForge Core Team
+ * @date 2025-10-02
+ */
 
-#include <iostream>
-#include "SpectraForge/Core/Console.h"
-#include "SpectraForge/Core/SafeConsole.h"
+#include "SpectraForge/upscaling/Upscaler.h"
+#include "SpectraForge/core/VulkanContext.h"
+#include <cmath>
 
-namespace SpectraForge {
-namespace Upscaling {
+namespace spectraforge {
+namespace upscaling {
 
-class Upscaler {
-  public:
-    virtual ~Upscaler() = default;
-
-    virtual bool initialize() {
-        SAFE_PRINT_LINE("Upscaler::initialize() - заглушка");
-        return true;
-    }
-
-    virtual void upscaleImage() {
-        // Заглушка для upscaling
-    }
-
-    virtual void cleanup() { SAFE_PRINT_LINE("Upscaler::cleanup() - заглушка"); }
-};
-
-class DLSSUpscaler : public Upscaler {
-  public:
-    bool initialize() override {
-        SAFE_PRINT_LINE("DLSSUpscaler::initialize() - заглушка");
-        return true;
-    }
-};
-
-class FSRUpscaler : public Upscaler {
-  public:
-    bool initialize() override {
-        SAFE_PRINT_LINE("FSRUpscaler::initialize() - заглушка");
-        return true;
-    }
-};
-
-}  // namespace Upscaling
-}  // namespace SpectraForge
-
-// Экспортируемая функция для тестирования
-extern "C" {
-void upscaler_test() {
-    SpectraForge::Upscaling::DLSSUpscaler dlss;
-    SpectraForge::Upscaling::FSRUpscaler fsr;
-
-    dlss.initialize();
-    fsr.initialize();
-
-    dlss.cleanup();
-    fsr.cleanup();
+UpscalerBase::UpscalerBase(std::string name)
+    : name_(std::move(name))
+{
 }
+
+void UpscalerBase::haltonSequence(uint32_t index, uint32_t base, float& out) {
+    float result = 0.0f;
+    float f = 1.0f / static_cast<float>(base);
+    uint32_t i = index;
+    
+    while (i > 0) {
+        result += f * static_cast<float>(i % base);
+        i = i / base;
+        f = f / static_cast<float>(base);
+    }
+    
+    out = result;
 }
+
+// ============================================================================
+// NullUpscaler (Deprecated - use NativeUpscaler instead)
+// ============================================================================
+
+NullUpscaler::NullUpscaler()
+    : UpscalerBase("Null (Deprecated)")
+{
+}
+
+bool NullUpscaler::initialize(
+    const core::VulkanContext& context,
+    const UpscaleConfig& config)
+{
+    (void)context;
+    
+    config_ = config;
+    initialized_ = true;
+    
+    return true;
+}
+
+void NullUpscaler::execute(
+    vk::CommandBuffer cmd,
+    const UpscaleResources& resources,
+    uint32_t frameIndex,
+    float jitterX,
+    float jitterY)
+{
+    // No-op
+    (void)cmd;
+    (void)resources;
+    (void)frameIndex;
+    (void)jitterX;
+    (void)jitterY;
+}
+
+void NullUpscaler::cleanup() {
+    initialized_ = false;
+}
+
+void NullUpscaler::getJitterOffset(uint32_t frameIndex, float& outX, float& outY) const {
+    (void)frameIndex;
+    outX = 0.0f;
+    outY = 0.0f;
+}
+
+bool NullUpscaler::resize(
+    uint32_t newInputWidth,
+    uint32_t newInputHeight,
+    uint32_t newOutputWidth,
+    uint32_t newOutputHeight)
+{
+    (void)newInputWidth;
+    (void)newInputHeight;
+    (void)newOutputWidth;
+    (void)newOutputHeight;
+    return true;
+}
+
+} // namespace upscaling
+} // namespace spectraforge

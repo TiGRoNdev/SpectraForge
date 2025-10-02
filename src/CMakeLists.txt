@@ -165,6 +165,12 @@ add_library(SpectraForge_Upscaling STATIC ${UPSCALING_SOURCES})
 # Настройка зависимостей
 target_link_libraries(SpectraForge_Core PUBLIC SpectraForge_Math)
 
+# Upscaling dependencies
+target_link_libraries(SpectraForge_Upscaling PUBLIC
+    SpectraForge_Core
+    Vulkan::Vulkan
+)
+
 if(TARGET SpectraForge_OpenGL)
     target_link_libraries(SpectraForge_OpenGL PUBLIC 
         SpectraForge_Core 

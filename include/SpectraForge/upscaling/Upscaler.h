@@ -20,6 +20,12 @@
 #include <string>
 
 namespace spectraforge {
+
+// Forward declaration
+namespace core {
+    class VulkanContext;
+}
+
 namespace upscaling {
 
 /**
@@ -69,8 +75,8 @@ public:
     /**
      * @brief Initialize upscaler
      */
-    virtual bool initialize(vk::Instance instance, vk::PhysicalDevice physicalDevice,
-                           vk::Device device, const UpscaleConfig& config) = 0;
+    virtual bool initialize(const core::VulkanContext& context,
+                           const UpscaleConfig& config) = 0;
 
     /**
      * @brief Execute upscaling
@@ -84,14 +90,20 @@ public:
     virtual void cleanup() = 0;
 
     /**
+     * @brief Resize (for window resize events)
+     */
+    virtual bool resize(uint32_t newInputWidth, uint32_t newInputHeight,
+                       uint32_t newOutputWidth, uint32_t newOutputHeight) = 0;
+
+    /**
      * @brief Get upscaler name
      */
     virtual const char* getName() const = 0;
 
     /**
-     * @brief Check if vendor-specific features are available
+     * @brief Check if initialized
      */
-    virtual bool isSupported() const = 0;
+    virtual bool isInitialized() const = 0;
 
     /**
      * @brief Get recommended jitter sequence for TAA
@@ -129,53 +141,21 @@ protected:
 };
 
 /**
- * @brief Null upscaler (passthrough, for testing)
+ * @brief Null upscaler (deprecated - use NativeUpscaler)
  */
 class NullUpscaler : public UpscalerBase {
 public:
     NullUpscaler();
     
-    bool initialize(vk::Instance instance, vk::PhysicalDevice physicalDevice,
-                   vk::Device device, const UpscaleConfig& config) override;
+    bool initialize(const core::VulkanContext& context,
+                   const UpscaleConfig& config) override;
     void execute(vk::CommandBuffer cmd, const UpscaleResources& resources,
                 uint32_t frameIndex, float jitterX, float jitterY) override;
     void cleanup() override;
-    bool isSupported() const override { return true; }
+    bool resize(uint32_t newInputWidth, uint32_t newInputHeight,
+               uint32_t newOutputWidth, uint32_t newOutputHeight) override;
+    bool isInitialized() const override { return initialized_; }
     void getJitterOffset(uint32_t frameIndex, float& outX, float& outY) const override;
-};
-
-/**
- * @brief Factory for creating upscalers (DIP: returns abstractions)
- */
-class UpscalerFactory {
-public:
-    enum class UpscalerType {
-        AUTO,    // Detect best available
-        DLSS,    // NVIDIA DLSS (requires RTX)
-        FSR2,    // AMD FidelityFX FSR2 (cross-vendor)
-        NONE     // Null upscaler (passthrough)
-    };
-
-    /**
-     * @brief Create upscaler by type
-     * @param type Upscaler type (AUTO detects best)
-     * @param gpuVendor GPU vendor ID (for AUTO detection)
-     * @return Unique pointer to interface (DIP)
-     */
-    static std::unique_ptr<IUpscaler> createUpscaler(
-        UpscalerType type,
-        uint32_t gpuVendorID = 0
-    );
-
-    /**
-     * @brief Check if DLSS is available on this system
-     */
-    static bool isDLSSAvailable(vk::PhysicalDevice physicalDevice);
-
-    /**
-     * @brief Check if FSR2 is available (always true, cross-vendor)
-     */
-    static bool isFSR2Available() { return true; }
 };
 
 } // namespace upscaling

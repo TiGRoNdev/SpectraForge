@@ -7,8 +7,9 @@
  */
 
 #include "SpectraForge/upscaling/UpscalerFactory.h"
-#include "SpectraForge/upscaling/DLSSUpscaler.h"      // Phase 3 TODO
-#include "SpectraForge/upscaling/FSR2Upscaler.h"      // Phase 3 TODO
+#include "SpectraForge/upscaling/NativeUpscaler.h"
+// #include "SpectraForge/upscaling/DLSSUpscaler.h"      // Phase 4 TODO
+// #include "SpectraForge/upscaling/FSR2Upscaler.h"      // Phase 4 TODO
 #include <iostream>
 
 namespace spectraforge {
@@ -56,7 +57,7 @@ std::unique_ptr<IUpscaler> UpscalerFactory::create(
         case UpscalerType::NONE:
         default:
             std::cout << "Using native resolution (no upscaling)\n";
-            return std::make_unique<NativeUpscaler>(config);
+            return std::make_unique<NativeUpscaler>();
     }
 }
 
@@ -120,75 +121,6 @@ const char* UpscalerFactory::getTypeName(UpscalerType type) {
         case UpscalerType::NONE:    return "Native";
         default:                     return "Unknown";
     }
-}
-
-// ============================================================================
-// NativeUpscaler Implementation (Pass-Through)
-// ============================================================================
-
-NativeUpscaler::NativeUpscaler(const UpscalerConfig& config)
-    : inputWidth_(config.inputWidth)
-    , inputHeight_(config.inputHeight)
-{
-}
-
-bool NativeUpscaler::initialize(
-    const VulkanContext& context,
-    const UpscaleConfig& config)
-{
-    // No initialization needed for pass-through
-    inputWidth_ = config.inputWidth;
-    inputHeight_ = config.inputHeight;
-    
-    initialized_ = true;
-    std::cout << "NativeUpscaler initialized (pass-through mode)\n";
-    
-    return true;
-}
-
-void NativeUpscaler::execute(
-    vk::CommandBuffer commandBuffer,
-    const UpscaleResources& resources,
-    uint32_t frameIndex,
-    float jitterX,
-    float jitterY)
-{
-    // Pass-through: Just copy input to output
-    // In real implementation, would use vkCmdCopyImage or blit
-    
-    (void)commandBuffer;
-    (void)resources;
-    (void)frameIndex;
-    (void)jitterX;
-    (void)jitterY;
-    
-    // TODO: Implement simple copy/blit
-}
-
-void NativeUpscaler::cleanup() {
-    initialized_ = false;
-}
-
-bool NativeUpscaler::resize(
-    uint32_t newInputWidth,
-    uint32_t newInputHeight,
-    uint32_t newOutputWidth,
-    uint32_t newOutputHeight)
-{
-    inputWidth_ = newInputWidth;
-    inputHeight_ = newInputHeight;
-    
-    (void)newOutputWidth;
-    (void)newOutputHeight;
-    
-    return true;
-}
-
-void NativeUpscaler::getJitterOffset(uint32_t frameIndex, float& outX, float& outY) const {
-    // No jitter for native upscaler
-    (void)frameIndex;
-    outX = 0.0f;
-    outY = 0.0f;
 }
 
 } // namespace upscaling
