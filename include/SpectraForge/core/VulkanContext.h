@@ -72,33 +72,11 @@ public:
 };
 
 /**
- * @brief Concrete Vulkan context implementation
+ * @brief Factory function to create VulkanContext
+ * @param enableValidation Enable Vulkan validation layers (default: true)
+ * @return Initialized VulkanContext, or nullptr on failure
  */
-class VulkanContextImpl : public VulkanContext {
-public:
-    VulkanContextImpl() = default;
-    ~VulkanContextImpl() override = default;
-
-    // Implementation will be in VulkanContext.cpp
-    vk::Instance getInstance() const override;
-    vk::PhysicalDevice getPhysicalDevice() const override;
-    vk::Device getDevice() const override;
-    vk::Queue getGraphicsQueue() const override;
-    vk::Queue getComputeQueue() const override;
-    vk::CommandPool getCommandPool() const override;
-    vk::PhysicalDeviceProperties getPhysicalDeviceProperties() const override;
-    vk::PhysicalDeviceMemoryProperties getMemoryProperties() const override;
-    bool isFeatureAvailable(const char* featureName) const override;
-
-private:
-    // TODO: Add actual Vulkan handles
-    vk::Instance instance_;
-    vk::PhysicalDevice physicalDevice_;
-    vk::Device device_;
-    vk::Queue graphicsQueue_;
-    vk::Queue computeQueue_;
-    vk::CommandPool commandPool_;
-};
+std::unique_ptr<VulkanContext> createVulkanContext(bool enableValidation = true);
 
 } // namespace spectraforge
 
