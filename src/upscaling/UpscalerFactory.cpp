@@ -8,8 +8,8 @@
 
 #include "SpectraForge/upscaling/UpscalerFactory.h"
 #include "SpectraForge/upscaling/NativeUpscaler.h"
-// #include "SpectraForge/upscaling/DLSSUpscaler.h"      // Phase 4 TODO
-// #include "SpectraForge/upscaling/FSR2Upscaler.h"      // Phase 4 TODO
+#include "SpectraForge/upscaling/DLSSUpscaler.h"
+// #include "SpectraForge/upscaling/FSR2Upscaler.h"      // Phase 4 Part 3 TODO
 #include <iostream>
 
 namespace spectraforge {
@@ -36,14 +36,9 @@ std::unique_ptr<IUpscaler> UpscalerFactory::create(
     // Create upscaler
     switch (type) {
         case UpscalerType::DLSS:
-            #ifdef SPECTRAFORGE_DLSS_AVAILABLE
             std::cout << "Creating DLSS upscaler\n";
-            return std::make_unique<DLSSUpscaler>(config);
-            #else
-            std::cerr << "DLSS not compiled in, falling back to FSR2\n";
-            type = UpscalerType::FSR2;
-            // Fall through to FSR2
-            #endif
+            return std::make_unique<DLSSUpscaler>();
+            // Note: DLSSUpscaler will return error in initialize() if SDK unavailable
             
         case UpscalerType::FSR2:
             #ifdef SPECTRAFORGE_FSR2_AVAILABLE

@@ -171,6 +171,26 @@ target_link_libraries(SpectraForge_Upscaling PUBLIC
     Vulkan::Vulkan
 )
 
+# DLSS support (conditional compilation)
+if(BUILD_WITH_DLSS AND DLSS_FOUND)
+    target_compile_definitions(SpectraForge_Upscaling PUBLIC SPECTRAFORGE_DLSS_AVAILABLE)
+    target_include_directories(SpectraForge_Upscaling PRIVATE ${DLSS_INCLUDE_DIRS})
+    target_link_libraries(SpectraForge_Upscaling PRIVATE ${DLSS_LIBRARIES})
+    message(STATUS "SpectraForge_Upscaling: DLSS support enabled")
+else()
+    message(STATUS "SpectraForge_Upscaling: DLSS disabled (skeleton only)")
+endif()
+
+# FSR2 support (conditional compilation)
+if(BUILD_WITH_FSR AND FSR_FOUND)
+    target_compile_definitions(SpectraForge_Upscaling PUBLIC SPECTRAFORGE_FSR2_AVAILABLE)
+    target_include_directories(SpectraForge_Upscaling PRIVATE ${FSR_INCLUDE_DIRS})
+    target_link_libraries(SpectraForge_Upscaling PRIVATE ${FSR_LIBRARIES})
+    message(STATUS "SpectraForge_Upscaling: FSR2 support enabled")
+else()
+    message(STATUS "SpectraForge_Upscaling: FSR2 disabled (skeleton only)")
+endif()
+
 if(TARGET SpectraForge_OpenGL)
     target_link_libraries(SpectraForge_OpenGL PUBLIC 
         SpectraForge_Core 
