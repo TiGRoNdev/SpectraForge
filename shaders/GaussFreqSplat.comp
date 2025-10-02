@@ -3,12 +3,13 @@
  * @brief Frequency-Encoded Gaussian Splatting for wavelet subbands
  * 
  * Implements analytic Gaussian frequency-domain splatting without DCT overhead.
- * Uses Vulkan 1.3 Subgroup Reductions for efficient accumulation.
+ * Each thread processes ONE pixel independently - no cross-thread communication.
+ * All 256 threads (16×16 workgroup) write their pixels independently.
  * 
  * Mathematical basis:
  * C(x) = Σ w_k * exp(-2π²σ_k²||k||²) * cos(2π k·μ_k)
  * 
- * Performance: O(M+P) per tile, no global atomics
+ * Performance: O(M+P) per pixel, no global atomics, full per-pixel granularity
  * 
  * @see docs/architecture/Renderer.md
  * @author SpectraForge Core Team  
@@ -16,9 +17,6 @@
  */
 
 #version 450
-#extension GL_KHR_shader_subgroup_basic : require
-#extension GL_KHR_shader_subgroup_arithmetic : require
-#extension GL_EXT_shader_subgroup_extended_types_float16 : require
 #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
 
 // Workgroup: 16×16 (баланс между occupancy и subgroup эффективностью)
@@ -60,9 +58,6 @@ layout(push_constant) uniform PushConstants {
 const float PI = 3.14159265359;
 const float TWO_PI = 6.28318530718;
 const float TWO_PI_SQ = 39.4784176044;  // 2π²
-
-// Shared memory для локальной аккумуляции
-shared f16vec4 tileAccum[16][16];
 
 /**
  * @brief Вычисление частоты для текущего пикселя
@@ -177,41 +172,27 @@ void main() {
         localAccum += accumulateGaussian(k, gauss, subbands);
     }
     
-    // Subgroup reduction для эффективной аккумуляции
-    f16vec4 subgroupSum = f16vec4(
-        float16_t(subgroupAdd(float(localAccum.r))),
-        float16_t(subgroupAdd(float(localAccum.g))),
-        float16_t(subgroupAdd(float(localAccum.b))),
-        float16_t(subgroupAdd(float(localAccum.a)))
+    // Нормализация по весам
+    // CRITICAL: Each thread processes and writes its OWN pixel independently
+    // No subgroup election - all 256 threads (16×16 workgroup) must write
+    if (localAccum.a > float16_t(0.0001)) {
+        localAccum.rgb /= localAccum.a;
+    }
+    
+    // Тональное мапирование (простой Reinhard)
+    localAccum.rgb = localAccum.rgb / (f16vec3(1.0hf) + localAccum.rgb);
+    
+    // Гамма-коррекция (sRGB)
+    f16vec4 finalColor = f16vec4(
+        pow(localAccum.rgb, f16vec3(float16_t(1.0 / 2.2))),
+        localAccum.a
     );
     
-    // Сохранение в shared memory
-    tileAccum[localID.x][localID.y] = subgroupSum;
+    // Запись с blend в существующий аккумулятор
+    // EVERY thread writes its pixel - this ensures complete output coverage
+    vec4 existing = imageLoad(outImage, globalID);
+    vec4 blended = vec4(finalColor) + existing;
     
-    // Барьер перед финальной записью
-    memoryBarrierShared();
-    barrier();
-    
-    // Финальная нормализация и запись
-    if (subgroupElect()) {
-        f16vec4 finalColor = tileAccum[localID.x][localID.y];
-        
-        // Нормализация по весам
-        if (finalColor.a > float16_t(0.0001)) {
-            finalColor.rgb /= finalColor.a;
-        }
-        
-        // Тональное мапирование (простой Reinhard)
-        finalColor.rgb = finalColor.rgb / (f16vec3(1.0hf) + finalColor.rgb);
-        
-        // Гамма-коррекция
-        finalColor.rgb = pow(finalColor.rgb, f16vec3(float16_t(1.0 / 2.2)));
-        
-        // Запись с blend в существующий аккумулятор
-        vec4 existing = imageLoad(outImage, globalID);
-        vec4 blended = vec4(finalColor) + existing;
-        
-        imageStore(outImage, globalID, blended);
-    }
+    imageStore(outImage, globalID, blended);
 }
 

@@ -16,6 +16,23 @@ option(BUILD_TESTS "Build test suite" ON)
 option(ENABLE_CODE_COVERAGE "Enable code coverage for tests" ON)
 option(ENABLE_FREQVOX "Enable FreqVox Renderer modules" ON)
 
+# ============================================================================
+# Phase 2 Options: Hybrid DWT + FreGS Configuration
+# ============================================================================
+set(SPECTRAFORGE_RENDERER "FREGS" CACHE STRING "Renderer backend (FREGS|FREQVOX)")
+set_property(CACHE SPECTRAFORGE_RENDERER PROPERTY STRINGS "FREGS" "FREQVOX")
+
+set(SPECTRAFORGE_UPSCALER "AUTO" CACHE STRING "Upscaler technology (AUTO|DLSS|FSR2|NONE)")
+set_property(CACHE SPECTRAFORGE_UPSCALER PROPERTY STRINGS "AUTO" "DLSS" "FSR2" "NONE")
+
+option(SPECTRAFORGE_RT_DENOISER "Enable OptiX AI denoiser" OFF)
+
+message(STATUS "=== SpectraForge Configuration ===")
+message(STATUS "  Renderer: ${SPECTRAFORGE_RENDERER}")
+message(STATUS "  Upscaler: ${SPECTRAFORGE_UPSCALER}")
+message(STATUS "  RT Denoiser: ${SPECTRAFORGE_RT_DENOISER}")
+message(STATUS "==================================")
+
 # Ранняя настройка CUDA для поддержки
 if(BUILD_WITH_CUDA)
     # Пытаемся найти CUDA compiler

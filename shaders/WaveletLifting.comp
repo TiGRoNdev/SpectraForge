@@ -87,34 +87,40 @@ f16vec2 update(f16vec2 even, f16vec2 detailLeft, f16vec2 detailRight) {
 void horizontalPass(inout f16vec2 approx, inout f16vec2 detail) {
     uint localX = gl_LocalInvocationID.x;
     uint localY = gl_LocalInvocationID.y;
-    
+
     // Чётные и нечётные столбцы
     bool isEven = (localX & 1u) == 0u;
-    
+
     f16vec2 current = tileLuminance[localX][localY];
-    
+
     if (isEven) {
-        // Чётный пиксель: получаем апроксимацию
-        f16vec2 oddRight = subgroupShuffle(current, localX + 1);
-        f16vec2 oddLeft = (localX > 0) ? subgroupShuffle(current, localX - 1) : current;
-        
-        // Predict: вычисляем детали справа
-        f16vec2 detailRight = predict(oddRight, current, subgroupShuffle(current, localX + 2));
-        f16vec2 detailLeft = (localX > 0) ? predict(oddLeft, subgroupShuffle(current, localX - 2), current) : f16vec2(0.0hf);
-        
+        // Чётный пиксель: вычисляем апроксимацию
+        // Получаем соседей из shared memory (правильный доступ для 2D layout)
+        f16vec2 oddLeft = (localX > 0) ? tileLuminance[localX - 1][localY] : current;
+        f16vec2 oddRight = (localX < 31) ? tileLuminance[localX + 1][localY] : current;
+        f16vec2 evenLeft2 = (localX > 1) ? tileLuminance[localX - 2][localY] : current;
+        f16vec2 evenRight2 = (localX < 30) ? tileLuminance[localX + 2][localY] : current;
+
+        // Predict: вычисляем детали
+        f16vec2 detailRight = predict(oddRight, current, evenRight2);
+        f16vec2 detailLeft = (localX > 0) ? predict(oddLeft, evenLeft2, current) : f16vec2(0.0hf);
+
         // Update: вычисляем апроксимацию
         approx = update(current, detailLeft, detailRight);
+        detail = f16vec2(0.0hf); // Инициализируем detail для четных пикселей
     } else {
-        // Нечётный пиксель: получаем детали
-        f16vec2 evenLeft = subgroupShuffle(current, localX - 1);
-        f16vec2 evenRight = (localX < 31) ? subgroupShuffle(current, localX + 1) : current;
-        
+        // Нечётный пиксель: вычисляем детали
+        f16vec2 evenLeft = (localX > 0) ? tileLuminance[localX - 1][localY] : current;
+        f16vec2 evenRight = (localX < 31) ? tileLuminance[localX + 1][localY] : current;
+
         detail = predict(current, evenLeft, evenRight);
+        approx = f16vec2(0.0hf); // Инициализируем approx для нечетных пикселей
     }
 }
 
 /**
  * @brief Вертикальный проход lifting
+ * @note Читает approxH из tileLuminance и detailH из tileChroma (после горизонтального прохода)
  */
 void verticalPass(inout f16vec2 ll, inout f16vec2 lh, inout f16vec2 hl, inout f16vec2 hh,
                   f16vec2 approxH, f16vec2 detailH) {
@@ -124,26 +130,31 @@ void verticalPass(inout f16vec2 ll, inout f16vec2 lh, inout f16vec2 hl, inout f1
     bool isEvenY = (localY & 1u) == 0u;
     
     if (isEvenY) {
-        // Чётная строка
+        // Чётная строка - работаем с коэффициентами аппроксимации
         f16vec2 approxUp = (localY > 0) ? tileLuminance[localX][localY - 1] : approxH;
         f16vec2 approxDown = (localY < 31) ? tileLuminance[localX][localY + 1] : approxH;
+        f16vec2 approxDown2 = (localY < 30) ? tileLuminance[localX][localY + 2] : approxH;
         
         // LL (Low-Low): апроксимация по обоим направлениям
-        f16vec2 detailVert = predict(approxDown, approxH, (localY < 30) ? tileLuminance[localX][localY + 2] : approxH);
-        ll = update(approxH, (localY > 0) ? predict(approxUp, tileLuminance[localX][localY - 2], approxH) : f16vec2(0.0hf), detailVert);
+        f16vec2 detailVert = predict(approxDown, approxH, approxDown2);
+        f16vec2 detailVertUp = (localY > 0) ? predict(approxUp, (localY > 1) ? tileLuminance[localX][localY - 2] : approxH, approxH) : f16vec2(0.0hf);
+        ll = update(approxH, detailVertUp, detailVert);
         
-        // LH (Low-High): детали по вертикали
-        lh = predict(approxDown, approxH, (localY < 30) ? tileLuminance[localX][localY + 2] : approxH);
+        // LH (Low-High): детали по вертикали на аппроксимации
+        lh = detailVert;
     } else {
-        // Нечётная строка
-        f16vec2 detailUp = (localY > 0) ? tileLuminance[localX][localY - 1] : detailH;
-        f16vec2 detailDown = (localY < 31) ? tileLuminance[localX][localY + 1] : detailH;
+        // Нечётная строка - работаем с коэффициентами деталей (КРИТИЧНО: читаем из tileChroma!)
+        f16vec2 detailUp = (localY > 0) ? tileChroma[localX][localY - 1] : detailH;
+        f16vec2 detailDown = (localY < 31) ? tileChroma[localX][localY + 1] : detailH;
+        f16vec2 detailDown2 = (localY < 30) ? tileChroma[localX][localY + 2] : detailH;
         
-        // HL (High-Low): детали по горизонтали
-        hl = predict(detailH, detailUp, detailDown);
+        // HL (High-Low): детали по горизонтали (вертикальная аппроксимация)
+        f16vec2 approxEvenUp = (localY > 0) ? tileLuminance[localX][localY - 1] : f16vec2(0.0hf);
+        f16vec2 approxEvenDown = (localY < 31) ? tileLuminance[localX][localY + 1] : f16vec2(0.0hf);
+        hl = predict(detailH, approxEvenUp, approxEvenDown);
         
         // HH (High-High): детали по обоим направлениям
-        hh = predict(detailDown, detailH, (localY < 30) ? tileLuminance[localX][localY + 2] : detailH);
+        hh = predict(detailH, detailUp, detailDown);
     }
 }
 
@@ -166,7 +177,6 @@ void main() {
     loadTile();
     
     // Барьер: ждём загрузки всего тайла
-    subgroupBarrier();
     memoryBarrierShared();
     barrier();
     
@@ -174,11 +184,11 @@ void main() {
     f16vec2 approxH, detailH;
     horizontalPass(approxH, detailH);
     
-    // Сохранение промежуточных результатов
-    tileLuminance[localID.x][localID.y] = approxH;
+    // Сохранение промежуточных результатов (КРИТИЧНО: сохраняем ОБА коэффициента)
+    tileLuminance[localID.x][localID.y] = approxH;  // Аппроксимация
+    tileChroma[localID.x][localID.y] = detailH;     // Детали (FIX: было потеряно!)
     
     // Барьер перед вертикальным проходом
-    subgroupBarrier();
     memoryBarrierShared();
     barrier();
     
@@ -194,16 +204,35 @@ void main() {
     // Фовеация: в периферии сохраняем только LL
     bool inFovea = pc.foveationLevel == 0u;
     
-    // Запись результатов (половинное разрешение)
-    ivec2 outCoord = globalID / 2;
+    // Определение четности координат для правильного разделения субполос
+    bool isEvenX = (localID.x & 1u) == 0u;
+    bool isEvenY = (localID.y & 1u) == 0u;
     
-    if (outCoord.x < (pc.inputWidth / 2) && outCoord.y < (pc.inputHeight / 2)) {
-        imageStore(outLL, outCoord, vec4(ll, 0.0, 0.0));
+    // Базовые координаты для выходных изображений (половинное разрешение)
+    ivec2 baseCoord = globalID / 2;
+    
+    // Запись результатов: каждая субполоса записывается ТОЛЬКО соответствующими потоками
+    if (baseCoord.x < (pc.inputWidth / 2) && baseCoord.y < (pc.inputHeight / 2)) {
+        // LL (Low-Low): только четные X и Y - аппроксимация
+        if (isEvenX && isEvenY) {
+            imageStore(outLL, baseCoord, vec4(ll, 0.0, 0.0));
+        }
         
         if (inFovea) {
-            imageStore(outLH, outCoord, vec4(lh, 0.0, 0.0));
-            imageStore(outHL, outCoord, vec4(hl, 0.0, 0.0));
-            imageStore(outHH, outCoord, vec4(hh, 0.0, 0.0));
+            // LH (Low-High): четные X, нечетные Y - горизонтальные детали
+            if (isEvenX && !isEvenY) {
+                imageStore(outLH, baseCoord, vec4(lh, 0.0, 0.0));
+            }
+            
+            // HL (High-Low): нечетные X, четные Y - вертикальные детали
+            if (!isEvenX && isEvenY) {
+                imageStore(outHL, baseCoord, vec4(hl, 0.0, 0.0));
+            }
+            
+            // HH (High-High): нечетные X и Y - диагональные детали
+            if (!isEvenX && !isEvenY) {
+                imageStore(outHH, baseCoord, vec4(hh, 0.0, 0.0));
+            }
         }
     }
 }
