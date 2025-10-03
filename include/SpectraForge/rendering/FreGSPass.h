@@ -150,4 +150,3 @@ private:
 
 } // namespace rendering
 } // namespace spectraforge
-
