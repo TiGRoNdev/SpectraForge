@@ -17,8 +17,8 @@
 #include "SpectraForge/Core/SafeConsole.h"
 #include "SpectraForge/Core/Console.h"
 
-// Define Vulkan-Hpp default dispatcher storage (required for dynamic loader)
-VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+// Storage для Vulkan-Hpp default dispatcher определяется единообразно в
+// `src/core/VulkanHppDispatch.cpp`.
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN

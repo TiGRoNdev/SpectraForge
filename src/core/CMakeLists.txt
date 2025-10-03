@@ -10,6 +10,9 @@ get_filename_component(PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE
 set(CORE_SOURCES
     Container.cpp
     VMAImplementation.cpp
+    Console.cpp
+    VulkanHppDispatch.cpp
+    Window.cpp
 )
 
 # Заголовочные файлы ядра
@@ -41,6 +44,10 @@ if(TARGET VulkanMemoryAllocator::VulkanMemoryAllocator)
     target_link_libraries(SpectraForge_Core PUBLIC VulkanMemoryAllocator::VulkanMemoryAllocator)
     message(STATUS "SpectraForge_Core: linked with VulkanMemoryAllocator")
 endif()
+
+# GLFW нужен для реализации Window
+find_package(glfw3 CONFIG REQUIRED)
+target_link_libraries(SpectraForge_Core PUBLIC glfw)
 
 # Настройки компилятора
 if(MSVC)

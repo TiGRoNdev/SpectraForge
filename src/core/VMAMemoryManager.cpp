@@ -167,6 +167,13 @@ bool VMAMemoryManager::initialize(
     allocatorInfo.device = static_cast<VkDevice>(device);
     allocatorInfo.instance = static_cast<VkInstance>(instance);
     
+    // Provide Vulkan function pointers for dynamic import to prevent null dereference
+    // when VMA is built with VMA_DYNAMIC_VULKAN_FUNCTIONS enabled.
+    VmaVulkanFunctions vulkanFunctions{};
+    vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+    vulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+    allocatorInfo.pVulkanFunctions = &vulkanFunctions;
+    
     // Enable budget tracking for statistics
     allocatorInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
     
@@ -176,18 +183,42 @@ bool VMAMemoryManager::initialize(
         return false;
     }
     
-    // Create transient resource pool
+    // Create transient resource pool with proper memory type selection
     VmaPoolCreateInfo poolInfo = {};
-    poolInfo.memoryTypeIndex = 0;  // Will be determined by VMA
     poolInfo.flags = VMA_POOL_CREATE_IGNORE_BUFFER_IMAGE_GRANULARITY_BIT;
     poolInfo.blockSize = 32 * 1024 * 1024;  // 32 MB blocks for transient resources
     poolInfo.minBlockCount = 1;
     poolInfo.maxBlockCount = 4;  // Max 128 MB for transients
-    
-    result = vmaCreatePool(allocator_, &poolInfo, &transientPool_);
-    if (result != VK_SUCCESS) {
-        std::cerr << "Warning: Failed to create transient pool: " << result << "\n";
-        transientPool_ = nullptr;  // Continue without transient pool
+
+    // Determine suitable memory type for typical transient image allocations
+    VkImageCreateInfo tmpImageInfo{};
+    tmpImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    tmpImageInfo.imageType = VK_IMAGE_TYPE_2D;
+    tmpImageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+    tmpImageInfo.extent = { 64, 64, 1 };
+    tmpImageInfo.mipLevels = 1;
+    tmpImageInfo.arrayLayers = 1;
+    tmpImageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    tmpImageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    tmpImageInfo.usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    tmpImageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    tmpImageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VmaAllocationCreateInfo tmpAllocInfo{};
+    tmpAllocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+
+    uint32_t memoryTypeIndex = UINT32_MAX;
+    result = vmaFindMemoryTypeIndexForImageInfo(allocator_, &tmpImageInfo, &tmpAllocInfo, &memoryTypeIndex);
+    if (result == VK_SUCCESS && memoryTypeIndex != UINT32_MAX) {
+        poolInfo.memoryTypeIndex = memoryTypeIndex;
+        result = vmaCreatePool(allocator_, &poolInfo, &transientPool_);
+        if (result != VK_SUCCESS) {
+            std::cerr << "Warning: Failed to create transient pool: " << result << "\n";
+            transientPool_ = nullptr;  // Continue without transient pool
+        }
+    } else {
+        std::cerr << "Warning: Failed to determine memory type for transient pool: " << result << "\n";
+        transientPool_ = nullptr;
     }
     
     initialized_ = true;
@@ -329,7 +360,13 @@ VMABuffer VMAMemoryManager::createTransientBuffer(size_t size, vk::BufferUsageFl
     VkResult result = vmaCreateBuffer(allocator_, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
     
     if (result != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create transient buffer: " + std::to_string(result));
+        // Fallback: try without dedicated flag and without pool
+        allocInfo.flags = 0;
+        allocInfo.pool = VK_NULL_HANDLE;
+        result = vmaCreateBuffer(allocator_, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
+        if (result != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create transient buffer: " + std::to_string(result));
+        }
     }
     
     updateStatistics(ResourceUsage::TRANSIENT, size, true);
@@ -365,7 +402,13 @@ VMAImage VMAMemoryManager::createTransientImage(const vk::ImageCreateInfo& image
     VkResult result = vmaCreateImage(allocator_, &vkImageInfo, &allocInfo, &image, &allocation, nullptr);
     
     if (result != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create transient image: " + std::to_string(result));
+        // Fallback: try without dedicated flag and without pool
+        allocInfo.flags = 0;
+        allocInfo.pool = VK_NULL_HANDLE;
+        result = vmaCreateImage(allocator_, &vkImageInfo, &allocInfo, &image, &allocation, nullptr);
+        if (result != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create transient image: " + std::to_string(result));
+        }
     }
     
     size_t estimatedSize = imageInfo.extent.width * imageInfo.extent.height * imageInfo.extent.depth * 4;

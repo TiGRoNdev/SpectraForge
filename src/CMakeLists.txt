@@ -3,6 +3,30 @@
 # Core модуль
 file(GLOB_RECURSE CORE_SOURCES "core/*.cpp" "core/*.h")
 add_library(SpectraForge_Core STATIC ${CORE_SOURCES})
+# App модуль (высокоуровневый фасад)
+file(GLOB_RECURSE APP_SOURCES "app/*.cpp" "app/*.h")
+if(APP_SOURCES)
+    add_library(SpectraForge_App STATIC ${APP_SOURCES})
+    target_link_libraries(SpectraForge_App
+        PUBLIC
+            SpectraForge_Core
+            SpectraForge_Math
+    )
+    target_include_directories(SpectraForge_App
+        PUBLIC ${CMAKE_SOURCE_DIR}/include
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    target_compile_features(SpectraForge_App PUBLIC cxx_std_20)
+endif()
+
+# Link Vulkan (Core uses VulkanContextImpl with vk* symbols)
+find_package(Vulkan REQUIRED)
+target_link_libraries(SpectraForge_Core PUBLIC Vulkan::Vulkan)
+
+# Link VMA if available (VMAMemoryManager uses VMA APIs)
+if(TARGET VulkanMemoryAllocator::VulkanMemoryAllocator)
+    target_link_libraries(SpectraForge_Core PUBLIC VulkanMemoryAllocator::VulkanMemoryAllocator)
+endif()
 
 # Math модуль
 add_subdirectory(math)

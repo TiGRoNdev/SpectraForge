@@ -1,6 +1,41 @@
 # API Reference - SpectraForge v1.0.0
 
 ## Содержание
+### SpectraForge::App фасад (v0.1.0)
+
+Высокоуровневый слой для быстрого запуска приложения без знания внутренних подсистем.
+
+- `SpectraForge::App::IApp`
+  - `bool init()` — инициализация окна/ядра/ресурсов
+  - `bool load_scene(const Vulkan::SceneData& data)` — загрузка сцены
+  - `void update(float delta_time)` — обработка событий и обновление
+  - `void render()` — рендеринг кадра и `swapBuffers`
+  - `void shutdown()` — корректное завершение работы
+
+- `SpectraForge::App::Engine`
+  - Реализация `IApp` поверх `Core::EngineCore`, использует `Core::Window`, `Rendering::IRenderer`, `Rendering::IResourceManager`, `Vulkan::SceneManager`
+
+- `SpectraForge::App::AppConfig`
+  - `window_width`, `window_height`, `window_title`, `vsync`, `debug`
+
+Пример использования (псевдокод):
+
+```cpp
+using namespace SpectraForge;
+App::AppConfig cfg{1280, 720, "Demo", true, false};
+auto logger = std::make_shared<Core::Logger>();
+auto renderer = createRenderer();              // конкретная реализация
+auto resources = createResourceManager();      // конкретная реализация
+
+App::Engine app(cfg, logger, renderer, resources);
+if (app.init()) {
+  Vulkan::SceneData scene{}; scene.scenePath = "examples/scenes/sponza/sponza.obj";
+  app.load_scene(scene);
+  for (;;) { app.update(0.016f); app.render(); }
+}
+app.shutdown();
+```
+
 
 1. [Математическая библиотека](#математическая-библиотека)
 2. [Система рендеринга](#система-рендеринга)

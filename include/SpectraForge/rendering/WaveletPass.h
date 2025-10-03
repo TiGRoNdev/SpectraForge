@@ -105,13 +105,20 @@ private:
      */
     std::vector<uint32_t> loadShaderSPIRV() const;
 
+    /**
+     * @brief Ensure input image/view exist (create dummy if not provided)
+     */
+    void ensureInputImage(const VulkanContext& context);
+
     WaveletPassConfig config_;
     WaveletSubbands subbands_;
     
     // Input
     vk::Image inputImage_;
     vk::ImageView inputView_;
-    
+    // Dummy input storage (for RAII when we create placeholder)
+    core::VMAImage vmaInputImage_;
+
     // Vulkan context (stored for cleanup)
     const VulkanContext* context_ = nullptr;
     
@@ -126,6 +133,9 @@ private:
         float threshold;
         uint32_t foveationLevel;
     } pushConstants_;
+
+    // Chosen image format for subbands/input
+    vk::Format subbandFormat_ = vk::Format::eUndefined;
 };
 
 } // namespace rendering

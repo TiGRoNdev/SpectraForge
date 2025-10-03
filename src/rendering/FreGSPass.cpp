@@ -15,6 +15,10 @@
 #include <fstream>
 #include <stdexcept>
 #include <iostream>
+#include <sstream>
+#include <vector>
+#include <string>
+#include <shaderc/shaderc.hpp>
 #include <cstring>
 
 namespace spectraforge {
@@ -279,7 +283,8 @@ bool FreGSPass::createOutputImage(const VulkanContext& context) {
     imageInfo.arrayLayers = 1;
     imageInfo.samples = vk::SampleCountFlagBits::e1;
     imageInfo.tiling = vk::ImageTiling::eOptimal;
-    imageInfo.usage = vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled;
+    imageInfo.usage = vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eSampled |
+                      vk::ImageUsageFlagBits::eTransferSrc;
     imageInfo.sharingMode = vk::SharingMode::eExclusive;
     imageInfo.initialLayout = vk::ImageLayout::eUndefined;
 
@@ -292,6 +297,47 @@ bool FreGSPass::createOutputImage(const VulkanContext& context) {
         
         // Get Vulkan image from VMA wrapper
         outputImage_ = vmaOutputImage_.getImage();
+        std::cout << "[FreGSPass] output image handle=" << static_cast<const void*>(static_cast<VkImage>(outputImage_)) << "\n";
+
+        // Transition UNDEFINED->GENERAL for storage usage
+        {
+            vk::CommandBufferAllocateInfo ainfo;
+            ainfo.commandPool = context.getCommandPool();
+            ainfo.level = vk::CommandBufferLevel::ePrimary;
+            ainfo.commandBufferCount = 1;
+            auto cmdBufs = device.allocateCommandBuffers(ainfo);
+            vk::CommandBuffer cmd = cmdBufs[0];
+            vk::CommandBufferBeginInfo binfo;
+            binfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+            cmd.begin(binfo);
+
+            vk::ImageMemoryBarrier barrier{};
+            barrier.srcAccessMask = {};
+            barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite;
+            barrier.oldLayout = vk::ImageLayout::eUndefined;
+            barrier.newLayout = vk::ImageLayout::eGeneral;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.image = outputImage_;
+            barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+            barrier.subresourceRange.baseMipLevel = 0;
+            barrier.subresourceRange.levelCount = 1;
+            barrier.subresourceRange.baseArrayLayer = 0;
+            barrier.subresourceRange.layerCount = 1;
+            cmd.pipelineBarrier(
+                vk::PipelineStageFlagBits::eTopOfPipe,
+                vk::PipelineStageFlagBits::eComputeShader,
+                vk::DependencyFlags{},
+                0, nullptr,
+                0, nullptr,
+                1, &barrier
+            );
+            cmd.end();
+            vk::SubmitInfo si; si.commandBufferCount = 1; si.pCommandBuffers = &cmd;
+            [[maybe_unused]] auto _res = context.getGraphicsQueue().submit(1, &si, nullptr);
+            context.getGraphicsQueue().waitIdle();
+            device.freeCommandBuffers(context.getCommandPool(), 1, &cmd);
+        }
 
         // Create image view
         vk::ImageViewCreateInfo viewInfo;
@@ -319,7 +365,7 @@ bool FreGSPass::createOutputImage(const VulkanContext& context) {
     }
 }
 
-bool FreGSPass::createGaussianBuffer(const VulkanContext& context) {
+bool FreGSPass::createGaussianBuffer([[maybe_unused]] const VulkanContext& context) {
     // Create buffer for Gaussian splats
     // Structure: uint32_t count + padding + GaussianSplat array
     size_t bufferSize = sizeof(uint32_t) * 4 + // header with padding
@@ -376,54 +422,32 @@ bool FreGSPass::createDescriptorSets(const VulkanContext& context) {
 
     // Update descriptor sets
     for (size_t i = 0; i < descriptorSets_.size(); ++i) {
-        std::vector<vk::WriteDescriptorSet> writes;
-        std::vector<vk::DescriptorImageInfo> imageInfos;
-        vk::DescriptorBufferInfo bufferInfo;
-
-        // Bindings 0-3: Input subbands
+        std::array<vk::DescriptorImageInfo, 5> imageInfos{};
         if (inputSubbands_) {
-            imageInfos.push_back({{}, inputSubbands_->viewLL, vk::ImageLayout::eGeneral});
-            imageInfos.push_back({{}, inputSubbands_->viewLH, vk::ImageLayout::eGeneral});
-            imageInfos.push_back({{}, inputSubbands_->viewHL, vk::ImageLayout::eGeneral});
-            imageInfos.push_back({{}, inputSubbands_->viewHH, vk::ImageLayout::eGeneral});
-
-            for (uint32_t j = 0; j < 4; ++j) {
-                writes.push_back({
-                    descriptorSets_[i],
-                    j,
-                    0,
-                    1,
-                    vk::DescriptorType::eStorageImage,
-                    &imageInfos[j]
-                });
-            }
+            imageInfos[0] = { {}, inputSubbands_->viewLL, vk::ImageLayout::eGeneral };
+            imageInfos[1] = { {}, inputSubbands_->viewLH, vk::ImageLayout::eGeneral };
+            imageInfos[2] = { {}, inputSubbands_->viewHL, vk::ImageLayout::eGeneral };
+            imageInfos[3] = { {}, inputSubbands_->viewHH, vk::ImageLayout::eGeneral };
+        } else {
+            // Если саббенды не заданы, заполняем нулевыми view (валидный set, но execute упадёт ранее)
+            imageInfos[0] = { {}, VK_NULL_HANDLE, vk::ImageLayout::eGeneral };
+            imageInfos[1] = { {}, VK_NULL_HANDLE, vk::ImageLayout::eGeneral };
+            imageInfos[2] = { {}, VK_NULL_HANDLE, vk::ImageLayout::eGeneral };
+            imageInfos[3] = { {}, VK_NULL_HANDLE, vk::ImageLayout::eGeneral };
         }
+        imageInfos[4] = { {}, outputView_, vk::ImageLayout::eGeneral };
 
-        // Binding 4: Output accumulator
-        imageInfos.push_back({{}, outputView_, vk::ImageLayout::eGeneral});
-        writes.push_back({
-            descriptorSets_[i],
-            4,
-            0,
-            1,
-            vk::DescriptorType::eStorageImage,
-            &imageInfos[4]
-        });
+        std::array<vk::WriteDescriptorSet, 6> writes{};
+        for (uint32_t j = 0; j < 4; ++j) {
+            writes[j] = { descriptorSets_[i], j, 0, 1, vk::DescriptorType::eStorageImage, &imageInfos[j] };
+        }
+        writes[4] = { descriptorSets_[i], 4, 0, 1, vk::DescriptorType::eStorageImage, &imageInfos[4] };
 
-        // Binding 5: Gaussian buffer
+        vk::DescriptorBufferInfo bufferInfo;
         bufferInfo.buffer = gaussianBuffer_;
         bufferInfo.offset = 0;
         bufferInfo.range = VK_WHOLE_SIZE;
-
-        writes.push_back({
-            descriptorSets_[i],
-            5,
-            0,
-            1,
-            vk::DescriptorType::eStorageBuffer,
-            nullptr,
-            &bufferInfo
-        });
+        writes[5] = { descriptorSets_[i], 5, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &bufferInfo };
 
         device.updateDescriptorSets(writes, {});
     }
@@ -432,29 +456,72 @@ bool FreGSPass::createDescriptorSets(const VulkanContext& context) {
 }
 
 std::vector<uint32_t> FreGSPass::loadShaderSPIRV() const {
-    std::vector<std::string> paths = {
-        "shaders/GaussFreqSplat.comp.spv",
-        "../shaders/GaussFreqSplat.comp.spv",
-        "../../shaders/GaussFreqSplat.comp.spv",
-        "build/shaders/GaussFreqSplat.comp.spv"
-    };
+    // 1) Try precompiled SPIR-V first
+    {
+        std::vector<std::string> paths = {
+            "shaders/GaussFreqSplat.comp.spv",
+            "../shaders/GaussFreqSplat.comp.spv",
+            "../../shaders/GaussFreqSplat.comp.spv",
+            "build/shaders/GaussFreqSplat.comp.spv"
+        };
 
-    for (const auto& path : paths) {
-        std::ifstream file(path, std::ios::binary | std::ios::ate);
-        if (file.is_open()) {
-            size_t fileSize = file.tellg();
-            std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
-            
-            file.seekg(0);
-            file.read(reinterpret_cast<char*>(buffer.data()), fileSize);
-            file.close();
+        for (const auto& path : paths) {
+            std::ifstream file(path, std::ios::binary | std::ios::ate);
+            if (file.is_open()) {
+                size_t fileSize = file.tellg();
+                std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
 
-            std::cout << "Loaded shader from: " << path << " (" << fileSize << " bytes)\n";
-            return buffer;
+                file.seekg(0);
+                file.read(reinterpret_cast<char*>(buffer.data()), fileSize);
+                file.close();
+
+                std::cout << "Loaded shader from: " << path << " (" << fileSize << " bytes)\n";
+                return buffer;
+            }
         }
     }
 
-    std::cerr << "Failed to find GaussFreqSplat.comp.spv in any of the search paths\n";
+    // 2) Fallback: compile GLSL at runtime
+    std::vector<std::string> glslPaths = {
+        "shaders/GaussFreqSplat.comp",
+        "../shaders/GaussFreqSplat.comp",
+        "../../shaders/GaussFreqSplat.comp"
+    };
+
+    for (const auto& path : glslPaths) {
+        std::ifstream file(path);
+        if (!file.is_open()) continue;
+
+        std::stringstream ss;
+        ss << file.rdbuf();
+        std::string source = ss.str();
+        file.close();
+
+        shaderc::Compiler compiler;
+        shaderc::CompileOptions options;
+        options.SetSourceLanguage(shaderc_source_language_glsl);
+        options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+        options.SetOptimizationLevel(shaderc_optimization_level_performance);
+
+        auto result = compiler.CompileGlslToSpv(
+            source.c_str(), source.size(),
+            shaderc_compute_shader,
+            "GaussFreqSplat.comp",
+            options
+        );
+
+        if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
+            std::cerr << "GaussFreqSplat: shaderc compile error: " << result.GetErrorMessage() << "\n";
+            continue;
+        }
+
+        std::vector<uint32_t> spirv(result.cbegin(), result.cend());
+        std::cout << "Compiled GLSL to SPIR-V at runtime from: " << path
+                  << " (" << spirv.size()*sizeof(uint32_t) << " bytes)\n";
+        return spirv;
+    }
+
+    std::cerr << "Failed to load or compile GaussFreqSplat.comp(.spv)\n";
     return {};
 }
 

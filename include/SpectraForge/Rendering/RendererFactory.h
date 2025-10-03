@@ -222,7 +222,7 @@ class RendererFactory {
      * @brief Получить информацию о GPU
      * @return Структура с информацией о GPU
      */
-    static struct GPUInfo {
+    struct GPUInfo {
         std::string vendor;
         std::string deviceName;
         size_t dedicatedMemory;
@@ -232,7 +232,9 @@ class RendererFactory {
         bool supportsDirectX12;
         bool supportsMetal;
         std::string driverVersion;
-    } getGPUInfo();
+    };
+
+    static GPUInfo getGPUInfo();
 
     /**
      * @brief Кэшированная информация о GPU

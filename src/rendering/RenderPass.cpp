@@ -41,45 +41,68 @@ vk::Pipeline RenderPassBase::createComputePipeline(
     vk::PipelineLayout layout)
 {
     vk::Device device = context.getDevice();
-    
-    // Create shader module
-    vk::ShaderModuleCreateInfo moduleInfo;
+    VkDevice rawDev = static_cast<VkDevice>(device);
+
+    // Create shader module (C API)
+    VkShaderModuleCreateInfo moduleInfo{};
+    moduleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     moduleInfo.codeSize = spirvCode.size() * sizeof(uint32_t);
-    moduleInfo.pCode = spirvCode.data();
-    
-    vk::ShaderModule shaderModule = device.createShaderModule(moduleInfo);
-    
-    // Create compute pipeline
-    vk::PipelineShaderStageCreateInfo stageInfo;
-    stageInfo.stage = vk::ShaderStageFlagBits::eCompute;
-    stageInfo.module = shaderModule;
-    stageInfo.pName = "main";
-    
-    vk::ComputePipelineCreateInfo pipelineInfo;
-    pipelineInfo.stage = stageInfo;
-    pipelineInfo.layout = layout;
-    
-    auto result = device.createComputePipeline(nullptr, pipelineInfo);
-    
-    // Cleanup shader module (no longer needed after pipeline creation)
-    device.destroyShaderModule(shaderModule);
-    
-    if (result.result != vk::Result::eSuccess) {
-        throw std::runtime_error("Failed to create compute pipeline for " + name_);
+    moduleInfo.pCode = reinterpret_cast<const uint32_t*>(spirvCode.data());
+    VkShaderModule rawModule = VK_NULL_HANDLE;
+    VkResult rm = vkCreateShaderModule(rawDev, &moduleInfo, nullptr, &rawModule);
+    if (rm != VK_SUCCESS) {
+        throw std::runtime_error("vkCreateShaderModule failed: " + std::to_string(rm));
     }
-    
-    return result.value;
+
+    // Create compute pipeline (C API)
+    VkPipelineShaderStageCreateInfo stageInfo{};
+    stageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    stageInfo.module = rawModule;
+    stageInfo.pName = "main";
+
+    VkComputePipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipelineInfo.stage = stageInfo;
+    pipelineInfo.layout = static_cast<VkPipelineLayout>(layout);
+
+    VkPipeline rawPipe = VK_NULL_HANDLE;
+    VkResult rp = vkCreateComputePipelines(rawDev, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &rawPipe);
+    // Destroy shader module
+    vkDestroyShaderModule(rawDev, rawModule, nullptr);
+    if (rp != VK_SUCCESS) {
+        throw std::runtime_error("vkCreateComputePipelines failed: " + std::to_string(rp));
+    }
+    return vk::Pipeline(rawPipe);
 }
 
 vk::DescriptorSetLayout RenderPassBase::createDescriptorSetLayout(
     const VulkanContext& context,
     const std::vector<vk::DescriptorSetLayoutBinding>& bindings)
 {
-    vk::DescriptorSetLayoutCreateInfo layoutInfo;
-    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-    layoutInfo.pBindings = bindings.data();
-    
-    return context.getDevice().createDescriptorSetLayout(layoutInfo);
+    vk::Device device = context.getDevice();
+    VkDevice rawDev = static_cast<VkDevice>(device);
+    std::vector<VkDescriptorSetLayoutBinding> cBindings;
+    cBindings.reserve(bindings.size());
+    for (const auto& b : bindings) {
+        VkDescriptorSetLayoutBinding cb{};
+        cb.binding = b.binding;
+        cb.descriptorType = static_cast<VkDescriptorType>(b.descriptorType);
+        cb.descriptorCount = b.descriptorCount;
+        cb.stageFlags = static_cast<VkShaderStageFlags>(b.stageFlags);
+        cb.pImmutableSamplers = nullptr;
+        cBindings.push_back(cb);
+    }
+    VkDescriptorSetLayoutCreateInfo ci{};
+    ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    ci.bindingCount = static_cast<uint32_t>(cBindings.size());
+    ci.pBindings = cBindings.data();
+    VkDescriptorSetLayout rawLayout = VK_NULL_HANDLE;
+    VkResult r = vkCreateDescriptorSetLayout(rawDev, &ci, nullptr, &rawLayout);
+    if (r != VK_SUCCESS) {
+        throw std::runtime_error("vkCreateDescriptorSetLayout failed: " + std::to_string(r));
+    }
+    return vk::DescriptorSetLayout(rawLayout);
 }
 
 void RenderPassBase::recordTimestamp(vk::CommandBuffer cmd, vk::PipelineStageFlagBits stage) {

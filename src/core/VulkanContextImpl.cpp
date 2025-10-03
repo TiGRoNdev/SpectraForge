@@ -9,6 +9,10 @@
  * @date 2025-10-02
  */
 
+#ifndef VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#endif
+#include <vulkan/vulkan.hpp>
 #include "SpectraForge/core/VulkanContext.h"
 #include "SpectraForge/core/VMAMemoryManager.h"
 #include <iostream>
@@ -16,6 +20,25 @@
 #include <map>
 #include <stdexcept>
 #include <vector>
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+#include <string>
+#include <cstring>
+#include <cstdlib>
+
+// Fallback defines for platform surface extension names when headers don't provide them
+#ifndef VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME
+#define VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME "VK_KHR_wayland_surface"
+#endif
+#ifndef VK_KHR_XCB_SURFACE_EXTENSION_NAME
+#define VK_KHR_XCB_SURFACE_EXTENSION_NAME "VK_KHR_xcb_surface"
+#endif
+#ifndef VK_KHR_XLIB_SURFACE_EXTENSION_NAME
+#define VK_KHR_XLIB_SURFACE_EXTENSION_NAME "VK_KHR_xlib_surface"
+#endif
+#ifndef VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+#define VK_KHR_WIN32_SURFACE_EXTENSION_NAME "VK_KHR_win32_surface"
+#endif
 
 namespace spectraforge {
 
@@ -234,6 +257,9 @@ public:
 
 private:
     void createInstance() {
+        // Инициализируем глобальные функции до любых вызовов vk::*
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
+
         vk::ApplicationInfo appInfo;
         appInfo.pApplicationName = "SpectraForge";
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -244,10 +270,30 @@ private:
         vk::InstanceCreateInfo createInfo;
         createInfo.pApplicationInfo = &appInfo;
         
-        // Extensions
+        // Extensions - используем GLFW для получения правильных расширений
         std::vector<const char*> extensions = {
             VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
         };
+
+        // Получаем требуемые расширения от GLFW (включает VK_KHR_surface и платформо-специфичные)
+        uint32_t glfwExtensionCount = 0;
+        const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+        
+        if (glfwExtensions && glfwExtensionCount > 0) {
+            for (uint32_t i = 0; i < glfwExtensionCount; ++i) {
+                extensions.push_back(glfwExtensions[i]);
+            }
+            std::cout << "GLFW предоставил " << glfwExtensionCount << " Vulkan расширений\n";
+        } else {
+            throw std::runtime_error(
+                "GLFW не смог предоставить расширения Vulkan! "
+                "Убедитесь, что:\n"
+                "  1) GLFW скомпилирован с поддержкой Vulkan\n"
+                "  2) Установлены драйверы Vulkan (пакет vulkan-loader или mesa-vulkan-drivers)\n"
+                "  3) Окно создано с GLFW_CLIENT_API = GLFW_NO_API\n"
+                "  4) glfwVulkanSupported() возвращает true"
+            );
+        }
         
         createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
         createInfo.ppEnabledExtensionNames = extensions.data();
@@ -267,8 +313,10 @@ private:
         }
         
         instance_ = vk::createInstance(createInfo);
-        
+
         std::cout << "Vulkan instance created (API 1.3)\n";
+        // Initialize dispatcher with instance
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(instance_);
     }
     
     void pickPhysicalDevice() {
@@ -327,19 +375,31 @@ private:
         }
         
         // Device features
-        vk::PhysicalDeviceFeatures deviceFeatures;
-        deviceFeatures.samplerAnisotropy = VK_TRUE;
-        deviceFeatures.geometryShader = VK_TRUE;
-        
+        vk::PhysicalDeviceFeatures supported = physicalDevice_.getFeatures();
+        vk::PhysicalDeviceFeatures deviceFeatures{};
+        deviceFeatures.samplerAnisotropy = supported.samplerAnisotropy;
+        deviceFeatures.geometryShader = supported.geometryShader;
+        // Enable extended storage image formats only if supported
+        deviceFeatures.shaderStorageImageExtendedFormats = supported.shaderStorageImageExtendedFormats;
+
+        // Query supported Vulkan 1.2 features (for shaderFloat16)
+        vk::PhysicalDeviceFeatures2 features2{};
+        vk::PhysicalDeviceVulkan12Features supported12{};
+        features2.pNext = &supported12;
+        physicalDevice_.getFeatures2(&features2);
+
         // Vulkan 1.3 features
         vk::PhysicalDeviceVulkan13Features features13;
         features13.synchronization2 = VK_TRUE;
         features13.dynamicRendering = VK_TRUE;
         
         // Vulkan 1.2 features
-        vk::PhysicalDeviceVulkan12Features features12;
+        vk::PhysicalDeviceVulkan12Features features12{};
         features12.bufferDeviceAddress = VK_TRUE;
         features12.descriptorIndexing = VK_TRUE;
+        // Enable fp16 arithmetic if supported to satisfy SPIR-V Capability Float16
+        features12.shaderFloat16 = supported12.shaderFloat16;
+        features12.shaderInt8 = supported12.shaderInt8;
         features13.pNext = &features12;
         
         // Device extensions
@@ -375,6 +435,8 @@ private:
         std::cout << "Logical device created\n";
         std::cout << "Graphics Queue Family: " << graphicsQueueFamily_ << "\n";
         std::cout << "Compute Queue Family: " << computeQueueFamily_ << "\n";
+        // Initialize dispatcher with device
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(device_);
     }
     
     void initializeVMA() {

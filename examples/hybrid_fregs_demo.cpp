@@ -138,6 +138,10 @@ public:
         fregsConfig.maxGaussians = 1024;
         
         fregsPass_ = std::make_unique<FreGSPass>(fregsConfig);
+        // Передаем выходы WaveletPass как вход FreGS
+        if (waveletPass_) {
+            fregsPass_->setInputSubbands(waveletPass_->getSubbands());
+        }
         
         if (!fregsPass_->initialize(*vulkanContext_)) {
             std::cerr << "Failed to initialize FreGSPass\n";
@@ -147,10 +151,14 @@ public:
         // 4. Initialize Upscaler (if enabled)
         if (config_.enableUpscaling) {
             std::cout << "Initializing Upscaler (auto-detect)...\n";
-            upscaler_ = UpscalerFactory::create(
-                UpscalerType::AUTO,
-                gpuVendorId_
-            );
+            UpscalerConfig autoCfg;
+            autoCfg.type = UpscalerType::AUTO;
+            autoCfg.inputWidth = config_.renderWidth;
+            autoCfg.inputHeight = config_.renderHeight;
+            autoCfg.outputWidth = config_.displayWidth;
+            autoCfg.outputHeight = config_.displayHeight;
+            autoCfg.quality = config_.upscaleQuality;
+            upscaler_ = UpscalerFactory::create(autoCfg, gpuVendorId_);
             
             if (!upscaler_) {
                 std::cerr << "Failed to create upscaler\n";
@@ -168,7 +176,12 @@ public:
             if (!upscaler_->initialize(*vulkanContext_, upscaleConfig)) {
                 std::cerr << "Failed to initialize upscaler, falling back to Native\n";
                 // Fallback to Native upscaler
-                upscaler_ = UpscalerFactory::create(UpscalerType::NONE, gpuVendorId_);
+                UpscalerConfig noneCfg; noneCfg.type = UpscalerType::NONE;
+                noneCfg.inputWidth = config_.renderWidth;
+                noneCfg.inputHeight = config_.renderHeight;
+                noneCfg.outputWidth = config_.displayWidth;
+                noneCfg.outputHeight = config_.displayHeight;
+                upscaler_ = UpscalerFactory::create(noneCfg, gpuVendorId_);
                 if (!upscaler_->initialize(*vulkanContext_, upscaleConfig)) {
                     std::cerr << "Failed to initialize Native upscaler\n";
                     return false;
@@ -237,10 +250,8 @@ public:
             waveletPass_.reset();
         }
         
-        if (vulkanContext_) {
-            vulkanContext_->cleanup();
-            vulkanContext_.reset();
-        }
+        // VulkanContext освобождается через unique_ptr
+        vulkanContext_.reset();
         
         std::cout << "✅ Cleanup complete.\n";
     }

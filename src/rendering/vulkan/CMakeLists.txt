@@ -10,6 +10,9 @@ add_library(SpectraForge_Vulkan STATIC
     ResourceManager.cpp
     SceneManager.cpp
     HardwareDetector.cpp
+    ${CMAKE_SOURCE_DIR}/src/rendering/WaveletPass.cpp
+    ${CMAKE_SOURCE_DIR}/src/rendering/FreGSPass.cpp
+    ${CMAKE_SOURCE_DIR}/src/rendering/HybridFreGSRenderer.cpp
 )
 
 # Устанавливаем стандарт C++

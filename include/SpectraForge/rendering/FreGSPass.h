@@ -85,6 +85,7 @@ public:
      * @brief Get output accumulator image
      */
     vk::ImageView getOutputView() const { return outputView_; }
+    vk::Image getOutputImage() const { return outputImage_; }
 
 private:
     /**

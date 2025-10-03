@@ -32,6 +32,30 @@ set(RENDERING_TEST_LIBS
     SpectraForge_Math
     SpectraForge_Core
 )
+# App facade unit-test
+if(GMOCK_FOUND)
+    set(APP_ENGINE_TEST_LIBS ${RENDERING_TEST_LIBS} SpectraForge_App)
+    
+    # Добавляем Vulkan если доступен (нужен для SceneManager и HybridFreGSRenderer)
+    if(TARGET SpectraForge_Vulkan)
+        list(APPEND APP_ENGINE_TEST_LIBS SpectraForge_Vulkan VulkanRenderer)
+    endif()
+    
+    # Добавляем GLFW (нужен для Window)
+    if(TARGET glfw)
+        list(APPEND APP_ENGINE_TEST_LIBS glfw)
+    endif()
+    
+    add_unit_test(app_engine_test
+        SOURCES
+            app/AppEngineTest.cpp
+        LIBS
+            ${APP_ENGINE_TEST_LIBS}
+    )
+    list(APPEND ALL_UNIT_TESTS app_engine_test)
+else()
+    message(STATUS "Пропуск app_engine_test - требуется GMock")
+endif()
 
 # Добавляем OpenGL только если он включен
 if(TARGET SpectraForge_OpenGL)
@@ -192,3 +216,15 @@ set(ALL_UNIT_TESTS
     ${ALL_UNIT_TESTS}  # Включаем условные тесты (rendering_tests, optix_tests, new P0 tests)
     PARENT_SCOPE
 )
+
+# Shader runtime compile test (uses shaderc if available)
+find_package(unofficial-shaderc CONFIG QUIET)
+if(TARGET unofficial::shaderc::shaderc)
+    add_unit_test(shader_runtime_compile_test
+        SOURCES
+            vulkan/ShaderRuntimeCompileTest.cpp
+        LIBS
+            unofficial::shaderc::shaderc
+    )
+    list(APPEND ALL_UNIT_TESTS shader_runtime_compile_test)
+endif()

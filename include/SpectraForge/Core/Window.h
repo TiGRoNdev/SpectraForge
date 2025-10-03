@@ -67,7 +67,7 @@ class Window {
      * @brief Конструктор окна
      * @param config Конфигурация окна
      */
-    explicit Window(const Config& config = Config{});
+    explicit Window(const Config& config);
 
     /**
      * @brief Деструктор
@@ -346,6 +346,11 @@ class Window {
      * @brief Получить размер основного монитора
      */
     static Math::Vector2 getPrimaryMonitorSize();
+
+    /**
+     * @brief Получить последнее созданное окно (для Vulkan surface)
+     */
+    static GLFWwindow* getLastCreatedWindow();
 
   private:
     Config config;           ///< Конфигурация окна

@@ -106,6 +106,23 @@
 - **⏱️ Temporal Reprojection** - стабильность и плавность кадра
 - **🧠 Neural Upscaling** - DLSS/FSR2 интеграция
 
+### ⚠️ Important: Vulkan Setup (Linux)
+
+**На Linux необходимо использовать системный Vulkan loader:**
+
+```bash
+# Запуск с системным Vulkan (рекомендуется)
+./run_with_system_vulkan.sh ./build/SpectraForge_Example_Demo
+
+# Или установить переменную окружения перед запуском
+export LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH"
+```
+
+**Причина**: vcpkg версия libvulkan не имеет доступа к системным драйверам GPU.  
+**Подробности**: См. `docs/guides/RuntimeErrorFixes.md`
+
+---
+
 ### 🚀 Быстрый старт FreqVox Sponza Demo
 
 ```bash

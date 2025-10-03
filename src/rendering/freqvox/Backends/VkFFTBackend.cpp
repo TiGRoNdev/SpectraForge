@@ -35,7 +35,7 @@ VkFFTBackend::~VkFFTBackend() {
     shutdown();
 }
 
-bool VkFFTBackend::initialize(const DctBlockConfig& config) {
+bool VkFFTBackend::initialize([[maybe_unused]] const DctBlockConfig& config) {
 #ifndef HYPERENGINE_USE_VKFFT
     SAFE_ERROR("[VkFFTBackend] VkFFT недоступен - требуется HYPERENGINE_USE_VKFFT в сборке");
     return false;

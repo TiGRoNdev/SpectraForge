@@ -783,11 +783,32 @@ if(BUILD_VULKAN_RENDERER)
             SpectraForge
         )
 
+    # SpectraForge Example Demo (App::Engine высокоуровневый фасад)
+    add_executable(SpectraForge_Example_Demo
+        examples/SpectraForge_Example_Demo.cpp
+    )
+    target_link_libraries(SpectraForge_Example_Demo PRIVATE
+        SpectraForge_App
+        SpectraForge_Vulkan
+        VulkanRenderer
+        SpectraForge
+        SpectraForge_Core
+    )
+
         # Добавляем CUDA библиотеки к VulkanBasic_Demo если CUDA доступна
         if(CUDA_AVAILABLE OR CUDA_RUNTIME_ONLY OR USING_COMPILED_CUDA_OBJECTS OR USING_COMPILED_CUDA_LIBRARY)
             target_link_libraries(VulkanBasic_Demo PRIVATE CUDA::cudart CUDA::cuda_driver)
             message(STATUS "VulkanBasic_Demo: добавлены CUDA библиотеки")
         endif()
+
+        # Hybrid DWT + FreGS Demo
+        add_executable(HybridFreGS_Demo
+            examples/hybrid_fregs_demo.cpp
+        )
+        target_link_libraries(HybridFreGS_Demo PRIVATE
+            SpectraForge
+            VulkanRenderer
+        )
 
         # CUDA-Vulkan Interop Demo (требует CUDA)
         if(CUDA_AVAILABLE OR CUDA_RUNTIME_ONLY)

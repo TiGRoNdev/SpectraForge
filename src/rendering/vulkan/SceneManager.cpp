@@ -81,6 +81,11 @@ bool SceneManager::loadScene(const SceneData& data) {
         // Очищаем предыдущую сцену
         clearScene();
 
+        // Если задан путь сцены, добавляем как основной объект (Sponza)
+        if (!data.scenePath.empty()) {
+            addObject(data.scenePath);
+        }
+
         // Загружаем меши
         if (!loadMeshes(data.meshPaths)) {
             SAFE_ERROR("[SceneManager] Ошибка загрузки мешей");
