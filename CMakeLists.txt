@@ -393,16 +393,16 @@ if(BUILD_ENGINE_3D)
         )
         target_link_libraries(OptimalRenderer_Demo PRIVATE SpectraForge)
 
-        # FreqVox Renderer демо (если включен)
+        # FreqVox Renderer демо (если включен) - LEGACY
         if(ENABLE_FREQVOX AND TARGET SpectraForge_FreqVox)
             add_executable(FreqVox_Demo
-                examples/freqvox_demo.cpp
+                examples/legacy/freqvox_demo.cpp
             )
             target_link_libraries(FreqVox_Demo PRIVATE SpectraForge SpectraForge_FreqVox)
 
             # FreqVox Sponza - полнофункциональное демо с загрузкой сцены
             add_executable(FreqVox_Sponza_Demo
-                examples/freqvox_sponza_demo.cpp
+                examples/legacy/freqvox_sponza_demo.cpp
             )
             target_link_libraries(FreqVox_Sponza_Demo PRIVATE 
                 SpectraForge 
@@ -804,9 +804,9 @@ if(BUILD_VULKAN_RENDERER)
             # Настройка CUDA для demo
             target_compile_definitions(CudaVulkanInterop_Demo PRIVATE CUDA_VULKAN_INTEROP_SUPPORTED=1)
 
-            # External Memory Test - тест реальных external memory handles
+            # External Memory Test - тест реальных external memory handles - LEGACY
             add_executable(ExternalMemory_Test
-                examples/test_external_memory.cpp
+                examples/legacy/test_external_memory.cpp
             )
             target_link_libraries(ExternalMemory_Test PRIVATE
                 VulkanRenderer

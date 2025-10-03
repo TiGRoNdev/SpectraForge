@@ -20,13 +20,17 @@
 #include <string>
 
 namespace spectraforge {
+
+// Forward declaration from parent namespace
+class VulkanContext;
+
 namespace rendering {
 
 /**
  * @brief Forward declarations
  */
-class VulkanContext;
 class ResourceManager;
+// VulkanContext is in parent namespace spectraforge
 
 /**
  * @brief Execution statistics for performance monitoring

@@ -13,6 +13,7 @@
 #include "SpectraForge/core/VMAMemoryManager.h"
 #include <iostream>
 #include <set>
+#include <map>
 #include <stdexcept>
 #include <vector>
 

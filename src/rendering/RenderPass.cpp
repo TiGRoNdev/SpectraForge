@@ -9,6 +9,7 @@
  */
 
 #include "SpectraForge/rendering/RenderPass.h"
+#include "SpectraForge/core/VulkanContext.h"
 #include <fstream>
 #include <stdexcept>
 #include <iostream>
