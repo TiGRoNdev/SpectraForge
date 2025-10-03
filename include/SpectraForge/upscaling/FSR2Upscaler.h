@@ -97,7 +97,7 @@ public:
     ~FSR2Upscaler() override;
 
     // IUpscaler interface
-    bool initialize(const core::VulkanContext& context,
+    bool initialize(const VulkanContext& context,
                    const UpscaleConfig& config) override;
     
     void execute(vk::CommandBuffer cmd, const UpscaleResources& resources,
@@ -150,7 +150,7 @@ private:
     /**
      * @brief Initialize FSR2 context
      */
-    bool initializeFSR2Context(const core::VulkanContext& context);
+    bool initializeFSR2Context(const VulkanContext& context);
 
     /**
      * @brief Create FSR2 dispatch description

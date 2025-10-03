@@ -88,7 +88,7 @@ public:
     ~DLSSUpscaler() override;
 
     // IUpscaler interface
-    bool initialize(const core::VulkanContext& context,
+    bool initialize(const VulkanContext& context,
                    const UpscaleConfig& config) override;
     
     void execute(vk::CommandBuffer cmd, const UpscaleResources& resources,
@@ -134,7 +134,7 @@ private:
     /**
      * @brief Initialize NVIDIA Streamline
      */
-    bool initializeStreamline(const core::VulkanContext& context);
+    bool initializeStreamline(const VulkanContext& context);
 
     /**
      * @brief Create DLSS feature

@@ -42,7 +42,7 @@ NullUpscaler::NullUpscaler()
 }
 
 bool NullUpscaler::initialize(
-    const core::VulkanContext& context,
+    const VulkanContext& context,
     const UpscaleConfig& config)
 {
     (void)context;

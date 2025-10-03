@@ -22,9 +22,7 @@
 namespace spectraforge {
 
 // Forward declaration
-namespace core {
-    class VulkanContext;
-}
+class VulkanContext;
 
 namespace upscaling {
 
@@ -75,7 +73,7 @@ public:
     /**
      * @brief Initialize upscaler
      */
-    virtual bool initialize(const core::VulkanContext& context,
+    virtual bool initialize(const VulkanContext& context,
                            const UpscaleConfig& config) = 0;
 
     /**
@@ -147,7 +145,7 @@ class NullUpscaler : public UpscalerBase {
 public:
     NullUpscaler();
     
-    bool initialize(const core::VulkanContext& context,
+    bool initialize(const VulkanContext& context,
                    const UpscaleConfig& config) override;
     void execute(vk::CommandBuffer cmd, const UpscaleResources& resources,
                 uint32_t frameIndex, float jitterX, float jitterY) override;

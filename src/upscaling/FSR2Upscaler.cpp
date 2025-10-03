@@ -39,7 +39,7 @@ FSR2Upscaler::~FSR2Upscaler() {
 }
 
 bool FSR2Upscaler::initialize(
-    const core::VulkanContext& context,
+    const VulkanContext& context,
     const UpscaleConfig& config)
 {
 #ifndef SPECTRAFORGE_FSR2_AVAILABLE
@@ -291,7 +291,7 @@ const char* FSR2Upscaler::getVendorName(uint32_t vendorID) {
 // Private Implementation Functions
 // ============================================================================
 
-bool FSR2Upscaler::initializeFSR2Context(const core::VulkanContext& context) {
+bool FSR2Upscaler::initializeFSR2Context(const VulkanContext& context) {
 #ifdef SPECTRAFORGE_FSR2_AVAILABLE
     // TODO: Initialize FSR2 context
     // This involves:

@@ -39,7 +39,7 @@ DLSSUpscaler::~DLSSUpscaler() {
 }
 
 bool DLSSUpscaler::initialize(
-    const core::VulkanContext& context,
+    const VulkanContext& context,
     const UpscaleConfig& config)
 {
 #ifndef SPECTRAFORGE_DLSS_AVAILABLE
@@ -272,7 +272,7 @@ void DLSSUpscaler::getOptimalResolution(
 // Private Implementation Functions
 // ============================================================================
 
-bool DLSSUpscaler::initializeStreamline(const core::VulkanContext& context) {
+bool DLSSUpscaler::initializeStreamline(const VulkanContext& context) {
 #ifdef SPECTRAFORGE_DLSS_AVAILABLE
     // TODO: Initialize Streamline SDK
     // This involves:

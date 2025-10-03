@@ -19,7 +19,7 @@ NativeUpscaler::NativeUpscaler()
 }
 
 bool NativeUpscaler::initialize(
-    const core::VulkanContext& context,
+    const VulkanContext& context,
     const UpscaleConfig& config)
 {
     device_ = context.getDevice();
