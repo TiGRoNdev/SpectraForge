@@ -525,6 +525,10 @@ std::vector<uint32_t> FreGSPass::loadShaderSPIRV() const {
     return {};
 }
 
+void FreGSPass::updateViewProjection(const glm::mat4& viewProj) {
+    pushConstants_.viewProj = viewProj;
+}
+
 } // namespace rendering
 } // namespace spectraforge
 

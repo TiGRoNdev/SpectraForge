@@ -15,7 +15,7 @@
 #include "SpectraForge/Core/SafeConsole.h"
 #ifdef VULKAN_RENDERER_OPTIX_SUPPORT
 #include "SpectraForge/OptiX/DenoiseModule.h"
-#include "SpectraForge/OptiX/OptiXRayTracer.h"
+// #include "SpectraForge/OptiX/OptiXRayTracer.h" // Временно отключено - CUDA не установлена
 #endif
 #include "SpectraForge/Upscaling/Upscaler.h"
 #include "SpectraForge/Vulkan/ResourceManager.h"
@@ -91,7 +91,7 @@ void VulkanRenderer::shutdown() {
     upscaler.reset();
 #ifdef VULKAN_RENDERER_OPTIX_SUPPORT
     denoiseModule.reset();
-    rayTracer.reset();
+    // rayTracer.reset(); // Временно отключено - CUDA не доступна
 #endif
 #ifdef CUDA_VULKAN_INTEROP_SUPPORTED
     splatter.reset();

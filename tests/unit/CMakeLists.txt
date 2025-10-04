@@ -156,6 +156,10 @@ if(TARGET CUDA::cudart)
             CUDA::cuda_driver
             glm::glm
     )
+    # GLFW нужен из-за использования SpectraForge_Core (VulkanContextImpl → glfw*)
+    if(TARGET glfw)
+        target_link_libraries(optix_tests PRIVATE glfw)
+    endif()
     list(APPEND ALL_UNIT_TESTS optix_tests)
     
     # NEW P0: FlashGSSplatter unit tests (CRITICAL for 80% coverage)

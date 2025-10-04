@@ -192,7 +192,7 @@ class VulkanRenderer {
     std::unique_ptr<SpectraForge::CUDA::FlashGSSplatter> splatter;
 #endif
 #ifdef VULKAN_RENDERER_OPTIX_SUPPORT
-    std::unique_ptr<SpectraForge::OptiX::OptiXRayTracer> rayTracer;
+    // std::unique_ptr<SpectraForge::OptiX::OptiXRayTracer> rayTracer; // Временно отключено - CUDA не доступна
     std::unique_ptr<SpectraForge::OptiX::DenoiseModule> denoiseModule;
 #endif
     std::unique_ptr<SpectraForge::Upscaling::Upscaler> upscaler;

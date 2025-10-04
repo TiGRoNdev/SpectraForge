@@ -1,0 +1,233 @@
+#version 450
+
+/**
+ * @file BitonicSort.comp
+ * @brief GPU Bitonic Merge Sort для Triangle Splatting depth sorting
+ * 
+ * Основано на:
+ * - https://poniesandlight.co.uk/reflect/bitonic_merge_sort/
+ * - Bitonic sorting network (alternative representation)
+ * 
+ * Сортирует треугольники по глубине (front-to-back) для корректного alpha blending.
+ */
+
+// === Configuration ===
+#define LOCAL_SIZE_X 256  // Threads per workgroup (power of 2)
+
+layout(local_size_x = LOCAL_SIZE_X, local_size_y = 1, local_size_z = 1) in;
+
+// === Algorithm variants ===
+#define ALGORITHM_LOCAL_BMS      0  // Local bitonic merge sort (up to LOCAL_SIZE_X * 2 elements)
+#define ALGORITHM_LOCAL_DISPERSE 1  // Local disperse (operates on local memory)
+#define ALGORITHM_BIG_FLIP       2  // Big flip (operates on global memory)
+#define ALGORITHM_BIG_DISPERSE   3  // Big disperse (operates on global memory)
+
+// === Buffers ===
+
+// Sort key buffer (depth values from camera)
+layout(set = 0, binding = 0) buffer SortKeys {
+    float keys[];  // depth[i] = distance from camera to triangle[i]
+};
+
+// Index buffer (contains triangle indices)
+layout(set = 0, binding = 1) buffer SortIndices {
+    uint indices[];  // indices[i] = original triangle index
+};
+
+// === Push Constants ===
+layout(push_constant) uniform PushConstants {
+    uint h;           // Height parameter for current sorting step
+    uint algorithm;   // Algorithm variant to execute (0-3)
+    uint numElements; // Total number of elements to sort
+} pushConstants;
+
+// === Shared Memory (workgroup local) ===
+// Используем для минимизации обращений к global memory
+shared float local_keys[LOCAL_SIZE_X * 2];
+shared uint local_indices[LOCAL_SIZE_X * 2];
+
+// === Helper Functions ===
+
+/**
+ * @brief Compare-and-swap для local memory (shared)
+ */
+void local_compare_and_swap(ivec2 idx) {
+    // Front-to-back sorting: меньшая глубина должна быть первой
+    if (local_keys[idx.x] > local_keys[idx.y]) {
+        // Swap keys
+        float tmpKey = local_keys[idx.x];
+        local_keys[idx.x] = local_keys[idx.y];
+        local_keys[idx.y] = tmpKey;
+        
+        // Swap indices
+        uint tmpIdx = local_indices[idx.x];
+        local_indices[idx.x] = local_indices[idx.y];
+        local_indices[idx.y] = tmpIdx;
+    }
+}
+
+/**
+ * @brief Compare-and-swap для global memory
+ */
+void global_compare_and_swap(ivec2 idx) {
+    // Bounds check
+    if (idx.x >= pushConstants.numElements || idx.y >= pushConstants.numElements) {
+        return;
+    }
+    
+    // Front-to-back sorting: меньшая глубина должна быть первой
+    if (keys[idx.x] > keys[idx.y]) {
+        // Swap keys
+        float tmpKey = keys[idx.x];
+        keys[idx.x] = keys[idx.y];
+        keys[idx.y] = tmpKey;
+        
+        // Swap indices
+        uint tmpIdx = indices[idx.x];
+        indices[idx.x] = indices[idx.y];
+        indices[idx.y] = tmpIdx;
+    }
+}
+
+/**
+ * @brief Big flip operation (global memory, full height h)
+ */
+void big_flip(uint h) {
+    uint t_prime = gl_GlobalInvocationID.x;
+    
+    if (t_prime >= pushConstants.numElements / 2) {
+        return;
+    }
+    
+    uint half_h = h >> 1;  // h / 2
+    uint q = ((2 * t_prime) / h) * h;
+    uint x = q + (t_prime % half_h);
+    uint y = q + h - (t_prime % half_h) - 1;
+    
+    global_compare_and_swap(ivec2(x, y));
+}
+
+/**
+ * @brief Big disperse operation (global memory, full height h)
+ */
+void big_disperse(uint h) {
+    uint t_prime = gl_GlobalInvocationID.x;
+    
+    if (t_prime >= pushConstants.numElements / 2) {
+        return;
+    }
+    
+    uint half_h = h >> 1;  // h / 2
+    uint q = ((2 * t_prime) / h) * h;
+    uint x = q + (t_prime % half_h);
+    uint y = q + (t_prime % half_h) + half_h;
+    
+    global_compare_and_swap(ivec2(x, y));
+}
+
+/**
+ * @brief Local flip operation (local memory, height h)
+ */
+void local_flip(uint h) {
+    uint t = gl_LocalInvocationID.x;
+    
+    barrier();
+    
+    uint half_h = h >> 1;  // h / 2
+    ivec2 indices = ivec2(h * ((2 * t) / h)) + ivec2(t % half_h, h - 1 - (t % half_h));
+    
+    local_compare_and_swap(indices);
+}
+
+/**
+ * @brief Local disperse operations (local memory, cascading from h down to 2)
+ */
+void local_disperse(uint h) {
+    uint t = gl_LocalInvocationID.x;
+    
+    for (; h > 1; h /= 2) {
+        barrier();
+        
+        uint half_h = h >> 1;  // h / 2
+        ivec2 indices = ivec2(h * ((2 * t) / h)) + ivec2(t % half_h, half_h + (t % half_h));
+        
+        local_compare_and_swap(indices);
+    }
+}
+
+/**
+ * @brief Local bitonic merge sort (local memory, up to h elements)
+ */
+void local_bms(uint h) {
+    uint t = gl_LocalInvocationID.x;
+    
+    for (uint hh = 2; hh <= h; hh <<= 1) {  // hh *= 2
+        local_flip(hh);
+        local_disperse(hh / 2);
+    }
+}
+
+// === Main Compute Shader ===
+
+void main() {
+    uint t = gl_LocalInvocationID.x;
+    
+    // Calculate global offset for this workgroup
+    uint offset = gl_WorkGroupSize.x * 2 * gl_WorkGroupID.x;
+    
+    // === Execute selected algorithm ===
+    
+    if (pushConstants.algorithm <= ALGORITHM_LOCAL_DISPERSE) {
+        // Local algorithms: populate local memory from global
+        if (offset + t * 2 < pushConstants.numElements) {
+            local_keys[t * 2] = keys[offset + t * 2];
+            local_indices[t * 2] = indices[offset + t * 2];
+        } else {
+            local_keys[t * 2] = 1e10;  // Far depth for padding
+            local_indices[t * 2] = 0;
+        }
+        
+        if (offset + t * 2 + 1 < pushConstants.numElements) {
+            local_keys[t * 2 + 1] = keys[offset + t * 2 + 1];
+            local_indices[t * 2 + 1] = indices[offset + t * 2 + 1];
+        } else {
+            local_keys[t * 2 + 1] = 1e10;  // Far depth for padding
+            local_indices[t * 2 + 1] = 0;
+        }
+    }
+    
+    // Switch по algorithm type
+    switch (pushConstants.algorithm) {
+        case ALGORITHM_LOCAL_BMS:
+            local_bms(pushConstants.h);
+            break;
+            
+        case ALGORITHM_LOCAL_DISPERSE:
+            local_disperse(pushConstants.h);
+            break;
+            
+        case ALGORITHM_BIG_FLIP:
+            big_flip(pushConstants.h);
+            break;
+            
+        case ALGORITHM_BIG_DISPERSE:
+            big_disperse(pushConstants.h);
+            break;
+    }
+    
+    // Write local memory back to global (for local algorithms)
+    if (pushConstants.algorithm <= ALGORITHM_LOCAL_DISPERSE) {
+        barrier();
+        
+        if (offset + t * 2 < pushConstants.numElements) {
+            keys[offset + t * 2] = local_keys[t * 2];
+            indices[offset + t * 2] = local_indices[t * 2];
+        }
+        
+        if (offset + t * 2 + 1 < pushConstants.numElements) {
+            keys[offset + t * 2 + 1] = local_keys[t * 2 + 1];
+            indices[offset + t * 2 + 1] = local_indices[t * 2 + 1];
+        }
+    }
+}
+

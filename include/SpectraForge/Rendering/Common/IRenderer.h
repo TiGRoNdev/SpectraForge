@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <glm/glm.hpp>
 #include "SpectraForge/Math/Vector3.h"
 
 namespace SpectraForge::Rendering {
@@ -136,6 +137,8 @@ struct FrameData {
         float fov = 60.0f;                ///< Поле зрения в градусах
         float nearPlane = 0.1f;           ///< Ближняя плоскость отсечения
         float farPlane = 1000.0f;         ///< Дальняя плоскость отсечения
+        glm::mat4 viewMatrix{1.0f};       ///< View matrix (опционально, можно вычислить из position/target/up)
+        glm::mat4 projectionMatrix{1.0f}; ///< Projection matrix (опционально, вычисляется из fov/aspect/near/far)
     } camera;
 
     struct {

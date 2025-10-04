@@ -206,26 +206,62 @@ public:
     
     void cleanup() {
         if (!initialized_) {
+            std::cout << "[VulkanContext] ℹ️ Уже очищено, пропускаем\n";
             return;
         }
-        
-        // Cleanup VMA first
-        core::VMAMemoryManager::getInstance().cleanup();
-        
+
+        std::cout << "[VulkanContext] 🔄 Начинаем очистку ресурсов...\n";
+
+        // КРИТИЧНО: Ожидаем завершения всех операций GPU перед уничтожением ресурсов
+        if (device_) {
+            std::cout << "[VulkanContext] ⏳ Синхронизация с GPU (ожидание до 5 сек)...\n";
+            try {
+                auto startTime = std::chrono::steady_clock::now();
+                device_.waitIdle();
+                auto endTime = std::chrono::steady_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+                std::cout << "[VulkanContext] ✅ GPU синхронизирован за " << duration.count() << " мс\n";
+            } catch (const std::exception& e) {
+                std::cerr << "[VulkanContext] ❌ Ошибка при синхронизации с GPU: " << e.what() << "\n";
+                std::cerr << "[VulkanContext] ⚠️ Продолжаем очистку несмотря на ошибку синхронизации\n";
+            }
+        }
+
+        // Cleanup VMA first (может содержать GPU ресурсы)
+        std::cout << "[VulkanContext] 🧹 Очистка VMA memory manager...\n";
+        try {
+            core::VMAMemoryManager::getInstance().cleanup();
+            std::cout << "[VulkanContext] ✅ VMA очищен\n";
+        } catch (const std::exception& e) {
+            std::cerr << "[VulkanContext] ❌ Ошибка при очистке VMA: " << e.what() << "\n";
+        }
+
         // Destroy logical device
         if (device_) {
-            device_.destroy();
-            device_ = nullptr;
+            std::cout << "[VulkanContext] 🗑️ Уничтожение логического устройства...\n";
+            try {
+                device_.destroy();
+                device_ = nullptr;
+                std::cout << "[VulkanContext] ✅ Логическое устройство уничтожено\n";
+            } catch (const std::exception& e) {
+                std::cerr << "[VulkanContext] ❌ Ошибка при уничтожении устройства: " << e.what() << "\n";
+            }
         }
-        
-        // Destroy instance
+
+        // Destroy instance (последний шаг)
         if (instance_) {
-            instance_.destroy();
-            instance_ = nullptr;
+            std::cout << "[VulkanContext] 🗑️ Уничтожение экземпляра Vulkan...\n";
+            try {
+                instance_.destroy();
+                instance_ = nullptr;
+                std::cout << "[VulkanContext] ✅ Экземпляр Vulkan уничтожен\n";
+            } catch (const std::exception& e) {
+                std::cerr << "[VulkanContext] ❌ Ошибка при уничтожении экземпляра: " << e.what() << "\n";
+            }
         }
-        
+
         initialized_ = false;
-        std::cout << "VulkanContext cleaned up\n";
+        std::cout << "[VulkanContext] ✅ Очистка завершена успешно\n";
     }
     
     // Interface implementation
@@ -276,22 +312,51 @@ private:
         };
 
         // Получаем требуемые расширения от GLFW (включает VK_KHR_surface и платформо-специфичные)
+        std::cout << "[VulkanContext] 🔍 Запрос расширений Vulkan от GLFW..." << std::endl;
+        
+        // КРИТИЧЕСКИ ВАЖНО: проверяем, что GLFW был инициализирован
+        if (!glfwInit()) {
+            throw std::runtime_error(
+                "GLFW не инициализирован! Вызовите glfwInit() перед созданием VulkanContext."
+            );
+        }
+        
+        // Проверяем поддержку Vulkan
+        std::cout << "[VulkanContext] 🔍 Проверка glfwVulkanSupported()..." << std::endl;
+        if (!glfwVulkanSupported()) {
+            throw std::runtime_error(
+                "glfwVulkanSupported() вернул FALSE!\n"
+                "  Возможные причины:\n"
+                "  1) Vulkan loader не установлен (libvulkan1, mesa-vulkan-drivers)\n"
+                "  2) Драйверы GPU не поддерживают Vulkan\n"
+                "  3) GLFW скомпилирован без поддержки Vulkan\n\n"
+                "  Установите: sudo apt install libvulkan1 mesa-vulkan-drivers vulkan-tools\n"
+                "  Проверка: vulkaninfo"
+            );
+        }
+        std::cout << "[VulkanContext] ✅ glfwVulkanSupported() = TRUE" << std::endl;
+        
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
         
         if (glfwExtensions && glfwExtensionCount > 0) {
+            std::cout << "[VulkanContext] ✅ GLFW предоставил " << glfwExtensionCount << " Vulkan расширений:" << std::endl;
             for (uint32_t i = 0; i < glfwExtensionCount; ++i) {
                 extensions.push_back(glfwExtensions[i]);
+                std::cout << "    - " << glfwExtensions[i] << std::endl;
             }
-            std::cout << "GLFW предоставил " << glfwExtensionCount << " Vulkan расширений\n";
         } else {
             throw std::runtime_error(
-                "GLFW не смог предоставить расширения Vulkan! "
-                "Убедитесь, что:\n"
-                "  1) GLFW скомпилирован с поддержкой Vulkan\n"
-                "  2) Установлены драйверы Vulkan (пакет vulkan-loader или mesa-vulkan-drivers)\n"
-                "  3) Окно создано с GLFW_CLIENT_API = GLFW_NO_API\n"
-                "  4) glfwVulkanSupported() возвращает true"
+                "glfwGetRequiredInstanceExtensions() вернул NULL!\n"
+                "  Это критическая ошибка GLFW-Vulkan интеграции.\n"
+                "  Убедитесь, что:\n"
+                "  1) GLFW инициализирован через glfwInit()\n"
+                "  2) glfwVulkanSupported() возвращает TRUE\n"
+                "  3) Окно (если создано) использует GLFW_CLIENT_API = GLFW_NO_API\n"
+                "  4) Установлены Vulkan драйверы и loader\n\n"
+                "  Текущий статус:\n"
+                "    glfwVulkanSupported() = " + 
+                std::string(glfwVulkanSupported() ? "TRUE" : "FALSE")
             );
         }
         

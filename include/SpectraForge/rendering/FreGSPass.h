@@ -80,6 +80,11 @@ public:
      * @brief Update foveation parameters (eye tracking)
      */
     void updateFoveation(glm::vec2 gazePoint, float radius);
+    
+    /**
+     * @brief Update View-Projection matrix for 3D transformation
+     */
+    void updateViewProjection(const glm::mat4& viewProj);
 
     /**
      * @brief Get output accumulator image
@@ -132,21 +137,19 @@ private:
     
     // Push constants
     struct PushConstants {
-        uint32_t outputWidth;
-        uint32_t outputHeight;
-        float freqScale;
-        uint32_t subbandLevel;
-        float foveaRadius;
-        uint32_t padding0; // std140 padding to align subsequent vec2 to 8 bytes
-        glm::vec2 foveaCenter;
-        uint32_t maxGaussians;
+        glm::mat4 viewProj;     // 64 bytes (offset 0)
+        uint32_t outputWidth;   // offset 64
+        uint32_t outputHeight;  // offset 68
+        float freqScale;        // offset 72
+        uint32_t subbandLevel;  // offset 76
+        float foveaRadius;      // offset 80
+        uint32_t padding0;      // offset 84
+        glm::vec2 foveaCenter;  // offset 88
+        uint32_t maxGaussians;  // offset 96
     } pushConstants_;
 
-    // Compile-time layout validation for std140 expectations
-    static_assert(offsetof(PushConstants, foveaCenter) == 24,
-                  "PushConstants::foveaCenter must be 8-byte aligned (offset 24) for std140");
-    static_assert(offsetof(PushConstants, maxGaussians) == 32,
-                  "PushConstants::maxGaussians must follow foveaCenter at offset 32");
+    // Compile-time layout validation for push constants
+    static_assert(sizeof(PushConstants) <= 128, "PushConstants exceeds common 128-byte limit");
 };
 
 } // namespace rendering

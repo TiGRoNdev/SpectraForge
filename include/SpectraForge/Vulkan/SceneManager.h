@@ -20,6 +20,11 @@ struct SceneData {
     std::string scenePath;
     std::vector<std::string> meshPaths;
     std::vector<std::string> texturePaths;
+
+    // ВРЕМЕННО: Параметр для уменьшения количества треугольников для стабилизации производительности
+    // step = 1: все треугольники, step = 5000: каждый 5000-й треугольник
+    size_t triangleStep = 1;
+
     // TODO: Добавить больше данных сцены
 };
 

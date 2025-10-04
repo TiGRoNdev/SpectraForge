@@ -136,9 +136,12 @@ class VulkanDemo {
 
             if (totalTime >= 1.0f) {
                 float fps = frameCount / totalTime;
+                float frameMs = (totalTime / frameCount) * 1000.0f;
                 std::string title =
                     "Vulkan Hybrid Renderer Demo - FPS: " + SAFE_TO_STRING(static_cast<int>(fps));
                 glfwSetWindowTitle(window, title.c_str());
+                SAFE_PRINT_LINE("FPS: " + SAFE_TO_STRING(static_cast<int>(fps)) +
+                                " | Frame Time: " + SAFE_TO_STRING(frameMs) + " ms");
 
                 frameCount = 0;
                 totalTime = 0.0f;

@@ -21,7 +21,7 @@ endif()
 
 # Link Vulkan (Core uses VulkanContextImpl with vk* symbols)
 find_package(Vulkan REQUIRED)
-target_link_libraries(SpectraForge_Core PUBLIC Vulkan::Vulkan)
+target_link_libraries(SpectraForge_Core PUBLIC Vulkan::Vulkan glfw)
 
 # Link VMA if available (VMAMemoryManager uses VMA APIs)
 if(TARGET VulkanMemoryAllocator::VulkanMemoryAllocator)

@@ -43,6 +43,12 @@ if(GMOCK_FOUND)
         LIBS
             ${INTEGRATION_TEST_LIBS}
     )
+    # simple_integration_test использует SpectraForge_Core (окна/инициализация Vulkan через GLFW)
+    if(TARGET glfw)
+        target_link_libraries(simple_integration_test PRIVATE glfw)
+    endif()
+    # Гарантируем порядок разрешения статических библиотек
+    target_link_options(simple_integration_test PRIVATE -Wl,--start-group -Wl,--end-group)
     
     # NEW: Full Pipeline Integration Test (CRITICAL for 80% coverage)
     add_integration_test(full_pipeline_integration_test
@@ -51,6 +57,10 @@ if(GMOCK_FOUND)
         LIBS
             ${INTEGRATION_TEST_LIBS}
     )
+    if(TARGET glfw)
+        target_link_libraries(full_pipeline_integration_test PRIVATE glfw)
+    endif()
+    target_link_options(full_pipeline_integration_test PRIVATE -Wl,--start-group -Wl,--end-group)
     
     set(ALL_INTEGRATION_TESTS 
         simple_integration_test

@@ -6,6 +6,7 @@
 #pragma once
 
 #include <memory>
+#include <glm/glm.hpp>
 #include "SpectraForge/App/Config.h"
 #include "SpectraForge/App/IApp.h"
 #include "SpectraForge/Core/EngineCore.h"
@@ -57,6 +58,16 @@ class Engine final : public IApp {
     std::shared_ptr<Rendering::IRenderer> renderer_;
     std::shared_ptr<Rendering::IResourceManager> resource_manager_;
     std::unique_ptr<Vulkan::SceneManager> scene_manager_;
+    
+    // Camera state (отодвинуты назад и выше для лучшего обзора Sponza)
+    // Оптимизированная позиция камеры для Sponza сцены
+    glm::vec3 cameraPos{0.0f, 2.0f, 10.0f};    // Ближе к сцене, на уровне глаз
+    glm::vec3 cameraFront{0.0f, 0.0f, -1.0f}; // Смотрим вперёд
+    float yaw = -90.0f;                        // Угол поворота по горизонтали
+    float pitch = 0.0f;                        // Угол наклона по вертикали
+    double lastMouseX = 0.0;
+    double lastMouseY = 0.0;
+    bool firstMouse = true;
 };
 
 }  // namespace App

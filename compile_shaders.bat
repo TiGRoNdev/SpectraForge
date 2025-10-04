@@ -59,6 +59,45 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
+echo Компиляция Bitonic Sort compute шейдера...
+"%GLSLC%" shaders\BitonicSort.comp -o shaders\BitonicSort.comp.spv
+if %ERRORLEVEL% neq 0 (
+    echo ОШИБКА: Не удалось скомпилировать BitonicSort.comp
+    pause
+    exit /b 1
+)
+
+echo Компиляция Tile Culling compute шейдера...
+"%GLSLC%" shaders\TileCulling.comp -o shaders\TileCulling.comp.spv
+if %ERRORLEVEL% neq 0 (
+    echo ОШИБКА: Не удалось скомпилировать TileCulling.comp
+    pause
+    exit /b 1
+)
+
+echo Компиляция Triangle Splatting compute шейдера...
+"%GLSLC%" shaders\TriangleSplatting.comp -o shaders\TriangleSplatting.comp.spv
+if %ERRORLEVEL% neq 0 (
+    echo ОШИБКА: Не удалось скомпилировать TriangleSplatting.comp
+    pause
+    exit /b 1
+)
+
+echo Компиляция Two-Pass Triangle Splatting шейдеров...
+"%GLSLC%" shaders\TriangleVisibility.comp -o shaders\TriangleVisibility.comp.spv
+if %ERRORLEVEL% neq 0 (
+    echo ОШИБКА: Не удалось скомпилировать TriangleVisibility.comp
+    pause
+    exit /b 1
+)
+
+"%GLSLC%" shaders\TriangleShading.comp -o shaders\TriangleShading.comp.spv
+if %ERRORLEVEL% neq 0 (
+    echo ОШИБКА: Не удалось скомпилировать TriangleShading.comp
+    pause
+    exit /b 1
+)
+
 echo.
 echo Все шейдеры успешно скомпилированы!
 echo Скомпилированные файлы находятся в папке shaders\compiled\

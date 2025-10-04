@@ -45,11 +45,13 @@ layout(std430, binding = 5) readonly buffer GaussianBuffer {
 
 // Push constants
 layout(push_constant) uniform PushConstants {
+    mat4 viewProj;          // View-Projection matrix для 3D трансформации
     uint outputWidth;
     uint outputHeight;
     float freqScale;        // Частотный масштаб (зависит от разрешения)
     uint subbandLevel;      // Уровень wavelet-декомпозиции
     float foveaRadius;      // Радиус фовеа в нормализованных координатах
+    uint padding0;          // выравнивание
     vec2 foveaCenter;       // Центр фовеа (gaze point)
     uint maxGaussians;      // Макс. количество Гауссианов для обработки
 } pc;
@@ -101,39 +103,49 @@ float16_t gaussianFreqKernel(vec2 k, vec3 mu, float sigma) {
  * @brief Загрузка wavelet subbands для текущего пикселя
  */
 f16vec4 loadSubbands(ivec2 coord) {
-    ivec2 subbandCoord = coord >> pc.subbandLevel;  // Масштабирование по уровню
-    
-    f16vec2 ll = f16vec2(imageLoad(inLL, subbandCoord).rg);
-    f16vec2 lh = f16vec2(imageLoad(inLH, subbandCoord).rg);
-    f16vec2 hl = f16vec2(imageLoad(inHL, subbandCoord).rg);
-    f16vec2 hh = f16vec2(imageLoad(inHH, subbandCoord).rg);
-    
-    // Реконструкция: комбинация субдиапазонов
-    return f16vec4(
-        ll.x + lh.x + hl.x,
-        ll.y + lh.y + hl.y,
-        hh.x,
-        hh.y
-    );
+    // Временный упрощённый путь: нейтральная модуляция, чтобы визуализировать гауссианы
+    // (устранение зависимости от содержимого wavelet-поддиапазонов)
+    float16_t one = float16_t(1.0);
+    return f16vec4(one, one, one, one);
 }
 
 /**
- * @brief Аккумуляция одного Гауссиана
+ * @brief Аккумуляция одного Гауссиана с 3D трансформацией
  */
-f16vec4 accumulateGaussian(vec2 k, GaussianSplat gauss, f16vec4 subbands) {
-    vec3 mu = gauss.positionAndScale.xyz;
+f16vec4 accumulateGaussian(ivec2 pixelCoord, GaussianSplat gauss, f16vec4 subbands) {
+    vec3 worldPos = gauss.positionAndScale.xyz;
     float sigma = gauss.positionAndScale.w;
     vec3 color = gauss.colorAndWeight.rgb;
     float weight = gauss.colorAndWeight.a;
     
-    // Вычисление частотного ядра
-    float16_t kernel = gaussianFreqKernel(k, mu, sigma);
+    // Трансформация 3D позиции в clip space
+    vec4 clipPos = pc.viewProj * vec4(worldPos, 1.0);
+    
+    // Перспективное деление
+    if (clipPos.w <= 0.0001) return f16vec4(0.0hf); // за камерой
+    vec3 ndc = clipPos.xyz / clipPos.w; // [-1,1]
+    
+    // Проверка видимости
+    if (abs(ndc.x) > 1.0 || abs(ndc.y) > 1.0 || abs(ndc.z) > 1.0) {
+        return f16vec4(0.0hf);
+    }
+    
+    // NDC -> screen space [0, outputWidth/Height]
+    vec2 screenPos = (ndc.xy * 0.5 + 0.5) * vec2(pc.outputWidth, pc.outputHeight);
+    
+    // Вычисление расстояния до текущего пикселя
+    vec2 pixelPos = vec2(pixelCoord) + 0.5;
+    float dist = length(screenPos - pixelPos);
+    
+    // Гауссиан в экранном пространстве (агрессивное покрытие с перекрытием)
+    float screenSigma = sigma * 80.0; // значительно увеличено для сплошного покрытия
+    float gaussianWeight = exp(-0.5 * (dist * dist) / (screenSigma * screenSigma));
     
     // Модуляция по wavelet subbands
-    float16_t modulation = subbands.r * kernel;
+    float16_t modulation = float16_t(gaussianWeight) * subbands.r;
     
     // Аккумуляция с весом
-    return f16vec4(color * float(weight * modulation), float16_t(weight));
+    return f16vec4(color * float(weight * modulation), float16_t(weight * gaussianWeight));
 }
 
 /**
@@ -164,12 +176,12 @@ void main() {
     for (uint i = 0; i < gaussCount; ++i) {
         GaussianSplat gauss = gaussianData.gaussians[i];
         
-        // Фовеация: в периферии обрабатываем меньше Гауссианов
-        if (!isInFovea(uv) && i > (gaussCount / 4)) {
-            break;  // 75% редукция в периферии
-        }
+        // ОТКЛЮЧЕНА фовеация для полного рендеринга всей сцены
+        // if (!isInFovea(uv) && i > (gaussCount / 4)) {
+        //     break;
+        // }
         
-        localAccum += accumulateGaussian(k, gauss, subbands);
+        localAccum += accumulateGaussian(globalID, gauss, subbands);
     }
     
     // Нормализация по весам
@@ -188,11 +200,8 @@ void main() {
         localAccum.a
     );
     
-    // Запись с blend в существующий аккумулятор
-    // EVERY thread writes its pixel - this ensures complete output coverage
-    vec4 existing = imageLoad(outImage, globalID);
-    vec4 blended = vec4(finalColor) + existing;
-    
-    imageStore(outImage, globalID, blended);
+    // Прямая запись в выходной аккумулирующий образ (без additive blend)
+    // Каждый поток пишет СВОЙ пиксель — полное покрытие выходного изображения
+    imageStore(outImage, globalID, vec4(finalColor));
 }
 

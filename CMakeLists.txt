@@ -539,12 +539,12 @@ if(BUILD_VULKAN_RENDERER)
     
     # Сбор OptiX файлов отдельно (если они нужны)
     file(GLOB_RECURSE VULKAN_OPTIX_SOURCES "src/optix/*.cpp")
-    
-    # Исключаем OptiX файлы если OptiX выключен
-    if(NOT BUILD_WITH_OPTIX)
-        message(STATUS "Excluding OptiX files from build (BUILD_WITH_OPTIX=OFF)")
+
+    # Исключаем OptiX файлы если OptiX выключен ИЛИ CUDA выключена (OptiX зависит от CUDA)
+    if(NOT BUILD_WITH_OPTIX OR NOT BUILD_WITH_CUDA)
+        message(STATUS "Excluding OptiX files from build (BUILD_WITH_OPTIX=${BUILD_WITH_OPTIX}, BUILD_WITH_CUDA=${BUILD_WITH_CUDA})")
     else()
-        # Добавляем OptiX файлы если OptiX включен
+        # Добавляем OptiX файлы если OptiX и CUDA включены
         list(APPEND VULKAN_CPP_SOURCES ${VULKAN_OPTIX_SOURCES})
         message(STATUS "Including OptiX files in build")
     endif()
@@ -578,6 +578,13 @@ if(BUILD_VULKAN_RENDERER)
     endif()
 
     target_compile_definitions(VulkanRenderer PUBLIC SpectraForge_ENABLE_VULKAN)
+    
+    # ✅ VULKAN CRITICAL: GLM configuration for Vulkan coordinate conventions
+    # Vulkan uses Z-range [0, 1] (not [-1, 1] like OpenGL)
+    target_compile_definitions(VulkanRenderer PUBLIC
+        GLM_FORCE_DEPTH_ZERO_TO_ONE  # Vulkan Z-range [0, 1]
+        GLM_FORCE_RADIANS            # Always use radians (safety)
+    )
 
     # Устанавливаем CUDA файлы как CUDA язык если доступен
     if(CUDA_AVAILABLE AND VULKAN_CUDA_CU_SOURCES)
@@ -703,6 +710,18 @@ if(BUILD_VULKAN_RENDERER)
     endif()
     if(TARGET unofficial::shaderc::shaderc)
         target_link_libraries(VulkanRenderer PUBLIC unofficial::shaderc::shaderc)
+    else()
+        # Fallback: direct shaderc linking (try both static and shared)
+        find_library(SHADERC_STATIC_LIB libshaderc.a)
+        find_library(SHADERC_SHARED_LIB shaderc_shared)
+
+        if(SHADERC_SHARED_LIB)
+            target_link_libraries(VulkanRenderer PUBLIC ${SHADERC_SHARED_LIB})
+            message(STATUS "Linked shaderc shared library: ${SHADERC_SHARED_LIB}")
+        elseif(SHADERC_STATIC_LIB)
+            target_link_libraries(VulkanRenderer PUBLIC ${SHADERC_STATIC_LIB})
+            message(STATUS "Linked shaderc static library: ${SHADERC_STATIC_LIB}")
+        endif()
     endif()
     if(TARGET imgui::imgui)
         target_link_libraries(VulkanRenderer PUBLIC imgui::imgui)
@@ -794,6 +813,24 @@ if(BUILD_VULKAN_RENDERER)
         SpectraForge
         SpectraForge_Core
     )
+    
+    # ✅ VULKAN CRITICAL: GLM configuration for Vulkan coordinate conventions
+    target_compile_definitions(SpectraForge_Example_Demo PRIVATE
+        GLM_FORCE_DEPTH_ZERO_TO_ONE  # Vulkan Z-range [0, 1]
+        GLM_FORCE_RADIANS            # Always use radians
+    )
+
+    # Triangle Splatting Demo (NEW!)
+    add_executable(TriangleSplatting_Demo
+        examples/triangle_splatting_demo.cpp
+        src/rendering/TriangleSplattingPass.cpp
+    )
+    target_link_libraries(TriangleSplatting_Demo PRIVATE
+        SpectraForge
+        VulkanRenderer
+        glm::glm
+    )
+    message(STATUS "Added TriangleSplatting_Demo executable")
 
         # Добавляем CUDA библиотеки к VulkanBasic_Demo если CUDA доступна
         if(CUDA_AVAILABLE OR CUDA_RUNTIME_ONLY OR USING_COMPILED_CUDA_OBJECTS OR USING_COMPILED_CUDA_LIBRARY)
@@ -808,7 +845,12 @@ if(BUILD_VULKAN_RENDERER)
         target_link_libraries(HybridFreGS_Demo PRIVATE
             SpectraForge
             VulkanRenderer
+            # Форсируем подтягивание всех символов из статической GLFW
+            "-Wl,--whole-archive" glfw "-Wl,--no-whole-archive"
         )
+        # Оборачиваем статические зависимости в группу для стабильного разрешения символов
+        target_link_options(HybridFreGS_Demo PRIVATE -Wl,--start-group)
+        target_link_options(HybridFreGS_Demo PRIVATE -Wl,--end-group)
 
         # CUDA-Vulkan Interop Demo (требует CUDA)
         if(CUDA_AVAILABLE OR CUDA_RUNTIME_ONLY)

@@ -1,0 +1,456 @@
+#version 450
+#extension GL_EXT_shader_16bit_storage : require
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
+
+// Константы для tile-based culling
+#define TILE_SIZE 16
+#define MAX_TRIANGLES_PER_TILE 256
+
+/**
+ * Triangle Splatting Compute Shader
+ * 
+ * Based on "Triangle Splatting for Real-Time Radiance Field Rendering" (2025)
+ * https://trianglesplatting.github.io/
+ * 
+ * Key innovation: Smooth window function based on Signed Distance Field (SDF)
+ * to render triangles with soft boundaries while preserving connectivity.
+ */
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+// Output image (RGBA16F)
+layout(binding = 0, rgba16f) uniform image2D outImage;
+
+// Texture samplers for materials (RGBA8)
+layout(binding = 4, std430) readonly buffer MaterialTextures {
+    uint textureCount;
+    uint textureOffsets[];  // Offset into texture data for each material
+};
+
+layout(binding = 5) readonly buffer TextureData {
+    uint textureData[];  // Packed RGBA8 texture data
+};
+
+// Triangle data (SSBO)
+struct Triangle {
+    vec3 v0, v1, v2;       // Vertices (world space)
+    vec2 texCoord0, texCoord1, texCoord2;  // Texture coordinates per vertex
+    vec3 color;            // RGB color
+    float opacity;         // Alpha
+    float sigma;           // Smoothness parameter
+    vec3 normal;           // Face normal (for lighting)
+    int materialId;        // Material index for texture lookup
+    float padding[2];      // Alignment to 96 bytes
+};
+
+layout(binding = 1, std430) readonly buffer TriangleBuffer {
+    Triangle triangles[];
+};
+
+// Sorted indices (front-to-back by depth)
+layout(binding = 2, std430) readonly buffer SortedIndices {
+    uint sortedIndices[];
+};
+
+// Tile-based culling data (computed in separate pass)
+struct TileVisibleTriangles {
+    uint triangleCount;
+    uint triangleIndices[MAX_TRIANGLES_PER_TILE];
+};
+
+layout(binding = 3, std430) readonly buffer TileCullingBuffer {
+    TileVisibleTriangles tileTriangles[];
+};
+
+// Push constants
+layout(push_constant) uniform PushConstants {
+    mat4 viewProj;              // View-Projection matrix
+    uint outputWidth;
+    uint outputHeight;
+    uint triangleCount;
+    uint enableEarlyTermination;
+    float alphaThreshold;
+    // Новое поле: включает использование тайлового биннинга (0=off, 1=on)
+    uint enableTileBinning;
+    uint padding[2];
+} pc;
+
+/**
+ * @brief Compute signed distance to a half-plane defined by edge
+ * 
+ * Based on Triangle Splatting 2025 paper:
+ * Li(p) = ni · p + di
+ * where ni is the outward-facing unit normal
+ * 
+ * @param p Point to test
+ * @param v0 Edge start vertex (screen space)
+ * @param v1 Edge end vertex (screen space)
+ * @return Signed distance (negative = inside, positive = outside)
+ */
+float halfPlaneDistance(vec2 p, vec2 v0, vec2 v1) {
+    vec2 edge = v1 - v0;
+    
+    // CRITICAL FIX for SCREEN SPACE (Y grows DOWN):
+    // In math coordinates (Y up): CCW normal = vec2(-edge.y, edge.x)
+    // In screen coordinates (Y down): CCW visually becomes CW mathematically
+    // So we need to FLIP the normal: vec2(edge.y, -edge.x) OR negate result
+    // 
+    // Paper uses: "outward-facing unit normals" meaning OUTSIDE is positive
+    // Используем правый перпендикуляр для согласования со screen space (проверено визуально)
+    vec2 normal = vec2(edge.y, -edge.x);  // RIGHT perpendicular (clockwise 90°)
+    
+    // CRITICAL: Normalize to get actual distance
+    float edgeLength = length(edge);
+    if (edgeLength < 0.0001) {
+        return 10000.0;  // Degenerate edge
+    }
+    normal = normal / edgeLength;  // Unit normal
+    
+    // Li(p) = ni · (p - v0)
+    // INSIDE triangle => Li < 0 for all edges
+    // OUTSIDE triangle => max(Li) > 0
+    return dot(normal, p - v0);
+}
+
+/**
+ * @brief Compute Axis-Aligned Bounding Box (AABB) for triangle
+ *
+ * @param v0, v1, v2 Triangle vertices (screen space)
+ * @return AABB as vec4(minX, minY, maxX, maxY)
+ */
+vec4 computeTriangleAABB(vec2 v0, vec2 v1, vec2 v2) {
+    float minX = min(min(v0.x, v1.x), v2.x);
+    float minY = min(min(v0.y, v1.y), v2.y);
+    float maxX = max(max(v0.x, v1.x), v2.x);
+    float maxY = max(max(v0.y, v1.y), v2.y);
+
+    return vec4(minX, minY, maxX, maxY);
+}
+
+/**
+ * @brief Check if point overlaps with AABB
+ *
+ * @param point Point to test
+ * @param aabb AABB as vec4(minX, minY, maxX, maxY)
+ * @return true if point overlaps with AABB
+ */
+bool overlapsWithAABB(vec2 point, vec4 aabb) {
+    return (point.x >= aabb.x && point.x <= aabb.w &&
+            point.y >= aabb.y && point.y <= aabb.z);
+}
+
+/**
+ * @brief Compute Signed Distance Field (SDF) for triangle
+ * 
+ * SDF = max distance to all three edges
+ * Negative inside, zero on boundary, positive outside
+ * 
+ * @param p Pixel position (screen space)
+ * @param v0, v1, v2 Triangle vertices (screen space)
+ * @return Signed distance to triangle boundary
+ */
+float computeTriangleSDF(vec2 p, vec2 v0, vec2 v1, vec2 v2) {
+    float d0 = halfPlaneDistance(p, v0, v1);
+    float d1 = halfPlaneDistance(p, v1, v2);
+    float d2 = halfPlaneDistance(p, v2, v0);
+    
+    // Inside if all distances are negative
+    return max(max(d0, d1), d2);
+}
+
+/**
+ * @brief Compute incenter (center of inscribed circle)
+ * 
+ * The incenter is the point equidistant from all edges,
+ * where SDF is minimized.
+ * 
+ * @param v0, v1, v2 Triangle vertices (screen space)
+ * @return Incenter position
+ */
+vec2 computeIncenter(vec2 v0, vec2 v1, vec2 v2) {
+    float a = length(v1 - v2);  // Side opposite to v0
+    float b = length(v2 - v0);  // Side opposite to v1
+    float c = length(v0 - v1);  // Side opposite to v2
+    
+    float perimeter = a + b + c;
+    
+    if (perimeter < 0.0001) {
+        // Degenerate triangle, fallback to centroid
+        return (v0 + v1 + v2) / 3.0;
+    }
+    
+    return (a * v0 + b * v1 + c * v2) / perimeter;
+}
+
+/**
+ * @brief Smooth window function
+ * 
+ * I(p) = ReLU(φ(p) / φ(s))^σ
+ * 
+ * where:
+ * - φ(p) = SDF at point p
+ * - φ(s) = SDF at incenter s (minimum, most negative)
+ * - σ = smoothness parameter
+ * 
+ * Properties:
+ * - Maximum opacity at incenter (I = 1)
+ * - Zero opacity at and beyond boundary (I = 0)
+ * - Adjustable sharpness via σ
+ * 
+ * @param phi SDF value at point
+ * @param phiCenter SDF value at incenter (negative)
+ * @param sigma Smoothness parameter
+ * @return Weight in [0, 1]
+ */
+float smoothWindowFunction(float phi, float phiCenter, float sigma) {
+    // Normalize: 0 at boundary, 1 at center
+    float normalized = clamp(phi / phiCenter, 0.0, 1.0);
+    
+    // Apply smoothness (power function)
+    // σ → 0: binary mask (hard edges)
+    // σ = 1: linear falloff
+    // σ → ∞: delta function (point splat)
+    return pow(normalized, sigma);
+}
+
+/**
+ * @brief Project 3D point to screen space
+ * 
+ * @param worldPos 3D position in world space
+ * @return 2D position in screen space (pixels), or vec2(-1) if behind camera
+ */
+vec2 projectToScreen(vec3 worldPos) {
+    vec4 clipPos = pc.viewProj * vec4(worldPos, 1.0);
+    
+    // Behind camera
+    if (clipPos.w <= 0.0001) {
+        return vec2(-10000.0, -10000.0);  // Far outside screen
+    }
+    
+    // Perspective divide
+    vec3 ndc = clipPos.xyz / clipPos.w;  // [-1, 1]
+    
+    // Frustum culling (outside [-1, 1] range)
+    if (abs(ndc.x) > 1.0 || abs(ndc.y) > 1.0 || abs(ndc.z) > 1.0) {
+        return vec2(-10000.0, -10000.0);
+    }
+    
+    // NDC → screen space [0, width/height]
+    vec2 screenPos = (ndc.xy * 0.5 + 0.5) * vec2(pc.outputWidth, pc.outputHeight);
+    
+    return screenPos;
+}
+
+/**
+ * @brief Check if triangle is back-facing (counter-clockwise in screen space)
+ *
+ * Uses the signed area (cross product) to determine triangle orientation.
+ * Negative area = back-facing (should be culled).
+ * Positive area = front-facing (visible).
+ *
+ * @param v0, v1, v2 Triangle vertices in screen space
+ * @return true if triangle is back-facing
+ */
+bool isBackFacing(vec2 v0, vec2 v1, vec2 v2) {
+    // В screen space ось Y направлена вниз, что инвертирует ориентацию
+    // Используем flipped-Y для корректного определения знака площади
+    vec2 fv0 = vec2(v0.x, -v0.y);
+    vec2 fv1 = vec2(v1.x, -v1.y);
+    vec2 fv2 = vec2(v2.x, -v2.y);
+
+    vec2 edge1 = fv1 - fv0;
+    vec2 edge2 = fv2 - fv0;
+    float signedArea = edge1.x * edge2.y - edge1.y * edge2.x;
+
+    // Отсеиваем задние грани (по часовому в flipped-Y будет отрицательно)
+    return signedArea <= 0.0;
+}
+
+/**
+ * @brief Compute barycentric coordinates for point inside triangle
+ *
+ * @param p Point in screen space
+ * @param v0, v1, v2 Triangle vertices in screen space
+ * @return Barycentric coordinates (alpha, beta, gamma)
+ */
+vec3 computeBarycentric(vec2 p, vec2 v0, vec2 v1, vec2 v2) {
+    vec2 v0v1 = v1 - v0;
+    vec2 v0v2 = v2 - v0;
+    vec2 pv0 = v0 - p;
+
+    float d00 = dot(v0v1, v0v1);
+    float d01 = dot(v0v1, v0v2);
+    float d11 = dot(v0v2, v0v2);
+    float d20 = dot(pv0, v0v1);
+    float d21 = dot(pv0, v0v2);
+
+    float denom = d00 * d11 - d01 * d01;
+    if (abs(denom) < 0.0001) {
+        return vec3(1.0, 0.0, 0.0); // Degenerate triangle
+    }
+
+    float v = (d11 * d20 - d01 * d21) / denom;
+    float w = (d00 * d21 - d01 * d20) / denom;
+    float u = 1.0 - v - w;
+
+    return vec3(u, v, w);
+}
+
+/**
+ * @brief Sample texture at given UV coordinates
+ *
+ * @param uv Texture coordinates [0,1]
+ * @param materialId Material index for texture lookup
+ * @return RGBA color from texture
+ */
+vec4 sampleTexture(vec2 uv, int materialId) {
+    // Clamp UV coordinates to [0,1]
+    uv = clamp(uv, 0.0, 1.0);
+
+    // For now, return material color as fallback
+    // TODO: Implement actual texture sampling when texture data is available
+    if (materialId == 0) return vec4(0.85, 0.75, 0.65, 1.0); // beige
+    if (materialId == 1) return vec4(0.5, 0.3, 0.2, 1.0);   // brown
+    if (materialId == 2) return vec4(0.7, 0.7, 0.7, 1.0);   // gray
+    if (materialId == 3) return vec4(0.8, 0.6, 0.4, 1.0);   // sandy
+    if (materialId == 4) return vec4(0.4, 0.3, 0.25, 1.0);  // dark brown
+
+    return vec4(0.8, 0.7, 0.6, 1.0); // default beige
+}
+
+void main() {
+    ivec2 globalID = ivec2(gl_GlobalInvocationID.xy);
+    
+    // Bounds check
+    if (globalID.x >= int(pc.outputWidth) || globalID.y >= int(pc.outputHeight)) {
+        return;
+    }
+    
+    vec2 pixelPos = vec2(globalID) + 0.5;  // Pixel center
+    
+    // 🔍 DEBUG: Log coordinates for центрального пикселя (1 раз на кадр)
+    bool isDebugPixel = (globalID.x == int(pc.outputWidth / 2) && 
+                         globalID.y == int(pc.outputHeight / 2));
+    
+    // Accumulation buffers (front-to-back alpha blending)
+    vec4 accumColor = vec4(0.0);
+    float accumAlpha = 0.0;
+    
+    // Выбор источника списка треугольников: тайловый список или индексы (visible/sorted)
+    // Сохраняем максимум, чтобы избежать деления на 0 при узких краях
+    // Используем деление с округлением вверх для корректного количества тайлов
+    uint tilesX = max(1u, (pc.outputWidth + TILE_SIZE - 1u) / TILE_SIZE);
+    ivec2 tileID = globalID / TILE_SIZE;
+    uint tileIndex = tileID.y * tilesX + tileID.x;
+
+    TileVisibleTriangles tileData = tileTriangles[tileIndex];
+    bool useTiles = (pc.enableTileBinning != 0) && (tileData.triangleCount > 0);
+    // Защита от выхода за границы MAX_TRIANGLES_PER_TILE
+    uint tileCountClamped = min(tileData.triangleCount, uint(MAX_TRIANGLES_PER_TILE));
+    uint loopCount = useTiles ? tileCountClamped : pc.triangleCount;
+
+    // Итерируем по подходящему списку
+    for (uint i = 0; i < loopCount; ++i) {
+        // Индекс треугольника из тайла или из глобального массива индексов (может быть visibleIndices)
+        uint triIdx = useTiles ? tileData.triangleIndices[i] : sortedIndices[i];
+        // Если используем список видимых индексов и встретили маркер пустоты — ранний выход
+        if (!useTiles && triIdx == 0xFFFFFFFFu) {
+            break;
+        }
+        Triangle tri = triangles[triIdx];
+        
+        // Project vertices to screen space
+        vec2 v0_screen = projectToScreen(tri.v0);
+        vec2 v1_screen = projectToScreen(tri.v1);
+        vec2 v2_screen = projectToScreen(tri.v2);
+
+        // Check if triangle is behind camera or outside frustum
+        if (v0_screen.x < -1000.0 || v1_screen.x < -1000.0 || v2_screen.x < -1000.0) {
+            continue;
+        }
+
+        // Backface culling: отсечение треугольников, повёрнутых назад
+        // Это ускоряет рендеринг в 2× для замкнутых мешей (половина треугольников не видна)
+        if (isBackFacing(v0_screen, v1_screen, v2_screen)) {
+            continue;  // Треугольник повёрнут назад — пропускаем
+        }
+
+        // Ранний выход по AABB для снижения работы пиксельного цикла
+        vec4 triAABB = computeTriangleAABB(v0_screen, v1_screen, v2_screen);
+        if (!overlapsWithAABB(pixelPos, triAABB)) {
+            continue;  // Пиксель не пересекает AABB треугольника
+        }
+        
+        // Compute incenter (point where SDF is minimized)
+        vec2 incenter = computeIncenter(v0_screen, v1_screen, v2_screen);
+        
+        // Compute SDF at current pixel
+        float phi = computeTriangleSDF(pixelPos, v0_screen, v1_screen, v2_screen);
+        
+        // SDF работает корректно - убираем debug-визуализацию
+
+        // Outside triangle (positive SDF)
+        if (phi > 0.0) {
+            continue;
+        }
+        
+        // Compute SDF at incenter (most negative value)
+        float phiCenter = computeTriangleSDF(incenter, v0_screen, v1_screen, v2_screen);
+        
+        // Degenerate triangle (zero area)
+        if (abs(phiCenter) < 0.0001) {
+            continue;
+        }
+        
+        // Compute smooth window function weight
+        float weight = smoothWindowFunction(phi, phiCenter, tri.sigma);
+        
+        // Triangle contribution (color * opacity * weight)
+        float alpha = tri.opacity * weight;
+        
+        // ✨ ТЕКСТУРЫ + ОСВЕЩЕНИЕ (простой Lambertian)
+        // Интерполируем текстурные координаты для текущего пикселя
+        vec3 barycentric = computeBarycentric(pixelPos, v0_screen, v1_screen, v2_screen);
+        vec2 texCoord = tri.texCoord0 * barycentric.x +
+                       tri.texCoord1 * barycentric.y +
+                       tri.texCoord2 * barycentric.z;
+
+        // Сэмплируем текстуру (пока fallback к цветам)
+        vec4 texColor = sampleTexture(texCoord, tri.materialId);
+
+        // Направление света (верхний-правый-передний)
+        vec3 lightDir = normalize(vec3(0.5, 1.0, 0.3));
+        // Рассеянный свет (diffuse)
+        // Усилим базовую засветку для визуальной проверки (ambient 0.5)
+        float diffuse = max(0.0, dot(tri.normal, lightDir)) * 0.5 + 0.5;
+        vec3 litColor = texColor.rgb * diffuse;
+        
+        // OPAQUE FAST PATH: если треугольник непрозрачный (opacity ≈ 1.0),
+        // пропускаем альфа-блендинг и используем Z-test подход
+        const float OPAQUE_THRESHOLD = 0.95;
+        if (tri.opacity >= OPAQUE_THRESHOLD && weight > 0.99) {
+            // Непрозрачный треугольник — просто заменяем цвет без блендинга
+            accumColor.rgb = litColor;
+            accumColor.a = 1.0;
+            accumAlpha = 1.0;
+            break;  // Дальнейшие треугольники за этим не видны
+        }
+        
+        // Front-to-back alpha blending (стандартный путь для прозрачных)
+        // C_accum += C_tri * α_tri * (1 - α_accum)
+        accumColor.rgb += litColor * alpha * (1.0 - accumAlpha);
+        accumColor.a += alpha * (1.0 - accumAlpha);
+        accumAlpha += alpha * (1.0 - accumAlpha);
+        
+        // Early termination (fully opaque)
+        if (pc.enableEarlyTermination != 0 && accumAlpha > pc.alphaThreshold) {
+            break;
+        }
+    }
+    
+    // Финальный цвет: используем накопленный цвет, или черный фон
+    vec4 outputColor = accumAlpha > 0.001 ? accumColor : vec4(0.0, 0.0, 0.0, 1.0);
+    
+    imageStore(outImage, globalID, outputColor);
+}
+

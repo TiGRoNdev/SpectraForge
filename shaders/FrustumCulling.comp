@@ -1,0 +1,159 @@
+#version 450
+
+/**
+ * @file FrustumCulling.comp
+ * @brief GPU-based frustum culling for Triangle Splatting
+ * 
+ * Отбраковывает треугольники вне view frustum для оптимизации rendering.
+ * Использует atomic counter для подсчёта видимых треугольников.
+ */
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+// === Triangle structure (must match C++ struct) ===
+struct Triangle {
+    vec3 v0;        // 12 bytes (offset 0)
+    float padding0; // 4 bytes  (offset 12)
+    
+    vec3 v1;        // 12 bytes (offset 16)
+    float padding1; // 4 bytes  (offset 28)
+    
+    vec3 v2;        // 12 bytes (offset 32)
+    float padding2; // 4 bytes  (offset 44)
+    
+    vec3 color;     // 12 bytes (offset 48)
+    float alpha;    // 4 bytes  (offset 60)
+    // Total: 64 bytes
+};
+
+// === Frustum Plane structure ===
+// Plane equation: ax + by + cz + d = 0
+// normal = (a, b, c), d = distance from origin
+struct FrustumPlane {
+    vec3 normal;    // 12 bytes
+    float distance; // 4 bytes
+};
+
+// === Buffers ===
+
+// Input: All triangles
+layout(set = 0, binding = 0) readonly buffer TriangleBuffer {
+    Triangle triangles[];
+};
+
+// Output: Visible triangle indices (compacted)
+layout(set = 0, binding = 1) writeonly buffer VisibleIndicesBuffer {
+    uint visibleIndices[];
+};
+
+// Output: Atomic counter for visible count
+layout(set = 0, binding = 2) buffer AtomicCounterBuffer {
+    uint visibleCount;
+};
+
+// === Push Constants ===
+layout(push_constant) uniform PushConstants {
+    mat4 viewProj;          // View-Projection matrix (64 bytes)
+    uint triangleCount;     // Total triangles (4 bytes)
+    uint padding[15];       // Align to 128 bytes
+} pushConstants;
+
+// === Helper Functions ===
+
+/**
+ * @brief Extract frustum planes from View-Projection matrix
+ * @note Uses Gribb-Hartmann method
+ */
+void extractFrustumPlanes(mat4 vp, out FrustumPlane planes[6]) {
+    // Left plane (column 4 + column 1)
+    planes[0].normal = vec3(vp[0][3] + vp[0][0], vp[1][3] + vp[1][0], vp[2][3] + vp[2][0]);
+    planes[0].distance = vp[3][3] + vp[3][0];
+    
+    // Right plane (column 4 - column 1)
+    planes[1].normal = vec3(vp[0][3] - vp[0][0], vp[1][3] - vp[1][0], vp[2][3] - vp[2][0]);
+    planes[1].distance = vp[3][3] - vp[3][0];
+    
+    // Bottom plane (column 4 + column 2)
+    planes[2].normal = vec3(vp[0][3] + vp[0][1], vp[1][3] + vp[1][1], vp[2][3] + vp[2][1]);
+    planes[2].distance = vp[3][3] + vp[3][1];
+    
+    // Top plane (column 4 - column 2)
+    planes[3].normal = vec3(vp[0][3] - vp[0][1], vp[1][3] - vp[1][1], vp[2][3] - vp[2][1]);
+    planes[3].distance = vp[3][3] - vp[3][1];
+    
+    // Near plane (column 4 + column 3)
+    planes[4].normal = vec3(vp[0][3] + vp[0][2], vp[1][3] + vp[1][2], vp[2][3] + vp[2][2]);
+    planes[4].distance = vp[3][3] + vp[3][2];
+    
+    // Far plane (column 4 - column 3)
+    planes[5].normal = vec3(vp[0][3] - vp[0][2], vp[1][3] - vp[1][2], vp[2][3] - vp[2][2]);
+    planes[5].distance = vp[3][3] - vp[3][2];
+    
+    // Normalize planes
+    for (int i = 0; i < 6; ++i) {
+        float len = length(planes[i].normal);
+        planes[i].normal /= len;
+        planes[i].distance /= len;
+    }
+}
+
+/**
+ * @brief Test if point is inside frustum
+ */
+bool isPointInFrustum(vec3 point, FrustumPlane planes[6]) {
+    for (int i = 0; i < 6; ++i) {
+        // Distance from point to plane
+        float dist = dot(planes[i].normal, point) + planes[i].distance;
+        
+        // If point is behind any plane, it's outside frustum
+        if (dist < 0.0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * @brief Test if triangle intersects frustum
+ * @note Conservative test: if ANY vertex is inside frustum, triangle is visible
+ */
+bool isTriangleVisible(Triangle tri, FrustumPlane planes[6]) {
+    // Check all 3 vertices
+    if (isPointInFrustum(tri.v0, planes)) return true;
+    if (isPointInFrustum(tri.v1, planes)) return true;
+    if (isPointInFrustum(tri.v2, planes)) return true;
+    
+    // TODO: More precise test (check if triangle intersects frustum)
+    // For now, conservative test is sufficient
+    
+    return false;
+}
+
+/**
+ * @brief Main compute shader
+ */
+void main() {
+    uint idx = gl_GlobalInvocationID.x;
+    
+    // Bounds check
+    if (idx >= pushConstants.triangleCount) {
+        return;
+    }
+    
+    // Get triangle
+    Triangle tri = triangles[idx];
+    
+    // Extract frustum planes from view-projection matrix
+    FrustumPlane planes[6];
+    extractFrustumPlanes(pushConstants.viewProj, planes);
+    
+    // Test visibility
+    if (isTriangleVisible(tri, planes)) {
+        // Atomically increment visible count and get index
+        uint visibleIndex = atomicAdd(visibleCount, 1);
+        
+        // Store original triangle index in compacted visible list
+        visibleIndices[visibleIndex] = idx;
+    }
+}
+
