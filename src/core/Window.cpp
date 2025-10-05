@@ -76,22 +76,8 @@ bool Window::initialize() {
     }
     std::cout << "[Window] ✅ Окно создано успешно" << std::endl;
     
-    // Проверяем расширения Vulkan ПОСЛЕ создания окна (только для Vulkan режима)
-    if (useVulkan && std::string(useVulkan) == "1") {
-        std::cout << "[Window] 🔍 Проверка Vulkan расширений после создания окна..." << std::endl;
-        uint32_t testExtCount = 0;
-        const char** testExt = glfwGetRequiredInstanceExtensions(&testExtCount);
-        if (!testExt || testExtCount == 0) {
-            std::cerr << "[Window] ❌ glfwGetRequiredInstanceExtensions() вернул NULL!" << std::endl;
-            std::cerr << "  Это критическая ошибка GLFW-Vulkan интеграции." << std::endl;
-            std::cerr << "  Проверьте: sudo apt install libvulkan1 mesa-vulkan-drivers" << std::endl;
-            return false;
-        }
-        std::cout << "[Window] ✅ GLFW предоставляет " << testExtCount << " Vulkan расширений:" << std::endl;
-        for (uint32_t i = 0; i < testExtCount; ++i) {
-            std::cout << "    - " << testExt[i] << std::endl;
-        }
-    }
+    // ПРИМЕЧАНИЕ: проверка расширений Vulkan будет выполнена позже в VulkanContext::createInstance()
+    // Здесь она не нужна, так как окно уже создано и готово к использованию
 
     g_last_window = window;  // Сохраняем для доступа из рендерера
 

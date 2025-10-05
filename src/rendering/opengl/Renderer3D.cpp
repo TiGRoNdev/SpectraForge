@@ -22,7 +22,7 @@ Renderer3D& Renderer3D::getInstance() {
     return instance;
 }
 
-// Инициализация и очистка
+// Инициализация с параметрами (перегрузка существующего метода)
 bool Renderer3D::initialize(int width, int height) {
     if (initialized) {
         SAFE_PRINT_LINE("Renderer3D already initialized");
@@ -58,6 +58,7 @@ bool Renderer3D::initialize(int width, int height) {
     return true;
 }
 
+// Очистка ресурсов
 void Renderer3D::cleanup() {
     if (!initialized) {
         return;
@@ -289,5 +290,185 @@ void Renderer3D::updateRenderStats(const Mesh3D& mesh) {
     renderStats.verticesProcessed += mesh.getVertexCount();
 }
 
-}  // namespace Rendering
-}  // namespace SpectraForge
+// Метод обработки изменения размера окна
+void Renderer3D::onWindowResize(int width, int height) {
+    screenWidth = width;
+    screenHeight = height;
+
+    if (mainCamera) {
+        mainCamera->setAspectRatio((float)width / height);
+    }
+
+    setViewport(0, 0, width, height);
+    SAFE_PRINT_LINE("Window resized to " + SAFE_TO_STRING(width) + "x" + SAFE_TO_STRING(height));
+}
+
+// Новые методы для поддержки демо
+
+void Renderer3D::beginFrame() {
+    if (!initialized) {
+        SAFE_ERROR("Renderer3D not initialized!");
+        return;
+    }
+
+    resetRenderStats();
+
+    // TODO: Начало кадра для конкретного API
+    SAFE_PRINT_LINE("Beginning frame...");
+
+    clear();
+    setupRenderState();
+}
+
+void Renderer3D::endFrame() {
+    if (!initialized) {
+        return;
+    }
+
+    // TODO: Завершение кадра для конкретного API
+    SAFE_PRINT_LINE("Ending frame. Stats: " + SAFE_TO_STRING(renderStats.drawCalls)
+                    + " draw calls, " + SAFE_TO_STRING(renderStats.trianglesRendered)
+                    + " triangles, " + SAFE_TO_STRING(renderStats.verticesProcessed) + " vertices");
+}
+
+void Renderer3D::renderMesh(const Mesh3D& mesh, const Math::Matrix4& transform, const Shader3D& shader) {
+    if (!initialized || !mainCamera) {
+        SAFE_ERROR("Renderer3D not properly initialized!");
+        return;
+    }
+
+    SAFE_PRINT_LINE("Rendering mesh with " + SAFE_TO_STRING(mesh.getTriangleCount())
+                    + " triangles");
+
+    // Используем шейдер
+    shader.use();
+
+    // Устанавливаем матрицы
+    setupMatrices(shader, transform);
+
+    // Устанавливаем освещение
+    setupLighting(shader);
+
+    // Рендерим меш (заглушка - реальная реализация нужна)
+    // mesh.render();
+
+    // Обновляем статистику
+    updateRenderStats(mesh);
+}
+
+// Базовая реализация Shader3D для демо
+namespace {
+
+class DemoShader3D : public SpectraForge::Rendering::Shader3D {
+public:
+    DemoShader3D() : programId(1), loaded(true) {
+        SAFE_PRINT_LINE("DemoShader3D created");
+    }
+
+    ~DemoShader3D() override {
+        SAFE_PRINT_LINE("DemoShader3D destroyed");
+    }
+
+    void use() const override {
+        SAFE_PRINT_LINE("Using demo shader");
+    }
+
+    void setMatrix4(const std::string& name, const SpectraForge::Math::Matrix4& matrix) const override {
+        SAFE_PRINT_LINE("Setting matrix4 " + name);
+    }
+
+    void setVector3(const std::string& name, const SpectraForge::Math::Vector3& vector) const override {
+        SAFE_PRINT_LINE("Setting vector3 " + name);
+    }
+
+    void setFloat(const std::string& name, float value) const override {
+        SAFE_PRINT_LINE("Setting float " + name + " = " + SAFE_TO_STRING(value));
+    }
+
+    void setInt(const std::string& name, int value) const override {
+        SAFE_PRINT_LINE("Setting int " + name + " = " + SAFE_TO_STRING(value));
+    }
+
+    void setBool(const std::string& name, bool value) const override {
+        SAFE_PRINT_LINE("Setting bool " + name + " = " + (value ? "true" : "false"));
+    }
+
+private:
+    unsigned int programId;
+    bool loaded;
+};
+
+} // namespace
+
+// Базовая реализация Shader3D для демо (добавляем в глобальный namespace для совместимости)
+class DemoShader3D : public SpectraForge::Rendering::Shader3D {
+public:
+    DemoShader3D() : programId(1), loaded(true) {
+        SAFE_PRINT_LINE("DemoShader3D created");
+    }
+
+    ~DemoShader3D() override {
+        SAFE_PRINT_LINE("DemoShader3D destroyed");
+    }
+
+    void use() const override {
+        SAFE_PRINT_LINE("Using demo shader");
+    }
+
+    void cleanup() override {
+        if (programId != 0) {
+            SAFE_PRINT_LINE("Cleaning up demo shader");
+            programId = 0;
+        }
+        loaded = false;
+    }
+
+    void setMatrix4(const std::string& name, const SpectraForge::Math::Matrix4& matrix) const override {
+        SAFE_PRINT_LINE("Setting matrix4 " + name);
+    }
+
+    void setVector3(const std::string& name, const SpectraForge::Math::Vector3& vector) const override {
+        SAFE_PRINT_LINE("Setting vector3 " + name);
+    }
+
+    void setFloat(const std::string& name, float value) const override {
+        SAFE_PRINT_LINE("Setting float " + name + " = " + SAFE_TO_STRING(value));
+    }
+
+    void setInt(const std::string& name, int value) const override {
+        SAFE_PRINT_LINE("Setting int " + name + " = " + SAFE_TO_STRING(value));
+    }
+
+    void setBool(const std::string& name, bool value) const override {
+        SAFE_PRINT_LINE("Setting bool " + name + " = " + (value ? "true" : "false"));
+    }
+
+private:
+    unsigned int programId;
+    bool loaded;
+};
+
+// Базовая реализация виртуальных методов Shader3D
+namespace SpectraForge {
+namespace Rendering {
+
+Shader3D::Shader3D() : programId(0), loaded(false) {
+    SAFE_PRINT_LINE("Shader3D constructor");
+}
+
+Shader3D::~Shader3D() {
+    cleanup();
+    SAFE_PRINT_LINE("Shader3D destructor");
+}
+
+void Shader3D::cleanup() {
+    if (programId != 0) {
+        SAFE_PRINT_LINE("Cleaning up shader program");
+        programId = 0;
+    }
+    loaded = false;
+    uniformLocations.clear();
+}
+
+} // namespace Rendering
+} // namespace SpectraForge

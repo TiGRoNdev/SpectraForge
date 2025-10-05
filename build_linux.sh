@@ -1,134 +1,83 @@
 #!/bin/bash
-# Скрипт сборки SpectraForge для Linux
-# Автоматически определяет доступные SDK и настраивает сборку
 
-set -e
+# SpectraForge Build Script for Linux
+# Pure C++ 3D Engine with Vulkan and Hybrid TriangleSplatting + FreGS rendering
 
-echo "🚀 SpectraForge - Скрипт сборки для Linux"
-echo "=========================================="
-echo ""
+set -e  # Exit on any error
 
-# Цвета для вывода
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+echo "=================================="
+echo "SpectraForge Linux Build Script"
+echo "Pure C++ with Vulkan only"
+echo "Hybrid TriangleSplatting + FreGS"
+echo "=================================="
 
-# Директория проекта
-PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$PROJECT_DIR"
-
-# Параметры по умолчанию
-BUILD_DIR="${PROJECT_DIR}/build"
-BUILD_TYPE="${1:-Release}"
-VCPKG_ROOT="${VCPKG_ROOT:-$HOME/vcpkg}"
-
-echo "📁 Директория проекта: $PROJECT_DIR"
-echo "🔧 Тип сборки: $BUILD_TYPE"
-echo ""
-
-# Проверка vcpkg
-if [ ! -f "$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" ]; then
-    echo -e "${RED}❌ Ошибка: vcpkg не найден в $VCPKG_ROOT${NC}"
-    echo "Установите vcpkg или задайте переменную VCPKG_ROOT"
+# Проверяем наличие CMake
+if ! command -v cmake &> /dev/null; then
+    echo "❌ CMake не найден. Установите CMake 3.16 или выше."
     exit 1
 fi
 
-echo -e "${GREEN}✓${NC} vcpkg найден: $VCPKG_ROOT"
-
-# Проверка CUDA
-BUILD_WITH_CUDA=OFF
-if command -v nvcc &> /dev/null; then
-    CUDA_VERSION=$(nvcc --version | grep "release" | awk '{print $5}' | sed 's/,//')
-    echo -e "${GREEN}✓${NC} CUDA найден: версия $CUDA_VERSION"
-    BUILD_WITH_CUDA=ON
-else
-    echo -e "${YELLOW}⚠${NC} CUDA не найден, сборка без CUDA"
-fi
-
-# Проверка OptiX
-BUILD_WITH_OPTIX=OFF
-if [ -n "$OptiX_ROOT_DIR" ] && [ -d "$OptiX_ROOT_DIR" ]; then
-    echo -e "${GREEN}✓${NC} OptiX найден: $OptiX_ROOT_DIR"
-    BUILD_WITH_OPTIX=ON
-elif [ -n "$OPTIX_ROOT" ] && [ -d "$OPTIX_ROOT" ]; then
-    echo -e "${GREEN}✓${NC} OptiX найден: $OPTIX_ROOT"
-    export OptiX_ROOT_DIR="$OPTIX_ROOT"
-    BUILD_WITH_OPTIX=ON
-else
-    echo -e "${YELLOW}⚠${NC} OptiX не найден, сборка без OptiX"
-fi
-
-# DLSS на Linux не поддерживается
-BUILD_WITH_DLSS=OFF
-echo -e "${YELLOW}ℹ${NC} DLSS не поддерживается на Linux (только Windows)"
-
-# Проверка FSR
-BUILD_WITH_FSR=OFF
-if [ -n "$FSR_ROOT_DIR" ] && [ -d "$FSR_ROOT_DIR" ]; then
-    echo -e "${GREEN}✓${NC} FSR найден: $FSR_ROOT_DIR"
-    BUILD_WITH_FSR=ON
-elif [ -n "$FIDELITYFX_ROOT" ] && [ -d "$FIDELITYFX_ROOT" ]; then
-    echo -e "${GREEN}✓${NC} FSR найден: $FIDELITYFX_ROOT"
-    export FSR_ROOT_DIR="$FIDELITYFX_ROOT"
-    BUILD_WITH_FSR=ON
-else
-    echo -e "${YELLOW}⚠${NC} FSR не найден, сборка без FSR"
-fi
-
-echo ""
-echo "📋 Конфигурация сборки:"
-echo "  • CUDA:  $BUILD_WITH_CUDA"
-echo "  • OptiX: $BUILD_WITH_OPTIX"
-echo "  • DLSS:  $BUILD_WITH_DLSS (не поддерживается на Linux)"
-echo "  • FSR:   $BUILD_WITH_FSR"
-echo ""
-
-# Очистка предыдущей сборки (опционально)
-if [ "$2" == "clean" ]; then
-    echo "🧹 Очистка предыдущей сборки..."
-    rm -rf "$BUILD_DIR"
-fi
-
-# Создание директории сборки
-mkdir -p "$BUILD_DIR"
-
-# Конфигурация CMake
-echo "⚙️  Конфигурация CMake..."
-cmake -B "$BUILD_DIR" -G Ninja \
-    -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
-    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    -DENABLE_FREQVOX=ON \
-    -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
-    -DBUILD_WITH_CUDA="$BUILD_WITH_CUDA" \
-    -DBUILD_WITH_OPTIX="$BUILD_WITH_OPTIX" \
-    -DBUILD_WITH_DLSS=OFF \
-    -DBUILD_WITH_FSR="$BUILD_WITH_FSR"
-
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Ошибка конфигурации CMake${NC}"
+# Проверяем наличие компилятора C++
+if ! command -v g++ &> /dev/null; then
+    echo "❌ Компилятор C++ не найден. Установите g++."
     exit 1
 fi
 
-# Сборка
-echo ""
+# Проверяем наличие системного Vulkan SDK
+if ! pkg-config --exists vulkan; then
+    echo "❌ Vulkan SDK не найден в системе."
+    echo "Установите Vulkan SDK: sudo apt install libvulkan-dev"
+    exit 1
+fi
+
+echo "✅ Vulkan SDK найден в системе"
+
+echo "✅ Проверки зависимостей пройдены"
+
+# Создаем директорию сборки если её нет
+BUILD_DIR="build_linux"
+if [ ! -d "$BUILD_DIR" ]; then
+    echo "📁 Создаём директорию сборки: $BUILD_DIR"
+    mkdir -p "$BUILD_DIR"
+else
+    echo "📁 Директория сборки уже существует: $BUILD_DIR"
+fi
+
+cd "$BUILD_DIR"
+
+# Настройка проекта с CMake
+echo "🔧 Настройка проекта с CMake..."
+cmake .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_CXX_STANDARD=17 \
+    -DVULKAN_SDK_PATH="$VULKAN_SDK_PATH" \
+    -DCMAKE_PREFIX_PATH="$VULKAN_SDK_PATH" \
+    -DBUILD_EXAMPLES=ON \
+    -DBUILD_TESTS=OFF
+
+# Сборка проекта
 echo "🔨 Сборка проекта..."
-cmake --build "$BUILD_DIR" --config "$BUILD_TYPE" -j$(nproc)
+cmake --build . --config Release -j$(nproc)
 
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Ошибка сборки${NC}"
+# Проверка успешной сборки
+if [ -f "HybridFreGS_Demo" ]; then
+    echo "✅ Сборка завершена успешно!"
+    echo ""
+    echo "=================================="
+    echo "SpectraForge успешно собран!"
+    echo ""
+    echo "Исполняемые файлы:"
+    echo "  📱 HybridFreGS_Demo     - демо Hybrid TriangleSplatting + FreGS (бесоконное)"
+    echo "  🖼️  WindowDemo           - демо оконной системы (требует графической среды)"
+    echo "  🏛️  SponzaAdvancedDemo   - демо сцены Sponza с validation layers"
+    echo ""
+    echo "Запуск демо:"
+    echo "  cd $BUILD_DIR"
+    echo "  ./HybridFreGS_Demo       # Бесоконное демо (рекомендуется)"
+    echo "  ./WindowDemo             # Оконное демо (требует X11)"
+    echo "  ./SponzaAdvancedDemo     # Sponza с validation layers"
+    echo "=================================="
+else
+    echo "❌ Ошибка сборки. Проверьте логи."
     exit 1
 fi
-
-echo ""
-echo -e "${GREEN}✅ Сборка успешно завершена!${NC}"
-echo ""
-echo "📦 Результаты сборки:"
-ls -lh "$BUILD_DIR"/*.a "$BUILD_DIR"/*_Demo 2>/dev/null || true
-
-echo ""
-echo "🚀 Для запуска демо:"
-echo "  cd $BUILD_DIR"
-echo "  ./VulkanRenderer_Demo"
-echo ""
-

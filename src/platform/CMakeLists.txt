@@ -1,16 +1,23 @@
-# Платформо-зависимый код SpectraForge
-cmake_minimum_required(VERSION 3.16)
+# SpectraForge Platform Module (оконная система)
 
-message(STATUS "Настройка SpectraForge_Platform")
-
-# Пока заглушка - будет реализовано в следующих этапах
-add_library(SpectraForge_Platform INTERFACE)
-
-target_include_directories(SpectraForge_Platform 
-    INTERFACE ${CMAKE_SOURCE_DIR}/include
+# Create platform module as object library
+add_library(SpectraForge_Platform OBJECT
+    X11Window.cpp
 )
 
-# Создание alias
-add_library(SpectraForge::Platform ALIAS SpectraForge_Platform)
+# Include directories
+target_include_directories(SpectraForge_Platform PUBLIC
+    ${CMAKE_SOURCE_DIR}/include
+)
 
-message(STATUS "SpectraForge_Platform заглушка создана")
+# Compile definitions
+target_compile_definitions(SpectraForge_Platform PUBLIC
+    ENGINE_3D_BUILD
+)
+
+# Link with X11 on Linux
+if(UNIX AND NOT APPLE)
+    find_package(X11 REQUIRED)
+    target_include_directories(SpectraForge_Platform PRIVATE ${X11_INCLUDE_DIR})
+    target_link_libraries(SpectraForge_Platform PRIVATE ${X11_LIBRARIES})
+endif()

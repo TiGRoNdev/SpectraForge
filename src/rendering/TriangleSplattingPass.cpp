@@ -388,7 +388,7 @@ void TriangleSplattingPass::cleanup() {
 }
 
 bool TriangleSplattingPass::createOutputImage() {
-    // Create output image (RGBA16F)
+    // Create output image (RGBA16F) — соответствует ожиданиям compute шейдера
     vk::ImageCreateInfo imageInfo;
     imageInfo.imageType = vk::ImageType::e2D;
     imageInfo.format = vk::Format::eR16G16B16A16Sfloat;
@@ -631,18 +631,32 @@ bool TriangleSplattingPass::createBuffers() {
 }
 
 bool TriangleSplattingPass::createShaderModule() {
-    // Load compiled SPIR-V shader
-    std::ifstream file("shaders/TriangleSplatting.comp.spv", std::ios::binary | std::ios::ate);
-    
+    // Load compiled SPIR-V shader with multiple path attempts (like other shaders)
+    std::vector<std::string> paths = {
+        "shaders/TriangleSplatting.comp.spv",
+        "../shaders/TriangleSplatting.comp.spv",
+        "../../shaders/TriangleSplatting.comp.spv",
+        "build/shaders/TriangleSplatting.comp.spv"
+    };
+
+    std::ifstream file;
+    for (const auto& path : paths) {
+        file.open(path, std::ios::binary | std::ios::ate);
+        if (file.is_open()) {
+            std::cout << "[TriangleSplattingPass] Loaded shader from: " << path << std::endl;
+            break;
+        }
+    }
+
     if (!file.is_open()) {
         std::cerr << "[TriangleSplattingPass] Failed to open shader file: shaders/TriangleSplatting.comp.spv\n";
         std::cerr << "[TriangleSplattingPass] Make sure to compile shaders with: glslangValidator -V shaders/TriangleSplatting.comp -o shaders/TriangleSplatting.comp.spv\n";
         return false;
     }
-    
+
     size_t fileSize = static_cast<size_t>(file.tellg());
     std::vector<char> buffer(fileSize);
-    
+
     file.seekg(0);
     file.read(buffer.data(), fileSize);
     file.close();
@@ -1352,15 +1366,29 @@ void TriangleSplattingPass::execute(vk::CommandBuffer cmd, uint32_t frameIndex) 
 
 bool TriangleSplattingPass::createBitonicSortResources() {
     std::cout << "[TriangleSplattingPass] Creating Bitonic Sort resources...\n";
-    
-    // 1. Load Bitonic Sort shader
-    std::ifstream file("shaders/BitonicSort.comp.spv", std::ios::binary | std::ios::ate);
-    
+
+    // 1. Load Bitonic Sort shader with multiple path attempts
+    std::vector<std::string> paths = {
+        "shaders/BitonicSort.comp.spv",
+        "../shaders/BitonicSort.comp.spv",
+        "../../shaders/BitonicSort.comp.spv",
+        "build/shaders/BitonicSort.comp.spv"
+    };
+
+    std::ifstream file;
+    for (const auto& path : paths) {
+        file.open(path, std::ios::binary | std::ios::ate);
+        if (file.is_open()) {
+            std::cout << "[TriangleSplattingPass] Loaded BitonicSort shader from: " << path << std::endl;
+            break;
+        }
+    }
+
     if (!file.is_open()) {
         std::cerr << "[TriangleSplattingPass] Failed to open shader file: shaders/BitonicSort.comp.spv\n";
         return false;
     }
-    
+
     size_t fileSize = static_cast<size_t>(file.tellg());
     std::vector<char> shaderCode(fileSize);
     file.seekg(0);
@@ -1481,15 +1509,29 @@ bool TriangleSplattingPass::createBitonicSortResources() {
 
 bool TriangleSplattingPass::createDepthKeyComputeResources() {
     std::cout << "[TriangleSplattingPass] Creating Depth Key Compute resources...\n";
-    
-    // 1. Load Depth Key Compute shader
-    std::ifstream file("shaders/DepthKeyCompute.comp.spv", std::ios::binary | std::ios::ate);
-    
+
+    // 1. Load Depth Key Compute shader with multiple path attempts
+    std::vector<std::string> paths = {
+        "shaders/DepthKeyCompute.comp.spv",
+        "../shaders/DepthKeyCompute.comp.spv",
+        "../../shaders/DepthKeyCompute.comp.spv",
+        "build/shaders/DepthKeyCompute.comp.spv"
+    };
+
+    std::ifstream file;
+    for (const auto& path : paths) {
+        file.open(path, std::ios::binary | std::ios::ate);
+        if (file.is_open()) {
+            std::cout << "[TriangleSplattingPass] Loaded DepthKeyCompute shader from: " << path << std::endl;
+            break;
+        }
+    }
+
     if (!file.is_open()) {
         std::cerr << "[TriangleSplattingPass] Failed to open shader file: shaders/DepthKeyCompute.comp.spv\n";
         return false;
     }
-    
+
     size_t fileSize = static_cast<size_t>(file.tellg());
     std::vector<char> shaderCode(fileSize);
     file.seekg(0);
@@ -1687,15 +1729,29 @@ void TriangleSplattingPass::computeDepthKeys(vk::CommandBuffer cmd, const glm::v
 
 bool TriangleSplattingPass::createFrustumCullingResources() {
     std::cout << "[TriangleSplattingPass] Creating Frustum Culling resources...\n";
-    
-    // 1. Load Frustum Culling shader
-    std::ifstream file("shaders/FrustumCulling.comp.spv", std::ios::binary | std::ios::ate);
-    
+
+    // 1. Load Frustum Culling shader with multiple path attempts
+    std::vector<std::string> paths = {
+        "shaders/FrustumCulling.comp.spv",
+        "../shaders/FrustumCulling.comp.spv",
+        "../../shaders/FrustumCulling.comp.spv",
+        "build/shaders/FrustumCulling.comp.spv"
+    };
+
+    std::ifstream file;
+    for (const auto& path : paths) {
+        file.open(path, std::ios::binary | std::ios::ate);
+        if (file.is_open()) {
+            std::cout << "[TriangleSplattingPass] Loaded FrustumCulling shader from: " << path << std::endl;
+            break;
+        }
+    }
+
     if (!file.is_open()) {
         std::cerr << "[TriangleSplattingPass] Failed to open shader file: shaders/FrustumCulling.comp.spv\n";
         return false;
     }
-    
+
     size_t fileSize = static_cast<size_t>(file.tellg());
     std::vector<char> shaderCode(fileSize);
     file.seekg(0);
@@ -1906,15 +1962,29 @@ void TriangleSplattingPass::performFrustumCulling(vk::CommandBuffer cmd) {
 
 bool TriangleSplattingPass::createIndirectArgsResources() {
     std::cout << "[TriangleSplattingPass] Creating Indirect Args Compute resources...\n";
-    
-    // 1. Load Indirect Args Compute shader
-    std::ifstream file("shaders/IndirectArgsCompute.comp.spv", std::ios::binary | std::ios::ate);
-    
+
+    // 1. Load Indirect Args Compute shader with multiple path attempts
+    std::vector<std::string> paths = {
+        "shaders/IndirectArgsCompute.comp.spv",
+        "../shaders/IndirectArgsCompute.comp.spv",
+        "../../shaders/IndirectArgsCompute.comp.spv",
+        "build/shaders/IndirectArgsCompute.comp.spv"
+    };
+
+    std::ifstream file;
+    for (const auto& path : paths) {
+        file.open(path, std::ios::binary | std::ios::ate);
+        if (file.is_open()) {
+            std::cout << "[TriangleSplattingPass] Loaded IndirectArgsCompute shader from: " << path << std::endl;
+            break;
+        }
+    }
+
     if (!file.is_open()) {
         std::cerr << "[TriangleSplattingPass] Failed to open shader file: shaders/IndirectArgsCompute.comp.spv\n";
         return false;
     }
-    
+
     size_t fileSize = static_cast<size_t>(file.tellg());
     std::vector<char> shaderCode(fileSize);
     file.seekg(0);
@@ -2070,8 +2140,23 @@ bool TriangleSplattingPass::createTileCullingResources() {
 }
 
 bool TriangleSplattingPass::createTileCullingPipelineResources() {
-    // Load Tile Culling shader
-    std::ifstream file("shaders/TileCulling.comp.spv", std::ios::binary | std::ios::ate);
+    // Load Tile Culling shader with multiple path attempts
+    std::vector<std::string> paths = {
+        "shaders/TileCulling.comp.spv",
+        "../shaders/TileCulling.comp.spv",
+        "../../shaders/TileCulling.comp.spv",
+        "build/shaders/TileCulling.comp.spv"
+    };
+
+    std::ifstream file;
+    for (const auto& path : paths) {
+        file.open(path, std::ios::binary | std::ios::ate);
+        if (file.is_open()) {
+            std::cout << "[TriangleSplattingPass] Loaded TileCulling shader from: " << path << std::endl;
+            break;
+        }
+    }
+
     if (!file.is_open()) {
         std::cerr << "[TriangleSplattingPass] Failed to open shader file: shaders/TileCulling.comp.spv\n";
         return false;

@@ -344,113 +344,106 @@ void main() {
     uint tileIndex = tileID.y * tilesX + tileID.x;
 
     TileVisibleTriangles tileData = tileTriangles[tileIndex];
-    bool useTiles = (pc.enableTileBinning != 0) && (tileData.triangleCount > 0);
-    // Защита от выхода за границы MAX_TRIANGLES_PER_TILE
+    // FORCE DISABLE tile binning for debug
+    bool useTiles = false;
     uint tileCountClamped = min(tileData.triangleCount, uint(MAX_TRIANGLES_PER_TILE));
-    uint loopCount = useTiles ? tileCountClamped : pc.triangleCount;
+    uint loopCount = pc.triangleCount; // Always use global triangle count
 
-    // Итерируем по подходящему списку
+    // ===== ULTRA DEBUG: Проверяем ПЕРВУЮ итерацию цикла! =====
+    bool anyTriangleProcessed = false;
+    bool passedBackface = false;
+    bool passedAABB = false;
+    bool passedSDF = false;
+    bool loopStarted = false; // Флаг что цикл НАЧАЛСЯ
+    
+    // ===== DEBUG: Флаг для раннего break =====
+    bool earlyBreak = false;
+
+    // DEBUG: Цвет для визуализации clipPos.w
+    vec4 debugColor = vec4(0.0, 0.0, 0.0, 1.0); // BLACK по умолчанию
+
     for (uint i = 0; i < loopCount; ++i) {
-        // Индекс треугольника из тайла или из глобального массива индексов (может быть visibleIndices)
+        loopStarted = true; // Первая строка в цикле!
         uint triIdx = useTiles ? tileData.triangleIndices[i] : sortedIndices[i];
-        // Если используем список видимых индексов и встретили маркер пустоты — ранний выход
         if (!useTiles && triIdx == 0xFFFFFFFFu) {
+            // EARLY BREAK - triIdx is invalid!
+            earlyBreak = true;
             break;
         }
-        Triangle tri = triangles[triIdx];
         
-        // Project vertices to screen space
+        Triangle tri = triangles[triIdx];
+        anyTriangleProcessed = true;
+        
+        // Project vertices
         vec2 v0_screen = projectToScreen(tri.v0);
         vec2 v1_screen = projectToScreen(tri.v1);
         vec2 v2_screen = projectToScreen(tri.v2);
 
-        // Check if triangle is behind camera or outside frustum
-        if (v0_screen.x < -1000.0 || v1_screen.x < -1000.0 || v2_screen.x < -1000.0) {
-            continue;
-        }
+    // ПРОВЕРКА ЦИКЛА: Визуализируем выполнение цикла
+    vec4 debugColor = vec4(0.0, 0.0, 0.0, 1.0); // BLACK по умолчанию
 
-        // Backface culling: отсечение треугольников, повёрнутых назад
-        // Это ускоряет рендеринг в 2× для замкнутых мешей (половина треугольников не видна)
-        if (isBackFacing(v0_screen, v1_screen, v2_screen)) {
-            continue;  // Треугольник повёрнут назад — пропускаем
-        }
+    // Считаем количество выполненных итераций
+    uint iterationsExecuted = 0;
 
-        // Ранний выход по AABB для снижения работы пиксельного цикла
-        vec4 triAABB = computeTriangleAABB(v0_screen, v1_screen, v2_screen);
-        if (!overlapsWithAABB(pixelPos, triAABB)) {
-            continue;  // Пиксель не пересекает AABB треугольника
-        }
-        
-        // Compute incenter (point where SDF is minimized)
-        vec2 incenter = computeIncenter(v0_screen, v1_screen, v2_screen);
-        
-        // Compute SDF at current pixel
-        float phi = computeTriangleSDF(pixelPos, v0_screen, v1_screen, v2_screen);
-        
-        // SDF работает корректно - убираем debug-визуализацию
+    for (uint i = 0; i < loopCount; ++i) {
+        iterationsExecuted++;
+        loopStarted = true; // Флаг что цикл НАЧАЛСЯ
 
-        // Outside triangle (positive SDF)
-        if (phi > 0.0) {
-            continue;
-        }
-        
-        // Compute SDF at incenter (most negative value)
-        float phiCenter = computeTriangleSDF(incenter, v0_screen, v1_screen, v2_screen);
-        
-        // Degenerate triangle (zero area)
-        if (abs(phiCenter) < 0.0001) {
-            continue;
-        }
-        
-        // Compute smooth window function weight
-        float weight = smoothWindowFunction(phi, phiCenter, tri.sigma);
-        
-        // Triangle contribution (color * opacity * weight)
-        float alpha = tri.opacity * weight;
-        
-        // ✨ ТЕКСТУРЫ + ОСВЕЩЕНИЕ (простой Lambertian)
-        // Интерполируем текстурные координаты для текущего пикселя
-        vec3 barycentric = computeBarycentric(pixelPos, v0_screen, v1_screen, v2_screen);
-        vec2 texCoord = tri.texCoord0 * barycentric.x +
-                       tri.texCoord1 * barycentric.y +
-                       tri.texCoord2 * barycentric.z;
-
-        // Сэмплируем текстуру (пока fallback к цветам)
-        vec4 texColor = sampleTexture(texCoord, tri.materialId);
-
-        // Направление света (верхний-правый-передний)
-        vec3 lightDir = normalize(vec3(0.5, 1.0, 0.3));
-        // Рассеянный свет (diffuse)
-        // Усилим базовую засветку для визуальной проверки (ambient 0.5)
-        float diffuse = max(0.0, dot(tri.normal, lightDir)) * 0.5 + 0.5;
-        vec3 litColor = texColor.rgb * diffuse;
-        
-        // OPAQUE FAST PATH: если треугольник непрозрачный (opacity ≈ 1.0),
-        // пропускаем альфа-блендинг и используем Z-test подход
-        const float OPAQUE_THRESHOLD = 0.95;
-        if (tri.opacity >= OPAQUE_THRESHOLD && weight > 0.99) {
-            // Непрозрачный треугольник — просто заменяем цвет без блендинга
-            accumColor.rgb = litColor;
-            accumColor.a = 1.0;
-            accumAlpha = 1.0;
-            break;  // Дальнейшие треугольники за этим не видны
-        }
-        
-        // Front-to-back alpha blending (стандартный путь для прозрачных)
-        // C_accum += C_tri * α_tri * (1 - α_accum)
-        accumColor.rgb += litColor * alpha * (1.0 - accumAlpha);
-        accumColor.a += alpha * (1.0 - accumAlpha);
-        accumAlpha += alpha * (1.0 - accumAlpha);
-        
-        // Early termination (fully opaque)
-        if (pc.enableEarlyTermination != 0 && accumAlpha > pc.alphaThreshold) {
+        uint triIdx = useTiles ? tileData.triangleIndices[i] : sortedIndices[i];
+        if (!useTiles && triIdx == 0xFFFFFFFFu) {
+            // EARLY BREAK - triIdx is invalid!
+            earlyBreak = true;
             break;
         }
+
+        Triangle tri = triangles[triIdx];
+        anyTriangleProcessed = true;
+
+        // Project vertices
+        vec2 v0_screen = projectToScreen(tri.v0);
+        vec2 v1_screen = projectToScreen(tri.v1);
+        vec2 v2_screen = projectToScreen(tri.v2);
+
+        // Вычисляем минимальное clipPos.w для треугольника
+        vec4 clip0 = pc.viewProj * vec4(tri.v0, 1.0);
+        vec4 clip1 = pc.viewProj * vec4(tri.v1, 1.0);
+        vec4 clip2 = pc.viewProj * vec4(tri.v2, 1.0);
+        float minClipW = min(clip0.w, min(clip1.w, clip2.w));
+
+        if (minClipW > 0.0) {
+            // Желтый для треугольников перед камерой (но может отсечься позже)
+            debugColor = vec4(1.0, 1.0, 0.0, 1.0);
+        } else {
+            // Фиолетовый для треугольников за камерой
+            debugColor = vec4(1.0, 0.0, 1.0, 1.0);
+        }
+
+        // Check behind camera
+        if (v0_screen.x < -1000.0 || v1_screen.x < -1000.0 || v2_screen.x < -1000.0) {
+            // Красный для треугольников за камерой
+            debugColor = vec4(1.0, 0.0, 0.0, 1.0);
+            continue;
+        }
+
+        // Зеленый для треугольников, прошедших все проверки
+        debugColor = vec4(0.0, 1.0, 0.0, 1.0);
+        
+        // TEMPORARY: Skip ALL culling checks - just mark triangle as visible!
+        passedBackface = true;
+        passedAABB = true;
+        passedSDF = true;
+        
+        // Используем цвет треугольника для ВСЕГО ЭКРАНА!
+        accumColor = vec4(tri.color, 1.0); // RED для нашего куба!
+        accumAlpha = 1.0;
+        break; // Process only first visible triangle
     }
     
-    // Финальный цвет: используем накопленный цвет, или черный фон
-    vec4 outputColor = accumAlpha > 0.001 ? accumColor : vec4(0.0, 0.0, 0.0, 1.0);
-    
+    // ПРОСТАЯ ВИЗУАЛИЗАЦИЯ: используем iterationsExecuted как интенсивность красного
+    float intensity = float(iterationsExecuted) / 12.0; // Нормализуем до 0-1 для 12 треугольников
+    vec4 outputColor = vec4(intensity, 0.0, 0.0, 1.0);
+
     imageStore(outImage, globalID, outputColor);
+}
 }
 

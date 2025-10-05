@@ -332,7 +332,7 @@ bool Engine::load_scene(const Vulkan::SceneData &data) {
             materialColors.push_back(glm::vec3(0.68f, 0.68f, 0.68f)); // серый камень (колонны)
             
             // Применяем triangleStep для уменьшения плотности (оптимизация производительности)
-            size_t step = std::max<size_t>(1, data.triangleStep);
+            size_t step = 1; // TODO: вынести настройки в движок
             for (size_t i = 0; i < tris.size(); i += step) {
                 const auto& tri = tris[i];
 
@@ -475,7 +475,24 @@ void Engine::render() {
         frame.camera.viewMatrix = glm::lookAt(cameraPos, center, upGlm);
         frame.camera.projectionMatrix = glm::perspective(glm::radians(frame.camera.fov), aspect, frame.camera.nearPlane, frame.camera.farPlane);
     }
+    // Обработка VK_ERROR_DEVICE_LOST: если рендерер сообщает о потере устройства — закрываем окно
+    if (auto h = std::dynamic_pointer_cast<Rendering::HybridFreGSRenderer>(renderer_)) {
+        if (h->isDeviceLost()) {
+            std::cerr << "[App::Engine] ❌ Device lost — закрываем окно" << std::endl;
+            if (window_) window_->close();
+            return;
+        }
+    }
+
     renderer_->renderFrame(frame);
+
+    if (auto h2 = std::dynamic_pointer_cast<Rendering::HybridFreGSRenderer>(renderer_)) {
+        if (h2->isDeviceLost()) {
+            std::cerr << "[App::Engine] ❌ Device lost обнаружен после renderFrame — закрываем окно" << std::endl;
+            if (window_) window_->close();
+            return;
+        }
+    }
     renderer_->endFrame();
 }
 

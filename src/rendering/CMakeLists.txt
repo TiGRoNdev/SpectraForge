@@ -1,16 +1,30 @@
-# Система рендеринга SpectraForge
-cmake_minimum_required(VERSION 3.16)
+# SpectraForge Rendering Module (Pure C++ with Vulkan)
 
-message(STATUS "Настройка SpectraForge_Rendering")
-
-# Пока заглушка - будет реализовано в следующих этапах
-add_library(SpectraForge_Rendering INTERFACE)
-
-target_include_directories(SpectraForge_Rendering 
-    INTERFACE ${CMAKE_SOURCE_DIR}/include
+# Create rendering module as object library
+add_library(SpectraForge_Vulkan OBJECT
+    SpectraForge_Vulkan.cpp
+    HybridFreGSRenderer.cpp
+    VulkanValidation.cpp
+    TriangleSplattingPass.cpp
+    # OpenGL-compatible rendering classes (используются для базовой геометрии)
+    opengl/Camera3D.cpp
+    opengl/Mesh3D.cpp
 )
 
-# Создание alias
-add_library(SpectraForge::Rendering ALIAS SpectraForge_Rendering)
+# Include directories
+target_include_directories(SpectraForge_Vulkan PUBLIC
+    ${CMAKE_SOURCE_DIR}/include
+)
 
-message(STATUS "SpectraForge_Rendering заглушка создана")
+# Link with Vulkan and core modules
+target_link_libraries(SpectraForge_Vulkan PUBLIC
+    Vulkan::Vulkan
+    SpectraForge_Core
+    SpectraForge_Math
+)
+
+# Compile definitions
+target_compile_definitions(SpectraForge_Vulkan PUBLIC
+    ENGINE_3D_BUILD
+    SpectraForge_ENABLE_VULKAN
+)

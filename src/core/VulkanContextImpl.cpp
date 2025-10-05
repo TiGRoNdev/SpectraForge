@@ -49,6 +49,42 @@ namespace spectraforge {
 namespace {
 
 /**
+ * @brief Debug callback для получения сообщений от validation layers
+ * @note Используем Vulkan-hpp типы для совместимости с vk::DebugUtilsMessengerCreateInfoEXT
+ */
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData) {
+    
+    (void)pUserData;  // Неиспользуемый параметр
+    
+    // Формируем префикс в зависимости от типа сообщения
+    std::string prefix = "[Vulkan";
+    if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
+        prefix += " Validation";
+    }
+    if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
+        prefix += " Performance";
+    }
+    prefix += "]";
+    
+    // Выводим в зависимости от уровня важности
+    if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+        std::cerr << prefix << " ❌ ERROR: " << pCallbackData->pMessage << "\n";
+    } else if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+        std::cout << prefix << " ⚠️  WARNING: " << pCallbackData->pMessage << "\n";
+    } else if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+        std::cout << prefix << " ℹ️  INFO: " << pCallbackData->pMessage << "\n";
+    } else {
+        std::cout << prefix << " 🔍 VERBOSE: " << pCallbackData->pMessage << "\n";
+    }
+    
+    return VK_FALSE;
+}
+
+/**
  * @brief Check if validation layers are available
  */
 bool checkValidationLayerSupport(const std::vector<const char*>& validationLayers) {
@@ -248,6 +284,22 @@ public:
             }
         }
 
+        // Destroy debug messenger перед instance (используем C API)
+        if (debugMessenger_ && instance_) {
+            std::cout << "[VulkanContext] 🗑️ Уничтожение debug messenger...\n";
+            try {
+                auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+                    instance_, "vkDestroyDebugUtilsMessengerEXT");
+                if (func != nullptr) {
+                    func(instance_, debugMessenger_, nullptr);
+                }
+                debugMessenger_ = nullptr;
+                std::cout << "[VulkanContext] ✅ Debug messenger уничтожен\n";
+            } catch (const std::exception& e) {
+                std::cerr << "[VulkanContext] ❌ Ошибка при уничтожении debug messenger: " << e.what() << "\n";
+            }
+        }
+        
         // Destroy instance (последний шаг)
         if (instance_) {
             std::cout << "[VulkanContext] 🗑️ Уничтожение экземпляра Vulkan...\n";
@@ -310,34 +362,28 @@ private:
         std::vector<const char*> extensions = {
             VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
         };
+        
+        // Добавляем debug utils extension для validation layers
+        if (enableValidation_) {
+            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+            std::cout << "[VulkanContext] 🔍 Добавлено расширение: " << VK_EXT_DEBUG_UTILS_EXTENSION_NAME << std::endl;
+        }
 
         // Получаем требуемые расширения от GLFW (включает VK_KHR_surface и платформо-специфичные)
+        // ПРИМЕЧАНИЕ: GLFW должен быть уже инициализирован Window::initializeSystem()
         std::cout << "[VulkanContext] 🔍 Запрос расширений Vulkan от GLFW..." << std::endl;
         
-        // КРИТИЧЕСКИ ВАЖНО: проверяем, что GLFW был инициализирован
-        if (!glfwInit()) {
-            throw std::runtime_error(
-                "GLFW не инициализирован! Вызовите glfwInit() перед созданием VulkanContext."
-            );
-        }
-        
-        // Проверяем поддержку Vulkan
-        std::cout << "[VulkanContext] 🔍 Проверка glfwVulkanSupported()..." << std::endl;
-        if (!glfwVulkanSupported()) {
-            throw std::runtime_error(
-                "glfwVulkanSupported() вернул FALSE!\n"
-                "  Возможные причины:\n"
-                "  1) Vulkan loader не установлен (libvulkan1, mesa-vulkan-drivers)\n"
-                "  2) Драйверы GPU не поддерживают Vulkan\n"
-                "  3) GLFW скомпилирован без поддержки Vulkan\n\n"
-                "  Установите: sudo apt install libvulkan1 mesa-vulkan-drivers vulkan-tools\n"
-                "  Проверка: vulkaninfo"
-            );
-        }
-        std::cout << "[VulkanContext] ✅ glfwVulkanSupported() = TRUE" << std::endl;
+        // Дополнительная отладка: проверяем состояние GLFW
+        std::cout << "[VulkanContext] 🔍 Проверка glfwVulkanSupported() перед запросом расширений..." << std::endl;
+        int vulkanSupported = glfwVulkanSupported();
+        std::cout << "[VulkanContext] glfwVulkanSupported() = " << (vulkanSupported ? "TRUE" : "FALSE") << std::endl;
         
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+        
+        std::cout << "[VulkanContext] glfwGetRequiredInstanceExtensions() вернул: " 
+                  << (glfwExtensions ? "VALID pointer" : "NULL")
+                  << ", count = " << glfwExtensionCount << std::endl;
         
         if (glfwExtensions && glfwExtensionCount > 0) {
             std::cout << "[VulkanContext] ✅ GLFW предоставил " << glfwExtensionCount << " Vulkan расширений:" << std::endl;
@@ -363,18 +409,48 @@ private:
         createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
         createInfo.ppEnabledExtensionNames = extensions.data();
         
-        // Validation layers
+        // Validation layers - безопасная проверка и включение только доступных слоев
         std::vector<const char*> validationLayers;
         if (enableValidation_) {
-            validationLayers = { "VK_LAYER_KHRONOS_validation" };
-            
-            if (!checkValidationLayerSupport(validationLayers)) {
-                std::cerr << "Validation layers requested but not available\n";
+            // Получаем все доступные слои валидации
+            auto availableLayers = vk::enumerateInstanceLayerProperties();
+            std::cout << "[VulkanContext] 🔍 Доступные validation layers (" << availableLayers.size() << "):" << std::endl;
+            for (const auto& layer : availableLayers) {
+                std::cout << "  ✓ " << layer.layerName << std::endl;
+            }
+
+            // Список желаемых слоев (будут включены только если доступны)
+            const std::vector<const char*> requestedLayers = {
+                "VK_LAYER_KHRONOS_validation",    // Основной слой валидации
+            };
+
+            std::cout << "[VulkanContext] 🔍 Проверка запрошенных слоёв..." << std::endl;
+            for (const char* requestedLayer : requestedLayers) {
+                bool found = false;
+                for (const auto& availableLayer : availableLayers) {
+                    if (strcmp(requestedLayer, availableLayer.layerName) == 0) {
+                        validationLayers.push_back(requestedLayer);
+                        found = true;
+                        std::cout << "  ✅ " << requestedLayer << " - ДОСТУПЕН" << std::endl;
+                        break;
+                    }
+                }
+                if (!found) {
+                    std::cout << "  ⚠️  " << requestedLayer << " - НЕДОСТУПЕН (пропускаем)" << std::endl;
+                }
+            }
+
+            if (validationLayers.empty()) {
+                std::cout << "[VulkanContext] ⚠️  Validation layers запрошены, но ни один не доступен" << std::endl;
+                std::cout << "[VulkanContext] ℹ️  Продолжаем без validation layers" << std::endl;
                 enableValidation_ = false;
             } else {
+                std::cout << "[VulkanContext] ✅ Включаем " << validationLayers.size() << " validation layer(s)" << std::endl;
                 createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
                 createInfo.ppEnabledLayerNames = validationLayers.data();
             }
+        } else {
+            std::cout << "[VulkanContext] ℹ️  Validation layers отключены пользователем" << std::endl;
         }
         
         instance_ = vk::createInstance(createInfo);
@@ -382,6 +458,36 @@ private:
         std::cout << "Vulkan instance created (API 1.3)\n";
         // Initialize dispatcher with instance
         VULKAN_HPP_DEFAULT_DISPATCHER.init(instance_);
+        
+        // Создаём debug messenger если validation layers включены (используем C API напрямую)
+        if (enableValidation_ && !validationLayers.empty()) {
+            VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+            debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+            debugCreateInfo.pNext = nullptr;
+            debugCreateInfo.flags = 0;
+            debugCreateInfo.messageSeverity = 
+                VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+                VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+            debugCreateInfo.messageType = 
+                VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+            debugCreateInfo.pfnUserCallback = debugCallback;
+            debugCreateInfo.pUserData = nullptr;
+            
+            // Используем C API для создания messenger, затем оборачиваем в vk::DebugUtilsMessengerEXT
+            VkDebugUtilsMessengerEXT rawMessenger;
+            auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+                instance_, "vkCreateDebugUtilsMessengerEXT");
+            if (func != nullptr && func(instance_, &debugCreateInfo, nullptr, &rawMessenger) == VK_SUCCESS) {
+                debugMessenger_ = vk::DebugUtilsMessengerEXT(rawMessenger);
+                std::cout << "[VulkanContext] ✅ Debug messenger создан - validation layers активны!\n";
+            } else {
+                std::cerr << "[VulkanContext] ⚠️  Не удалось создать debug messenger\n";
+            }
+        }
     }
     
     void pickPhysicalDevice() {
@@ -444,6 +550,8 @@ private:
         vk::PhysicalDeviceFeatures deviceFeatures{};
         deviceFeatures.samplerAnisotropy = supported.samplerAnisotropy;
         deviceFeatures.geometryShader = supported.geometryShader;
+        // Включаем robust буферный доступ (если поддерживается) для предотвращения OOB → DeviceLost
+        deviceFeatures.robustBufferAccess = supported.robustBufferAccess;
         // Enable extended storage image formats only if supported
         deviceFeatures.shaderStorageImageExtendedFormats = supported.shaderStorageImageExtendedFormats;
 
@@ -457,6 +565,8 @@ private:
         vk::PhysicalDeviceVulkan13Features features13;
         features13.synchronization2 = VK_TRUE;
         features13.dynamicRendering = VK_TRUE;
+        // Включаем робастность доступа к изображениям через core 1.3
+        features13.robustImageAccess = VK_TRUE;
         
         // Vulkan 1.2 features
         vk::PhysicalDeviceVulkan12Features features12{};
@@ -466,11 +576,36 @@ private:
         features12.shaderFloat16 = supported12.shaderFloat16;
         features12.shaderInt8 = supported12.shaderInt8;
         features13.pNext = &features12;
+
+        // Опционально: VK_EXT_robustness2 (если доступно) для усиленной защиты доступа к буферам/изображениям
+        bool hasRobust2 = false;
+        {
+            auto extProps = physicalDevice_.enumerateDeviceExtensionProperties();
+            for (const auto& ep : extProps) {
+                if (std::string(ep.extensionName) == std::string(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME)) {
+                    hasRobust2 = true;
+                    break;
+                }
+            }
+        }
+        vk::PhysicalDeviceRobustness2FeaturesEXT robust2{};
+        if (hasRobust2) {
+            robust2.robustBufferAccess2 = VK_TRUE;
+            robust2.robustImageAccess2 = VK_TRUE;
+            // nullDescriptor оставим по умолчанию (false) чтобы не менять семантику биндингов
+            features12.pNext = &robust2;
+        }
+
+        // Не добавляем VkPhysicalDeviceImageRobustnessFeatures в pNext при наличии Vulkan13 (см. VUID-06532)
         
         // Device extensions
         std::vector<const char*> deviceExtensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
         };
+        if (hasRobust2) {
+            deviceExtensions.push_back(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+        }
+        // VK_EXT_image_robustness не требуется при core 1.3 robustImageAccess
         
         // Device create info
         vk::DeviceCreateInfo createInfo;
@@ -519,6 +654,7 @@ private:
     vk::Queue graphicsQueue_;
     vk::Queue computeQueue_;
     vk::CommandPool commandPool_;
+    vk::DebugUtilsMessengerEXT debugMessenger_;
     
     uint32_t graphicsQueueFamily_ = 0;
     uint32_t computeQueueFamily_ = 0;
