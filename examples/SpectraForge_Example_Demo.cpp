@@ -1,5 +1,3 @@
-// PSEUDOCODE !!!!!!
-
 #include <chrono>
 #include <iostream>
 #include <thread>  // для std::this_thread::sleep_for
@@ -55,7 +53,7 @@ class PseudoDemo {
         // step=500 →     81 треугольников → 32 FPS    (максимальная производительность)
         //
         // Выбрано: step=100 для лучшего баланса качества и производительности
-        scene.triangleStep = 200;
+        scene.triangleStep = 100;
 
         std::cout << "[Demo] 🔺 Загрузка сцены с уменьшенной плотностью треугольников (step=" << scene.triangleStep << ")" << std::endl;
 

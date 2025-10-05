@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cstring>
 #include <cinttypes>
+#include <SpectraForge/Rendering/Mesh3D.h>
 
 namespace spectraforge {
 namespace rendering {
@@ -127,10 +128,19 @@ bool TriangleSplattingPass::initialize(vk::Device device,
 }
 
 void TriangleSplattingPass::cleanup() {
-    if (!initialized_) return;
+    if (!initialized_) {
+        std::cout << "[TriangleSplattingPass] Cleanup called but not initialized\n";
+        return;
+    }
     
     std::cout << "[TriangleSplattingPass] Cleaning up...\n";
-    
+
+    // Check buffer states before cleanup
+    std::cout << "[TriangleSplattingPass] Buffer states before cleanup:\n";
+    std::cout << "[TriangleSplattingPass] tileCullingBuffer_ = " << tileCullingBuffer_ << std::endl;
+    std::cout << "[TriangleSplattingPass] materialTexturesBuffer_ = " << materialTexturesBuffer_ << std::endl;
+    std::cout << "[TriangleSplattingPass] textureDataBuffer_ = " << textureDataBuffer_ << std::endl;
+
     // Destroy pipeline
     if (pipeline_) {
         device_.destroyPipeline(pipeline_);
@@ -195,6 +205,19 @@ void TriangleSplattingPass::cleanup() {
         vmaDestroyBuffer(allocator_, tileCullingBuffer_, tileCullingAllocation_);
         tileCullingBuffer_ = nullptr;
         tileCullingAllocation_ = nullptr;
+    }
+
+    // Destroy material and texture buffers
+    if (materialTexturesBuffer_) {
+        vmaDestroyBuffer(allocator_, materialTexturesBuffer_, materialTexturesAllocation_);
+        materialTexturesBuffer_ = nullptr;
+        materialTexturesAllocation_ = nullptr;
+    }
+
+    if (textureDataBuffer_) {
+        vmaDestroyBuffer(allocator_, textureDataBuffer_, textureDataAllocation_);
+        textureDataBuffer_ = nullptr;
+        textureDataAllocation_ = nullptr;
     }
 
     // Destroy Bitonic Sort resources
@@ -624,7 +647,84 @@ bool TriangleSplattingPass::createBuffers() {
     
     indirectDispatchBuffer_ = vk::Buffer(vkIndirectDispatchBuffer);
     
-    std::cout << "[TriangleSplattingPass] Created buffers (max " 
+    // Create material textures buffer (SSBO) - для texture lookup
+    vk::BufferCreateInfo materialTexturesBufferInfo;
+    materialTexturesBufferInfo.size = sizeof(uint32_t) * 1024; // Max 1024 materials
+    materialTexturesBufferInfo.usage = vk::BufferUsageFlagBits::eStorageBuffer |
+                                      vk::BufferUsageFlagBits::eTransferDst;
+    materialTexturesBufferInfo.sharingMode = vk::SharingMode::eExclusive;
+
+    VmaAllocationCreateInfo materialTexturesAllocInfo{};
+    materialTexturesAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+    VkBuffer vkMaterialTexturesBuffer;
+    VkBufferCreateInfo vkMaterialTexturesBufferInfo = static_cast<VkBufferCreateInfo>(materialTexturesBufferInfo);
+
+    result = vmaCreateBuffer(
+        allocator_,
+        &vkMaterialTexturesBufferInfo,
+        &materialTexturesAllocInfo,
+        &vkMaterialTexturesBuffer,
+        &materialTexturesAllocation_,
+        nullptr
+    );
+
+    if (result != VK_SUCCESS) {
+        std::cerr << "[TriangleSplattingPass] Failed to create material textures buffer\n";
+        return false;
+    }
+
+    materialTexturesBuffer_ = vk::Buffer(vkMaterialTexturesBuffer);
+
+    // Create texture data buffer (SSBO) - для packed texture data
+    vk::BufferCreateInfo textureDataBufferInfo2;
+    textureDataBufferInfo2.size = sizeof(uint32_t) * 1024 * 1024; // Max 1M RGBA8 texels
+    textureDataBufferInfo2.usage = vk::BufferUsageFlagBits::eStorageBuffer |
+                                  vk::BufferUsageFlagBits::eTransferDst;
+    textureDataBufferInfo2.sharingMode = vk::SharingMode::eExclusive;
+
+    VmaAllocationCreateInfo textureDataAllocInfo{};
+    textureDataAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+    VkBuffer vkTextureDataBuffer;
+    VkBufferCreateInfo vkTextureDataBufferInfo = static_cast<VkBufferCreateInfo>(textureDataBufferInfo2);
+
+    result = vmaCreateBuffer(
+        allocator_,
+        &vkTextureDataBufferInfo,
+        &textureDataAllocInfo,
+        &vkTextureDataBuffer,
+        &textureDataAllocation_,
+        nullptr
+    );
+
+    if (result != VK_SUCCESS) {
+        std::cerr << "[TriangleSplattingPass] Failed to create texture data buffer\n";
+        return false;
+    }
+
+    textureDataBuffer_ = vk::Buffer(vkTextureDataBuffer);
+    
+    // Validate that essential buffers are created
+    if (triangleBuffer_ == VK_NULL_HANDLE) {
+        std::cerr << "[TriangleSplattingPass] ❌ Critical error: triangleBuffer_ is null!\n";
+        return false;
+    }
+
+    if (sortedIndicesBuffer_ == VK_NULL_HANDLE) {
+        std::cerr << "[TriangleSplattingPass] ❌ Critical error: sortedIndicesBuffer_ is null!\n";
+        return false;
+    }
+
+    std::cout << "[TriangleSplattingPass] ✅ Buffers created successfully:\n";
+    std::cout << "  - Triangle buffer: " << (triangleBuffer_ != VK_NULL_HANDLE ? "✅ OK" : "❌ FAILED") << "\n";
+    std::cout << "  - Sorted indices buffer: " << (sortedIndicesBuffer_ != VK_NULL_HANDLE ? "✅ OK" : "❌ FAILED") << "\n";
+    std::cout << "  - Depth keys buffer: " << (depthKeysBuffer_ != VK_NULL_HANDLE ? "✅ OK" : "❌ FAILED") << "\n";
+    std::cout << "  - Visible indices buffer: " << (visibleIndicesBuffer_ != VK_NULL_HANDLE ? "✅ OK" : "❌ FAILED") << "\n";
+    std::cout << "  - Tile culling buffer: " << (tileCullingBuffer_ != VK_NULL_HANDLE ? "✅ OK" : "⚠️ Not yet created (created later)") << "\n";
+    std::cout << "  - Material textures buffer: " << (materialTexturesBuffer_ != VK_NULL_HANDLE ? "✅ OK" : "❌ FAILED") << "\n";
+    std::cout << "  - Texture data buffer: " << (textureDataBuffer_ != VK_NULL_HANDLE ? "✅ OK" : "❌ FAILED") << "\n";
+    std::cout << "[TriangleSplattingPass] Created buffers (max "
               << maxTriangles_ << " triangles)\n";
     
     return true;
@@ -667,15 +767,23 @@ bool TriangleSplattingPass::createShaderModule() {
     
     computeShader_ = device_.createShaderModule(createInfo);
     
-    std::cout << "[TriangleSplattingPass] Loaded shader module (" 
+    std::cout << "[TriangleSplattingPass] Loaded shader module ("
               << fileSize << " bytes)\n";
-    
+
+    // Check buffer states right after shader loading
+    std::cout << "[TriangleSplattingPass] DEBUG: Buffer states after shader loading:\n";
+    std::cout << "[TriangleSplattingPass] DEBUG: tileCullingBuffer_ = " << tileCullingBuffer_ << std::endl;
+    std::cout << "[TriangleSplattingPass] DEBUG: materialTexturesBuffer_ = " << materialTexturesBuffer_ << std::endl;
+    std::cout << "[TriangleSplattingPass] DEBUG: textureDataBuffer_ = " << textureDataBuffer_ << std::endl;
+
     return true;
 }
 
 bool TriangleSplattingPass::createDescriptorSets() {
+    std::cout << "[TriangleSplattingPass] DEBUG: Entering createDescriptorSets()\n";
+
     // Descriptor set layout
-    std::array<vk::DescriptorSetLayoutBinding, 4> bindings;
+    std::array<vk::DescriptorSetLayoutBinding, 6> bindings;
     
     // Binding 0: Output image (storage image)
     bindings[0].binding = 0;
@@ -701,18 +809,31 @@ bool TriangleSplattingPass::createDescriptorSets() {
     bindings[3].descriptorCount = 1;
     bindings[3].stageFlags = vk::ShaderStageFlagBits::eCompute;
 
+    // Binding 4: MaterialTextures buffer (SSBO) - для texture lookup
+    bindings[4].binding = 4;
+    bindings[4].descriptorType = vk::DescriptorType::eStorageBuffer;
+    bindings[4].descriptorCount = 1;
+    bindings[4].stageFlags = vk::ShaderStageFlagBits::eCompute;
+
+    // Binding 5: TextureData buffer (SSBO) - для packed texture data
+    bindings[5].binding = 5;
+    bindings[5].descriptorType = vk::DescriptorType::eStorageBuffer;
+    bindings[5].descriptorCount = 1;
+    bindings[5].stageFlags = vk::ShaderStageFlagBits::eCompute;
+
     vk::DescriptorSetLayoutCreateInfo layoutInfo;
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
     
     descriptorSetLayout_ = device_.createDescriptorSetLayout(layoutInfo);
+    std::cout << "[TriangleSplattingPass] DEBUG: Descriptor set layout created\n";
     
     // Descriptor pool
     std::array<vk::DescriptorPoolSize, 2> poolSizes;
     poolSizes[0].type = vk::DescriptorType::eStorageImage;
     poolSizes[0].descriptorCount = 1;
     poolSizes[1].type = vk::DescriptorType::eStorageBuffer;
-    poolSizes[1].descriptorCount = 3;  // Triangle buffer + sorted indices + tile culling buffer
+    poolSizes[1].descriptorCount = 5;  // Triangle buffer + sorted indices + tile culling buffer + material textures + texture data
     
     vk::DescriptorPoolCreateInfo poolInfo;
     poolInfo.maxSets = 1;
@@ -720,7 +841,8 @@ bool TriangleSplattingPass::createDescriptorSets() {
     poolInfo.pPoolSizes = poolSizes.data();
     
     descriptorPool_ = device_.createDescriptorPool(poolInfo);
-    
+    std::cout << "[TriangleSplattingPass] DEBUG: Descriptor pool created\n";
+
     // Allocate descriptor set
     vk::DescriptorSetAllocateInfo allocInfo;
     allocInfo.descriptorPool = descriptorPool_;
@@ -729,9 +851,10 @@ bool TriangleSplattingPass::createDescriptorSets() {
     
     auto sets = device_.allocateDescriptorSets(allocInfo);
     descriptorSet_ = sets[0];
+    std::cout << "[TriangleSplattingPass] DEBUG: Descriptor set allocated\n";
     
     // Update descriptor set
-    std::array<vk::WriteDescriptorSet, 4> writes;
+    std::array<vk::WriteDescriptorSet, 6> writes;
     
     // Output image
     vk::DescriptorImageInfo imageInfo;
@@ -773,9 +896,13 @@ bool TriangleSplattingPass::createDescriptorSets() {
     writes[2].descriptorType = vk::DescriptorType::eStorageBuffer;
     writes[2].pBufferInfo = &indicesBufferInfo;
 
-    // Tile culling buffer (проверяем что буфер создан)
-    if (tileCullingBuffer_) {
-        vk::DescriptorBufferInfo tileCullingBufferInfo;
+    // Create buffer info structures that will remain valid until updateDescriptorSets is called
+    vk::DescriptorBufferInfo tileCullingBufferInfo;
+    vk::DescriptorBufferInfo materialTexturesBufferInfo;
+    vk::DescriptorBufferInfo textureDataBufferInfo;
+
+    // Tile culling buffer (проверяем что буфер создан и корректен)
+    if (tileCullingBuffer_ && tileCullingBuffer_ != VK_NULL_HANDLE) {
         tileCullingBufferInfo.buffer = tileCullingBuffer_;
         tileCullingBufferInfo.offset = 0;
         tileCullingBufferInfo.range = VK_WHOLE_SIZE;
@@ -786,14 +913,106 @@ bool TriangleSplattingPass::createDescriptorSets() {
         writes[3].descriptorCount = 1;
         writes[3].descriptorType = vk::DescriptorType::eStorageBuffer;
         writes[3].pBufferInfo = &tileCullingBufferInfo;
+    }
 
-        // Обновляем только первые 4 дескриптора (буфер создан)
-        device_.updateDescriptorSets({writes[0], writes[1], writes[2], writes[3]}, nullptr);
-        std::cout << "[TriangleSplattingPass] ✅ Tile culling buffer bound to descriptor set\n";
+    // Material textures buffer (проверяем что буфер создан и корректен)
+    if (materialTexturesBuffer_ && materialTexturesBuffer_ != VK_NULL_HANDLE) {
+        materialTexturesBufferInfo.buffer = materialTexturesBuffer_;
+        materialTexturesBufferInfo.offset = 0;
+        materialTexturesBufferInfo.range = VK_WHOLE_SIZE;
+
+        writes[4].dstSet = descriptorSet_;
+        writes[4].dstBinding = 4;
+        writes[4].dstArrayElement = 0;
+        writes[4].descriptorCount = 1;
+        writes[4].descriptorType = vk::DescriptorType::eStorageBuffer;
+        writes[4].pBufferInfo = &materialTexturesBufferInfo;
+    }
+
+    // Texture data buffer (проверяем что буфер создан и корректен)
+    if (textureDataBuffer_ && textureDataBuffer_ != VK_NULL_HANDLE) {
+        textureDataBufferInfo.buffer = textureDataBuffer_;
+        textureDataBufferInfo.offset = 0;
+        textureDataBufferInfo.range = VK_WHOLE_SIZE;
+
+        writes[5].dstSet = descriptorSet_;
+        writes[5].dstBinding = 5;
+        writes[5].dstArrayElement = 0;
+        writes[5].descriptorCount = 1;
+        writes[5].descriptorType = vk::DescriptorType::eStorageBuffer;
+        writes[5].pBufferInfo = &textureDataBufferInfo;
+    }
+
+    // Collect valid descriptor writes
+    std::vector<vk::WriteDescriptorSet> validWrites;
+
+    // Always include output image and triangle buffer
+    std::cout << "[TriangleSplattingPass] DEBUG: Adding output image to valid writes\n";
+    validWrites.push_back(writes[0]); // Output image
+    std::cout << "[TriangleSplattingPass] DEBUG: Adding triangle buffer to valid writes\n";
+    validWrites.push_back(writes[1]); // Triangle buffer
+    std::cout << "[TriangleSplattingPass] DEBUG: Adding indices buffer to valid writes\n";
+    validWrites.push_back(writes[2]); // Indices buffer
+
+    // Check and validate each buffer before adding to descriptors
+    std::cout << "[TriangleSplattingPass] DEBUG: Buffer validation before descriptor binding:\n";
+    std::cout << "[TriangleSplattingPass] DEBUG: tileCullingBuffer_ = " << tileCullingBuffer_ << std::endl;
+    std::cout << "[TriangleSplattingPass] DEBUG: materialTexturesBuffer_ = " << materialTexturesBuffer_ << std::endl;
+    std::cout << "[TriangleSplattingPass] DEBUG: textureDataBuffer_ = " << textureDataBuffer_ << std::endl;
+
+    // Add tile culling buffer if available and valid
+    if (tileCullingBuffer_ && tileCullingBuffer_ != VK_NULL_HANDLE) {
+        std::cout << "[TriangleSplattingPass] ✅ Adding tile culling buffer to descriptors\n";
+        validWrites.push_back(writes[3]);
     } else {
-        // Обновляем только первые 3 дескриптора (буфер не создан)
-        device_.updateDescriptorSets({writes[0], writes[1], writes[2]}, nullptr);
-        std::cout << "[TriangleSplattingPass] ⚠️ Tile culling buffer null, bound only 3 descriptors\n";
+        std::cout << "[TriangleSplattingPass] ⚠️ Skipping tile culling buffer (null or invalid)\n";
+    }
+
+    // Add material textures buffer if available and valid
+    if (materialTexturesBuffer_ && materialTexturesBuffer_ != VK_NULL_HANDLE) {
+        std::cout << "[TriangleSplattingPass] ✅ Adding material textures buffer to descriptors\n";
+        validWrites.push_back(writes[4]);
+    } else {
+        std::cout << "[TriangleSplattingPass] ⚠️ Skipping material textures buffer (null or invalid)\n";
+    }
+
+    // Add texture data buffer if available and valid
+    if (textureDataBuffer_ && textureDataBuffer_ != VK_NULL_HANDLE) {
+        std::cout << "[TriangleSplattingPass] ✅ Adding texture data buffer to descriptors\n";
+        validWrites.push_back(writes[5]);
+    } else {
+        std::cout << "[TriangleSplattingPass] ⚠️ Skipping texture data buffer (null or invalid)\n";
+    }
+
+    // Update descriptor sets with valid writes only
+    if (!validWrites.empty()) {
+        std::cout << "[TriangleSplattingPass] DEBUG: About to call updateDescriptorSets with " << validWrites.size() << " writes\n";
+        for (size_t i = 0; i < validWrites.size(); ++i) {
+            if (validWrites[i].descriptorType == vk::DescriptorType::eStorageImage && validWrites[i].pImageInfo != nullptr) {
+                std::cout << "[TriangleSplattingPass] DEBUG: Write " << i << " - binding: " << validWrites[i].dstBinding
+                          << ", image: " << validWrites[i].pImageInfo->imageView << std::endl;
+            } else if (validWrites[i].descriptorType == vk::DescriptorType::eStorageBuffer && validWrites[i].pBufferInfo != nullptr) {
+                std::cout << "[TriangleSplattingPass] DEBUG: Write " << i << " - binding: " << validWrites[i].dstBinding
+                          << ", buffer: " << validWrites[i].pBufferInfo->buffer << std::endl;
+            } else {
+                std::cout << "[TriangleSplattingPass] DEBUG: Write " << i << " - binding: " << validWrites[i].dstBinding
+                          << ", descriptorType: " << vk::to_string(validWrites[i].descriptorType)
+                          << ", pBufferInfo: " << (validWrites[i].pBufferInfo ? "OK" : "NULL")
+                          << ", pImageInfo: " << (validWrites[i].pImageInfo ? "OK" : "NULL") << std::endl;
+            }
+        }
+
+        std::cout << "[TriangleSplattingPass] DEBUG: Calling updateDescriptorSets()...\n";
+        try {
+            device_.updateDescriptorSets(validWrites, nullptr);
+        } catch (const std::exception& e) {
+            std::cerr << "[TriangleSplattingPass] ❌ Exception in updateDescriptorSets: " << e.what() << std::endl;
+            return false;
+        }
+        std::cout << "[TriangleSplattingPass] ✅ " << validWrites.size() << " descriptors bound successfully\n";
+    } else {
+        std::cerr << "[TriangleSplattingPass] ❌ No valid descriptors to bind!\n";
+        return false;
     }
 
     std::cout << "[TriangleSplattingPass] Created descriptor sets\n";
@@ -851,6 +1070,22 @@ void TriangleSplattingPass::setCameraPosition(const glm::vec3& cameraPos) {
 
 void TriangleSplattingPass::setFrustumCullingEnabled(bool enabled) {
     enableFrustumCulling_ = enabled;
+}
+
+void TriangleSplattingPass::setDebugMode(uint32_t mode) {
+    pushConstants_.debugMode = mode;
+}
+
+void TriangleSplattingPass::setLighting(const glm::vec3& lightDirection, float lightIntensity,
+                                       const glm::vec3& ambientColor, float ambientIntensity) {
+    lightDirection_ = glm::normalize(lightDirection);
+    lightIntensity_ = lightIntensity;
+    ambientColor_ = ambientColor;
+    ambientIntensity_ = ambientIntensity;
+}
+
+void TriangleSplattingPass::setLightingEnabled(bool enabled) {
+    enableLighting_ = enabled;
 }
 
 uint32_t TriangleSplattingPass::getVisibleTriangleCount() const {
@@ -1045,6 +1280,64 @@ void TriangleSplattingPass::uploadTriangles(const std::vector<Triangle>& triangl
     
     std::cout << "[TriangleSplattingPass] Uploaded " << triangleCount_ 
               << " triangles to GPU\n";
+}
+
+std::vector<TriangleSplattingPass::Triangle> 
+TriangleSplattingPass::convertMeshToTriangles(const SpectraForge::Rendering::Mesh3D& mesh, float sigma) {
+    std::vector<Triangle> triangles;
+    
+    const auto& vertices = mesh.getVertices();
+    const auto& indices = mesh.getIndices();
+    
+    // Convert each triangle face
+    for (size_t i = 0; i < indices.size(); i += 3) {
+        if (i + 2 >= indices.size()) break;
+        
+        unsigned int idx0 = indices[i];
+        unsigned int idx1 = indices[i + 1];
+        unsigned int idx2 = indices[i + 2];
+        
+        if (idx0 >= vertices.size() || idx1 >= vertices.size() || idx2 >= vertices.size()) {
+            std::cerr << "⚠️  Invalid vertex index in mesh conversion\n";
+            continue;
+        }
+        
+        const auto& v0 = vertices[idx0];
+        const auto& v1 = vertices[idx1];
+        const auto& v2 = vertices[idx2];
+        
+        // Create triangle
+        Triangle tri;
+        tri.v0 = glm::vec3(v0.position.x, v0.position.y, v0.position.z);
+        tri.v1 = glm::vec3(v1.position.x, v1.position.y, v1.position.z);
+        tri.v2 = glm::vec3(v2.position.x, v2.position.y, v2.position.z);
+        
+        tri.texCoord0 = glm::vec2(v0.u, v0.v);
+        tri.texCoord1 = glm::vec2(v1.u, v1.v);
+        tri.texCoord2 = glm::vec2(v2.u, v2.v);
+        
+        // Average vertex colors
+        glm::vec3 avgColor = (glm::vec3(v0.color.x, v0.color.y, v0.color.z) +
+                             glm::vec3(v1.color.x, v1.color.y, v1.color.z) +
+                             glm::vec3(v2.color.x, v2.color.y, v2.color.z)) / 3.0f;
+        tri.color = avgColor;
+        tri.opacity = 1.0f;
+        tri.sigma = sigma;
+        
+        // Calculate face normal (average of vertex normals)
+        glm::vec3 normal = (glm::vec3(v0.normal.x, v0.normal.y, v0.normal.z) +
+                           glm::vec3(v1.normal.x, v1.normal.y, v1.normal.z) +
+                           glm::vec3(v2.normal.x, v2.normal.y, v2.normal.z)) / 3.0f;
+        tri.normal = glm::normalize(normal);
+        
+        tri.materialId = 0; // Default material
+        tri.padding[0] = 0.0f;
+        tri.padding[1] = 0.0f;
+        
+        triangles.push_back(tri);
+    }
+    
+    return triangles;
 }
 
 void TriangleSplattingPass::sortTrianglesByDepth(vk::CommandBuffer cmd) {
@@ -2826,6 +3119,138 @@ void TriangleSplattingPass::executeShadingPass(vk::CommandBuffer cmd) {
     cmd.dispatch(groupsX, groupsY, 1);
     
     std::cout << "[TriangleSplattingPass] Shading Pass dispatched: " << groupsX << "×" << groupsY << " workgroups\n";
+}
+
+void TriangleSplattingPass::saveFrameToPPM(const std::string& filename) {
+    if (!initialized_ || !outputImage_) {
+        std::cerr << "[TriangleSplattingPass] Cannot save frame - not initialized!\n";
+        return;
+    }
+    
+    // Create staging buffer for image download
+    VkBufferCreateInfo stagingInfo{};
+    stagingInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    stagingInfo.size = config_.outputWidth * config_.outputHeight * 4; // RGBA8
+    stagingInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    stagingInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    
+    VmaAllocationCreateInfo allocInfo{};
+    allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    
+    VkBuffer stagingBufferVk;
+    VmaAllocation stagingAlloc;
+    VmaAllocationInfo stagingAllocInfo;
+    vmaCreateBuffer(allocator_, &stagingInfo, &allocInfo, &stagingBufferVk, &stagingAlloc, &stagingAllocInfo);
+    
+    vk::Buffer stagingBuffer(stagingBufferVk);
+    
+    // Create one-time command buffer
+    vk::CommandBufferAllocateInfo cmdAllocInfo;
+    cmdAllocInfo.commandPool = commandPool_;
+    cmdAllocInfo.level = vk::CommandBufferLevel::ePrimary;
+    cmdAllocInfo.commandBufferCount = 1;
+    
+    auto cmdBuffers = device_.allocateCommandBuffers(cmdAllocInfo);
+    vk::CommandBuffer cmd = cmdBuffers[0];
+    
+    vk::CommandBufferBeginInfo beginInfo;
+    beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+    cmd.begin(beginInfo);
+    
+    // Transition image to TRANSFER_SRC_OPTIMAL
+    vk::ImageMemoryBarrier toTransfer;
+    toTransfer.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+    toTransfer.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+    toTransfer.oldLayout = vk::ImageLayout::eGeneral;
+    toTransfer.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+    toTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    toTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    toTransfer.image = outputImage_;
+    toTransfer.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+    toTransfer.subresourceRange.baseMipLevel = 0;
+    toTransfer.subresourceRange.levelCount = 1;
+    toTransfer.subresourceRange.baseArrayLayer = 0;
+    toTransfer.subresourceRange.layerCount = 1;
+    
+    cmd.pipelineBarrier(
+        vk::PipelineStageFlagBits::eComputeShader,
+        vk::PipelineStageFlagBits::eTransfer,
+        vk::DependencyFlags{},
+        0, nullptr, 0, nullptr, 1, &toTransfer
+    );
+    
+    // Copy image to staging buffer
+    vk::BufferImageCopy region;
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = vk::Offset3D{0, 0, 0};
+    region.imageExtent = vk::Extent3D{config_.outputWidth, config_.outputHeight, 1};
+    
+    cmd.copyImageToBuffer(outputImage_, vk::ImageLayout::eTransferSrcOptimal, stagingBuffer, 1, &region);
+    
+    // Transition back to GENERAL
+    vk::ImageMemoryBarrier toGeneral;
+    toGeneral.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+    toGeneral.dstAccessMask = vk::AccessFlagBits::eShaderWrite;
+    toGeneral.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+    toGeneral.newLayout = vk::ImageLayout::eGeneral;
+    toGeneral.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    toGeneral.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    toGeneral.image = outputImage_;
+    toGeneral.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+    toGeneral.subresourceRange.baseMipLevel = 0;
+    toGeneral.subresourceRange.levelCount = 1;
+    toGeneral.subresourceRange.baseArrayLayer = 0;
+    toGeneral.subresourceRange.layerCount = 1;
+    
+    cmd.pipelineBarrier(
+        vk::PipelineStageFlagBits::eTransfer,
+        vk::PipelineStageFlagBits::eComputeShader,
+        vk::DependencyFlags{},
+        0, nullptr, 0, nullptr, 1, &toGeneral
+    );
+    
+    cmd.end();
+    
+    // Submit and wait
+    vk::SubmitInfo submitInfo;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &cmd;
+    
+    auto result = graphicsQueue_.submit(1, &submitInfo, nullptr);
+    if (result != vk::Result::eSuccess) {
+        throw std::runtime_error("Failed to submit graphics queue");
+    }
+    graphicsQueue_.waitIdle();
+    
+    // Read data from staging buffer (already mapped)
+    uint8_t* data = reinterpret_cast<uint8_t*>(stagingAllocInfo.pMappedData);
+    
+    // Write PPM file (P3 format - ASCII)
+    std::ofstream file(filename);
+    file << "P3\n" << config_.outputWidth << " " << config_.outputHeight << "\n255\n";
+    
+    for (uint32_t y = 0; y < config_.outputHeight; ++y) {
+        for (uint32_t x = 0; x < config_.outputWidth; ++x) {
+            uint32_t idx = (y * config_.outputWidth + x) * 4;
+            file << (int)data[idx] << " " << (int)data[idx+1] << " " << (int)data[idx+2] << " ";
+        }
+        file << "\n";
+    }
+    
+    file.close();
+    
+    // Cleanup
+    device_.freeCommandBuffers(commandPool_, 1, &cmd);
+    vmaDestroyBuffer(allocator_, stagingBufferVk, stagingAlloc);
+    
+    std::cout << "[TriangleSplattingPass] ✅ Frame saved to " << filename << " (" << config_.outputWidth << "x" << config_.outputHeight << ")\n";
 }
 
 } // namespace rendering

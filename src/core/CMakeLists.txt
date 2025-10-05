@@ -2,9 +2,18 @@
 
 # Create core module as object library
 add_library(SpectraForge_Core OBJECT
+    Component.cpp
+    Console.cpp
+    Container.cpp
+    EngineCore.cpp
+    GameObject3D.cpp
     Logger.cpp
-    WindowFactory.cpp
+    Transform3D.cpp
     VMAImplementation.cpp
+    VMAMemoryManager.cpp
+    VulkanHppDispatch.cpp
+    Window.cpp
+    WindowFactory.cpp
 )
 
 # Include directories

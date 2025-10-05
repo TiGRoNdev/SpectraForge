@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 #include <memory>
+#include <SpectraForge/Rendering/Mesh3D.h>
 
 namespace spectraforge {
 namespace rendering {
@@ -119,6 +120,14 @@ public:
     void uploadTriangles(const std::vector<Triangle>& triangles);
     
     /**
+     * @brief Convert mesh data to triangles
+     * @param mesh Input mesh data
+     * @param sigma Smoothness parameter for window function
+     * @return Vector of triangles ready for GPU upload
+     */
+    static std::vector<Triangle> convertMeshToTriangles(const SpectraForge::Rendering::Mesh3D& mesh, float sigma = 1.0f);
+    
+    /**
      * @brief Set view-projection matrix for 3D → 2D projection
      */
     void setViewProjection(const glm::mat4& viewProj);
@@ -132,6 +141,28 @@ public:
      * @brief Enable/disable frustum culling
      */
     void setFrustumCullingEnabled(bool enabled);
+    
+    /**
+     * @brief Set debug visualization mode
+     * @param mode 0 = normal rendering, 1 = SDF visualization, 2 = barycentric visualization
+     */
+    void setDebugMode(uint32_t mode);
+    
+    /**
+     * @brief Set lighting parameters
+     * @param lightDirection Directional light direction (normalized)
+     * @param lightIntensity Light intensity (0.0 - 2.0)
+     * @param ambientColor Ambient light color
+     * @param ambientIntensity Ambient light intensity
+     */
+    void setLighting(const glm::vec3& lightDirection, float lightIntensity,
+                    const glm::vec3& ambientColor, float ambientIntensity);
+    
+    /**
+     * @brief Enable/disable lighting
+     * @param enabled true to enable lighting, false to disable
+     */
+    void setLightingEnabled(bool enabled);
     
     /**
      * @brief Get visible triangle count after culling (read from GPU)
@@ -153,6 +184,11 @@ public:
      * @brief Check if pass is initialized
      */
     bool isInitialized() const { return initialized_; }
+    
+    /**
+     * @brief Save current frame to PPM file (DEBUG)
+     */
+    void saveFrameToPPM(const std::string& filename);
 
 private:
     // Configuration
@@ -246,7 +282,8 @@ private:
         uint32_t enableEarlyTerm;    // offset 76
         float alphaThreshold;        // offset 80
         uint32_t enableTileBinning;  // offset 84 (0 = off, 1 = on)
-        uint32_t padding[2];         // offset 88-95
+        uint32_t debugMode;          // offset 88 (0 = normal, 1 = SDF, 2 = barycentric)
+        uint32_t padding;            // offset 92
     } pushConstants_;
     
     struct BitonicSortPushConstants {
@@ -279,11 +316,24 @@ private:
     
     // Frustum culling enabled flag
     bool enableFrustumCulling_ = true;
+    
+    // Lighting parameters
+    glm::vec3 lightDirection_ = glm::vec3(0.0f, 0.0f, -1.0f); // Default downward light
+    float lightIntensity_ = 1.0f;
+    glm::vec3 ambientColor_ = glm::vec3(0.1f, 0.1f, 0.1f); // Dark gray ambient
+    float ambientIntensity_ = 0.3f;
+    bool enableLighting_ = true;
 
     // Tile culling resources (для оптимизации производительности)
     vk::Buffer tileCullingBuffer_;
     VmaAllocation tileCullingAllocation_;
     uint32_t tileCount_ = 0;  // Количество тайлов (ширина/16 * высота/16)
+
+    // Material and texture resources
+    vk::Buffer materialTexturesBuffer_;
+    VmaAllocation materialTexturesAllocation_;
+    vk::Buffer textureDataBuffer_;
+    VmaAllocation textureDataAllocation_;
     // Tile culling pipeline resources
     vk::ShaderModule tileCullingShader_;
     vk::Pipeline tileCullingPipeline_;
@@ -328,6 +378,11 @@ private:
         uint32_t maxTrianglesPerPixel;
         uint32_t enableEarlyTermination;
         float alphaThreshold;
+        glm::vec3 lightDirection;        // Directional light direction (normalized)
+        float lightIntensity;            // Light intensity (0.0 - 2.0)
+        glm::vec3 ambientColor;          // Ambient light color
+        float ambientIntensity;          // Ambient light intensity
+        uint32_t enableLighting;         // Enable/disable lighting (0=off, 1=on)
         uint32_t padding;
     };
 

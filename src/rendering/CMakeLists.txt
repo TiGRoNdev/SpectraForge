@@ -9,6 +9,12 @@ add_library(SpectraForge_Vulkan OBJECT
     # OpenGL-compatible rendering classes (используются для базовой геометрии)
     opengl/Camera3D.cpp
     opengl/Mesh3D.cpp
+    # Vulkan subsystem files
+    vulkan/VulkanRenderer.cpp
+    vulkan/VulkanEngine.cpp
+    vulkan/ResourceManager.cpp
+    vulkan/SceneManager.cpp
+    vulkan/HardwareDetector.cpp
 )
 
 # Include directories

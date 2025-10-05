@@ -14,6 +14,7 @@
 #include "SpectraForge/Core/Window.h"
 #include "SpectraForge/Rendering/Common/IRenderer.h"
 #include "SpectraForge/Rendering/Common/IResourceManager.h"
+#include "SpectraForge/Rendering/Camera3D.h"
 #include "SpectraForge/Vulkan/SceneManager.h"
 
 namespace SpectraForge {
@@ -59,12 +60,16 @@ class Engine final : public IApp {
     std::shared_ptr<Rendering::IResourceManager> resource_manager_;
     std::unique_ptr<Vulkan::SceneManager> scene_manager_;
     
-    // Camera state (отодвинуты назад и выше для лучшего обзора Sponza)
-    // Оптимизированная позиция камеры для Sponza сцены
-    glm::vec3 cameraPos{0.0f, 2.0f, 10.0f};    // Ближе к сцене, на уровне глаз
-    glm::vec3 cameraFront{0.0f, 0.0f, -1.0f}; // Смотрим вперёд
-    float yaw = -90.0f;                        // Угол поворота по горизонтали
-    float pitch = 0.0f;                        // Угол наклона по вертикали
+    // Camera для рендеринга (Camera3D объект)
+    std::unique_ptr<Rendering::Camera3D> renderCamera_;
+    
+    // Camera state - ВНУТРИ Sponza для корректного рендеринга
+    // Sponza AABB: X=[-17..17], Y=[-0.9..15.6], Z=[-7.8..7.8]
+    // Треугольники находятся в X=10.9, поэтому камера смотрит ВПРАВО (+X)
+    glm::vec3 cameraPos{0.0f, 3.0f, 0.0f};     // ✅ ВНУТРИ атриума на уровне глаз
+    glm::vec3 cameraFront{0.99f, -0.10f, 0.0f};  // Смотрим ВПРАВО (+X) и НЕМНОГО ВНИЗ
+    float yaw = 0.0f;                          // ✅ ВПРАВО (+X direction)
+    float pitch = -5.0f;                       // НЕМНОГО ВНИЗ
     double lastMouseX = 0.0;
     double lastMouseY = 0.0;
     bool firstMouse = true;

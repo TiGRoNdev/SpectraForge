@@ -51,6 +51,11 @@ layout(push_constant) uniform PushConstants {
     uint maxTrianglesPerPixel;
     uint enableEarlyTermination;
     float alphaThreshold;
+    vec3 lightDirection;        // Directional light direction (normalized)
+    float lightIntensity;       // Light intensity (0.0 - 2.0)
+    vec3 ambientColor;          // Ambient light color
+    float ambientIntensity;     // Ambient light intensity
+    uint enableLighting;        // Enable/disable lighting (0=off, 1=on)
     uint padding;
 } pc;
 
@@ -58,9 +63,65 @@ layout(push_constant) uniform PushConstants {
 // Helper functions
 // ============================================================================
 
+/**
+ * @brief Compute triangle normal from vertices
+ * @param v0 First vertex
+ * @param v1 Second vertex  
+ * @param v2 Third vertex
+ * @return Normalized triangle normal
+ */
+vec3 computeTriangleNormal(vec3 v0, vec3 v1, vec3 v2) {
+    vec3 edge1 = v1 - v0;
+    vec3 edge2 = v2 - v0;
+    return normalize(cross(edge1, edge2));
+}
+
+/**
+ * @brief Apply Phong lighting model to triangle color
+ * @param baseColor Base triangle color
+ * @param normal Triangle normal
+ * @param viewPos Camera/view position
+ * @param worldPos World position of the point
+ * @return Lit color
+ */
+vec3 applyLighting(vec3 baseColor, vec3 normal, vec3 viewPos, vec3 worldPos) {
+    if (pc.enableLighting == 0) {
+        return baseColor; // Lighting disabled
+    }
+    
+    // Normalize inputs
+    vec3 N = normalize(normal);
+    vec3 L = normalize(pc.lightDirection);
+    vec3 V = normalize(viewPos - worldPos);
+    vec3 R = reflect(-L, N);
+    
+    // Ambient lighting
+    vec3 ambient = pc.ambientColor * pc.ambientIntensity;
+    
+    // Diffuse lighting (Lambert)
+    float NdotL = max(dot(N, L), 0.0);
+    vec3 diffuse = baseColor * NdotL * pc.lightIntensity;
+    
+    // Specular lighting (Blinn-Phong)
+    vec3 H = normalize(L + V);
+    float NdotH = max(dot(N, H), 0.0);
+    float shininess = 32.0; // Material shininess
+    vec3 specular = vec3(0.2, 0.2, 0.2) * pow(NdotH, shininess) * pc.lightIntensity;
+    
+    // Combine lighting components
+    return ambient + diffuse + specular;
+}
+
 float halfPlaneDistance(vec2 p, vec2 v0, vec2 v1) {
     vec2 edge = v1 - v0;
-    vec2 normal = normalize(vec2(-edge.y, edge.x));
+    
+    // ИСПРАВЛЕНИЕ: Правильные нормали для Y-down screen space
+    vec2 normal = vec2(edge.y, -edge.x); // Right perpendicular
+    
+    float edgeLength = length(edge);
+    if (edgeLength < 0.0001) return 10000.0;
+    normal = normal / edgeLength; // Unit normal
+    
     return dot(normal, p - v0);
 }
 
@@ -86,8 +147,20 @@ vec2 computeIncenter(vec2 v0, vec2 v1, vec2 v2) {
 }
 
 float smoothWindowFunction(float phi, float phiCenter, float sigma) {
-    float normalized = clamp(phi / phiCenter, 0.0, 1.0);
-    return pow(normalized, sigma);
+    // Математическая основа: I(p) = ReLU(φ(p)/φ(s))^σ
+    // где φ(s) < 0 - минимальное SDF значение в incenter
+    
+    // Проверка корректности: φ(s) должно быть отрицательным
+    if (phiCenter >= 0.0) {
+        return 0.0; // Неверные данные
+    }
+    
+    // ReLU(φ(p)/φ(s)) = max(0, φ(p)/φ(s))
+    float ratio = phi / phiCenter;
+    float reluValue = max(0.0, ratio);
+    
+    // Применить smoothness: pow(reluValue, sigma)
+    return pow(reluValue, sigma);
 }
 
 vec2 projectToScreen(vec3 worldPos) {
@@ -176,17 +249,25 @@ void main() {
         // Triangle contribution
         float alpha = tri.opacity * weight;
         
+        // Compute triangle normal and world position for lighting
+        vec3 triangleNormal = computeTriangleNormal(tri.v0, tri.v1, tri.v2);
+        vec3 worldPos = (tri.v0 + tri.v1 + tri.v2) / 3.0; // Use triangle center
+        vec3 viewPos = vec3(0.0, 0.0, 0.0); // Camera position (should be passed as uniform)
+        
+        // Apply lighting to triangle color
+        vec3 litColor = applyLighting(tri.color, triangleNormal, viewPos, worldPos);
+        
         // Opaque fast path
         const float OPAQUE_THRESHOLD = 0.95;
         if (tri.opacity >= OPAQUE_THRESHOLD && weight > 0.99) {
-            accumColor.rgb = tri.color;
+            accumColor.rgb = litColor;
             accumColor.a = 1.0;
             accumAlpha = 1.0;
             break;
         }
         
         // Front-to-back alpha blending
-        accumColor.rgb += tri.color * alpha * (1.0 - accumAlpha);
+        accumColor.rgb += litColor * alpha * (1.0 - accumAlpha);
         accumColor.a += alpha * (1.0 - accumAlpha);
         accumAlpha += alpha * (1.0 - accumAlpha);
         

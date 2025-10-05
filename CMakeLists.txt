@@ -68,6 +68,12 @@ endif()
 # Подключаем модульную структуру
 add_subdirectory(src)
 
+# Подключаем тесты (если включены)
+option(ENABLE_TESTS "Enable tests" ON)
+if(ENABLE_TESTS)
+    add_subdirectory(tests)
+endif()
+
 # Создаем основную библиотеку SpectraForge
 add_library(SpectraForge STATIC
     $<TARGET_OBJECTS:SpectraForge_Core>
@@ -99,62 +105,28 @@ install(TARGETS SpectraForge
 
 # Создание демо приложения
 if(BUILD_EXAMPLES)
-    # Hybrid TriangleSplatting + FreGS Demo
-    add_executable(HybridFreGS_Demo
-        examples/hybrid_fregs_demo.cpp
+    # SpectraForge Example Demo (Sponza scene with Triangle Splatting)
+    add_executable(SpectraForge_Example_Demo
+        examples/SpectraForge_Example_Demo.cpp
     )
-    target_link_libraries(HybridFreGS_Demo PRIVATE SpectraForge)
+    target_link_libraries(SpectraForge_Example_Demo PRIVATE 
+        SpectraForge_App
+        SpectraForge_Core
+        SpectraForge_Math
+        SpectraForge_Platform
+        SpectraForge_Vulkan
+        SpectraForge
+        glfw
+    )
 
     # Add X11 libraries for window support on Linux
     if(UNIX AND NOT APPLE)
         find_package(X11 REQUIRED)
-        target_include_directories(HybridFreGS_Demo PRIVATE ${X11_INCLUDE_DIR})
-        target_link_libraries(HybridFreGS_Demo PRIVATE ${X11_LIBRARIES})
+        target_include_directories(SpectraForge_Example_Demo PRIVATE ${X11_INCLUDE_DIR})
+        target_link_libraries(SpectraForge_Example_Demo PRIVATE ${X11_LIBRARIES})
     endif()
 
-    # Window system demo (requires window support)
-    add_executable(WindowDemo
-        examples/window_demo.cpp
-    )
-    target_link_libraries(WindowDemo PRIVATE SpectraForge)
-
-    # Add X11 libraries for window support on Linux
-    if(UNIX AND NOT APPLE)
-        find_package(X11 REQUIRED)
-        target_include_directories(WindowDemo PRIVATE ${X11_INCLUDE_DIR})
-        target_link_libraries(WindowDemo PRIVATE ${X11_LIBRARIES})
-    endif()
-
-    # Sponza Advanced Demo (with validation layers)
-    add_executable(SponzaAdvancedDemo
-        examples/sponza_advanced_demo.cpp
-    )
-    target_link_libraries(SponzaAdvancedDemo PRIVATE SpectraForge)
-
-    # Add X11 libraries for Sponza demo
-    if(UNIX AND NOT APPLE)
-        find_package(X11 REQUIRED)
-        target_include_directories(SponzaAdvancedDemo PRIVATE ${X11_INCLUDE_DIR})
-        target_link_libraries(SponzaAdvancedDemo PRIVATE ${X11_LIBRARIES})
-    endif()
-
-    # Cube Demo (simple geometry rendering test)
-    add_executable(CubeDemo
-        examples/cube_demo.cpp
-    )
-    target_link_libraries(CubeDemo PRIVATE SpectraForge)
-
-    # Add X11 libraries for Cube demo
-    if(UNIX AND NOT APPLE)
-        find_package(X11 REQUIRED)
-        target_include_directories(CubeDemo PRIVATE ${X11_INCLUDE_DIR})
-        target_link_libraries(CubeDemo PRIVATE ${X11_LIBRARIES})
-    endif()
-
-    message(STATUS "SpectraForge Demo with Hybrid TriangleSplatting + FreGS renderer created")
-    message(STATUS "Window system demo created (WindowDemo - requires graphical environment)")
-    message(STATUS "Sponza Advanced Demo created (SponzaAdvancedDemo - with validation layers)")
-    message(STATUS "Cube Demo created (CubeDemo - simple geometry rendering)")
+    message(STATUS "SpectraForge Example Demo created (Sponza scene with lighting)")
 endif()
 
 # ============================================================

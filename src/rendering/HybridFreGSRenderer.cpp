@@ -526,8 +526,9 @@ void HybridFreGSRenderer::recordCommandBuffer(vk::CommandBuffer commandBuffer, u
     
     commandBuffer.begin(beginInfo);
     
-    // Execute Triangle Splatting Pass (compute pass)
-    if (triangleSplattingPass_ && triangleSplattingPass_->getTriangleCount() > 0) {
+    // Execute rendering pass based on mode
+    if (renderMode_ == RenderMode::TriangleSplatting && 
+        triangleSplattingPass_ && triangleSplattingPass_->getTriangleCount() > 0) {
         // Transition output image UNDEFINED -> GENERAL (первый кадр)
         vk::ImageMemoryBarrier barrierInit{};
         barrierInit.oldLayout = vk::ImageLayout::eUndefined;
@@ -550,6 +551,29 @@ void HybridFreGSRenderer::recordCommandBuffer(vk::CommandBuffer commandBuffer, u
         );
         
         triangleSplattingPass_->execute(commandBuffer, currentFrame_);
+        
+        // ===== DEBUG: Save first frame for analysis =====
+        static int frameSaveCounter = 0;
+        if (frameSaveCounter == 0) {
+            frameSaveCounter++;
+            // End current command buffer and submit (to complete rendering)
+            commandBuffer.end();
+            
+            vk::SubmitInfo submitInfo;
+            submitInfo.commandBufferCount = 1;
+            submitInfo.pCommandBuffers = &commandBuffer;
+            graphicsQueue_.submit(submitInfo, nullptr);
+            graphicsQueue_.waitIdle();
+            
+            // Save frame to file
+            triangleSplattingPass_->saveFrameToPPM("/home/tigron/Documents/GITHUB/SpectraForge/DEBUG_frame.ppm");
+            
+            // Restart command buffer
+            vk::CommandBufferBeginInfo beginInfo;
+            beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+            commandBuffer.begin(beginInfo);
+        }
+        // ===============================================
         
         // Transition Triangle Splatting output from GENERAL to TRANSFER_SRC_OPTIMAL
         vk::ImageMemoryBarrier barrier1{};
@@ -654,8 +678,51 @@ void HybridFreGSRenderer::recordCommandBuffer(vk::CommandBuffer commandBuffer, u
             vk::PipelineStageFlagBits::eComputeShader,
             {}, 0, nullptr, 0, nullptr, 1, &barrier4
         );
+    } else if (renderMode_ == RenderMode::GaussianSplatting && fregsPass_) {
+        // TODO: Execute FreGS Pass (Gaussian Splatting)
+        // fregsPass_->execute(commandBuffer, currentFrame_);
+        
+        // Fallback: clear screen to green for FreGS mode
+        vk::ClearColorValue clearColor(std::array<float, 4>{0.1f, 0.4f, 0.2f, 1.0f});
+        vk::ImageSubresourceRange range;
+        range.aspectMask = vk::ImageAspectFlagBits::eColor;
+        range.baseMipLevel = 0;
+        range.levelCount = 1;
+        range.baseArrayLayer = 0;
+        range.layerCount = 1;
+        
+        // Transition to TRANSFER_DST
+        vk::ImageMemoryBarrier barrier{};
+        barrier.oldLayout = vk::ImageLayout::eUndefined;
+        barrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = swapchainImages_[imageIndex];
+        barrier.subresourceRange = range;
+        barrier.srcAccessMask = {};
+        barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+        
+        commandBuffer.pipelineBarrier(
+            vk::PipelineStageFlagBits::eTopOfPipe,
+            vk::PipelineStageFlagBits::eTransfer,
+            {}, 0, nullptr, 0, nullptr, 1, &barrier
+        );
+        
+        commandBuffer.clearColorImage(swapchainImages_[imageIndex], vk::ImageLayout::eTransferDstOptimal, clearColor, range);
+        
+        // Transition to PRESENT_SRC
+        barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+        barrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
+        barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+        barrier.dstAccessMask = {};
+        
+        commandBuffer.pipelineBarrier(
+            vk::PipelineStageFlagBits::eTransfer,
+            vk::PipelineStageFlagBits::eBottomOfPipe,
+            {}, 0, nullptr, 0, nullptr, 1, &barrier
+        );
     } else {
-        // Fallback: clear screen to dark blue if no triangles
+        // Fallback: clear screen to dark blue if no triangles or unknown mode
         vk::ClearColorValue clearColor(std::array<float, 4>{0.1f, 0.2f, 0.4f, 1.0f});
         vk::ImageSubresourceRange range;
         range.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -889,12 +956,18 @@ bool HybridFreGSRenderer::supportsFeature(RenderingFeature feature) const {
     }
 }
 
-void HybridFreGSRenderer::uploadGaussians(const std::vector<int>& /*gaussians*/) {
-    // TODO: Implement Gaussian upload
+void HybridFreGSRenderer::uploadGaussians(const std::vector<spectraforge::rendering::GaussianSplat>& gaussians) {
+    // TODO: Implement Gaussian upload for FreGS pass
+    std::cout << "[HybridFreGSRenderer] Uploaded " << gaussians.size() << " Gaussians\n";
 }
 
-void HybridFreGSRenderer::uploadTriangles(const std::vector<int>& /*triangles*/) {
-    // TODO: Implement triangle upload
+void HybridFreGSRenderer::uploadTriangles(const std::vector<spectraforge::rendering::TriangleSplattingPass::Triangle>& triangles) {
+    if (!triangleSplattingPass_) {
+        std::cerr << "[HybridFreGSRenderer] Triangle Splatting Pass not initialized!\n";
+        return;
+    }
+    triangleSplattingPass_->uploadTriangles(triangles);
+    std::cout << "[HybridFreGSRenderer] Uploaded " << triangles.size() << " Triangles to Triangle Splatting Pass\n";
 }
 
 bool HybridFreGSRenderer::createAllocator() {
@@ -925,6 +998,10 @@ bool HybridFreGSRenderer::initializeTriangleSplatting() {
     config.enableTwoPassRendering = false; // Start with single-pass
     
     triangleSplattingPass_ = std::make_unique<spectraforge::rendering::TriangleSplattingPass>(config);
+    
+    // ❗ ОТКЛЮЧАЕМ FRUSTUM CULLING ДЛЯ ДИАГНОСТИКИ!
+    triangleSplattingPass_->setFrustumCullingEnabled(false);
+    std::cout << "[HybridFreGSRenderer] ⚠️ Frustum Culling ОТКЛЮЧЁН для диагностики\n";
     
     if (!triangleSplattingPass_->initialize(device_, allocator_, graphicsQueue_, graphicsQueue_, commandPool_)) {
         std::cerr << "❌ Failed to initialize Triangle Splatting Pass\n";

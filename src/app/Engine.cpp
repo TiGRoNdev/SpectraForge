@@ -13,6 +13,7 @@
 #include "SpectraForge/Rendering/Common/IResourceManager.h"
 #include "SpectraForge/Rendering/HybridFreGSRenderer.h"
 #include "SpectraForge/rendering/TriangleSplattingPass.h"
+#include "SpectraForge/rendering/FreGSPass.h"
 #include "SpectraForge/Core/Logger.h"
 #include <filesystem>
 #include <fstream>
@@ -20,6 +21,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_X11
+#include <GLFW/glfw3native.h>
 
 namespace {
 // Простой дефолтный ResourceManager-адаптер до полноценной интеграции VMA-слоя в IResourceManager
@@ -144,6 +147,36 @@ bool Engine::init() {
         return false;
     }
     logger_->logInfo("[App::Engine] EngineCore инициализирован успешно");
+
+    // Привязываем окно к рендереру (для Vulkan swapchain и TriangleSplatting)
+    auto* hybridRenderer = dynamic_cast<Rendering::HybridFreGSRenderer*>(renderer_.get());
+    if (hybridRenderer && win) {
+        logger_->logInfo("[App::Engine] Привязка окна к рендереру (Vulkan swapchain + Triangle Splatting)...");
+        Display* display = glfwGetX11Display();
+        Window x11Window = glfwGetX11Window(win);
+        if (!hybridRenderer->attachWindow(display, reinterpret_cast<void*>(x11Window), config_.window_width, config_.window_height)) {
+            SAFE_ERROR("[App::Engine] Ошибка привязки окна к рендереру");
+            return false;
+        }
+        logger_->logInfo("[App::Engine] Окно успешно привязано к рендереру (Triangle Splatting готов)");
+    }
+    
+    // Создаём камеру для рендеринга
+    renderCamera_ = std::make_unique<Rendering::Camera3D>();
+    float aspectRatio = static_cast<float>(config_.window_width) / static_cast<float>(config_.window_height);
+    renderCamera_->setPerspective(60.0f, aspectRatio, 0.1f, 1000.0f);
+    renderCamera_->setPosition(Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z));
+    renderCamera_->lookAt(
+        Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z),
+        Math::Vector3(cameraPos.x + cameraFront.x, cameraPos.y + cameraFront.y, cameraPos.z + cameraFront.z),
+        Math::Vector3(0.0f, 1.0f, 0.0f)
+    );
+    
+    // Передаём камеру в рендерер
+    if (hybridRenderer) {
+        hybridRenderer->setCamera(renderCamera_.get());
+        logger_->logInfo("[App::Engine] Камера создана и передана в рендерер");
+    }
 
     // Сцена
     scene_manager_ = std::make_unique<Vulkan::SceneManager>();
@@ -331,8 +364,21 @@ bool Engine::load_scene(const Vulkan::SceneData &data) {
             materialColors.push_back(glm::vec3(0.58f, 0.48f, 0.42f)); // терракота (пол)
             materialColors.push_back(glm::vec3(0.68f, 0.68f, 0.68f)); // серый камень (колонны)
             
+            // DEBUG: Выводим диапазон координат для диагностики
+            glm::vec3 minCoord(FLT_MAX), maxCoord(-FLT_MAX);
+            for (const auto& v : verts) {
+                minCoord.x = std::min(minCoord.x, v.x);
+                minCoord.y = std::min(minCoord.y, v.y);
+                minCoord.z = std::min(minCoord.z, v.z);
+                maxCoord.x = std::max(maxCoord.x, v.x);
+                maxCoord.y = std::max(maxCoord.y, v.y);
+                maxCoord.z = std::max(maxCoord.z, v.z);
+            }
+            std::cout << "[Engine] 📐 Sponza AABB: min=(" << minCoord.x << ", " << minCoord.y << ", " << minCoord.z << ") max=(" << maxCoord.x << ", " << maxCoord.y << ", " << maxCoord.z << ")\n";
+            std::cout << "[Engine] 📷 Камера находится в: (" << cameraPos.x << ", " << cameraPos.y << ", " << cameraPos.z << ") смотрит в: (" << cameraFront.x << ", " << cameraFront.y << ", " << cameraFront.z << ")\n";
+            
             // Применяем triangleStep для уменьшения плотности (оптимизация производительности)
-            size_t step = 1; // TODO: вынести настройки в движок
+            size_t step = data.triangleStep > 0 ? data.triangleStep : 1;
             for (size_t i = 0; i < tris.size(); i += step) {
                 const auto& tri = tris[i];
 
@@ -390,6 +436,18 @@ bool Engine::load_scene(const Vulkan::SceneData &data) {
             std::cout << "[App::Engine] ⚡ TriangleStep=" << step << " применён: " 
                       << tris.size() << " → " << triangles.size() << " треугольников\n";
             
+            // DEBUG: Первый треугольник
+            if (!triangles.empty()) {
+                const auto& t0 = triangles[0];
+                std::cout << "🔺 DEBUG: Первый треугольник:\n";
+                std::cout << "  v0=(" << t0.v0.x << "," << t0.v0.y << "," << t0.v0.z << ")\n";
+                std::cout << "  v1=(" << t0.v1.x << "," << t0.v1.y << "," << t0.v1.z << ")\n";
+                std::cout << "  v2=(" << t0.v2.x << "," << t0.v2.y << "," << t0.v2.z << ")\n";
+                std::cout << "  color=(" << t0.color.r << "," << t0.color.g << "," << t0.color.b << ")\n";
+                std::cout << "  normal=(" << t0.normal.x << "," << t0.normal.y << "," << t0.normal.z << ")\n";
+                std::cout << "  sigma=" << t0.sigma << " opacity=" << t0.opacity << "\n";
+            }
+            
             std::cout << "[App::Engine] 🔺 Загружено " << triangles.size() 
                       << " треугольников для Triangle Splatting (" 
                       << (triangles.size() * sizeof(spectraforge::rendering::TriangleSplattingPass::Triangle) / 1024) 
@@ -430,6 +488,16 @@ void Engine::update(float delta_time) {
             if (glfwGetKey(win, GLFW_KEY_D) == GLFW_PRESS) cameraPos += right * speed;
             if (glfwGetKey(win, GLFW_KEY_SPACE) == GLFW_PRESS) cameraPos.y += speed;
             if (glfwGetKey(win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) cameraPos.y -= speed;
+            
+            // Обновляем рендер-камеру после движения
+            if (renderCamera_) {
+                renderCamera_->setPosition(Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z));
+                renderCamera_->lookAt(
+                    Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z),
+                    Math::Vector3(cameraPos.x + cameraFront.x, cameraPos.y + cameraFront.y, cameraPos.z + cameraFront.z),
+                    Math::Vector3(0.0f, 1.0f, 0.0f)
+                );
+            }
         }
     }
 }

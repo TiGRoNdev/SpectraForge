@@ -66,7 +66,14 @@ layout(push_constant) uniform PushConstants {
 
 float halfPlaneDistance(vec2 p, vec2 v0, vec2 v1) {
     vec2 edge = v1 - v0;
-    vec2 normal = normalize(vec2(-edge.y, edge.x));
+    
+    // ИСПРАВЛЕНИЕ: Правильные нормали для Y-down screen space
+    vec2 normal = vec2(edge.y, -edge.x); // Right perpendicular
+    
+    float edgeLength = length(edge);
+    if (edgeLength < 0.0001) return 10000.0;
+    normal = normal / edgeLength; // Unit normal
+    
     return dot(normal, p - v0);
 }
 

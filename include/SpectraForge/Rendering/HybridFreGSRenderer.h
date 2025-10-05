@@ -11,10 +11,10 @@
 #include <vk_mem_alloc.h>
 #include "SpectraForge/Rendering/Common/IRenderer.h"
 #include "SpectraForge/rendering/TriangleSplattingPass.h"
+#include "SpectraForge/rendering/FreGSPass.h"
 #include "SpectraForge/Rendering/Mesh3D.h"
 #include "SpectraForge/Rendering/Camera3D.h"
 // #include "SpectraForge/rendering/WaveletPass.h"
-// #include "SpectraForge/rendering/FreGSPass.h"
 // #include "SpectraForge/core/VulkanContext.h"
 
 namespace SpectraForge {
@@ -61,12 +61,12 @@ class HybridFreGSRenderer final : public IRenderer {
     /**
      * @brief Загрузка гауссианов для FreGS пасса (point clouds)
      */
-    void uploadGaussians(const std::vector<int>& /*gaussians*/);
+    void uploadGaussians(const std::vector<spectraforge::rendering::GaussianSplat>& gaussians);
 
     /**
      * @brief Загрузка треугольников для Triangle Splatting (meshes)
      */
-    void uploadTriangles(const std::vector<int>& /*triangles*/);
+    void uploadTriangles(const std::vector<spectraforge::rendering::TriangleSplattingPass::Triangle>& triangles);
 
     /**
      * @brief Установить режим рендеринга
@@ -134,8 +134,9 @@ class HybridFreGSRenderer final : public IRenderer {
     // === VMA Allocator ===
     VmaAllocator allocator_ = VK_NULL_HANDLE;
 
-    // === Triangle Splatting Pass ===
+    // === Rendering Passes ===
     std::unique_ptr<spectraforge::rendering::TriangleSplattingPass> triangleSplattingPass_;
+    std::unique_ptr<spectraforge::rendering::FreGSPass> fregsPass_;
 
     // === Camera ===
     Camera3D* camera_ = nullptr;
