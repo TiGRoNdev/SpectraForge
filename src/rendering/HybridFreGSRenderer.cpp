@@ -552,27 +552,33 @@ void HybridFreGSRenderer::recordCommandBuffer(vk::CommandBuffer commandBuffer, u
         
         triangleSplattingPass_->execute(commandBuffer, currentFrame_);
         
-        // ===== DEBUG: Save first frame for analysis =====
+        // ===== DEBUG: Save frames for analysis =====
         static int frameSaveCounter = 0;
-        if (frameSaveCounter == 0) {
-            frameSaveCounter++;
+        const int saveEveryNthFrame = 60; // Save every 60th frame (1 FPS at 60 FPS)
+
+        if (frameSaveCounter % saveEveryNthFrame == 0) {
             // End current command buffer and submit (to complete rendering)
             commandBuffer.end();
-            
+
             vk::SubmitInfo submitInfo;
             submitInfo.commandBufferCount = 1;
             submitInfo.pCommandBuffers = &commandBuffer;
             graphicsQueue_.submit(submitInfo, nullptr);
             graphicsQueue_.waitIdle();
-            
+
+            // Generate unique filename
+            char filename[256];
+            snprintf(filename, sizeof(filename), "/home/tigron/Documents/GITHUB/SpectraForge/DEBUG_frame_%03d.ppm", frameSaveCounter / saveEveryNthFrame);
+
             // Save frame to file
-            triangleSplattingPass_->saveFrameToPPM("/home/tigron/Documents/GITHUB/SpectraForge/DEBUG_frame.ppm");
-            
+            triangleSplattingPass_->saveFrameToPPM(filename);
+
             // Restart command buffer
             vk::CommandBufferBeginInfo beginInfo;
             beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
             commandBuffer.begin(beginInfo);
         }
+        frameSaveCounter++;
         // ===============================================
         
         // Transition Triangle Splatting output from GENERAL to TRANSFER_SRC_OPTIMAL

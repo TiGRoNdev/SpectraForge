@@ -5,6 +5,28 @@
 #include <cstring>
 #include <cinttypes>
 #include <SpectraForge/Rendering/Mesh3D.h>
+#include <cmath>
+
+// Конвертация half-float в float
+inline float halfToFloat(uint16_t h) {
+    uint32_t h_exp = (h & 0x7C00) >> 10;  // Экспонента (5 бит)
+    uint32_t h_mant = h & 0x03FF;         // Мантисса (10 бит)
+
+    if (h_exp == 0) {
+        // Denormalized number
+        if (h_mant == 0) return 0.0f;
+        return std::ldexp(static_cast<float>(h_mant), -24);
+    } else if (h_exp == 31) {
+        // Infinity or NaN
+        return (h_mant == 0) ? std::numeric_limits<float>::infinity() : std::numeric_limits<float>::quiet_NaN();
+    } else {
+        // Normalized number
+        uint32_t f_exp = h_exp + 112;  // Смещение экспоненты для float
+        uint32_t f_mant = h_mant << 13; // Смещение мантиссы для float
+        uint32_t f = (h & 0x8000) << 16 | (f_exp << 23) | f_mant; // Знак + экспонента + мантисса
+        return *reinterpret_cast<float*>(&f);
+    }
+}
 
 namespace spectraforge {
 namespace rendering {
@@ -3127,10 +3149,10 @@ void TriangleSplattingPass::saveFrameToPPM(const std::string& filename) {
         return;
     }
     
-    // Create staging buffer for image download
+    // Create staging buffer for image download (RGBA16F = 8 bytes per pixel)
     VkBufferCreateInfo stagingInfo{};
     stagingInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    stagingInfo.size = config_.outputWidth * config_.outputHeight * 4; // RGBA8
+    stagingInfo.size = config_.outputWidth * config_.outputHeight * 8; // RGBA16F
     stagingInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     stagingInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     
@@ -3232,14 +3254,41 @@ void TriangleSplattingPass::saveFrameToPPM(const std::string& filename) {
     // Read data from staging buffer (already mapped)
     uint8_t* data = reinterpret_cast<uint8_t*>(stagingAllocInfo.pMappedData);
     
+    // DEBUG: Сохраняем сырые данные для анализа
+    std::string rawFilename = filename.substr(0, filename.find_last_of('.')) + "_raw.bin";
+    std::ofstream rawFile(rawFilename, std::ios::binary);
+    rawFile.write(reinterpret_cast<const char*>(data), config_.outputWidth * config_.outputHeight * 8);
+    rawFile.close();
+    std::cout << "[TriangleSplattingPass] DEBUG: Saved raw data to " << rawFilename << std::endl;
+
     // Write PPM file (P3 format - ASCII)
     std::ofstream file(filename);
     file << "P3\n" << config_.outputWidth << " " << config_.outputHeight << "\n255\n";
-    
+
     for (uint32_t y = 0; y < config_.outputHeight; ++y) {
         for (uint32_t x = 0; x < config_.outputWidth; ++x) {
-            uint32_t idx = (y * config_.outputWidth + x) * 4;
-            file << (int)data[idx] << " " << (int)data[idx+1] << " " << (int)data[idx+2] << " ";
+            uint32_t idx = (y * config_.outputWidth + x) * 8; // RGBA16F = 8 bytes per pixel
+            // Конвертируем float16 в uint8 для PPM формата
+            uint16_t r16 = *reinterpret_cast<uint16_t*>(&data[idx]);
+            uint16_t g16 = *reinterpret_cast<uint16_t*>(&data[idx+2]);
+            uint16_t b16 = *reinterpret_cast<uint16_t*>(&data[idx+4]);
+
+            // DEBUG: Выводим сырые значения для диагностики
+            if (x < 5 && y < 5) {
+                std::cout << "[TriangleSplattingPass] DEBUG: Pixel (" << x << "," << y << ") raw: R=" << r16 << " G=" << g16 << " B=" << b16 << std::endl;
+            }
+
+            // Конвертируем half-float в 0-255 диапазон
+            float r = halfToFloat(r16);
+            float g = halfToFloat(g16);
+            float b = halfToFloat(b16);
+
+            // Clamp и конвертируем в 0-255
+            int r8 = std::max(0, std::min(255, static_cast<int>(r * 255.0f)));
+            int g8 = std::max(0, std::min(255, static_cast<int>(g * 255.0f)));
+            int b8 = std::max(0, std::min(255, static_cast<int>(b * 255.0f)));
+
+            file << r8 << " " << g8 << " " << b8 << " ";
         }
         file << "\n";
     }

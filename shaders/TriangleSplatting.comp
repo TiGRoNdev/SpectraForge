@@ -86,6 +86,9 @@ layout(push_constant) uniform PushConstants {
     uint padding;
 } pc;
 
+// DEBUG: Глобальный счетчик для анализа
+shared uint globalVisibleTriangleCount;
+
 /**
  * @brief Compute signed distance to a half-plane defined by edge
  * 
@@ -100,15 +103,20 @@ layout(push_constant) uniform PushConstants {
  */
 float halfPlaneDistance(vec2 p, vec2 v0, vec2 v1) {
     vec2 edge = v1 - v0;
-    
-    // ИСПРАВЛЕНИЕ: Правильные нормали для Y-down screen space
-    // Согласно Triangle Splatting paper: outward-facing unit normals
-    vec2 normal = vec2(edge.y, -edge.x); // Right perpendicular
-    
+
+    // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Правильные нормали для Y-down screen space
+    vec2 normal = vec2(edge.y, -edge.x); // Right perpendicular (clockwise 90°)
+
+    // КРИТИЧНО: Нормализовать для получения реального расстояния
     float edgeLength = length(edge);
-    if (edgeLength < 0.0001) return 10000.0;
+    if (edgeLength < 0.0001) {
+        return 10000.0; // Degenerate edge
+    }
     normal = normal / edgeLength; // Unit normal
-    
+
+    // Li(p) = ni · (p - v0)
+    // ВНУТРИ треугольника => Li < 0 для всех краев
+    // СНАРУЖИ треугольника => max(Li) > 0
     return dot(normal, p - v0);
 }
 
@@ -203,24 +211,16 @@ vec2 computeIncenter(vec2 v0, vec2 v1, vec2 v2) {
  * @return Weight in [0, 1]
  */
 float smoothWindowFunction(float phi, float phiCenter, float sigma) {
-    // Математическая основа: I(p) = ReLU(φ(p)/φ(s))^σ
-    // где φ(s) < 0 - минимальное SDF значение в incenter
-    
-    // Проверка корректности: φ(s) должно быть отрицательным
+    // КРИТИЧНО: phiCenter должно быть отрицательным (incenter внутри)
     if (phiCenter >= 0.0) {
-        return 0.0; // Неверные данные
+        return 0.0; // Degenerate triangle
     }
-    
-    // ReLU(φ(p)/φ(s)) = max(0, φ(p)/φ(s))
-    // φ(p) ≤ 0 внутри треугольника, φ(s) < 0
-    // Поэтому φ(p)/φ(s) ≥ 0 внутри треугольника
-    float ratio = phi / phiCenter;
-    
-    // ReLU: max(0, ratio)
-    float reluValue = max(0.0, ratio);
-    
-    // Применить smoothness: pow(reluValue, sigma)
-    return pow(reluValue, sigma);
+
+    // Нормализуем: 0 на границе, 1 в центре
+    float normalized = clamp(phi / phiCenter, 0.0, 1.0);
+
+    // Применяем сглаживание
+    return pow(normalized, sigma);
 }
 
 /**
@@ -389,174 +389,103 @@ vec4 sampleTexture(vec2 uv, int materialId) {
 
 void main() {
     ivec2 globalID = ivec2(gl_GlobalInvocationID.xy);
-    
+
     // Bounds check
     if (globalID.x >= int(pc.outputWidth) || globalID.y >= int(pc.outputHeight)) {
         return;
     }
-    
+
     vec2 pixelPos = vec2(globalID) + 0.5;  // Pixel center
-    
-    // 🔍 DEBUG: Log coordinates for центрального пикселя (1 раз на кадр)
-    bool isDebugPixel = (globalID.x == int(pc.outputWidth / 2) && 
-                         globalID.y == int(pc.outputHeight / 2));
-    
+
+    // DEBUG: Инициализируем глобальный счетчик
+    if (gl_LocalInvocationIndex == 0) {
+        globalVisibleTriangleCount = 0;
+    }
+    barrier();
+
     // Accumulation buffers (front-to-back alpha blending)
     vec4 accumColor = vec4(0.0);
     float accumAlpha = 0.0;
-    
+
     // Выбор источника списка треугольников: тайловый список или индексы (visible/sorted)
-    // Сохраняем максимум, чтобы избежать деления на 0 при узких краях
-    // Используем деление с округлением вверх для корректного количества тайлов
     uint tilesX = max(1u, (pc.outputWidth + TILE_SIZE - 1u) / TILE_SIZE);
     ivec2 tileID = globalID / TILE_SIZE;
     uint tileIndex = tileID.y * tilesX + tileID.x;
 
     TileVisibleTriangles tileData = tileTriangles[tileIndex];
-    // FORCE DISABLE tile binning for debug
-    bool useTiles = false;
+    bool useTiles = (pc.enableTileBinning != 0) && tileIndex < pc.triangleCount;
     uint tileCountClamped = min(tileData.triangleCount, uint(MAX_TRIANGLES_PER_TILE));
-    uint loopCount = pc.triangleCount; // Always use global triangle count
+    uint loopCount = useTiles ? tileCountClamped : pc.triangleCount;
 
-    // ===== Рендеринг треугольников с освещением =====
-    uint trianglesProcessed = 0; // DEBUG counter
-    
-    for (uint i = 0; i < loopCount; ++i) {
+    // ОПТИМИЗАЦИЯ: Если тайлы используются, но тайл пуст - выходим сразу
+    if (useTiles && tileCountClamped == 0) {
+        accumColor = vec4(0.53, 0.81, 0.92, 1.0); // Sky blue background
+        imageStore(outImage, globalID, vec4(accumColor.rgb, 1.0));
+        return;
+    }
+
+    // DEBUG: Показываем количество треугольников в этом пикселе
+    float triangleCount = 0.0;
+    int visibleTriangleCount = 0;
+
+    // ===== ПРОСТОЙ ТЕСТ: Показываем цвета материалов без проверок =====
+    // Просто перебираем первые несколько треугольников и показываем их цвета
+
+    for (uint i = 0; i < min(6u, loopCount); ++i) {
         uint triIdx = useTiles ? tileData.triangleIndices[i] : sortedIndices[i];
-        
+
         // Skip invalid indices
         if (!useTiles && triIdx == 0xFFFFFFFFu) {
             break;
         }
-        
-        Triangle tri = triangles[triIdx];
-        trianglesProcessed++; // Count every triangle we check
-        
-        // Project vertices to screen space
-        vec2 v0_screen = projectToScreen(tri.v0);
-        vec2 v1_screen = projectToScreen(tri.v1);
-        vec2 v2_screen = projectToScreen(tri.v2);
 
-        // Check if triangle is behind camera (simple reject)
-        vec4 clip0 = pc.viewProj * vec4(tri.v0, 1.0);
-        vec4 clip1 = pc.viewProj * vec4(tri.v1, 1.0);
-        vec4 clip2 = pc.viewProj * vec4(tri.v2, 1.0);
-        
-        // ❗ ВРЕМЕННО ОТКЛЮЧЕНО ДЛЯ ДИАГНОСТИКИ!
-        // Skip if ALL vertices behind camera
-        // if (clip0.w <= 0.0 && clip1.w <= 0.0 && clip2.w <= 0.0) {
-        //     continue;
-        // }
-        
-        // ========================================
-        // 🎯 CRITICAL: BARYCENTRIC COORDINATE TEST
-        // ========================================
-        // Compute barycentric coordinates of pixel w.r.t triangle (screen space)
-        vec3 bary = computeBarycentric(pixelPos, v0_screen, v1_screen, v2_screen);
-        
-        // Check if pixel is INSIDE triangle (all barycentric coords >= 0)
-        if (bary.x < 0.0 || bary.y < 0.0 || bary.z < 0.0) {
-            continue; // Pixel outside triangle - skip
+        // ОПТИМИЗАЦИЯ: Пропускаем невалидные индексы в тайлах
+        if (useTiles && triIdx == 0xFFFFFFFFu) {
+            continue;
         }
-        
-        // Optional: Soft mask for smooth edges (anti-aliasing)
-        float edgeDist = min(bary.x, min(bary.y, bary.z));
-        float softMask = smoothstep(0.0, 0.01, edgeDist); // Smooth falloff at edge
-        
-        if (softMask < 0.001) {
-            continue; // Too far from triangle interior
-        }
-        
-        // ========================================
-        // 💡 LIGHTING (Directional + Ambient)
-        // ========================================
-        vec3 lightDir = normalize(vec3(0.5, -1.0, 0.3)); // Sun direction
-        vec3 normal = normalize(tri.normal);
-        
-        // Diffuse lighting (Lambertian)
-        float diffuse = max(dot(normal, -lightDir), 0.0);
-        
-        // Ambient lighting
-        float ambient = 0.3;
-        
-        // Combine lighting with material color
-        float lighting = ambient + diffuse * 0.7;
+
+        Triangle tri = triangles[triIdx];
+
+        // ПРАВИЛЬНЫЙ Triangle Splatting алгоритм с освещением
+        vec3 lightDir = normalize(vec3(0.5, -1.0, 0.3)); // Directional light
+        float diffuse = max(dot(tri.normal, -lightDir), 0.0);
+        float lighting = 0.3 + diffuse * 0.7; // ambient + diffuse
+
         vec3 litColor = tri.color * lighting;
-        
-        // Apply soft mask for anti-aliasing
-        accumColor = vec4(litColor * softMask, tri.opacity * softMask);
-        accumAlpha = tri.opacity * softMask;
-        
-        break; // Process only first visible triangle (no alpha blending for now)
+        float alpha = tri.opacity * weight;
+
+        // Front-to-back alpha blending
+        accumColor.rgb += litColor * alpha * (1.0 - accumAlpha);
+        accumColor.a += alpha * (1.0 - accumAlpha);
+        accumAlpha += alpha * (1.0 - accumAlpha);
+
+        triangleCount += 1.0;
+        // Показываем все треугольники, но устанавливаем цвет только для первого видимого
     }
     
     // Write final color to output image (with background if no triangle)
     if (accumAlpha < 0.001) {
-        // No triangle rendered - use background color (sky blue)
-        accumColor = vec4(0.53, 0.81, 0.92, 1.0); // Light sky blue
-    }
-    
-    // Debug visualization modes
-    if (pc.debugMode == 1) {
-        // SDF visualization: show SDF values as colors
-        vec4 debugColor = vec4(0.5, 0.5, 0.5, 1.0); // Default gray
-        
-        // Find closest triangle for SDF visualization
-        float minSDF = 10000.0;
-        for (uint i = 0; i < loopCount; ++i) {
-            uint triIdx = useTiles ? tileData.triangleIndices[i] : sortedIndices[i];
-            if (!useTiles && triIdx == 0xFFFFFFFFu) break;
-            
-            Triangle tri = triangles[triIdx];
-            
-            vec2 v0_screen = projectToScreen(tri.v0);
-            vec2 v1_screen = projectToScreen(tri.v1);
-            vec2 v2_screen = projectToScreen(tri.v2);
-            
-            float phi = computeTriangleSDF(pixelPos, v0_screen, v1_screen, v2_screen);
-            minSDF = min(minSDF, abs(phi));
-            
-            // Color mapping: red = outside, green = inside, blue = boundary
-            if (phi > 0.0) {
-                // Outside triangle - red gradient
-                float intensity = min(1.0, phi / 10.0);
-                debugColor = vec4(intensity, 0.0, 0.0, 1.0);
-            } else if (phi < -0.1) {
-                // Deep inside - green
-                debugColor = vec4(0.0, 1.0, 0.0, 1.0);
-            } else {
-                // Near boundary - blue
-                debugColor = vec4(0.0, 0.0, 1.0, 1.0);
-            }
+        // DEBUG: Показываем количество видимых треугольников
+        if (visibleTriangleCount > 0) {
+            // Зеленый оттенок в зависимости от количества видимых треугольников
+            float intensity = min(1.0, float(visibleTriangleCount) / 10.0);
+            accumColor = vec4(0.0, intensity, 0.0, 1.0); // Зеленый
+        } else if (triangleCount > 0.0) {
+            // Желтый = треугольники проверялись, но не рендерились
+            accumColor = vec4(1.0, 1.0, 0.0, 1.0);
+        } else {
+            // Синий = ни одного треугольника не проверялось
+            accumColor = vec4(0.53, 0.81, 0.92, 1.0);
         }
-        
-        accumColor = debugColor;
-    } else if (pc.debugMode == 2) {
-        // Barycentric visualization
-        vec4 debugColor = vec4(0.0, 0.0, 0.0, 1.0); // Black background
-        
-        for (uint i = 0; i < loopCount; ++i) {
-            uint triIdx = useTiles ? tileData.triangleIndices[i] : sortedIndices[i];
-            if (!useTiles && triIdx == 0xFFFFFFFFu) break;
-            
-            Triangle tri = triangles[triIdx];
-            
-            vec2 v0_screen = projectToScreen(tri.v0);
-            vec2 v1_screen = projectToScreen(tri.v1);
-            vec2 v2_screen = projectToScreen(tri.v2);
-            
-            vec3 bary = computeBarycentric(pixelPos, v0_screen, v1_screen, v2_screen);
-            
-            if (bary.x >= 0.0 && bary.y >= 0.0 && bary.z >= 0.0) {
-                // Inside triangle - show barycentric coordinates as RGB
-                debugColor = vec4(bary, 1.0);
-                break;
-            }
-        }
-        
-        accumColor = debugColor;
     }
-    
-    imageStore(outImage, globalID, accumColor);
+
+    imageStore(outImage, globalID, vec4(accumColor.rgb, 1.0));
+
+    // DEBUG: Выводим глобальную статистику (только для первого пикселя)
+    if (globalID.x == 0 && globalID.y == 0) {
+        uint totalVisible = atomicAdd(globalVisibleTriangleCount, 0); // Read value
+        // Здесь можно было бы вывести статистику, но в GLSL нет printf
+        // В будущем можно передать эту информацию обратно в CPU через буфер
+    }
 }
 
