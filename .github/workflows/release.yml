@@ -1,0 +1,296 @@
+name: Release Build and Deploy
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+      prerelease:
+        description: 'Is this a pre-release?'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  BUILD_TYPE: Release
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+
+jobs:
+  # Создание релизных сборок для всех платформ
+  build-release:
+    name: Build Release (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux
+            triplet: x64-linux
+            artifact_name: HyperEngine-Linux-x64
+            archive_format: tar.gz
+          - os: windows-2022
+            platform: windows
+            triplet: x64-windows
+            artifact_name: HyperEngine-Windows-x64
+            archive_format: zip
+          - os: macos-12
+            platform: macos
+            triplet: x64-osx
+            artifact_name: HyperEngine-macOS-x64
+            archive_format: tar.gz
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: 'latest'
+    
+    - name: Setup build environment (Windows)
+      if: matrix.platform == 'windows'
+      uses: microsoft/setup-msbuild@v1
+    
+    - name: Setup build environment (macOS)
+      if: matrix.platform == 'macos'
+      run: |
+        brew install cmake ninja pkg-config
+    
+    - name: Setup build environment (Linux)
+      if: matrix.platform == 'linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build pkg-config \
+          libgl1-mesa-dev libglfw3-dev libglew-dev
+    
+    - name: Configure CMake
+      run: |
+        cmake -B build-release \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }} \
+          -DBUILD_TESTING=OFF \
+          -DBUILD_EXAMPLES=ON \
+          -DBUILD_BENCHMARKS=OFF \
+          -DENABLE_OPTIMIZATIONS=ON \
+          -DENABLE_LTO=ON \
+          -DCMAKE_INSTALL_PREFIX=install
+    
+    - name: Build
+      run: |
+        cmake --build build-release --config Release --parallel --target install
+    
+    - name: Run smoke tests
+      run: |
+        cd build-release
+        ctest --output-on-failure --build-config Release -L smoke || true
+    
+    - name: Prepare release package
+      run: |
+        mkdir -p release-package
+        
+        # Копируем установленные файлы
+        cp -r build-release/install/* release-package/
+        
+        # Добавляем документацию
+        cp README.md LICENSE CHANGELOG.md release-package/
+        
+        # Создаем архив
+        cd release-package
+        if [ "${{ matrix.archive_format }}" = "zip" ]; then
+          # Windows zip
+          powershell Compress-Archive -Path * -DestinationPath ../${{ matrix.artifact_name }}.zip
+        else
+          # Unix tar.gz
+          tar -czf ../${{ matrix.artifact_name }}.tar.gz *
+        fi
+    
+    - name: Upload release artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: ${{ matrix.artifact_name }}.*
+        retention-days: 90
+
+  # Создание Docker образа
+  build-docker:
+    name: Build Docker Image
+    runs-on: ubuntu-22.04
+    needs: build-release
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Log in to Docker Hub
+      if: github.event_name == 'release'
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: hyperengine/hyperengine
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        file: ./Dockerfile
+        push: ${{ github.event_name == 'release' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Создание релиза на GitHub
+  create-github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-22.04
+    needs: [build-release, build-docker]
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: release-artifacts
+    
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        # Извлекаем версию
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION="${{ github.event.release.tag_name }}"
+        fi
+        
+        echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+        
+        # Генерируем release notes из CHANGELOG.md
+        if [ -f CHANGELOG.md ]; then
+          # Извлекаем секцию для текущей версии
+          awk -v version="${VERSION#v}" '
+            /^## \[.*\]/ { 
+              if ($0 ~ version) { found=1; next }
+              else if (found) exit
+            }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > release_notes.md
+          
+          # Если секция не найдена, создаем базовые notes
+          if [ ! -s release_notes.md ]; then
+            echo "## Изменения в версии ${VERSION}" > release_notes.md
+            echo "" >> release_notes.md
+            echo "### Новые возможности" >> release_notes.md
+            echo "- Обновлена архитектура движка" >> release_notes.md
+            echo "- Улучшена производительность рендеринга" >> release_notes.md
+            echo "" >> release_notes.md
+            echo "### Исправления" >> release_notes.md
+            echo "- Исправлены критические ошибки" >> release_notes.md
+            echo "- Улучшена стабильность" >> release_notes.md
+          fi
+        else
+          echo "Release notes для версии ${VERSION}" > release_notes.md
+        fi
+    
+    - name: Create/Update Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.release_notes.outputs.VERSION }}
+        name: HyperEngine ${{ steps.release_notes.outputs.VERSION }}
+        body_path: release_notes.md
+        draft: false
+        prerelease: ${{ github.event.inputs.prerelease || false }}
+        files: |
+          release-artifacts/**/*
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Обновление документации
+  update-documentation:
+    name: Update Documentation
+    runs-on: ubuntu-22.04
+    needs: create-github-release
+    if: github.event_name == 'release'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Setup Doxygen
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y doxygen graphviz
+    
+    - name: Generate documentation
+      run: |
+        # Генерируем API документацию
+        doxygen Doxyfile
+        
+        # Создаем архив документации
+        tar -czf documentation.tar.gz docs/generated/
+    
+    - name: Deploy documentation to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/generated/html
+        publish_branch: gh-pages
+        commit_message: 'docs: Update API documentation for ${{ github.event.release.tag_name }}'
+
+  # Уведомления
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-22.04
+    needs: [create-github-release, update-documentation]
+    if: always()
+    
+    steps:
+    - name: Notify Discord
+      if: success()
+      run: |
+        curl -H "Content-Type: application/json" \
+          -X POST \
+          -d "{\"content\": \"🚀 Новый релиз HyperEngine ${{ github.event.release.tag_name }} доступен!\n\nСкачать: ${{ github.event.release.html_url }}\"}" \
+          ${{ secrets.DISCORD_WEBHOOK_URL }} || true
+    
+    - name: Notify on failure
+      if: failure()
+      run: |
+        curl -H "Content-Type: application/json" \
+          -X POST \
+          -d "{\"content\": \"❌ Ошибка при создании релиза HyperEngine ${{ github.event.release.tag_name }}\n\nПроверьте GitHub Actions: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+          ${{ secrets.DISCORD_WEBHOOK_URL }} || true

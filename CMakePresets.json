@@ -53,6 +53,30 @@
                 "CMAKE_CXX_STANDARD": "17",
                 "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake"
             }
+        },
+        {
+            "name": "windows-ninja",
+            "displayName": "Windows with Ninja and vcpkg",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-ninja",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "windows-ninja-debug",
+            "displayName": "Windows Debug with Ninja and vcpkg",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-ninja-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_STANDARD": "17",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
         }
     ],
     "buildPresets": [
@@ -75,6 +99,16 @@
             "name": "windows-vcpkg",
             "configurePreset": "windows-vcpkg",
             "displayName": "Windows vcpkg Build"
+        },
+        {
+            "name": "windows-ninja",
+            "configurePreset": "windows-ninja",
+            "displayName": "Windows Ninja Build"
+        },
+        {
+            "name": "windows-ninja-debug",
+            "configurePreset": "windows-ninja-debug",
+            "displayName": "Windows Ninja Debug Build"
         }
     ]
 }

@@ -2,6 +2,7 @@
 build/
 build-refactor/
 build-vcpkg/
+build-refactor/
 out/
 cmake-build-*/
 
@@ -182,3 +183,8 @@ asset_cache/
 # User settings
 user_settings.json
 config.ini
+
+# Refactoring temporary files
+docs/refactoring/temp/
+*.refactor.bak
+.cursor/mcp.json

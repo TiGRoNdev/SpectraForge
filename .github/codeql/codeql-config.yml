@@ -1,0 +1,85 @@
+# Конфигурация CodeQL для HyperEngine
+
+name: "HyperEngine CodeQL Configuration"
+
+# Настройки сканирования
+disable-default-queries: false
+
+# Дополнительные запросы безопасности
+queries:
+  - name: security-and-quality
+    uses: security-and-quality
+  - name: security-extended
+    uses: security-extended
+  - name: cpp-lgtm-full
+    uses: .github/codeql/queries
+
+# Пути для анализа
+paths:
+  - src/
+  - include/
+
+# Исключенные пути
+paths-ignore:
+  - build*/
+  - vcpkg*/
+  - tests/
+  - examples/
+  - docs/
+  - "**/*.md"
+  - "**/*.txt"
+  - "**/*.json"
+  - "**/*.yml"
+  - "**/*.yaml"
+
+# Настройки компиляции для C++
+cpp:
+  # Включаем дополнительные флаги
+  after-prepare:
+    - mkdir -p build-codeql
+    - cd build-codeql
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+  
+  # Команда сборки
+  configure:
+    command: cmake --build build-codeql --parallel
+
+# Настройки для анализа уязвимостей
+security:
+  # Включаем анализ потоков данных
+  enable-data-flow-analysis: true
+  
+  # Максимальная глубина анализа
+  max-paths: 1000
+  
+  # Таймаут для анализа (в секундах)
+  timeout: 1800
+
+# Пороги серьезности
+severity-thresholds:
+  error: high
+  warning: medium
+  note: low
+
+# Пользовательские правила
+custom-rules:
+  # Проверка на использование небезопасных функций
+  - id: unsafe-string-functions
+    severity: error
+    description: "Использование небезопасных строковых функций"
+    pattern: |
+      strcpy|strcat|sprintf|gets|scanf
+  
+  # Проверка на утечки памяти
+  - id: memory-leaks
+    severity: high
+    description: "Потенциальные утечки памяти"
+    pattern: |
+      new.*without.*delete|malloc.*without.*free
+  
+  # Проверка на переполнение буфера
+  - id: buffer-overflow
+    severity: high
+    description: "Потенциальное переполнение буфера"
+    pattern: |
+      memcpy.*without.*bounds.*check|strncpy.*without.*null.*terminator

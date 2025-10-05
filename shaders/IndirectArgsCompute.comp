@@ -1,0 +1,62 @@
+#version 450
+
+/**
+ * @file IndirectArgsCompute.comp
+ * @brief Compute indirect dispatch arguments from visible triangle count
+ * 
+ * Преобразует atomic visible count в dispatch dimensions (x, y, z) для vkCmdDispatchIndirect.
+ * Используется после frustum culling для dynamic workgroup count.
+ */
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+// === Buffers ===
+
+// Output: Indirect dispatch args (3x uint32)
+layout(set = 0, binding = 0) buffer IndirectDispatchArgs {
+    uint groupCountX;
+    uint groupCountY;
+    uint groupCountZ;
+} indirectArgs;
+
+// Input: Visible triangle count (atomic result from frustum culling)
+layout(set = 0, binding = 1) readonly buffer VisibleCountBuffer {
+    uint visibleCount;
+};
+
+// === Push Constants ===
+layout(push_constant) uniform PushConstants {
+    uint threadsPerGroup;  // Usually 256 for depth key compute
+    uint padding[3];       // Alignment
+} pushConstants;
+
+/**
+ * @brief Main compute shader
+ * 
+ * Вычисляет количество workgroups для dispatch на основе visible count:
+ * groupCountX = ceil(visibleCount / threadsPerGroup)
+ */
+void main() {
+    // Calculate required workgroups
+    uint threadsPerGroup = pushConstants.threadsPerGroup;
+    
+    if (threadsPerGroup == 0) {
+        threadsPerGroup = 256; // Default fallback
+    }
+    
+    uint visibleTriangles = visibleCount;
+    
+    // Compute dispatch dimensions
+    if (visibleTriangles == 0) {
+        // No visible triangles → no work
+        indirectArgs.groupCountX = 0;
+        indirectArgs.groupCountY = 1;
+        indirectArgs.groupCountZ = 1;
+    } else {
+        // groupCountX = ceil(visibleCount / threadsPerGroup)
+        indirectArgs.groupCountX = (visibleTriangles + threadsPerGroup - 1) / threadsPerGroup;
+        indirectArgs.groupCountY = 1;
+        indirectArgs.groupCountZ = 1;
+    }
+}
+

@@ -44,10 +44,14 @@ if(WIN32)
         ${DLSS_ROOT_DIR}/external/streamline/lib/x64
     )
 else()
-    set(DLSS_LIB_NAMES sl.interposer)
+    # ВАЖНО: Streamline SDK официально не поддерживает Linux
+    # Для Linux используйте FSR или отключите DLSS
+    set(DLSS_LIB_NAMES libsl.interposer.so sl.interposer)
     set(DLSS_LIB_PATHS
         ${DLSS_ROOT_DIR}/lib
+        ${DLSS_ROOT_DIR}/lib/linux
         ${DLSS_ROOT_DIR}/external/streamline/lib
+        ${DLSS_ROOT_DIR}/external/streamline/lib/linux
     )
 endif()
 
@@ -90,11 +94,27 @@ endif()
 
 # Установка переменных результата
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(DLSS
-    FOUND_VAR DLSS_FOUND
-    REQUIRED_VARS DLSS_ROOT_DIR DLSS_INCLUDE_DIR DLSS_LIBRARY
-    VERSION_VAR DLSS_VERSION
-)
+
+# Для Linux: DLSS_LIBRARY опциональна, так как Streamline не поддерживает Linux
+if(UNIX AND NOT APPLE)
+    find_package_handle_standard_args(DLSS
+        FOUND_VAR DLSS_FOUND
+        REQUIRED_VARS DLSS_ROOT_DIR DLSS_INCLUDE_DIR
+        VERSION_VAR DLSS_VERSION
+    )
+    
+    # Для Linux: если библиотеки нет, все равно считаем "найденным" с предупреждением
+    if(DLSS_INCLUDE_DIR AND NOT DLSS_LIBRARY)
+        message(WARNING "DLSS headers found, but library missing. DLSS not officially supported on Linux. Consider using FSR instead.")
+        set(DLSS_FOUND FALSE)
+    endif()
+else()
+    find_package_handle_standard_args(DLSS
+        FOUND_VAR DLSS_FOUND
+        REQUIRED_VARS DLSS_ROOT_DIR DLSS_INCLUDE_DIR DLSS_LIBRARY
+        VERSION_VAR DLSS_VERSION
+    )
+endif()
 
 if(DLSS_FOUND)
     set(DLSS_INCLUDE_DIRS ${DLSS_INCLUDE_DIR})

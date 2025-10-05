@@ -1,0 +1,395 @@
+---
+description: SOLID principles, architecture patterns, and comprehensive development standards for SpectraForge
+globs: ["**/*.cpp", "**/*.h", "**/*.hpp"]
+alwaysApply: true
+priority: 900
+---
+
+# SpectraForge Architecture Rules
+
+@context {
+  "type": "architecture_guidelines",
+  "purpose": "Enforce SOLID principles, project structure, code quality, testing, build systems, documentation, performance, security, version control, monitoring, deployment, and enforcement for C++ projects",
+  "format_version": "2.0",
+  "priority": 900,
+  "applies_to": "All project files and architecture decisions",
+  "supported_languages": ["C++17", "C++20"],
+  "ai_model": "Claude 4.5 Sonnet"
+}
+
+> **CLAUDE DIRECTIVE**: STRICTLY enforce SOLID principles in ALL code generation. Violations of SRP, OCP, LSP, ISP, or DIP are CRITICAL errors.
+
+## 1. Core Principles
+Adhere to these foundational principles to ensure maintainable and extensible code. Prioritize modern C++ features for better performance and safety.
+
+@principles_rules [
+  {
+    "id": "srp",
+    "rule": "Single Responsibility Principle (SRP): Each class or function should have only one reason to change.",
+    "severity": "high",
+    "example": "Separate rendering logic from scene management to avoid bloated classes."
+  },
+  {
+    "id": "ocp",
+    "rule": "Open/Closed Principle (OCP): Classes should be open for extension but closed for modification.",
+    "severity": "high",
+    "example": "Use abstract base classes for renderers, allowing new implementations without changing existing code."
+  },
+  {
+    "id": "lsp",
+    "rule": "Liskov Substitution Principle (LSP): Derived classes must be substitutable for their base classes without altering program correctness.",
+    "severity": "high",
+    "example": "A 4D vector class deriving from a base vector should support all base operations consistently."
+  },
+  {
+    "id": "isp",
+    "rule": "Interface Segregation Principle (ISP): No client should depend on methods it doesn't use; prefer multiple small interfaces.",
+    "severity": "high",
+    "example": "Split a large engine interface into rendering, physics, and input interfaces."
+  },
+  {
+    "id": "dip",
+    "rule": "Dependency Inversion Principle (DIP): Depend on abstractions, not concretions; use dependency injection.",
+    "severity": "high",
+    "example": "Inject resource managers via interfaces rather than hardcoding concrete classes."
+  },
+  {
+    "id": "dry",
+    "rule": "DRY (Don't Repeat Yourself): Eliminate code duplication through abstraction and reuse.",
+    "severity": "high",
+    "example": "Use templates for common vector operations instead of repeating code for different dimensions."
+  },
+  {
+    "id": "grasp",
+    "rule": "GRASP (General Responsibility Assignment Software Patterns): Assign responsibilities to classes/objects appropriately.",
+    "severity": "medium",
+    "example": "Controller classes handle input, while models manage data."
+  },
+  {
+    "id": "kiss",
+    "rule": "KISS (Keep It Simple, Stupid): Prefer simple solutions over complex ones.",
+    "severity": "medium",
+    "example": "Use standard library algorithms instead of custom implementations unless necessary."
+  },
+  {
+    "id": "yagni",
+    "rule": "YAGNI (You Aren't Gonna Need It): Don't implement functionality until it's needed.",
+    "severity": "medium",
+    "example": "Avoid adding advanced 4D rotation features until required by the project."
+  }
+]
+
+- Apply these principles during design reviews to maintain code quality.
+
+## 2. Project Structure Requirements
+Maintain a flat, modular structure to facilitate navigation and scalability.
+
+@structure_rules {
+  "src": "Source code implementation files with modular subdirectories",
+  "src/core": "Core engine components (GameObject, Component, Transform)",
+  "src/math": "Mathematical library (Vector3/4, Matrix4, Quaternion)",
+  "src/rendering": "Rendering systems (OpenGL, Vulkan backends)",
+  "src/physics": "Physics simulation components",
+  "src/input": "Input handling system",
+  "src/cuda": "CUDA integration for GPU acceleration",
+  "src/optix": "OptiX ray tracing integration",
+  "src/upscaling": "AI upscaling (DLSS/FSR)",
+  "include": "Header files for interfaces and declarations",
+  "tests": "Unit and integration tests mirroring source structure",
+  "docs": "Technical documentation and architecture diagrams",
+  "examples": "Usage examples and demo applications",
+  "build": "Build artifacts (add to .gitignore)",
+  "scripts": "Build scripts, utilities, and automation tools",
+  "cmake": "CMake modules and find scripts",
+  "shaders": "GLSL/HLSL shader files"
+}
+
+- Place headers and sources together for easy navigation in small projects; use subdirectories for modules in larger ones.
+- Include documentation files: README.md (overview), API_Reference.md (API docs), Examples.md (tutorials), CONTRIBUTING.md (guidelines), CHANGELOG.md (history), ARCHITECTURE.md (design decisions).
+
+## 3. Code Quality Standards
+Enforce readability and maintainability through consistent practices.
+
+@quality_rules [
+  {
+    "id": "file_organization",
+    "rule": "One class per file (except small related classes); headers in include/ with matching sources in src/.",
+    "severity": "high"
+  },
+  {
+    "id": "naming_conventions",
+    "rule": "Use PascalCase for classes, snake_case for functions and variables.",
+    "severity": "high",
+    "example": "class Engine4D; void render_frame();"
+  },
+  {
+    "id": "function_design",
+    "rule": "Keep functions small (<50 lines), max 3 parameters, use meaningful names, return early.",
+    "severity": "high",
+    "example": "if (!valid) return; // Early return"
+  },
+  {
+    "id": "class_design",
+    "rule": "Limit classes to 200 lines, prefer composition over inheritance, use const correctness.",
+    "severity": "high",
+    "example": "const Vector4& getPosition() const;"
+  },
+  {
+    "id": "error_handling",
+    "rule": "Use exceptions sparingly, provide meaningful messages, never ignore errors.",
+    "severity": "high",
+    "example": "throw std::runtime_error(\"Invalid matrix\");"
+  }
+]
+
+- Use tools like clang-tidy for static analysis and cppcheck for code quality checks.
+
+## 4. Testing Requirements
+Aim for comprehensive coverage to catch bugs early.
+
+@testing_rules [
+  {
+    "id": "coverage",
+    "rule": "Minimum 80% code coverage; unit tests for all public methods.",
+    "severity": "high"
+  },
+  {
+    "id": "structure",
+    "rule": "Follow AAA pattern (Arrange, Act, Assert); one test per behavior.",
+    "severity": "high",
+    "example": "// Arrange\nint x = 1;\n// Act\nint y = addOne(x);\n// Assert\nASSERT_EQ(2, y);"
+  },
+  {
+    "id": "tools",
+    "rule": "Use frameworks like Google Test or Catch2; include sanitizers and Valgrind.",
+    "severity": "medium"
+  },
+  {
+    "id": "types",
+    "rule": "Include integration, performance, and property-based tests.",
+    "severity": "medium"
+  }
+]
+
+- Keep tests independent; mock dependencies.
+
+## 5. Build and CI/CD
+Use CMake for cross-platform builds.
+
+@build_rules [
+  {
+    "id": "system",
+    "rule": "Use modern CMake (min 3.0); support Debug/Release/Profile configurations.",
+    "severity": "high",
+    "example": "cmake_minimum_required(VERSION 3.16)"
+  },
+  {
+    "id": "ci",
+    "rule": "Automate testing on commits; include linting, security scans.",
+    "severity": "high"
+  }
+]
+
+- Integrate with GitHub Actions using mcp_github_run_workflow.
+
+## 6. Documentation Standards
+Use Doxygen for code docs.
+
+@documentation_rules [
+  {
+    "id": "code",
+    "rule": "Document public APIs with Doxygen comments; include examples.",
+    "severity": "medium",
+    "example": "/** @brief Renders a frame. */"
+  },
+  {
+    "id": "technical",
+    "rule": "Include architecture diagrams, API specs, deployment guides.",
+    "severity": "medium"
+  }
+]
+
+- Generate docs automatically in CI.
+
+## 7. Performance and Optimization
+Profile and optimize based on data.
+
+@performance_rules [
+  {
+    "id": "guidelines",
+    "rule": "Profile before optimizing; use appropriate data structures, minimize allocations.",
+    "severity": "high",
+    "example": "Use std::vector for dynamic arrays."
+  },
+  {
+    "id": "memory",
+    "rule": "Apply RAII, use smart pointers, avoid leaks.",
+    "severity": "high",
+    "example": "std::unique_ptr<int> ptr = std::make_unique<int>(42);"
+  }
+]
+
+## 8. Security Considerations
+Follow secure coding practices.
+
+@security_rules [
+  {
+    "id": "best_practices",
+    "rule": "Validate inputs, avoid buffer overflows, sanitize data.",
+    "severity": "high",
+    "example": "Use std::string instead of char arrays."
+  }
+]
+
+- Use tools like CERT C++ checker.
+
+## 9. Version Control
+Follow Git Flow with feature branches.
+
+@version_control_rules [
+  {
+    "id": "workflow",
+    "rule": "Use feature branches, atomic commits, conventional commits.",
+    "severity": "high",
+    "example": "git checkout -b feature/new-renderer"
+  },
+  {
+    "id": "review",
+    "rule": "Require PRs with approvals; use mcp_github_create_pull_request.",
+    "severity": "high"
+  }
+]
+
+- Manage issues with mcp_github_create_issue.
+
+## 10. Monitoring and Logging
+Implement structured logging.
+
+@monitoring_rules [
+  {
+    "id": "logging",
+    "rule": "Use log levels, avoid sensitive data; consider Boost.log.",
+    "severity": "medium"
+  },
+  {
+    "id": "monitoring",
+    "rule": "Track metrics, set alerts for issues.",
+    "severity": "medium"
+  }
+]
+
+## 11. Deployment and Operations
+Use Docker for containerization.
+
+@deployment_rules [
+  {
+    "id": "deployment",
+    "rule": "Use multi-stage Docker builds, blue-green deployments.",
+    "severity": "medium",
+    "example": "FROM builder AS build\nCOPY . .\nRUN make"
+  },
+  {
+    "id": "config",
+    "rule": "Use environment configs, avoid hardcoding.",
+    "severity": "medium"
+  }
+]
+
+## 12. Code Review Checklist
+Before merging:
+
+@checklist_rules [
+  {
+    "id": "solid",
+    "rule": "Follows SOLID principles.",
+    "severity": "high"
+  },
+  // Add all from original
+]
+
+## 13. Enforcement
+Enforce through tools and processes.
+
+@enforcement_rules [
+  {
+    "id": "tools",
+    "rule": "Use linting (clang-tidy), pre-commit hooks, CI checks.",
+    "severity": "high"
+  }
+]
+
+## 14. Exceptions
+Document and approve exceptions.
+
+@exceptions_rules [
+  {
+    "id": "process",
+    "rule": "Document rationale, approve by team, review regularly.",
+    "severity": "medium"
+  }
+]
+
+## 15. Tables for Quick Reference
+
+### SOLID Principles Examples
+| Principle | Example in C++ |
+|-----------|----------------|
+| SRP | Separate class for matrix operations |
+| OCP | Virtual functions for extensibility |
+| LSP | Derived shapes behave like base Shape |
+| ISP | Multiple small interfaces for components |
+| DIP | Dependency injection via constructors |
+
+### Project Directories
+| Directory | Description |
+|-----------|-------------|
+| src | Source code |
+| include | Headers |
+| tests | Tests |
+| docs | Documentation |
+| examples | Examples |
+| build | Artifacts |
+| scripts | Scripts |
+| config | Configs |
+
+### Enforcement Tools
+| Tool | Purpose | Usage |
+|------|---------|-------|
+| clang-tidy | Static analysis | Run in CI |
+| Cppcheck | Code quality | Pre-commit |
+| Doxygen | Documentation | Generate in build |
+| Valgrind | Memory checks | In tests |
+| Docker | Deployment | Multi-stage builds |
+
+## 16. MCP Integration for Architecture
+
+@mcp_architecture_tools [
+  {
+    "id": "github_issues",
+    "mcp_tool": "mcp_github_create_issue",
+    "when": "Architecture violations or technical debt detected",
+    "params": {"owner": "TiGRoNdev", "repo": "SpectraForge", "labels": ["architecture", "technical-debt"]}
+  },
+  {
+    "id": "research",
+    "mcp_tool": "mcp_perplexity-ask_perplexity_research",
+    "when": "Need architectural patterns or best practices research"
+  },
+  {
+    "id": "library_docs",
+    "mcp_tools": ["mcp_context7_resolve-library-id", "mcp_context7_get-library-docs"],
+    "when": "Researching third-party library architectures"
+  }
+]
+
+## 17. Best Practices and Enforcement
+
+- Regularly review architecture against SOLID principles
+- Use Cursor AI for rule suggestions and enforcement
+- Reference C++ Core Guidelines and industry standards
+- Integrate MCP commands for GitHub automation
+- Balance simplicity with performance needs
+- BLOCK merges that violate critical architecture rules
+
+---
+**Version**: 2.0 | **Optimized for**: Claude 4.5 Sonnet

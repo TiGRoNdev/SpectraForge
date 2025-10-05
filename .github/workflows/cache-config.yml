@@ -1,0 +1,93 @@
+# Конфигурация кэширования для GitHub Actions
+
+# Общие настройки кэширования
+cache:
+  # Кэш для vcpkg
+  vcpkg:
+    key: ${{ runner.os }}-vcpkg-${{ hashFiles('vcpkg.json') }}
+    restore-keys: |
+      ${{ runner.os }}-vcpkg-
+    paths:
+      - vcpkg_installed/
+      - vcpkg/
+      - build/vcpkg_installed/
+  
+  # Кэш для CMake
+  cmake:
+    key: ${{ runner.os }}-cmake-${{ hashFiles('CMakeLists.txt', 'cmake/**') }}
+    restore-keys: |
+      ${{ runner.os }}-cmake-
+    paths:
+      - build/CMakeCache.txt
+      - build/CMakeFiles/
+  
+  # Кэш для зависимостей компилятора
+  compiler:
+    key: ${{ runner.os }}-compiler-${{ matrix.compiler }}-${{ hashFiles('**/*.cpp', '**/*.h') }}
+    restore-keys: |
+      ${{ runner.os }}-compiler-${{ matrix.compiler }}-
+      ${{ runner.os }}-compiler-
+    paths:
+      - ~/.cache/clang/
+      - ~/.cache/gcc/
+      - C:\Users\runneradmin\AppData\Local\Temp\chocolatey/
+  
+  # Кэш для инструментов анализа кода
+  tools:
+    key: ${{ runner.os }}-tools-v1
+    restore-keys: |
+      ${{ runner.os }}-tools-
+    paths:
+      - ~/.cache/pre-commit/
+      - ~/.local/bin/
+      - C:\ProgramData\chocolatey\
+
+# Настройки для разных типов сборок
+build-configs:
+  debug:
+    cmake-flags: -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON -DENABLE_SANITIZERS=ON
+    cache-suffix: debug
+  
+  release:
+    cmake-flags: -DCMAKE_BUILD_TYPE=Release -DENABLE_OPTIMIZATIONS=ON
+    cache-suffix: release
+  
+  profile:
+    cmake-flags: -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_PROFILING=ON
+    cache-suffix: profile
+
+# Настройки для различных платформ
+platform-configs:
+  ubuntu:
+    triplet: x64-linux
+    package-manager: apt
+    dependencies:
+      - build-essential
+      - cmake
+      - ninja-build
+      - pkg-config
+      - libgl1-mesa-dev
+      - libglfw3-dev
+      - libglew-dev
+      - libassimp-dev
+  
+  windows:
+    triplet: x64-windows
+    package-manager: vcpkg
+    dependencies:
+      - glfw3
+      - glew
+      - assimp
+      - vulkan
+  
+  macos:
+    triplet: x64-osx
+    package-manager: brew
+    dependencies:
+      - cmake
+      - ninja
+      - pkg-config
+      - glfw
+      - glew
+      - assimp
+      - vulkan-headers

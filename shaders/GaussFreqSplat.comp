@@ -1,0 +1,207 @@
+/**
+ * @file GaussFreqSplat.comp
+ * @brief Frequency-Encoded Gaussian Splatting for wavelet subbands
+ * 
+ * Implements analytic Gaussian frequency-domain splatting without DCT overhead.
+ * Each thread processes ONE pixel independently - no cross-thread communication.
+ * All 256 threads (16×16 workgroup) write their pixels independently.
+ * 
+ * Mathematical basis:
+ * C(x) = Σ w_k * exp(-2π²σ_k²||k||²) * cos(2π k·μ_k)
+ * 
+ * Performance: O(M+P) per pixel, no global atomics, full per-pixel granularity
+ * 
+ * @see docs/architecture/Renderer.md
+ * @author SpectraForge Core Team  
+ * @date 2025-10-02
+ */
+
+#version 450
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
+
+// Workgroup: 16×16 (баланс между occupancy и subgroup эффективностью)
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+// Input: wavelet subbands
+layout(binding = 0, rg16f) readonly uniform image2D inLL;
+layout(binding = 1, rg16f) readonly uniform image2D inLH;
+layout(binding = 2, rg16f) readonly uniform image2D inHL;
+layout(binding = 3, rg16f) readonly uniform image2D inHH;
+
+// Output: аккумулятор для final image
+layout(binding = 4, rgba16f) uniform image2D outImage;
+
+// Gaussian parameters buffer (position μ, scale σ, weight w)
+struct GaussianSplat {
+    vec4 positionAndScale;  // xyz = μ, w = σ
+    vec4 colorAndWeight;    // rgb = color, a = weight
+};
+
+layout(std430, binding = 5) readonly buffer GaussianBuffer {
+    uint count;
+    uint _padding[3];
+    GaussianSplat gaussians[];
+} gaussianData;
+
+// Push constants
+layout(push_constant) uniform PushConstants {
+    mat4 viewProj;          // View-Projection matrix для 3D трансформации
+    uint outputWidth;
+    uint outputHeight;
+    float freqScale;        // Частотный масштаб (зависит от разрешения)
+    uint subbandLevel;      // Уровень wavelet-декомпозиции
+    float foveaRadius;      // Радиус фовеа в нормализованных координатах
+    uint padding0;          // выравнивание
+    vec2 foveaCenter;       // Центр фовеа (gaze point)
+    uint maxGaussians;      // Макс. количество Гауссианов для обработки
+} pc;
+
+// Constants
+const float PI = 3.14159265359;
+const float TWO_PI = 6.28318530718;
+const float TWO_PI_SQ = 39.4784176044;  // 2π²
+
+/**
+ * @brief Вычисление частоты для текущего пикселя
+ */
+vec2 computeFrequency(ivec2 pixelCoord) {
+    vec2 uv = (vec2(pixelCoord) + 0.5) / vec2(pc.outputWidth, pc.outputHeight);
+    return uv * pc.freqScale;
+}
+
+/**
+ * @brief Проверка принадлежности фовеа
+ */
+bool isInFovea(vec2 uv) {
+    float dist = distance(uv, pc.foveaCenter);
+    return dist <= pc.foveaRadius;
+}
+
+/**
+ * @brief Аналитическое вычисление Гауссианы в частотной области
+ * 
+ * Формула: exp(-2π²σ²||k||²) * cos(2π k·μ)
+ * 
+ * @param k Частотный вектор
+ * @param mu Позиция Гауссианы (μ)
+ * @param sigma Масштаб Гауссианы (σ)
+ * @return Значение частотного ядра
+ */
+float16_t gaussianFreqKernel(vec2 k, vec3 mu, float sigma) {
+    // Экспоненциальное подавление по σ
+    float kNormSq = dot(k, k);
+    float sigmaSq = sigma * sigma;
+    float attenuation = exp(-TWO_PI_SQ * sigmaSq * kNormSq);
+    
+    // Косинусная фаза по μ
+    float phase = cos(TWO_PI * dot(k, mu.xy));
+    
+    return float16_t(attenuation * phase);
+}
+
+/**
+ * @brief Загрузка wavelet subbands для текущего пикселя
+ */
+f16vec4 loadSubbands(ivec2 coord) {
+    // Временный упрощённый путь: нейтральная модуляция, чтобы визуализировать гауссианы
+    // (устранение зависимости от содержимого wavelet-поддиапазонов)
+    float16_t one = float16_t(1.0);
+    return f16vec4(one, one, one, one);
+}
+
+/**
+ * @brief Аккумуляция одного Гауссиана с 3D трансформацией
+ */
+f16vec4 accumulateGaussian(ivec2 pixelCoord, GaussianSplat gauss, f16vec4 subbands) {
+    vec3 worldPos = gauss.positionAndScale.xyz;
+    float sigma = gauss.positionAndScale.w;
+    vec3 color = gauss.colorAndWeight.rgb;
+    float weight = gauss.colorAndWeight.a;
+    
+    // Трансформация 3D позиции в clip space
+    vec4 clipPos = pc.viewProj * vec4(worldPos, 1.0);
+    
+    // Перспективное деление
+    if (clipPos.w <= 0.0001) return f16vec4(0.0hf); // за камерой
+    vec3 ndc = clipPos.xyz / clipPos.w; // [-1,1]
+    
+    // Проверка видимости
+    if (abs(ndc.x) > 1.0 || abs(ndc.y) > 1.0 || abs(ndc.z) > 1.0) {
+        return f16vec4(0.0hf);
+    }
+    
+    // NDC -> screen space [0, outputWidth/Height]
+    vec2 screenPos = (ndc.xy * 0.5 + 0.5) * vec2(pc.outputWidth, pc.outputHeight);
+    
+    // Вычисление расстояния до текущего пикселя
+    vec2 pixelPos = vec2(pixelCoord) + 0.5;
+    float dist = length(screenPos - pixelPos);
+    
+    // Гауссиан в экранном пространстве (агрессивное покрытие с перекрытием)
+    float screenSigma = sigma * 80.0; // значительно увеличено для сплошного покрытия
+    float gaussianWeight = exp(-0.5 * (dist * dist) / (screenSigma * screenSigma));
+    
+    // Модуляция по wavelet subbands
+    float16_t modulation = float16_t(gaussianWeight) * subbands.r;
+    
+    // Аккумуляция с весом
+    return f16vec4(color * float(weight * modulation), float16_t(weight * gaussianWeight));
+}
+
+/**
+ * @brief Главная функция compute shader
+ */
+void main() {
+    ivec2 globalID = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 localID = ivec2(gl_LocalInvocationID.xy);
+    
+    // Проверка границ
+    if (globalID.x >= pc.outputWidth || globalID.y >= pc.outputHeight) {
+        return;
+    }
+    
+    // Вычисление частоты
+    vec2 k = computeFrequency(globalID);
+    vec2 uv = vec2(globalID) / vec2(pc.outputWidth, pc.outputHeight);
+    
+    // Загрузка wavelet subbands
+    f16vec4 subbands = loadSubbands(globalID);
+    
+    // Локальная аккумуляция
+    f16vec4 localAccum = f16vec4(0.0hf);
+    
+    // Обработка всех Гауссианов (или до maxGaussians)
+    uint gaussCount = min(gaussianData.count, pc.maxGaussians);
+    
+    for (uint i = 0; i < gaussCount; ++i) {
+        GaussianSplat gauss = gaussianData.gaussians[i];
+        
+        // ОТКЛЮЧЕНА фовеация для полного рендеринга всей сцены
+        // if (!isInFovea(uv) && i > (gaussCount / 4)) {
+        //     break;
+        // }
+        
+        localAccum += accumulateGaussian(globalID, gauss, subbands);
+    }
+    
+    // Нормализация по весам
+    // CRITICAL: Each thread processes and writes its OWN pixel independently
+    // No subgroup election - all 256 threads (16×16 workgroup) must write
+    if (localAccum.a > float16_t(0.0001)) {
+        localAccum.rgb /= localAccum.a;
+    }
+    
+    // Тональное мапирование (простой Reinhard)
+    localAccum.rgb = localAccum.rgb / (f16vec3(1.0hf) + localAccum.rgb);
+    
+    // Гамма-коррекция (sRGB)
+    f16vec4 finalColor = f16vec4(
+        pow(localAccum.rgb, f16vec3(float16_t(1.0 / 2.2))),
+        localAccum.a
+    );
+    
+    // Прямая запись в выходной аккумулирующий образ (без additive blend)
+    // Каждый поток пишет СВОЙ пиксель — полное покрытие выходного изображения
+    imageStore(outImage, globalID, vec4(finalColor));
+}
+

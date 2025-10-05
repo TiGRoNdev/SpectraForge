@@ -1,0 +1,474 @@
+---
+description: MASTER RULES - Coordination and strict enforcement for all SpectraForge development rules with Claude 4.5 Sonnet optimization
+globs: ["**/*"]
+alwaysApply: true
+priority: 1000
+---
+
+# 🎯 MASTER RULES - SpectraForge Project
+
+@context {
+  "type": "master_coordinator",
+  "purpose": "Ensure STRICT enforcement of all project rules with Claude 4.5 Sonnet optimization, use context7",
+  "priority": "CRITICAL",
+  "format_version": "2.0",
+  "applies_to": "ALL project files and operations",
+  "ai_model": "Claude 4.5 Sonnet"
+}
+
+## ⚠️ CRITICAL DIRECTIVES - MANDATORY EXECUTION
+
+> **ATTENTION CLAUDE 4.5 SONNET**: These directives are MANDATORY and MUST be followed WITHOUT EXCEPTION.
+
+### 1. Rule Execution Priority
+
+**YOU MUST ALWAYS:**
+1. ✅ **CHECK ALL RULES** before any code generation or modification
+2. ✅ **VALIDATE** every output against defined rules  
+3. ✅ **ENFORCE** severity levels strictly (high > medium > low)
+4. ✅ **REPORT** any rule violations immediately
+5. ✅ **SUGGEST** corrections when violations are detected
+
+**NEVER:**
+- ❌ Generate code that violates high-severity rules
+- ❌ Ignore or skip rule validation
+- ❌ Assume rules are optional
+- ❌ Create exceptions without explicit user approval
+
+### 2. Rule Hierarchy and Priority
+
+```
+Priority Order (highest to lowest):
+1. MASTER RULES (this file)          - Priority 1000
+2. Architecture Rules                  - Priority 900
+3. Coding Standards                    - Priority 800
+4. Console Output Rules                - Priority 700
+5. Build Instructions                  - Priority 600
+6. Feature Workflow                    - Priority 500
+7. Test Automation                     - Priority 400
+```
+
+@priority_rules [
+  {
+    "id": "master_override",
+    "rule": "MASTER RULES override all other rules in case of conflict",
+    "severity": "critical",
+    "action": "MANDATORY"
+  },
+  {
+    "id": "severity_enforcement",
+    "rule": "HIGH severity rules MUST be enforced before code generation",
+    "severity": "critical", 
+    "action": "MANDATORY"
+  },
+  {
+    "id": "conflict_resolution",
+    "rule": "On rule conflict: Ask user for clarification, prefer higher priority rule",
+    "severity": "high",
+    "action": "REQUIRED"
+  }
+]
+
+### 3. Code Generation Protocol
+
+**BEFORE generating ANY code, YOU MUST:**
+
+```plaintext
+STEP 1: Identify file type and applicable rules
+STEP 2: Load all relevant rule sets
+STEP 3: Verify no rule conflicts exist
+STEP 4: Generate code following ALL applicable rules
+STEP 5: Validate output against rules
+STEP 6: Report compliance status
+```
+
+@generation_protocol [
+  {
+    "id": "pre_generation_check",
+    "rule": "ALWAYS check applicable rules BEFORE code generation",
+    "severity": "critical",
+    "enforcement": "BLOCK generation if rules violated"
+  },
+  {
+    "id": "post_generation_validation", 
+    "rule": "ALWAYS validate generated code against ALL applicable rules",
+    "severity": "critical",
+    "enforcement": "AUTO-FIX or REGENERATE if violations found"
+  },
+  {
+    "id": "compliance_reporting",
+    "rule": "ALWAYS report which rules were applied and compliance status",
+    "severity": "high",
+    "enforcement": "MANDATORY reporting"
+  }
+]
+
+### 4. MCP Tools Integration - MANDATORY USAGE
+
+**GitHub MCP Tools - MUST USE when applicable:**
+
+@github_mcp_mandatory [
+  {
+    "id": "issue_creation",
+    "rule": "ALWAYS use mcp_github_create_issue for bug/feature tracking",
+    "severity": "high",
+    "when": "User reports bug or requests feature"
+  },
+  {
+    "id": "pr_creation",
+    "rule": "ALWAYS use mcp_github_create_pull_request for code changes",
+    "severity": "high",
+    "when": "Code changes ready for review"
+  },
+  {
+    "id": "branch_creation",
+    "rule": "ALWAYS use mcp_github_create_branch for new features/fixes",
+    "severity": "high",
+    "when": "Starting new development work"
+  },
+  {
+    "id": "workflow_execution",
+    "rule": "ALWAYS use mcp_github_run_workflow for CI/CD triggers",
+    "severity": "medium",
+    "when": "Testing or deployment needed"
+  },
+  {
+    "id": "code_review",
+    "rule": "SUGGEST mcp_github_request_copilot_review for PR reviews",
+    "severity": "medium",
+    "when": "PR created and needs review"
+  }
+]
+
+**Research & Web MCP Tools - USE when needed:**
+
+@research_mcp_tools [
+  {
+    "id": "perplexity_research",
+    "rule": "USE mcp_perplexity-ask_perplexity_research for deep technical research",
+    "severity": "medium",
+    "when": "Need current information or technical deep dive"
+  },
+  {
+    "id": "web_scrape",
+    "rule": "USE mcp_firecrawl-mcp_firecrawl_scrape for documentation/article parsing",
+    "severity": "medium",
+    "when": "Need to extract content from specific URL"
+  },
+  {
+    "id": "web_search",
+    "rule": "USE mcp_firecrawl-mcp_firecrawl_search for general web searches",
+    "severity": "low",
+    "when": "Need to find information online"
+  }
+]
+
+**Library Documentation MCP Tools:**
+
+@library_docs_mcp [
+  {
+    "id": "resolve_library",
+    "rule": "ALWAYS use mcp_context7_resolve-library-id BEFORE get-library-docs",
+    "severity": "high",
+    "when": "Need library documentation"
+  },
+  {
+    "id": "get_docs",
+    "rule": "USE mcp_context7_get-library-docs for up-to-date library documentation",
+    "severity": "medium",
+    "when": "Working with external libraries"
+  }
+]
+
+### 5. Repository Information - HARDCODED
+
+```yaml
+REPOSITORY:
+  owner: "TiGRoNdev"
+  repo: "SpectraForge"
+  url: "https://github.com/TiGRoNdev/SpectraForge"
+  
+DEVELOPMENT:
+  main_branch: "main"
+  develop_branch: "develop"
+  feature_prefix: "feature/"
+  bugfix_prefix: "bugfix/"
+  hotfix_prefix: "hotfix/"
+  
+PROJECT:
+  name: "SpectraForge"
+  type: "Spectral Processing Engine Combining Transform Rendering And Frequency Optimized Radiance Gaussian Encoding"
+  language: "C++17/20"
+  build_system: "CMake 3.16+"
+```
+
+**ALWAYS use these values when creating GitHub operations!**
+
+### 6. Strict SOLID Principles Enforcement
+
+@solid_enforcement [
+  {
+    "id": "srp_check",
+    "rule": "REJECT classes with multiple responsibilities",
+    "severity": "critical",
+    "action": "BLOCK and request refactoring"
+  },
+  {
+    "id": "ocp_check", 
+    "rule": "REQUIRE abstractions for extensibility",
+    "severity": "critical",
+    "action": "SUGGEST virtual functions or templates"
+  },
+  {
+    "id": "lsp_check",
+    "rule": "VALIDATE derived classes can substitute base classes",
+    "severity": "critical",
+    "action": "CHECK inheritance hierarchies"
+  },
+  {
+    "id": "isp_check",
+    "rule": "REJECT fat interfaces",
+    "severity": "high",
+    "action": "SUGGEST interface segregation"
+  },
+  {
+    "id": "dip_check",
+    "rule": "REQUIRE dependency injection over concrete coupling",
+    "severity": "high",
+    "action": "SUGGEST constructor injection"
+  }
+]
+
+### 7. Code Quality Gates - AUTO-ENFORCE
+
+@quality_gates [
+  {
+    "id": "naming_validation",
+    "rule": "snake_case for functions/vars, PascalCase for classes, UPPER_CASE for macros",
+    "severity": "critical",
+    "auto_fix": true
+  },
+  {
+    "id": "include_guards",
+    "rule": "All headers MUST have #pragma once or include guards",
+    "severity": "critical",
+    "auto_fix": true
+  },
+  {
+    "id": "smart_pointers",
+    "rule": "NO raw pointers for ownership, use std::unique_ptr/shared_ptr",
+    "severity": "critical",
+    "auto_fix": false
+  },
+  {
+    "id": "const_correctness",
+    "rule": "Mark const where applicable (methods, parameters, variables)",
+    "severity": "high",
+    "auto_fix": true
+  },
+  {
+    "id": "safe_console",
+    "rule": "ALWAYS use SAFE_TO_STRING for console output",
+    "severity": "critical",
+    "auto_fix": true
+  }
+]
+
+### 8. Testing Requirements - MANDATORY
+
+@testing_mandatory [
+  {
+    "id": "test_coverage",
+    "rule": "ALL new functions MUST have unit tests (min 80% coverage)",
+    "severity": "critical",
+    "action": "BLOCK merge without tests"
+  },
+  {
+    "id": "test_pattern",
+    "rule": "ALL tests MUST follow AAA pattern (Arrange, Act, Assert)",
+    "severity": "high",
+    "action": "ENFORCE pattern in test code"
+  },
+  {
+    "id": "test_framework",
+    "rule": "USE Google Test or Catch2 for all tests",
+    "severity": "high",
+    "action": "REQUIRED framework usage"
+  }
+]
+
+### 9. Documentation Requirements - AUTO-GENERATE
+
+@documentation_auto [
+  {
+    "id": "doxygen_comments",
+    "rule": "ALL public APIs MUST have Doxygen comments",
+    "severity": "critical",
+    "auto_fix": true,
+    "template": "/** @brief [description]\n * @param [name] [description]\n * @return [description]\n */"
+  },
+  {
+    "id": "file_headers",
+    "rule": "ALL source files MUST have copyright and description headers",
+    "severity": "high",
+    "auto_fix": true
+  },
+  {
+    "id": "complex_logic",
+    "rule": "Complex logic (>10 lines) MUST have explanatory comments",
+    "severity": "medium",
+    "auto_fix": false
+  }
+]
+
+### 10. Security & Performance - CRITICAL
+
+@security_critical [
+  {
+    "id": "input_validation",
+    "rule": "ALL external inputs MUST be validated",
+    "severity": "critical",
+    "action": "REQUIRE validation code"
+  },
+  {
+    "id": "buffer_safety",
+    "rule": "NO C-style arrays, use std::array or std::vector",
+    "severity": "critical",
+    "action": "BLOCK unsafe code"
+  },
+  {
+    "id": "exception_safety",
+    "rule": "ALL resource allocations MUST be exception-safe (RAII)",
+    "severity": "critical",
+    "action": "ENFORCE RAII pattern"
+  }
+]
+
+@performance_rules [
+  {
+    "id": "allocation_optimization",
+    "rule": "MINIMIZE dynamic allocations in hot paths",
+    "severity": "high",
+    "action": "SUGGEST optimizations"
+  },
+  {
+    "id": "move_semantics",
+    "rule": "USE std::move for large objects",
+    "severity": "high",
+    "action": "AUTO-FIX where possible"
+  }
+]
+
+### 11. Error Handling Protocol
+
+@error_protocol [
+  {
+    "id": "violation_reporting",
+    "rule": "When rule violated: 1) Report violation, 2) Explain rule, 3) Suggest fix",
+    "severity": "critical",
+    "format": "❌ RULE VIOLATION: [rule_id]\n📋 Rule: [description]\n💡 Suggestion: [fix]"
+  },
+  {
+    "id": "user_override",
+    "rule": "User can override MEDIUM/LOW rules with explicit request",
+    "severity": "medium",
+    "action": "Document override reason"
+  },
+  {
+    "id": "critical_block",
+    "rule": "CRITICAL/HIGH rules CANNOT be overridden without master approval",
+    "severity": "critical",
+    "action": "BLOCK and require justification"
+  }
+]
+
+### 12. Workflow Integration
+
+@workflow_integration [
+  {
+    "id": "github_workflow",
+    "rule": "For each feature: 1) Create branch, 2) Develop with TDD, 3) Create PR, 4) Request review",
+    "severity": "high",
+    "tools": ["mcp_github_create_branch", "mcp_github_create_pull_request", "mcp_github_request_copilot_review"]
+  },
+  {
+    "id": "ci_integration",
+    "rule": "After PR creation, trigger CI workflow",
+    "severity": "medium",
+    "tools": ["mcp_github_run_workflow"]
+  }
+]
+
+## 📊 Compliance Reporting Format
+
+**For EVERY code generation, provide:**
+
+```plaintext
+✅ RULES COMPLIANCE REPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+📁 File: [filename]
+🏷️  Type: [file_type]
+
+📋 Applied Rules:
+  ✓ [rule_id_1] - [rule_name]
+  ✓ [rule_id_2] - [rule_name]
+  ...
+
+⚠️  Warnings:
+  ⚠ [warning_1]
+  ⚠ [warning_2]
+
+❌ Violations:
+  ❌ [violation_1] - BLOCKED
+  
+💡 Suggestions:
+  💡 [suggestion_1]
+
+🎯 Compliance Score: [X]%
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+## 🔍 Self-Verification Checklist
+
+**Before finalizing ANY response, verify:**
+
+- [ ] All applicable rules identified and loaded
+- [ ] Generated code follows ALL high-severity rules
+- [ ] MCP tools used where applicable
+- [ ] Compliance report generated
+- [ ] User informed of any violations or warnings
+- [ ] Suggestions provided for improvements
+
+## 🚨 Emergency Override Protocol
+
+**ONLY if critical project need:**
+
+1. User MUST explicitly state: "OVERRIDE RULE [rule_id] for [reason]"
+2. Document override in code comments
+3. Create GitHub issue to track technical debt
+4. Set reminder to fix in next sprint
+
+## 📚 Rule File References
+
+```yaml
+Architecture:      .cursor/rules/architecture.mdc
+Coding Standards:  .cursor/rules/coding-rules.mdc
+Console Output:    .cursor/rules/console-output.mdc
+Engine Scheme:     .cursor/rules/engine-architecture-scheme.mdc
+Build Instructions: .cursor/rules/build-instructions.mdc
+Feature Workflow:  .cursor/rules/feature-development-workflow.mdc
+Test Framework:    .cursor/rules/test-automation-framework.mdc
+```
+
+---
+
+**🎯 REMEMBER: These rules exist to ensure code quality, maintainability, and team collaboration. Strict enforcement = Better software!**
+
+---
+
+## Version History
+
+- v2.0 (2025-09-30): Created master rules with Claude 4.5 Sonnet optimization
+- Full MCP integration (GitHub, Perplexity, Web, Library docs)
+- Strict enforcement directives added
+- Compliance reporting system implemented

@@ -1,0 +1,18 @@
+# Набор запросов безопасности для HyperEngine
+
+- description: "Основные проверки безопасности"
+- qlpack: codeql/cpp-queries
+- include:
+    kind:
+      - problem
+      - path-problem
+    severity:
+      - error
+      - warning
+
+- description: "Кастомные проверки HyperEngine"
+- include:
+    query: 
+      - unsafe-memory-operations.ql
+      - graphics-api-misuse.ql
+      - resource-leaks.ql

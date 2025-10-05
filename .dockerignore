@@ -1,0 +1,85 @@
+# Git files
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# Build directories
+build/
+build-*/
+cmake-build-*/
+out/
+dist/
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# vcpkg (will be installed in Docker)
+vcpkg/
+vcpkg_installed/
+
+# Coverage and analysis reports
+coverage/
+cov-int/
+*.gcda
+*.gcno
+*.gcov
+
+# Documentation builds
+docs/html/
+docs/latex/
+docs/doxygen/
+
+# Test results
+Testing/
+test-results/
+*.xml
+*.log
+
+# Quality reports
+quality-reports/
+static-analysis/
+
+# Cache files
+.cache/
+*.cache
+ccache/
+
+# Temporary files
+*.tmp
+*.temp
+temp.bat
+
+# CMake cache
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+
+# Node modules (if any)
+node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+
+# Misc
+*.bak
+*.swp
+*.orig
+*.rej

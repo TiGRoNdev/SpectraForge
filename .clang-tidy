@@ -1,3 +1,4 @@
+# Конфигурация clang-tidy для HyperEngine
 ---
 Checks: >
   *,
@@ -6,134 +7,109 @@ Checks: >
   -android-*,
   -fuchsia-*,
   -google-*,
+  -zircon-*,
   -llvm-*,
   -llvmlibc-*,
-  -misc-*,
-  -modernize-*,
-  -mpi-*,
-  -openmp-*,
-  -performance-*,
-  -portability-*,
-  -readability-*,
-  -zircon-*
-WarningsAsErrors: ''
-HeaderFilterRegex: '.*'
-AnalyzeTemporaryDtors: false
-FormatStyle: 'file'
+  -objc-*,
+  -misc-non-private-member-variables-in-classes,
+  -misc-const-correctness,
+  -readability-magic-numbers,
+  -readability-avoid-const-params-in-decls,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-type-union-access,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-owning-memory,
+  -modernize-use-trailing-return-type,
+  -modernize-avoid-c-arrays,
+  -hicpp-avoid-c-arrays,
+  -hicpp-vararg,
+  -hicpp-no-array-decay,
+  -bugprone-easily-swappable-parameters
+
+# Параметры для конкретных проверок
 CheckOptions:
+  - key: readability-identifier-naming.NamespaceCase
+    value: CamelCase
   - key: readability-identifier-naming.ClassCase
     value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
   - key: readability-identifier-naming.FunctionCase
-    value: camelCase
+    value: camelBack
   - key: readability-identifier-naming.VariableCase
-    value: camelCase
+    value: camelBack
   - key: readability-identifier-naming.ParameterCase
-    value: camelCase
+    value: camelBack
   - key: readability-identifier-naming.MemberCase
-    value: camelCase
-  - key: readability-identifier-naming.PrivateMemberSuffix
-    value: '_'
-  - key: readability-identifier-naming.ProtectedMemberSuffix
-    value: '_'
-  - key: readability-identifier-naming.PublicMemberSuffix
-    value: '_'
+    value: camelBack
+  - key: readability-identifier-naming.MemberPrefix
+    value: m_
+  - key: readability-identifier-naming.PrivateMemberPrefix
+    value: m_
+  - key: readability-identifier-naming.ProtectedMemberPrefix
+    value: m_
   - key: readability-identifier-naming.EnumConstantCase
     value: UPPER_CASE
-  - key: readability-identifier-naming.EnumConstantPrefix
-    value: ''
-  - key: readability-identifier-naming.ConstexprVariableCase
+  - key: readability-identifier-naming.ConstantCase
     value: UPPER_CASE
-  - key: readability-identifier-naming.ConstexprVariablePrefix
-    value: ''
   - key: readability-identifier-naming.StaticConstantCase
     value: UPPER_CASE
-  - key: readability-identifier-naming.StaticConstantPrefix
-    value: ''
-  - key: readability-identifier-naming.StaticVariableCase
-    value: camelCase
-  - key: readability-identifier-naming.StaticVariablePrefix
-    value: ''
   - key: readability-identifier-naming.GlobalConstantCase
     value: UPPER_CASE
-  - key: readability-identifier-naming.GlobalConstantPrefix
-    value: ''
-  - key: readability-identifier-naming.GlobalVariableCase
-    value: camelCase
-  - key: readability-identifier-naming.GlobalVariablePrefix
-    value: ''
-  - key: readability-identifier-naming.LocalConstantCase
-    value: UPPER_CASE
-  - key: readability-identifier-naming.LocalConstantPrefix
-    value: ''
-  - key: readability-identifier-naming.LocalVariableCase
-    value: camelCase
-  - key: readability-identifier-naming.LocalVariablePrefix
-    value: ''
   - key: readability-identifier-naming.TypedefCase
     value: CamelCase
   - key: readability-identifier-naming.TypeAliasCase
     value: CamelCase
-  - key: readability-identifier-naming.StructCase
-    value: CamelCase
-  - key: readability-identifier-naming.UnionCase
-    value: CamelCase
-  - key: readability-identifier-naming.EnumCase
-    value: CamelCase
-  - key: readability-identifier-naming.ClassCase
-    value: CamelCase
-  - key: readability-identifier-naming.FunctionCase
-    value: camelCase
-  - key: readability-identifier-naming.VariableCase
-    value: camelCase
-  - key: readability-identifier-naming.ParameterCase
-    value: camelCase
-  - key: readability-identifier-naming.MemberCase
-    value: camelCase
-  - key: readability-identifier-naming.PrivateMemberSuffix
-    value: '_'
-  - key: readability-identifier-naming.ProtectedMemberSuffix
-    value: '_'
-  - key: readability-identifier-naming.PublicMemberSuffix
-    value: '_'
-  - key: readability-identifier-naming.EnumConstantCase
-    value: UPPER_CASE
-  - key: readability-identifier-naming.EnumConstantPrefix
-    value: ''
-  - key: readability-identifier-naming.ConstexprVariableCase
-    value: UPPER_CASE
-  - key: readability-identifier-naming.ConstexprVariablePrefix
-    value: ''
-  - key: readability-identifier-naming.StaticConstantCase
-    value: UPPER_CASE
-  - key: readability-identifier-naming.StaticConstantPrefix
-    value: ''
-  - key: readability-identifier-naming.StaticVariableCase
-    value: camelCase
-  - key: readability-identifier-naming.StaticVariablePrefix
-    value: ''
-  - key: readability-identifier-naming.GlobalConstantCase
-    value: UPPER_CASE
-  - key: readability-identifier-naming.GlobalConstantPrefix
-    value: ''
-  - key: readability-identifier-naming.GlobalVariableCase
-    value: camelCase
-  - key: readability-identifier-naming.GlobalVariablePrefix
-    value: ''
-  - key: readability-identifier-naming.LocalConstantCase
-    value: UPPER_CASE
-  - key: readability-identifier-naming.LocalConstantPrefix
-    value: ''
-  - key: readability-identifier-naming.LocalVariableCase
-    value: camelCase
-  - key: readability-identifier-naming.LocalVariablePrefix
-    value: ''
-  - key: readability-identifier-naming.TypedefCase
-    value: CamelCase
-  - key: readability-identifier-naming.TypeAliasCase
-    value: CamelCase
-  - key: readability-identifier-naming.StructCase
-    value: CamelCase
-  - key: readability-identifier-naming.UnionCase
-    value: CamelCase
-  - key: readability-identifier-naming.EnumCase
-    value: CamelCase
+
+  # Настройки для функций
+  - key: readability-function-cognitive-complexity.Threshold
+    value: 50
+  - key: readability-function-size.LineThreshold
+    value: 100
+  - key: readability-function-size.StatementThreshold
+    value: 150
+  - key: readability-function-size.BranchThreshold
+    value: 20
+  - key: readability-function-size.ParameterThreshold
+    value: 8
+  - key: readability-function-size.NestingThreshold
+    value: 6
+  - key: readability-function-size.VariableThreshold
+    value: 20
+
+  # Настройки для производительности
+  - key: performance-move-const-arg.CheckTriviallyCopyableMove
+    value: false
+  - key: performance-for-range-copy.WarnOnAllAutoCopies
+    value: true
+  - key: performance-inefficient-vector-operation.EnableProto
+    value: false
+
+  # Настройки для современности C++
+  - key: modernize-loop-convert.MaxCopySize
+    value: 16
+  - key: modernize-loop-convert.MinConfidence
+    value: reasonable
+  - key: modernize-use-nullptr.NullMacros
+    value: "NULL"
+
+  # Настройки для безопасности
+  - key: cert-dcl16-c.NewSuffixes
+    value: "L;LL;LU;LLU"
+  - key: cert-oop54-cpp.WarnOnlyIfThisHasSuspiciousField
+    value: false
+
+  # Настройки для стиля кода
+  - key: misc-non-copyable-objects.CheckTriviallyCopyableMove
+    value: true
+
+# Игнорируемые предупреждения для определенных файлов
+HeaderFilterRegex: '(src|include|tests)/.*\.(h|hpp)$'
+
+# Настройки анализа
+AnalyzeTemporaryDtors: false
+FormatStyle: file
+
+# Настройки пользователя
+User: HyperEngine

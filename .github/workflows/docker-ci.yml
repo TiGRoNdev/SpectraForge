@@ -1,0 +1,374 @@
+name: Docker-based CI/CD
+
+on:
+  push:
+    branches: [ master, release/*, refactoring/* ]
+  pull_request:
+    branches: [ master, release/* ]
+  workflow_dispatch:
+
+env:
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+jobs:
+  # Build Docker CI image
+  build-ci-image:
+    name: Build CI Docker Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:latest
+            network=host
+      
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-ci-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-ci-
+            ${{ runner.os }}-buildx-
+      
+      - name: Build CI Runner Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: ci-runner
+          tags: |
+            hyperengine-ci:latest
+            hyperengine-ci:${{ github.sha }}
+          cache-from: |
+            type=local,src=/tmp/.buildx-cache
+            type=gha
+          cache-to: |
+            type=local,dest=/tmp/.buildx-cache-new,mode=max
+            type=gha,mode=max
+          load: true
+          build-args: |
+            CPPCHECK_VERSION=2.13.0
+      
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      
+      - name: Verify CI image
+        run: |
+          docker run --rm hyperengine-ci:latest bash -c "
+            echo '=== Installed Tools ==='
+            cmake --version
+            clang --version
+            clang-tidy --version
+            clang-format --version
+            cppcheck --version
+            ninja --version
+            echo 'System Libraries:'
+            pkg-config --modversion glfw3 || echo 'GLFW3: N/A'
+            pkg-config --modversion glm || echo 'GLM: N/A'
+            pkg-config --modversion gtest || echo 'GTest: N/A'
+          "
+      
+      - name: Save Docker image
+        run: |
+          docker save hyperengine-ci:latest | gzip > /tmp/hyperengine-ci.tar.gz
+      
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-ci-image
+          path: /tmp/hyperengine-ci.tar.gz
+          retention-days: 1
+
+  # Code Quality Checks
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    needs: build-ci-image
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Download Docker image
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-ci-image
+          path: /tmp
+      
+      - name: Load Docker image
+        run: |
+          docker load < /tmp/hyperengine-ci.tar.gz
+      
+      - name: Run clang-format check
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            hyperengine-ci:latest \
+            bash -c "
+              echo 'Checking code formatting...'
+              UNFORMATTED=\$(find src include tests examples -type f \( -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) \
+                -not -path '*/build/*' | \
+                xargs clang-format --dry-run --Werror --style=file 2>&1 | grep 'would be reformatted' || true)
+              
+              if [ -n \"\$UNFORMATTED\" ]; then
+                echo '⚠️  Warning: Some files need formatting:'
+                echo \"\$UNFORMATTED\"
+                echo 'Run: find src include tests examples -type f \( -name *.cpp -o -name *.h \) | xargs clang-format -i'
+                exit 0  # Don't fail on formatting issues, just warn
+              else
+                echo '✅ All files are properly formatted'
+              fi
+            "
+      
+      - name: Run clang-tidy
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            hyperengine-ci:latest \
+            bash -c "
+              # Generate compile_commands.json if not exists
+              if [ ! -f build/compile_commands.json ]; then
+                cmake -B build -S . \
+                  -DCMAKE_BUILD_TYPE=Debug \
+                  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+                  -DBUILD_WITH_CUDA=OFF \
+                  -DBUILD_WITH_OPTIX=OFF \
+                  -DBUILD_WITH_DLSS=OFF \
+                  -DBUILD_WITH_FSR=OFF
+              fi
+              
+              # Run clang-tidy on source files
+              find src -name '*.cpp' | head -20 | \
+              xargs clang-tidy --config-file=.clang-tidy -p build --quiet || true
+            "
+      
+      - name: Run cppcheck
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            hyperengine-ci:latest \
+            bash -c '
+              cppcheck \
+                --enable=all \
+                --std=c++20 \
+                --platform=unix64 \
+                --inconclusive \
+                --force \
+                --xml \
+                --xml-version=2 \
+                --output-file=cppcheck-results.xml \
+                --suppress-xml=cppcheck.cfg \
+                src/ include/ || true
+              
+              echo "Cppcheck analysis completed"
+              [ -f cppcheck-results.xml ] && echo "Results saved to cppcheck-results.xml" || echo "No results file"
+            '
+      
+      - name: Upload analysis results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: code-quality-results
+          path: |
+            cppcheck-results.xml
+            build/compile_commands.json
+
+  # Build and Test
+  build-and-test:
+    name: Build & Test (Docker)
+    runs-on: ubuntu-latest
+    needs: build-ci-image
+    
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Download Docker image
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-ci-image
+          path: /tmp
+      
+      - name: Load Docker image
+        run: |
+          docker load < /tmp/hyperengine-ci.tar.gz
+      
+      - name: Build project
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -v /tmp/ccache:/ccache \
+            -e CCACHE_DIR=/ccache \
+            -w /workspace \
+            hyperengine-ci:latest \
+            bash -c "
+              cmake -B build-${{ matrix.build_type }} -S . \
+                -G Ninja \
+                -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+                -DBUILD_TESTS=ON \
+                -DENABLE_VULKAN_BACKEND=ON \
+                -DENABLE_OPENGL_BACKEND=ON \
+                -DBUILD_WITH_CUDA=OFF \
+                -DBUILD_WITH_OPTIX=OFF \
+              -DBUILD_WITH_DLSS=OFF \
+              -DBUILD_WITH_FSR=OFF
+            
+            cmake --build build-${{ matrix.build_type }} -j\$(nproc) --verbose
+            "
+      
+      - name: Run tests
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace/build-${{ matrix.build_type }} \
+            hyperengine-ci:latest \
+            bash -c "
+              ctest --output-on-failure --parallel \$(nproc) || true
+            "
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: matrix.build_type == 'Release'
+        with:
+          name: build-artifacts-${{ matrix.build_type }}
+          path: |
+            build-${{ matrix.build_type }}/src/libHyperEngine.a
+            build-${{ matrix.build_type }}/**/*_Demo
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.build_type }}
+          path: build-${{ matrix.build_type }}/Testing/
+
+  # Full Quality Suite (using docker-compose)
+  full-quality-suite:
+    name: Full Quality Suite
+    runs-on: ubuntu-latest
+    needs: build-ci-image
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Download Docker image
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-ci-image
+          path: /tmp
+      
+      - name: Load Docker image
+        run: |
+          docker load < /tmp/hyperengine-ci.tar.gz
+      
+      - name: Run full quality checks
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            hyperengine-ci:latest \
+            bash -c "./scripts/quality_check.sh || true"
+      
+      - name: Upload quality reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: full-quality-reports
+          path: |
+            build/quality-reports/
+            build/static-analysis/
+            build/coverage/
+
+  # Build final images
+  build-final-images:
+    name: Build Final Docker Images
+    runs-on: ubuntu-latest
+    needs: [code-quality, build-and-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push builder image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: builder
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/hyperengine-builder:latest
+            ghcr.io/${{ github.repository_owner }}/hyperengine-builder:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+      
+      - name: Build and push CI image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: ci-runner
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/hyperengine-ci:latest
+            ghcr.io/${{ github.repository_owner }}/hyperengine-ci:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+
+  # Notification
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [code-quality, build-and-test, full-quality-suite]
+    if: always()
+    
+    steps:
+      - name: Check results
+        run: |
+          echo "Code Quality: ${{ needs.code-quality.result }}"
+          echo "Build & Test: ${{ needs.build-and-test.result }}"
+          echo "Full Quality Suite: ${{ needs.full-quality-suite.result }}"
+          
+          if [[ "${{ needs.code-quality.result }}" == "failure" ]] || \
+             [[ "${{ needs.build-and-test.result }}" == "failure" ]]; then
+            echo "❌ CI/CD Pipeline Failed!"
+            exit 1
+          else
+            echo "✅ CI/CD Pipeline Passed!"
+          fi

@@ -1,4 +1,6 @@
+# Pre-commit hooks для HyperEngine
 repos:
+  # Базовые проверки
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
@@ -6,3 +8,109 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # Форматирование C++ с автоматическим исправлением
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v16.0.6
+    hooks:
+      - id: clang-format
+        args: [--style=file, -i]  # -i для автоматического исправления
+        files: \.(cpp|h|hpp|c|cc|cxx)$
+        description: "Автоматическое форматирование C++ кода"
+
+  # CMake форматирование
+  - repo: https://github.com/cheshirekow/cmake-format-precommit
+    rev: v0.6.13
+    hooks:
+      - id: cmake-format
+        additional_dependencies: [pyyaml]
+        types: [cmake]
+
+  # Проверка орфографии в комментариях
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.5
+    hooks:
+      - id: codespell
+        args: [--write-changes]
+        exclude: |
+          (?x)^(
+              .*\.json|
+              .*\.xml|
+              .*\.log|
+              build/.*|
+              vcpkg/.*|
+              vcpkg_installed/.*
+          )$
+
+  # Локальные хуки для специфических проверок HyperEngine
+  - repo: local
+    hooks:
+      # Проверка namespace'ов
+      - id: check-namespaces
+        name: Check HyperEngine namespaces
+        entry: scripts/check_namespaces.sh
+        language: script
+        files: \.(cpp|h|hpp)$
+        pass_filenames: false
+
+      # Проверка include guards
+      - id: check-include-guards
+        name: Check include guards
+        entry: scripts/check_include_guards.sh
+        language: script
+        files: \.h$
+        pass_filenames: false
+
+      # Быстрая проверка безопасности
+      - id: security-check-quick
+        name: Quick security check
+        entry: bash
+        args: [-c, 'grep -n "strcpy\|strcat\|sprintf\|gets" $@ || true']
+        language: system
+        files: \.(cpp|h|hpp|c|cc|cxx)$
+        verbose: true
+
+      # Проверка на TODO/FIXME без issue номеров
+      - id: check-todos
+        name: Check TODO/FIXME comments
+        entry: bash
+        args: [-c, 'if grep -n "TODO\|FIXME" $@ | grep -v "#[0-9]"; then echo "TODO/FIXME должны содержать номер issue"; exit 1; fi']
+        language: system
+        files: \.(cpp|h|hpp|c|cc|cxx)$
+
+      # Проверка на использование std::cout без SAFE_TO_STRING
+      - id: check-console-output
+        name: Check console output safety
+        entry: bash
+        args: [-c, 'if grep -n "std::cout.*<<.*[^)]$" $@ | grep -v "SAFE_TO_STRING\|std::string\|\""; then echo "Используйте SAFE_TO_STRING для вывода переменных"; exit 1; fi']
+        language: system
+        files: \.(cpp|c|cc|cxx)$
+
+      # Автоматическое форматирование с помощью локального скрипта
+      - id: format-code-local
+        name: Format code with local script
+        entry: scripts/format_code.bat
+        language: script
+        files: \.(cpp|h|hpp|c|cc|cxx)$
+        pass_filenames: false
+        stages: [manual]  # Запускается только при явном вызове
+
+      # Быстрая проверка перед коммитом
+      - id: pre-commit-check
+        name: Quick pre-commit validation
+        entry: scripts/pre_commit_check.sh
+        language: script
+        files: \.(cpp|h|hpp|c|cc|cxx)$
+        pass_filenames: false
+        stages: [commit]
+
+# Конфигурация
+default_stages: [commit]
+fail_fast: false
+minimum_pre_commit_version: 3.0.0
