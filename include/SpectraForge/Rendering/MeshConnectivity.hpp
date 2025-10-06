@@ -40,7 +40,7 @@ struct TriangleSplattingVertex {
      * @brief Сравнение вершин с допуском (epsilon)
      */
     bool operator==(const TriangleSplattingVertex& other) const {
-        static constexpr float EPSILON = 1e-6f;
+        static constexpr float EPSILON = 1e-5f;
         return (position - other.position).magnitude() < EPSILON &&
                (color - other.color).magnitude() < EPSILON &&
                std::abs(opacity - other.opacity) < EPSILON;
