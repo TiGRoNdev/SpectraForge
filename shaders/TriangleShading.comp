@@ -44,7 +44,7 @@ layout(binding = 2, std430) readonly buffer VisibilityBuffer {
 };
 
 // Push constants
-layout(push_constant) uniform PushConstants {
+layout(push_constant) uniform UnifiedPushConstants {
     mat4 viewProj;
     uint outputWidth;
     uint outputHeight;

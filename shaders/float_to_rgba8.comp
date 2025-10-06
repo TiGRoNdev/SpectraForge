@@ -13,7 +13,7 @@ layout(set = 0, binding = 0) readonly buffer InputBuffer {
 layout(set = 0, binding = 1, rgba8) uniform image2D outputImage;
 
 // Push constants для размеров
-layout(push_constant) uniform PushConstants {
+layout(push_constant) uniform UnifiedPushConstants {
     uint srcWidth;   // Ширина входного буфера
     uint srcHeight;  // Высота входного буфера
     uint dstWidth;   // Ширина выходного изображения

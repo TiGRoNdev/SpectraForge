@@ -52,7 +52,7 @@ layout(binding = 2, std430) writeonly buffer TileCullingBuffer {
 };
 
 // Push constants
-layout(push_constant) uniform PushConstants {
+layout(push_constant) uniform UnifiedPushConstants {
     mat4 viewProj;              // View-Projection matrix
     uint outputWidth;
     uint outputHeight;

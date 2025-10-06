@@ -45,10 +45,16 @@ layout(set = 0, binding = 2) buffer AtomicCounterBuffer {
 };
 
 // === Push Constants ===
-layout(push_constant) uniform PushConstants {
-    mat4 viewProj;              // View-Projection matrix (64 bytes)
-    uint triangleCount;         // Total triangles (4 bytes)
-    uint padding[15];           // Align to 128 bytes
+layout(push_constant) uniform UnifiedPushConstants {
+    mat4 viewProj;              // 64 bytes
+    uint outputWidth;
+    uint outputHeight;
+    uint triangleCount;         // 4 bytes
+    uint enableEarlyTermination;
+    float alphaThreshold;
+    uint enableTileBinning;
+    uint debugMode;
+    uint padding;               // align to 96 bytes
 } pushConstants;
 
 /**

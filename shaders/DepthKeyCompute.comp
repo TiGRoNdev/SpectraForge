@@ -49,13 +49,16 @@ layout(set = 0, binding = 3) readonly buffer VisibleIndicesBuffer {
 };
 
 // === Push Constants ===
-layout(push_constant) uniform PushConstants {
-    mat4 viewProj;              // View-Projection matrix for accurate depth calculation
-    vec3 cameraPos;             // Camera position (12 bytes)
-    uint triangleCount;         // Number of triangles to process (visible count if culling enabled)
-    uint useCulling;            // 1 = use visibleIndices, 0 = process all triangles
-    vec3 cameraForward;         // Camera forward direction vector
-    uint padding;               // Alignment
+layout(push_constant) uniform UnifiedPushConstants {
+    mat4 viewProj;              // 64 bytes
+    uint outputWidth;           // unused here
+    uint outputHeight;          // unused here
+    uint triangleCount;         // used
+    uint enableEarlyTermination;// unused here
+    float alphaThreshold;       // unused here
+    uint enableTileBinning;     // unused here
+    uint debugMode;             // unused here
+    uint padding;               // align to 96 bytes
 } pushConstants;
 
 // === Helper Functions ===
@@ -73,22 +76,12 @@ vec3 getTriangleCenter(Triangle tri) {
 */
 float computeTriangleDepth(Triangle tri) {
     vec3 triangleCenter = getTriangleCenter(tri);
-    
-    // Method 1: NDC depth (most accurate for sorting)
+    // Use NDC depth via view-projection only (unified push constants)
     vec4 clipPos = pushConstants.viewProj * vec4(triangleCenter, 1.0);
-    
     if (clipPos.w <= 0.0001) {
-        return 1000000.0; // Behind camera - far depth
+        return 1000000.0;
     }
-    
-    float ndcDepth = clipPos.z / clipPos.w; // NDC depth [-1, 1]
-    
-    // Method 2: Distance along camera forward axis (alternative)
-    vec3 cameraToCenter = triangleCenter - pushConstants.cameraPos;
-    float viewDepth = dot(cameraToCenter, normalize(pushConstants.cameraForward));
-    
-    // Use NDC depth as primary, view depth as backup
-    return (abs(ndcDepth) < 1.0) ? ndcDepth : viewDepth;
+    return clipPos.z / clipPos.w;
 }
 
 /**
@@ -103,18 +96,7 @@ void main() {
     }
     
     // Get actual triangle index
-    uint triangleIdx;
-    
-    if (pushConstants.useCulling == 1) {
-        // Use frustum culling results
-        if (visibleIdx >= visibleIndices.length()) {
-            return;
-        }
-        triangleIdx = visibleIndices[visibleIdx];
-    } else {
-        // Process all triangles
-        triangleIdx = visibleIdx;
-    }
+    uint triangleIdx = visibleIdx; // unified PC: process sequential indices
     
     // Bounds check for triangle index
     if (triangleIdx >= triangles.length()) {

@@ -4,6 +4,7 @@
 #include <vk_mem_alloc.h>
 #include <glm/glm.hpp>
 #include <vector>
+#include <cstdint>
 #include <memory>
 #include <SpectraForge/Rendering/Mesh3D.h>
 
@@ -294,42 +295,21 @@ private:
     vk::DescriptorSet indirectArgsDescriptorSet_;
     
     // Push constants
-    struct PushConstants {
-        glm::mat4 viewProj;          // 64 bytes (offset 0)
-        uint32_t outputWidth;        // offset 64
-        uint32_t outputHeight;       // offset 68
-        uint32_t triangleCount;      // offset 72
-        uint32_t enableEarlyTerm;    // offset 76
-        float alphaThreshold;        // offset 80
-        uint32_t enableTileBinning;  // offset 84 (0 = off, 1 = on)
-        uint32_t debugMode;          // offset 88 (0 = normal, 1 = SDF, 2 = barycentric)
-        uint32_t padding;            // offset 92
-    } pushConstants_;
-    
-    struct BitonicSortPushConstants {
-        uint32_t h;           // Height parameter
-        uint32_t algorithm;   // Algorithm variant (0-3)
-        uint32_t numElements; // Total elements
-        uint32_t padding;     // Alignment
+    struct UnifiedPushConstants {
+        glm::mat4 viewProj;                // 64 bytes
+        std::uint32_t outputWidth;         // 4 bytes
+        std::uint32_t outputHeight;        // 4 bytes
+        std::uint32_t triangleCount;       // 4 bytes
+        std::uint32_t enableEarlyTermination; // 4 bytes
+        float alphaThreshold;              // 4 bytes
+        std::uint32_t enableTileBinning;   // 4 bytes
+        std::uint32_t debugMode;           // 4 bytes
+        std::uint32_t padding;             // 4 bytes
+        // Total: 96 bytes
     };
-    
-    struct DepthKeyComputePushConstants {
-        glm::vec3 cameraPos;     // Camera position (12 bytes)
-        uint32_t triangleCount;  // Number of triangles to process (visible count if culling enabled)
-        uint32_t useCulling;     // 1 = use visibleIndices, 0 = process all triangles
-        uint32_t padding;        // Alignment
-    };
-    
-    struct FrustumCullingPushConstants {
-        glm::mat4 viewProj;      // View-Projection matrix (64 bytes)
-        uint32_t triangleCount;  // Total triangles (4 bytes)
-        uint32_t padding[15];    // Align to 128 bytes
-    };
-    
-    struct IndirectArgsPushConstants {
-        uint32_t threadsPerGroup; // Threads per workgroup (usually 256)
-        uint32_t padding[3];      // Alignment
-    };
+    UnifiedPushConstants pushConstants_{};
+    // Использовать эту структуру во ВСЕХ compute shaders
+    // И установить size = 96 во всех pipeline layouts
     
     // Camera position for depth sorting
     glm::vec3 cameraPosition_ = glm::vec3(0.0f, 0.0f, 0.0f);

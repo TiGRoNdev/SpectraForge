@@ -41,7 +41,7 @@ layout(set = 0, binding = 1) buffer SortIndices {
 };
 
 // === Push Constants ===
-layout(push_constant) uniform PushConstants {
+layout(push_constant) uniform UnifiedPushConstants {
     uint h;           // Height parameter for current sorting step
     uint algorithm;   // Algorithm variant to execute (0-3)
     uint numElements; // Total number of elements to sort

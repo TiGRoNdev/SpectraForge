@@ -138,7 +138,7 @@ bool TriangleSplattingPass::initialize(vk::Device device,
     pushConstants_.outputWidth = config_.outputWidth;
     pushConstants_.outputHeight = config_.outputHeight;
     pushConstants_.triangleCount = 0;
-    pushConstants_.enableEarlyTerm = config_.enableEarlyTermination ? 1 : 0;
+    pushConstants_.enableEarlyTermination = config_.enableEarlyTermination ? 1u : 0u;
     pushConstants_.alphaThreshold = config_.alphaThreshold;
     // Включаем тайловый биннинг, если буфер создан
     pushConstants_.enableTileBinning = (tileCullingBuffer_ != VK_NULL_HANDLE) ? 1u : 0u;
@@ -1047,7 +1047,7 @@ bool TriangleSplattingPass::createPipeline() {
     vk::PushConstantRange pushConstantRange;
     pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
     pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(PushConstants);
+    pushConstantRange.size = 96; // Unified push constants size
     
     // Pipeline layout
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
@@ -1375,15 +1375,19 @@ void TriangleSplattingPass::sortTrianglesByDepth(vk::CommandBuffer cmd) {
     
     // First sort the rows for levels <= BITONIC_BLOCK_SIZE
     for (uint32_t level = 2; level <= BITONIC_BLOCK_SIZE; level *= 2) {
-        BitonicSortPushConstants pushConstants;
-        pushConstants.h = level;
-        pushConstants.algorithm = 0; // LOCAL_BMS
-        pushConstants.numElements = NUM_ELEMENTS;
+        UnifiedPushConstants pushConstants;
+        pushConstants.outputWidth = 0;
+        pushConstants.outputHeight = 0;
+        pushConstants.triangleCount = NUM_ELEMENTS; // reuse field
+        pushConstants.enableEarlyTermination = 0;
+        pushConstants.alphaThreshold = 0.0f;
+        pushConstants.enableTileBinning = level; // encode 'h' here
+        pushConstants.debugMode = 0;             // algorithm id (0 LOCAL_BMS)
         pushConstants.padding = 0;
         
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, bitonicSortPipeline_);
         cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, bitonicSortPipelineLayout_, 0, 1, &bitonicSortDescriptorSet_, 0, nullptr);
-        cmd.pushConstants(bitonicSortPipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, sizeof(BitonicSortPushConstants), &pushConstants);
+        cmd.pushConstants(bitonicSortPipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, 96, &pushConstants);
         
         uint32_t groupCountX = std::max(1u, NUM_ELEMENTS / BITONIC_BLOCK_SIZE);
         cmd.dispatch(groupCountX, 1, 1);
@@ -1407,15 +1411,19 @@ void TriangleSplattingPass::sortTrianglesByDepth(vk::CommandBuffer cmd) {
     for (uint32_t level = BITONIC_BLOCK_SIZE * 2; level <= NUM_ELEMENTS; level *= 2) {
         // Big flip
         {
-            BitonicSortPushConstants pushConstants;
-            pushConstants.h = level;
-            pushConstants.algorithm = 2; // BIG_FLIP
-            pushConstants.numElements = NUM_ELEMENTS;
+            UnifiedPushConstants pushConstants;
+            pushConstants.outputWidth = 0;
+            pushConstants.outputHeight = 0;
+            pushConstants.triangleCount = NUM_ELEMENTS;
+            pushConstants.enableEarlyTermination = 0;
+            pushConstants.alphaThreshold = 0.0f;
+            pushConstants.enableTileBinning = level; // h
+            pushConstants.debugMode = 2;             // algorithm id (2 BIG_FLIP)
             pushConstants.padding = 0;
             
             cmd.bindPipeline(vk::PipelineBindPoint::eCompute, bitonicSortPipeline_);
             cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, bitonicSortPipelineLayout_, 0, 1, &bitonicSortDescriptorSet_, 0, nullptr);
-            cmd.pushConstants(bitonicSortPipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, sizeof(BitonicSortPushConstants), &pushConstants);
+            cmd.pushConstants(bitonicSortPipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, 96, &pushConstants);
             
             uint32_t groupCountX = std::max(1u, NUM_ELEMENTS / BITONIC_BLOCK_SIZE);
             cmd.dispatch(groupCountX, 1, 1);
@@ -1436,18 +1444,22 @@ void TriangleSplattingPass::sortTrianglesByDepth(vk::CommandBuffer cmd) {
         
         // Cascade of disperse operations
         for (uint32_t hh = level / 2; hh > 1; hh /= 2) {
-            BitonicSortPushConstants pushConstants;
-            pushConstants.numElements = NUM_ELEMENTS;
+            UnifiedPushConstants pushConstants;
+            pushConstants.outputWidth = 0;
+            pushConstants.outputHeight = 0;
+            pushConstants.triangleCount = NUM_ELEMENTS;
+            pushConstants.enableEarlyTermination = 0;
+            pushConstants.alphaThreshold = 0.0f;
             pushConstants.padding = 0;
             
             if (hh <= BITONIC_BLOCK_SIZE) {
                 // Local disperse
-                pushConstants.h = hh;
-                pushConstants.algorithm = 1; // LOCAL_DISPERSE
+                pushConstants.enableTileBinning = hh; // h
+                pushConstants.debugMode = 1;          // algorithm id (1 LOCAL_DISPERSE)
                 
                 cmd.bindPipeline(vk::PipelineBindPoint::eCompute, bitonicSortPipeline_);
                 cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, bitonicSortPipelineLayout_, 0, 1, &bitonicSortDescriptorSet_, 0, nullptr);
-                cmd.pushConstants(bitonicSortPipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, sizeof(BitonicSortPushConstants), &pushConstants);
+                cmd.pushConstants(bitonicSortPipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, 96, &pushConstants);
                 
                 uint32_t groupCountX = std::max(1u, NUM_ELEMENTS / BITONIC_BLOCK_SIZE);
                 cmd.dispatch(groupCountX, 1, 1);
@@ -1455,12 +1467,12 @@ void TriangleSplattingPass::sortTrianglesByDepth(vk::CommandBuffer cmd) {
                 break; // Local disperse handles the rest
             } else {
                 // Big disperse
-                pushConstants.h = hh;
-                pushConstants.algorithm = 3; // BIG_DISPERSE
+                pushConstants.enableTileBinning = hh; // h
+                pushConstants.debugMode = 3;          // algorithm id (3 BIG_DISPERSE)
                 
                 cmd.bindPipeline(vk::PipelineBindPoint::eCompute, bitonicSortPipeline_);
                 cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, bitonicSortPipelineLayout_, 0, 1, &bitonicSortDescriptorSet_, 0, nullptr);
-                cmd.pushConstants(bitonicSortPipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, sizeof(BitonicSortPushConstants), &pushConstants);
+                cmd.pushConstants(bitonicSortPipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, 96, &pushConstants);
                 
                 uint32_t groupCountX = std::max(1u, NUM_ELEMENTS / BITONIC_BLOCK_SIZE);
                 cmd.dispatch(groupCountX, 1, 1);
@@ -1642,7 +1654,7 @@ void TriangleSplattingPass::execute(vk::CommandBuffer cmd, uint32_t frameIndex) 
         cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipelineLayout_, 0, 1, &descriptorSet_, 0, nullptr);
     
     // Push constants
-    cmd.pushConstants(pipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, sizeof(PushConstants), &pushConstants_);
+    cmd.pushConstants(pipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, 96, &pushConstants_);
     
     // Dispatch compute shader (16x16 local size)
     uint32_t groupsX = (config_.outputWidth + 15) / 16;
@@ -1741,7 +1753,7 @@ bool TriangleSplattingPass::createBitonicSortResources() {
     vk::PushConstantRange pushConstantRange;
     pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
     pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(BitonicSortPushConstants);
+    pushConstantRange.size = 96; // Unified push constants size
     
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
     pipelineLayoutInfo.setLayoutCount = 1;
@@ -1896,7 +1908,7 @@ bool TriangleSplattingPass::createDepthKeyComputeResources() {
     vk::PushConstantRange pushConstantRange;
     pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
     pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(DepthKeyComputePushConstants);
+    pushConstantRange.size = 96; // Unified push constants size
     
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
     pipelineLayoutInfo.setLayoutCount = 1;
@@ -2008,14 +2020,11 @@ void TriangleSplattingPass::computeDepthKeys(vk::CommandBuffer cmd, const glm::v
     cmd.bindPipeline(vk::PipelineBindPoint::eCompute, depthKeyComputePipeline_);
     cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, depthKeyComputePipelineLayout_, 0, 1, &depthKeyComputeDescriptorSet_, 0, nullptr);
     
-    // Push constants
-    DepthKeyComputePushConstants pushConstants;
-    pushConstants.cameraPos = cameraPos;
-    pushConstants.triangleCount = triangleCount_; // Will be visible count if culling enabled
-    pushConstants.useCulling = enableFrustumCulling_ ? 1 : 0;
-    pushConstants.padding = 0;
-    
-    cmd.pushConstants(depthKeyComputePipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, sizeof(DepthKeyComputePushConstants), &pushConstants);
+    // Push constants (unified)
+    UnifiedPushConstants dkpc = pushConstants_;
+    (void)cameraPos;
+    dkpc.triangleCount = triangleCount_;
+    cmd.pushConstants(depthKeyComputePipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, 96, &dkpc);
     
     // Dispatch
     if (enableFrustumCulling_) {
@@ -2110,7 +2119,7 @@ bool TriangleSplattingPass::createFrustumCullingResources() {
     vk::PushConstantRange pushConstantRange;
     pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
     pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(FrustumCullingPushConstants);
+    pushConstantRange.size = 96; // Unified push constants size
     
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
     pipelineLayoutInfo.setLayoutCount = 1;
@@ -2233,12 +2242,9 @@ void TriangleSplattingPass::performFrustumCulling(vk::CommandBuffer cmd) {
     cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, frustumCullingPipelineLayout_, 0, 1, &frustumCullingDescriptorSet_, 0, nullptr);
     
     // Push constants (view-projection matrix + triangle count)
-    FrustumCullingPushConstants pushConstants;
-    pushConstants.viewProj = pushConstants_.viewProj;
-    pushConstants.triangleCount = triangleCount_;
-    std::memset(pushConstants.padding, 0, sizeof(pushConstants.padding));
-    
-    cmd.pushConstants(frustumCullingPipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, sizeof(FrustumCullingPushConstants), &pushConstants);
+    UnifiedPushConstants fcpc = pushConstants_;
+    fcpc.triangleCount = triangleCount_;
+    cmd.pushConstants(frustumCullingPipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, 96, &fcpc);
     
     // Dispatch (256 threads per workgroup)
     uint32_t groupCount = (triangleCount_ + 255) / 256;
@@ -2337,7 +2343,7 @@ bool TriangleSplattingPass::createIndirectArgsResources() {
     vk::PushConstantRange pushConstantRange;
     pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
     pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(IndirectArgsPushConstants);
+    pushConstantRange.size = 96; // Unified push constants size
     
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
     pipelineLayoutInfo.setLayoutCount = 1;
@@ -2599,12 +2605,11 @@ void TriangleSplattingPass::computeIndirectArgs(vk::CommandBuffer cmd) {
     cmd.bindPipeline(vk::PipelineBindPoint::eCompute, indirectArgsPipeline_);
     cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, indirectArgsPipelineLayout_, 0, 1, &indirectArgsDescriptorSet_, 0, nullptr);
     
-    // Push constants (threads per group)
-    IndirectArgsPushConstants pushConstants;
-    pushConstants.threadsPerGroup = 256; // Match depth key compute workgroup size
-    std::memset(pushConstants.padding, 0, sizeof(pushConstants.padding));
-    
-    cmd.pushConstants(indirectArgsPipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, sizeof(IndirectArgsPushConstants), &pushConstants);
+    // Push constants (threads per group) — unified
+    UnifiedPushConstants iapc = pushConstants_;
+    iapc.outputWidth = 256; // encode threadsPerGroup
+    iapc.outputHeight = std::max(1u, (triangleCount_ + 255) / 256); // encode maxWorkGroups
+    cmd.pushConstants(indirectArgsPipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, 96, &iapc);
     
     // Dispatch (single thread computes all args)
     cmd.dispatch(1, 1, 1);
@@ -2794,7 +2799,7 @@ bool TriangleSplattingPass::createTwoPassResources() {
     vk::PushConstantRange visPushConstantRange;
     visPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
     visPushConstantRange.offset = 0;
-    visPushConstantRange.size = sizeof(TwoPassPushConstants);
+    visPushConstantRange.size = 96;
     
     vk::PipelineLayoutCreateInfo visPipelineLayoutInfo;
     visPipelineLayoutInfo.setLayoutCount = 1;
@@ -2852,7 +2857,7 @@ bool TriangleSplattingPass::createTwoPassResources() {
     vk::PushConstantRange shadPushConstantRange;
     shadPushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
     shadPushConstantRange.offset = 0;
-    shadPushConstantRange.size = sizeof(TwoPassPushConstants);
+    shadPushConstantRange.size = 96;
     
     vk::PipelineLayoutCreateInfo shadPipelineLayoutInfo;
     shadPipelineLayoutInfo.setLayoutCount = 1;
@@ -3098,17 +3103,9 @@ void TriangleSplattingPass::executeVisibilityPass(vk::CommandBuffer cmd) {
     cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, visibilityPassPipelineLayout_, 0, 1, &visibilityPassDescriptorSet_, 0, nullptr);
     
     // Push constants
-    TwoPassPushConstants pc{};
-    pc.viewProj = pushConstants_.viewProj;
-    pc.outputWidth = config_.outputWidth;
-    pc.outputHeight = config_.outputHeight;
-    pc.triangleCount = triangleCount_;
-    pc.maxTrianglesPerPixel = config_.maxTrianglesPerPixel;
-    pc.enableEarlyTermination = 0; // Not used in visibility pass
-    pc.alphaThreshold = 0.0f;      // Not used in visibility pass
-    pc.padding = 0;
-    
-    cmd.pushConstants(visibilityPassPipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, sizeof(TwoPassPushConstants), &pc);
+    UnifiedPushConstants vppc = pushConstants_;
+    vppc.triangleCount = triangleCount_;
+    cmd.pushConstants(visibilityPassPipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, 96, &vppc);
     
     // Dispatch: triangle-parallel (256 threads per workgroup)
     uint32_t groupCount = (triangleCount_ + 255) / 256;
@@ -3123,17 +3120,9 @@ void TriangleSplattingPass::executeShadingPass(vk::CommandBuffer cmd) {
     cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, shadingPassPipelineLayout_, 0, 1, &shadingPassDescriptorSet_, 0, nullptr);
     
     // Push constants
-    TwoPassPushConstants pc{};
-    pc.viewProj = pushConstants_.viewProj;
-    pc.outputWidth = config_.outputWidth;
-    pc.outputHeight = config_.outputHeight;
-    pc.triangleCount = triangleCount_;
-    pc.maxTrianglesPerPixel = config_.maxTrianglesPerPixel;
-    pc.enableEarlyTermination = config_.enableEarlyTermination ? 1 : 0;
-    pc.alphaThreshold = config_.alphaThreshold;
-    pc.padding = 0;
-    
-    cmd.pushConstants(shadingPassPipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, sizeof(TwoPassPushConstants), &pc);
+    UnifiedPushConstants sppc = pushConstants_;
+    sppc.triangleCount = triangleCount_;
+    cmd.pushConstants(shadingPassPipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, 96, &sppc);
     
     // Dispatch: pixel-parallel (16×16 threads per workgroup)
     uint32_t groupsX = (config_.outputWidth + 15) / 16;

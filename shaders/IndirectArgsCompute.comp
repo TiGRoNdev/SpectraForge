@@ -28,7 +28,7 @@ layout(set = 0, binding = 1) readonly buffer VisibleCountBuffer {
 };
 
 // === Push Constants ===
-layout(push_constant) uniform PushConstants {
+layout(push_constant) uniform UnifiedPushConstants {
     uint threadsPerGroup;      // Usually 256 for compute shaders
     uint maxWorkGroups;        // Maximum allowed workgroups (защита)
     uint padding[2];           // Alignment

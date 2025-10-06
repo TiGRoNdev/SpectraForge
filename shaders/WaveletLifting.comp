@@ -37,7 +37,7 @@ layout(binding = 3, rg16f) writeonly uniform image2D outHL; // High-Low (вер�
 layout(binding = 4, rg16f) writeonly uniform image2D outHH; // High-High (диагональные детали)
 
 // Push constants для параметров
-layout(push_constant) uniform PushConstants {
+layout(push_constant) uniform UnifiedPushConstants {
     uint inputWidth;
     uint inputHeight;
     float threshold;        // Порог для разреженности

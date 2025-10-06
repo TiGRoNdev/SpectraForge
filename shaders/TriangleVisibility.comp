@@ -52,7 +52,7 @@ layout(binding = 3, std430) buffer PixelCounterBuffer {
 };
 
 // Push constants
-layout(push_constant) uniform PushConstants {
+layout(push_constant) uniform UnifiedPushConstants {
     mat4 viewProj;
     uint outputWidth;
     uint outputHeight;

@@ -92,7 +92,7 @@ bool FreGSPass::initialize(const VulkanContext& context) {
         vk::PushConstantRange pushConstantRange;
         pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
         pushConstantRange.offset = 0;
-        pushConstantRange.size = sizeof(PushConstants);
+        pushConstantRange.size = 96; // Unified push constants size
 
         vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
         pipelineLayoutInfo.setLayoutCount = 1;

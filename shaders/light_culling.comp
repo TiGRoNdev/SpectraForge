@@ -50,7 +50,7 @@ layout(set = 1, binding = 1, std430) restrict writeonly buffer TileDataBuffer {
 layout(set = 2, binding = 0) uniform sampler2D depthTexture;
 
 // Push constants
-layout(push_constant) uniform LightCullingPushConstants {
+layout(push_constant) uniform UnifiedPushConstants {
     uint tileID;
     uint screenWidth;
     uint screenHeight;

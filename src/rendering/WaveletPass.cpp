@@ -89,7 +89,7 @@ bool WaveletPass::initialize(const VulkanContext& context) {
         vk::PushConstantRange pushConstantRange;
         pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
         pushConstantRange.offset = 0;
-        pushConstantRange.size = sizeof(PushConstants);
+        pushConstantRange.size = 96; // Unified push constants size
 
         // Create pipeline layout via C API to avoid dispatcher issues
         VkPipelineLayoutCreateInfo pli{};
@@ -100,7 +100,7 @@ bool WaveletPass::initialize(const VulkanContext& context) {
         VkPushConstantRange pcr{};
         pcr.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
         pcr.offset = 0;
-        pcr.size = sizeof(PushConstants);
+        pcr.size = 96; // Unified push constants size
         pli.pushConstantRangeCount = 1;
         pli.pPushConstantRanges = &pcr;
         std::cout << "[WaveletPass] createPipelineLayout..." << std::endl;
