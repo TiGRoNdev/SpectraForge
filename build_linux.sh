@@ -58,26 +58,3 @@ cmake .. \
 # Сборка проекта
 echo "🔨 Сборка проекта..."
 cmake --build . --config Release -j$(nproc)
-
-# Проверка успешной сборки
-if [ -f "HybridFreGS_Demo" ]; then
-    echo "✅ Сборка завершена успешно!"
-    echo ""
-    echo "=================================="
-    echo "SpectraForge успешно собран!"
-    echo ""
-    echo "Исполняемые файлы:"
-    echo "  📱 HybridFreGS_Demo     - демо Hybrid TriangleSplatting + FreGS (бесоконное)"
-    echo "  🖼️  WindowDemo           - демо оконной системы (требует графической среды)"
-    echo "  🏛️  SponzaAdvancedDemo   - демо сцены Sponza с validation layers"
-    echo ""
-    echo "Запуск демо:"
-    echo "  cd $BUILD_DIR"
-    echo "  ./HybridFreGS_Demo       # Бесоконное демо (рекомендуется)"
-    echo "  ./WindowDemo             # Оконное демо (требует X11)"
-    echo "  ./SponzaAdvancedDemo     # Sponza с validation layers"
-    echo "=================================="
-else
-    echo "❌ Ошибка сборки. Проверьте логи."
-    exit 1
-fi

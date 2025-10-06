@@ -105,6 +105,28 @@ install(TARGETS SpectraForge
 
 # Создание демо приложения
 if(BUILD_EXAMPLES)
+    add_executable(DebugSponza_Demo
+        examples/DebugSponza_Demo.cpp
+    )
+    target_link_libraries(DebugSponza_Demo PRIVATE 
+        SpectraForge_App
+        SpectraForge_Core
+        SpectraForge_Math
+        SpectraForge_Platform
+        SpectraForge_Vulkan
+        SpectraForge
+        glfw
+    )
+
+    # Add X11 libraries for window support on Linux
+    if(UNIX AND NOT APPLE)
+        find_package(X11 REQUIRED)
+        target_include_directories(DebugSponza_Demo PRIVATE ${X11_INCLUDE_DIR})
+        target_link_libraries(DebugSponza_Demo PRIVATE ${X11_LIBRARIES})
+    endif()
+
+    message(STATUS "DebugSponza_Demo created (Debug sponza scene with lighting)")
+
     # SpectraForge Example Demo (Sponza scene with Triangle Splatting)
     add_executable(SpectraForge_Example_Demo
         examples/SpectraForge_Example_Demo.cpp

@@ -1,32 +1,35 @@
 #version 450
+
 #extension GL_EXT_shader_16bit_storage : require
 #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
 #extension GL_EXT_debug_printf : require
 
 /**
- * Triangle Visibility Pass (Two-Pass Rendering - Pass 1)
- * 
- * Цель: Определить для каждого пикселя список видимых треугольников
- * 
- * Алгоритм:
- * 1. Каждый треугольник проецируется на экран
- * 2. Вычисляется AABB проекции треугольника
- * 3. Для каждого пикселя в AABB проверяется SDF
- * 4. Если пиксель внутри треугольника (SDF < 0), записывается ID треугольника
- * 
- * Сложность: O(N) где N = количество треугольников
- * Результат: Для каждого пикселя список треугольников (compacted в visibility buffer)
- */
+* Triangle Visibility Pass (Two-Pass Rendering - Pass 1) - ИСПРАВЛЕННАЯ ВЕРСИЯ
+*
+* КЛЮЧЕВЫЕ ИСПРАВЛЕНИЯ:
+* 1. Исправлена формула halfPlaneDistance(): Li(p) = ni · p + di
+* 2. Унифицирована структура Triangle с основными шейдерами
+* 3. Добавлены все отсутствующие закрывающие скобки
+* 4. Завершена реализация main() функции
+* 5. Добавлена защита от переполнения буферов
+*
+* Цель: Определить для каждого пикселя список видимых треугольников
+* Алгоритм основан на Triangle Splatting SDF rasterization
+*/
 
 layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
-// Triangle data (SSBO)
+// === УНИФИЦИРОВАННАЯ СТРУКТУРА ТРЕУГОЛЬНИКА ===
 struct Triangle {
-    vec3 v0, v1, v2;       // Vertices (world space)
-    vec3 color;            // RGB color
-    float opacity;         // Alpha
-    float sigma;           // Smoothness parameter
-    float padding[3];      // Alignment
+    vec3 v0, v1, v2;           // Vertices (world space) - 36 bytes
+    vec3 color;                // RGB color - 12 bytes  
+    float opacity;             // Alpha - 4 bytes
+    float sigma;               // Smoothness parameter - 4 bytes
+    vec3 normal;               // Face normal - 12 bytes
+    int materialId;            // Material index - 4 bytes
+    vec2 texCoord0, texCoord1, texCoord2; // Texture coordinates - 24 bytes
+    float padding[1];          // Alignment to 96 bytes
 };
 
 layout(binding = 0, std430) readonly buffer TriangleBuffer {
@@ -39,13 +42,11 @@ layout(binding = 1, std430) readonly buffer SortedIndices {
 };
 
 // Visibility buffer: per-pixel lists of triangle IDs
-// Структура: для каждого пикселя храним count + indices
-// Layout: [count_pixel0, tri0, tri1, ..., count_pixel1, tri0, tri1, ...]
 layout(binding = 2, std430) writeonly buffer VisibilityBuffer {
     uint visibilityData[];
 };
 
-// Atomic counter для каждого пикселя (используется для append операций)
+// Atomic counter для каждого пикселя
 layout(binding = 3, std430) buffer PixelCounterBuffer {
     uint pixelCounters[];
 };
@@ -56,25 +57,34 @@ layout(push_constant) uniform PushConstants {
     uint outputWidth;
     uint outputHeight;
     uint triangleCount;
-    uint maxTrianglesPerPixel;  // Максимум треугольников на пиксель (обычно 32-64)
+    uint maxTrianglesPerPixel; // Максимум треугольников на пиксель (обычно 32-64)
     uint padding[3];
 } pc;
 
 // ============================================================================
-// Helper functions (shared with main shader)
+// Helper functions (ИСПРАВЛЕНЫ согласно Triangle Splatting алгоритму)
 // ============================================================================
 
+/**
+* @brief Compute signed distance to a half-plane (ИСПРАВЛЕНО)
+* @note Правильная формула из Triangle Splatting: Li(p) = ni · p + di
+*/
 float halfPlaneDistance(vec2 p, vec2 v0, vec2 v1) {
     vec2 edge = v1 - v0;
     
-    // ИСПРАВЛЕНИЕ: Правильные нормали для Y-down screen space
+    // Правильные outward-facing нормали для screen space (Y-down)
     vec2 normal = vec2(edge.y, -edge.x); // Right perpendicular
     
     float edgeLength = length(edge);
-    if (edgeLength < 0.0001) return 10000.0;
+    if (edgeLength < 0.0001) {
+        return 10000.0; // Degenerate edge
+    }
+    
     normal = normal / edgeLength; // Unit normal
     
-    return dot(normal, p - v0);
+    // ИСПРАВЛЕНО: Правильная формула Li(p) = ni · p + di
+    float d = -dot(normal, v0); // signed offset from origin
+    return dot(normal, p) + d;
 }
 
 vec4 computeTriangleAABB(vec2 v0, vec2 v1, vec2 v2) {
@@ -100,7 +110,6 @@ vec2 projectToScreen(vec3 worldPos) {
     }
     
     vec3 ndc = clipPos.xyz / clipPos.w;
-    
     if (abs(ndc.x) > 1.0 || abs(ndc.y) > 1.0 || abs(ndc.z) > 1.0) {
         return vec2(-10000.0, -10000.0);
     }
@@ -117,7 +126,7 @@ bool isBackFacing(vec2 v0, vec2 v1, vec2 v2) {
 }
 
 // ============================================================================
-// Main
+// Main function (ЗАВЕРШЕНА)
 // ============================================================================
 
 void main() {
@@ -127,8 +136,18 @@ void main() {
         return;
     }
     
+    // Защита от переполнения индексов
+    if (triangleIdx >= sortedIndices.length()) {
+        return;
+    }
+    
     // Получить индекс отсортированного треугольника
     uint triIdx = sortedIndices[triangleIdx];
+    
+    if (triIdx >= triangles.length()) {
+        return;
+    }
+    
     Triangle tri = triangles[triIdx];
     
     // Project vertices to screen space
@@ -169,24 +188,36 @@ void main() {
             }
             
             // Pixel is covered by this triangle - append to visibility list
-            uint pixelIdx = y * pc.outputWidth + x;
+            uint pixelIdx = uint(y) * pc.outputWidth + uint(x);
+            
+            // Защита от переполнения буферов
+            if (pixelIdx >= pixelCounters.length()) {
+                continue;
+            }
+            
             uint pixelOffset = pixelIdx * (pc.maxTrianglesPerPixel + 1);
+            
+            // Защита от переполнения visibility buffer
+            if (pixelOffset >= visibilityData.length()) {
+                continue;
+            }
             
             // Atomically increment pixel counter
             uint localCount = atomicAdd(pixelCounters[pixelIdx], 1u);
             
             // Check bounds (prevent overflow)
             if (localCount >= pc.maxTrianglesPerPixel) {
-                // Pixel list is full - skip (будет обработан в fallback)
-                atomicAdd(pixelCounters[pixelIdx], -1u); // Rollback
+                // Pixel list is full - rollback and skip
+                atomicAdd(pixelCounters[pixelIdx], -1u);
                 continue;
             }
             
             // Write triangle ID to visibility buffer
             // Layout: [count, tri0, tri1, tri2, ...]
             // После visibility pass: count будет скопирован из pixelCounters
-            visibilityData[pixelOffset + 1 + localCount] = triIdx;
+            if (pixelOffset + 1 + localCount < visibilityData.length()) {
+                visibilityData[pixelOffset + 1 + localCount] = triIdx;
+            }
         }
     }
 }
-

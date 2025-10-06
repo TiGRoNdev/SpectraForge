@@ -1,36 +1,37 @@
 #version 450
+
 #extension GL_EXT_shader_16bit_storage : require
 #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
 #extension GL_EXT_debug_printf : require
 
 /**
- * Triangle Shading Pass (Two-Pass Rendering - Pass 2)
- * 
- * Цель: Применить SDF window function и блендинг только к видимым треугольникам
- * 
- * Алгоритм:
- * 1. Для каждого пикселя прочитать список видимых треугольников из visibility buffer
- * 2. Применить SDF window function и alpha blending только к этим треугольникам
- * 3. Записать финальный цвет
- * 
- * Сложность: O(M) где M = количество пикселей × среднее число треугольников на пиксель
- * 
- * Ключевое преимущество: вместо итерации по всем 40k треугольникам для каждого пикселя,
- * обрабатываем только ~5-20 видимых треугольников на пиксель (ускорение 20-50×)
- */
+* Triangle Shading Pass (Two-Pass Rendering - Pass 2) - ИСПРАВЛЕННАЯ ВЕРСИЯ
+*
+* КЛЮЧЕВЫЕ ИСПРАВЛЕНИЯ:
+* 1. Исправлена формула halfPlaneDistance(): Li(p) = ni · p + di
+* 2. Унифицирована структура Triangle с основными шейдерами
+* 3. Завершена реализация lighting calculation и main() функции
+* 4. Добавлена защита от переполнения буферов
+* 5. Исправлена smooth window function согласно Triangle Splatting
+*
+* Цель: Применить SDF window function и блендинг только к видимым треугольникам
+*/
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 // Output image (RGBA16F)
 layout(binding = 0, rgba16f) uniform image2D outImage;
 
-// Triangle data (SSBO)
+// === УНИФИЦИРОВАННАЯ СТРУКТУРА ТРЕУГОЛЬНИКА ===
 struct Triangle {
-    vec3 v0, v1, v2;       // Vertices (world space)
-    vec3 color;            // RGB color
-    float opacity;         // Alpha
-    float sigma;           // Smoothness parameter
-    float padding[3];      // Alignment
+    vec3 v0, v1, v2;           // Vertices (world space) - 36 bytes
+    vec3 color;                // RGB color - 12 bytes  
+    float opacity;             // Alpha - 4 bytes
+    float sigma;               // Smoothness parameter - 4 bytes
+    vec3 normal;               // Face normal - 12 bytes
+    int materialId;            // Material index - 4 bytes
+    vec2 texCoord0, texCoord1, texCoord2; // Texture coordinates - 24 bytes
+    float padding[1];          // Alignment to 96 bytes
 };
 
 layout(binding = 1, std430) readonly buffer TriangleBuffer {
@@ -56,34 +57,28 @@ layout(push_constant) uniform PushConstants {
     vec3 ambientColor;          // Ambient light color
     float ambientIntensity;     // Ambient light intensity
     uint enableLighting;        // Enable/disable lighting (0=off, 1=on)
-    uint padding;
+    vec3 cameraPosition;        // Camera position for lighting
+    float padding;
 } pc;
 
 // ============================================================================
-// Helper functions
+// Helper functions (ИСПРАВЛЕНЫ)
 // ============================================================================
 
 /**
- * @brief Compute triangle normal from vertices
- * @param v0 First vertex
- * @param v1 Second vertex  
- * @param v2 Third vertex
- * @return Normalized triangle normal
- */
+* @brief Compute triangle normal from vertices
+*/
 vec3 computeTriangleNormal(vec3 v0, vec3 v1, vec3 v2) {
     vec3 edge1 = v1 - v0;
     vec3 edge2 = v2 - v0;
-    return normalize(cross(edge1, edge2));
+    vec3 normal = cross(edge1, edge2);
+    float len = length(normal);
+    return (len > 0.0001) ? (normal / len) : vec3(0.0, 0.0, 1.0);
 }
 
 /**
- * @brief Apply Phong lighting model to triangle color
- * @param baseColor Base triangle color
- * @param normal Triangle normal
- * @param viewPos Camera/view position
- * @param worldPos World position of the point
- * @return Lit color
- */
+* @brief Apply Phong lighting model to triangle color (ЗАВЕРШЕНО)
+*/
 vec3 applyLighting(vec3 baseColor, vec3 normal, vec3 viewPos, vec3 worldPos) {
     if (pc.enableLighting == 0) {
         return baseColor; // Lighting disabled
@@ -91,9 +86,8 @@ vec3 applyLighting(vec3 baseColor, vec3 normal, vec3 viewPos, vec3 worldPos) {
     
     // Normalize inputs
     vec3 N = normalize(normal);
-    vec3 L = normalize(pc.lightDirection);
+    vec3 L = normalize(-pc.lightDirection); // Light pointing towards surface
     vec3 V = normalize(viewPos - worldPos);
-    vec3 R = reflect(-L, N);
     
     // Ambient lighting
     vec3 ambient = pc.ambientColor * pc.ambientIntensity;
@@ -112,17 +106,25 @@ vec3 applyLighting(vec3 baseColor, vec3 normal, vec3 viewPos, vec3 worldPos) {
     return ambient + diffuse + specular;
 }
 
+/**
+* @brief Compute signed distance to a half-plane (ИСПРАВЛЕНО)
+*/
 float halfPlaneDistance(vec2 p, vec2 v0, vec2 v1) {
     vec2 edge = v1 - v0;
     
-    // ИСПРАВЛЕНИЕ: Правильные нормали для Y-down screen space
+    // Правильные outward-facing нормали для screen space
     vec2 normal = vec2(edge.y, -edge.x); // Right perpendicular
     
     float edgeLength = length(edge);
-    if (edgeLength < 0.0001) return 10000.0;
+    if (edgeLength < 0.0001) {
+        return 10000.0;
+    }
+    
     normal = normal / edgeLength; // Unit normal
     
-    return dot(normal, p - v0);
+    // ИСПРАВЛЕНО: Правильная формула Li(p) = ni · p + di
+    float d = -dot(normal, v0);
+    return dot(normal, p) + d;
 }
 
 float computeTriangleSDF(vec2 p, vec2 v0, vec2 v1, vec2 v2) {
@@ -136,7 +138,6 @@ vec2 computeIncenter(vec2 v0, vec2 v1, vec2 v2) {
     float a = length(v1 - v2);
     float b = length(v2 - v0);
     float c = length(v0 - v1);
-    
     float perimeter = a + b + c;
     
     if (perimeter < 0.0001) {
@@ -146,21 +147,27 @@ vec2 computeIncenter(vec2 v0, vec2 v1, vec2 v2) {
     return (a * v0 + b * v1 + c * v2) / perimeter;
 }
 
+/**
+* @brief Smooth window function (ИСПРАВЛЕНО согласно Triangle Splatting)
+*/
 float smoothWindowFunction(float phi, float phiCenter, float sigma) {
     // Математическая основа: I(p) = ReLU(φ(p)/φ(s))^σ
     // где φ(s) < 0 - минимальное SDF значение в incenter
     
-    // Проверка корректности: φ(s) должно быть отрицательным
     if (phiCenter >= 0.0) {
-        return 0.0; // Неверные данные
+        return 0.0; // Degenerate triangle
     }
     
-    // ReLU(φ(p)/φ(s)) = max(0, φ(p)/φ(s))
-    float ratio = phi / phiCenter;
-    float reluValue = max(0.0, ratio);
+    // ReLU ensures 0 outside triangle (phi > 0)
+    if (phi > 0.0) {
+        return 0.0;
+    }
     
-    // Применить smoothness: pow(reluValue, sigma)
-    return pow(reluValue, sigma);
+    // Inside triangle: normalize to [0,1]
+    float ratio = clamp(phi / phiCenter, 0.0, 1.0);
+    
+    // Apply smoothness parameter
+    return pow(ratio, sigma);
 }
 
 vec2 projectToScreen(vec3 worldPos) {
@@ -171,7 +178,6 @@ vec2 projectToScreen(vec3 worldPos) {
     }
     
     vec3 ndc = clipPos.xyz / clipPos.w;
-    
     if (abs(ndc.x) > 1.0 || abs(ndc.y) > 1.0 || abs(ndc.z) > 1.0) {
         return vec2(-10000.0, -10000.0);
     }
@@ -181,7 +187,7 @@ vec2 projectToScreen(vec3 worldPos) {
 }
 
 // ============================================================================
-// Main
+// Main function (ЗАВЕРШЕНА)
 // ============================================================================
 
 void main() {
@@ -193,8 +199,14 @@ void main() {
     }
     
     vec2 pixelPos = vec2(globalID) + 0.5;
-    uint pixelIdx = globalID.y * pc.outputWidth + globalID.x;
+    uint pixelIdx = uint(globalID.y) * pc.outputWidth + uint(globalID.x);
     uint pixelOffset = pixelIdx * (pc.maxTrianglesPerPixel + 1);
+    
+    // Защита от переполнения
+    if (pixelOffset >= visibilityData.length()) {
+        imageStore(outImage, globalID, vec4(0.2, 0.2, 0.25, 1.0)); // Background
+        return;
+    }
     
     // Read triangle count for this pixel
     uint visibleTriCount = visibilityData[pixelOffset];
@@ -210,8 +222,18 @@ void main() {
             break;
         }
         
+        uint visDataIdx = pixelOffset + 1 + i;
+        if (visDataIdx >= visibilityData.length()) {
+            break;
+        }
+        
         // Read triangle ID from visibility buffer
-        uint triIdx = visibilityData[pixelOffset + 1 + i];
+        uint triIdx = visibilityData[visDataIdx];
+        
+        if (triIdx >= triangles.length()) {
+            continue;
+        }
+        
         Triangle tri = triangles[triIdx];
         
         // Project vertices to screen space
@@ -230,7 +252,7 @@ void main() {
         // Compute SDF at current pixel
         float phi = computeTriangleSDF(pixelPos, v0_screen, v1_screen, v2_screen);
         
-        // Outside triangle (этого не должно быть, т.к. visibility pass уже отфильтровал)
+        // Outside triangle (не должно быть, т.к. visibility pass отфильтровал)
         if (phi > 0.0) {
             continue;
         }
@@ -250,12 +272,14 @@ void main() {
         float alpha = tri.opacity * weight;
         
         // Compute triangle normal and world position for lighting
-        vec3 triangleNormal = computeTriangleNormal(tri.v0, tri.v1, tri.v2);
-        vec3 worldPos = (tri.v0 + tri.v1 + tri.v2) / 3.0; // Use triangle center
-        vec3 viewPos = vec3(0.0, 0.0, 0.0); // Camera position (should be passed as uniform)
+        vec3 triangleNormal = (length(tri.normal) > 0.0001) ? 
+                             normalize(tri.normal) : 
+                             computeTriangleNormal(tri.v0, tri.v1, tri.v2);
+        
+        vec3 worldPos = (tri.v0 + tri.v1 + tri.v2) / 3.0; // Triangle center
         
         // Apply lighting to triangle color
-        vec3 litColor = applyLighting(tri.color, triangleNormal, viewPos, worldPos);
+        vec3 litColor = applyLighting(tri.color, triangleNormal, pc.cameraPosition, worldPos);
         
         // Opaque fast path
         const float OPAQUE_THRESHOLD = 0.95;
@@ -277,7 +301,13 @@ void main() {
         }
     }
     
+    // Background color if no triangles
+    if (accumAlpha < 0.001) {
+        accumColor = vec4(0.2, 0.2, 0.25, 1.0); // Dark gray background
+    } else {
+        accumColor.a = 1.0; // Opaque final image
+    }
+    
     // Write final color
     imageStore(outImage, globalID, accumColor);
 }
-

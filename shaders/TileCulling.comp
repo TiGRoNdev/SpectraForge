@@ -1,15 +1,18 @@
 #version 450
+
 #extension GL_EXT_shader_16bit_storage : require
 #extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
 
 /**
- * Tile Culling Compute Shader
- *
- * Computes which triangles are visible in each screen tile (16x16)
- * for efficient triangle splatting rendering.
- *
- * Output: TileVisibleTriangles array with triangle indices per tile
- */
+* Tile Culling Compute Shader (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+*
+* КЛЮЧЕВЫЕ ИСПРАВЛЕНИЯ:
+* 1. Унифицирована структура Triangle с основным шейдером
+* 2. Исправлена ошибка в координатах AABB (.w/.z -> .z/.w)
+* 3. Улучшена логика пересечения AABB с тайлом
+* 4. Добавлена защита от переполнения буфера
+* 5. Оптимизирована сортировка по глубине
+*/
 
 // Константы для tile-based culling
 #define TILE_SIZE 16
@@ -17,13 +20,16 @@
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-// Triangle data (SSBO)
+// === УНИФИЦИРОВАННАЯ СТРУКТУРА ТРЕУГОЛЬНИКА ===
 struct Triangle {
-    vec3 v0, v1, v2;       // Vertices (world space)
-    vec3 color;            // RGB color
-    float opacity;         // Alpha
-    float sigma;           // Smoothness parameter
-    float padding[3];      // Alignment
+    vec3 v0, v1, v2;           // Vertices (world space) - 36 bytes
+    vec3 color;                // RGB color - 12 bytes  
+    float opacity;             // Alpha - 4 bytes
+    float sigma;               // Smoothness parameter - 4 bytes
+    vec3 normal;               // Face normal - 12 bytes
+    int materialId;            // Material index - 4 bytes
+    vec2 texCoord0, texCoord1, texCoord2; // Texture coordinates - 24 bytes
+    float padding[1];          // Alignment to 96 bytes
 };
 
 layout(binding = 0, std430) readonly buffer TriangleBuffer {
@@ -55,120 +61,184 @@ layout(push_constant) uniform PushConstants {
 } pc;
 
 /**
- * @brief Compute Axis-Aligned Bounding Box (AABB) for triangle
- */
+* @brief Compute Axis-Aligned Bounding Box (AABB) for triangle
+* @return AABB as vec4(minX, minY, maxX, maxY)
+*/
 vec4 computeTriangleAABB(vec2 v0, vec2 v1, vec2 v2) {
     float minX = min(min(v0.x, v1.x), v2.x);
     float minY = min(min(v0.y, v1.y), v2.y);
     float maxX = max(max(v0.x, v1.x), v2.x);
     float maxY = max(max(v0.y, v1.y), v2.y);
-
     return vec4(minX, minY, maxX, maxY);
 }
 
 /**
- * @brief Check if AABB overlaps with tile
- */
+* @brief Check if AABB overlaps with tile (ИСПРАВЛЕНО)
+* @param aabb Triangle AABB as vec4(minX, minY, maxX, maxY)
+* @param tileID Tile coordinates (x, y)
+*/
 bool aabbOverlapsTile(vec4 aabb, ivec2 tileID) {
     float tileMinX = float(tileID.x * TILE_SIZE);
     float tileMinY = float(tileID.y * TILE_SIZE);
     float tileMaxX = float((tileID.x + 1) * TILE_SIZE);
     float tileMaxY = float((tileID.y + 1) * TILE_SIZE);
-
-    return !(aabb.w < tileMinX || aabb.z > tileMaxX ||
-             aabb.y < tileMinY || aabb.x > tileMaxY);
+    
+    // ИСПРАВЛЕНО: Правильные координаты AABB
+    // aabb = (minX, minY, maxX, maxY)
+    return !(aabb.z < tileMinX ||  // maxX < tileMinX
+             aabb.x > tileMaxX ||  // minX > tileMaxX  
+             aabb.w < tileMinY ||  // maxY < tileMinY
+             aabb.y > tileMaxY);   // minY > tileMaxY
 }
 
 /**
- * @brief Project 3D point to screen space
- */
+* @brief Project 3D point to screen space
+*/
 vec2 projectToScreen(vec3 worldPos) {
     vec4 clipPos = pc.viewProj * vec4(worldPos, 1.0);
-
+    
     // Behind camera
     if (clipPos.w <= 0.0001) {
         return vec2(-10000.0, -10000.0);
     }
-
+    
     // Perspective divide
     vec3 ndc = clipPos.xyz / clipPos.w;
-
+    
     // Frustum culling
     if (abs(ndc.x) > 1.0 || abs(ndc.y) > 1.0 || abs(ndc.z) > 1.0) {
         return vec2(-10000.0, -10000.0);
     }
-
+    
     // NDC → screen space
     vec2 screenPos = (ndc.xy * 0.5 + 0.5) * vec2(pc.outputWidth, pc.outputHeight);
-
     return screenPos;
+}
+
+/**
+* @brief Compute NDC depth for triangle (ДОБАВЛЕНО для улучшенной сортировки)
+*/
+float computeTriangleNDCDepth(Triangle tri) {
+    vec4 clip0 = pc.viewProj * vec4(tri.v0, 1.0);
+    vec4 clip1 = pc.viewProj * vec4(tri.v1, 1.0);
+    vec4 clip2 = pc.viewProj * vec4(tri.v2, 1.0);
+    
+    // Защита от деления на ноль
+    float z0 = (clip0.w > 0.0001) ? (clip0.z / clip0.w) : 1000.0;
+    float z1 = (clip1.w > 0.0001) ? (clip1.z / clip1.w) : 1000.0;
+    float z2 = (clip2.w > 0.0001) ? (clip2.z / clip2.w) : 1000.0;
+    
+    // Средняя глубина по вершинам
+    return (z0 + z1 + z2) / 3.0;
+}
+
+/**
+* @brief Insertion sort for small arrays (ОПТИМИЗИРОВАНО)
+*/
+void insertionSort(inout uint indices[MAX_TRIANGLES_PER_TILE], inout float depths[MAX_TRIANGLES_PER_TILE], uint count) {
+    for (uint i = 1u; i < count; ++i) {
+        uint keyIdx = indices[i];
+        float keyDepth = depths[i];
+        
+        int j = int(i) - 1;
+        
+        // Front-to-back: меньший NDC Z ближе к камере
+        while (j >= 0 && depths[uint(j)] > keyDepth) {
+            indices[uint(j + 1)] = indices[uint(j)];
+            depths[uint(j + 1)] = depths[uint(j)];
+            j--;
+        }
+        
+        indices[uint(j + 1)] = keyIdx;
+        depths[uint(j + 1)] = keyDepth;
+    }
 }
 
 void main() {
     ivec2 tileID = ivec2(gl_WorkGroupID.xy);
-    // Деление тайлов с округлением вверх по X для корректного индекса
+    
+    // Вычисление индекса тайла с защитой от переполнения
     uint tilesX = max(1u, (pc.outputWidth + TILE_SIZE - 1u) / TILE_SIZE);
-    uint tileIndex = tileID.y * tilesX + tileID.x;
-
+    uint tilesY = max(1u, (pc.outputHeight + TILE_SIZE - 1u) / TILE_SIZE);
+    
+    // Проверка границ тайла
+    if (uint(tileID.x) >= tilesX || uint(tileID.y) >= tilesY) {
+        return;
+    }
+    
+    uint tileIndex = uint(tileID.y) * tilesX + uint(tileID.x);
+    
     // Initialize tile data
     TileVisibleTriangles tileData;
     tileData.triangleCount = 0;
-    // Локальные глубины для сортировки по фронт-ту-бэк
-    float depths[MAX_TRIANGLES_PER_TILE];
-
+    
+    // Локальные массивы для сортировки
+    uint localIndices[MAX_TRIANGLES_PER_TILE];
+    float localDepths[MAX_TRIANGLES_PER_TILE];
+    
+    // Обрабатываем только если в пределах выделенного буфера
+    if (tileIndex >= tileTriangles.length()) {
+        return;
+    }
+    
     // Check all triangles for visibility in this tile
     for (uint i = 0; i < pc.triangleCount; ++i) {
+        // Защита от переполнения
+        if (i >= sortedIndices.length()) {
+            break;
+        }
+        
         uint triIdx = sortedIndices[i];
+        
+        // Защита от невалидных индексов
+        if (triIdx >= triangles.length()) {
+            continue;
+        }
+        
         Triangle tri = triangles[triIdx];
-
+        
         // Project vertices to screen space
         vec2 v0_screen = projectToScreen(tri.v0);
         vec2 v1_screen = projectToScreen(tri.v1);
         vec2 v2_screen = projectToScreen(tri.v2);
-
+        
         // Skip if triangle is behind camera or outside frustum
         if (v0_screen.x < -1000.0 || v1_screen.x < -1000.0 || v2_screen.x < -1000.0) {
             continue;
         }
-
+        
         // Compute triangle AABB
         vec4 triAABB = computeTriangleAABB(v0_screen, v1_screen, v2_screen);
-
+        
         // Check if triangle overlaps with this tile
         if (aabbOverlapsTile(triAABB, tileID)) {
             // Add triangle to tile if we have space
             if (tileData.triangleCount < MAX_TRIANGLES_PER_TILE) {
-                // Оценка глубины: средний ndc.z по вершинам (после perspective divide)
-                vec4 clip0 = pc.viewProj * vec4(tri.v0, 1.0);
-                vec4 clip1 = pc.viewProj * vec4(tri.v1, 1.0);
-                vec4 clip2 = pc.viewProj * vec4(tri.v2, 1.0);
-                float z0 = (clip0.z / max(clip0.w, 1e-6));
-                float z1 = (clip1.z / max(clip1.w, 1e-6));
-                float z2 = (clip2.z / max(clip2.w, 1e-6));
-                float avgDepth = (z0 + z1 + z2) / 3.0;
-
-                tileData.triangleIndices[tileData.triangleCount] = triIdx;
-                depths[tileData.triangleCount] = avgDepth;
+                // Вычисляем глубину для сортировки
+                float avgDepth = computeTriangleNDCDepth(tri);
+                
+                localIndices[tileData.triangleCount] = triIdx;
+                localDepths[tileData.triangleCount] = avgDepth;
                 tileData.triangleCount++;
             }
         }
     }
-
-    // Локальная сортировка индексов по глубине (front-to-back): меньший ndc.z ближе
-    // Простая вставками (N<=256)
-    for (uint i = 1u; i < tileData.triangleCount; ++i) {
-        uint keyIdx = tileData.triangleIndices[i];
-        float keyDepth = depths[i];
-        int j = int(i) - 1;
-        while (j >= 0 && depths[uint(j)] > keyDepth) {
-            tileData.triangleIndices[uint(j + 1)] = tileData.triangleIndices[uint(j)];
-            depths[uint(j + 1)] = depths[uint(j)];
-            j--;
-        }
-        tileData.triangleIndices[uint(j + 1)] = keyIdx;
-        depths[uint(j + 1)] = keyDepth;
+    
+    // Локальная сортировка треугольников по глубине (front-to-back)
+    if (tileData.triangleCount > 1) {
+        insertionSort(localIndices, localDepths, tileData.triangleCount);
     }
-
+    
+    // Копируем отсортированные индексы в выходную структуру
+    for (uint i = 0; i < tileData.triangleCount; ++i) {
+        tileData.triangleIndices[i] = localIndices[i];
+    }
+    
+    // Заполняем оставшиеся слоты невалидными индексами
+    for (uint i = tileData.triangleCount; i < MAX_TRIANGLES_PER_TILE; ++i) {
+        tileData.triangleIndices[i] = 0xFFFFFFFFu;
+    }
+    
     // Write tile data to buffer
     tileTriangles[tileIndex] = tileData;
 }

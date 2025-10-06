@@ -169,8 +169,13 @@ bool Engine::init() {
     renderCamera_->lookAt(
         Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z),
         Math::Vector3(cameraPos.x + cameraFront.x, cameraPos.y + cameraFront.y, cameraPos.z + cameraFront.z),
-        Math::Vector3(0.0f, 1.0f, 0.0f)
+        Math::Vector3(0.0f, 1.0f, 0.0f)  // Up vector
     );
+
+    std::cout << "[Engine] 🎥 Камера инициализирована в позиции: (" << cameraPos.x << ", "
+              << cameraPos.y << ", " << cameraPos.z << ")" << std::endl;
+    std::cout << "[Engine] 👁️ Камера смотрит в направлении: (" << cameraFront.x << ", "
+              << cameraFront.y << ", " << cameraFront.z << ")" << std::endl;
     
     // Передаём камеру в рендерер
     if (hybridRenderer) {
@@ -250,57 +255,148 @@ bool Engine::load_scene(const Vulkan::SceneData &data) {
             // игнорируем, используем fallback
         }
 
+        // Функция разрешения пути (нужна для материалов тоже)
+        auto resolvePathFn = [](const std::string& rel) -> std::filesystem::path {
+            std::filesystem::path input(rel);
+            if (std::filesystem::exists(input)) return std::filesystem::canonical(input);
+            std::vector<std::filesystem::path> roots;
+            roots.push_back(std::filesystem::current_path());
+            std::error_code ec;
+            auto exe = std::filesystem::read_symlink("/proc/self/exe", ec);
+            if (!ec) {
+                auto exeDir = exe.parent_path();
+                roots.push_back(exeDir);
+                if (exeDir.has_parent_path()) roots.push_back(exeDir.parent_path());
+                if (exeDir.has_parent_path() && exeDir.parent_path().has_parent_path())
+                    roots.push_back(exeDir.parent_path().parent_path());
+            }
+            for (const auto& r : roots) {
+                auto cand = r / input;
+                if (std::filesystem::exists(cand)) return std::filesystem::canonical(cand);
+            }
+            return input; // как есть
+        };
+
+        // Загружаем материалы из MTL файла
+        struct Material {
+            std::string name;
+            std::string diffuseTexture;
+            std::string normalTexture;
+            glm::vec3 diffuseColor{1.0f};
+            int id = 0;
+        };
+        std::vector<Material> materials;
+        std::unordered_map<std::string, int> materialMap;
+
+        // Парсим MTL файл если он существует
+        std::filesystem::path objPath = resolvePathFn(data.scenePath);
+        std::filesystem::path mtlPath = objPath.parent_path() / (objPath.stem().string() + ".mtl");
+        if (std::filesystem::exists(mtlPath)) {
+            std::ifstream mtlFile(mtlPath);
+            if (mtlFile) {
+                std::string line;
+                std::string currentMaterialName;
+                Material currentMaterial;
+                while (std::getline(mtlFile, line)) {
+                    std::istringstream iss(line);
+                    std::string token;
+                    iss >> token;
+
+                    if (token == "newmtl") {
+                        if (!currentMaterialName.empty()) {
+                            currentMaterial.id = materials.size();
+                            materials.push_back(currentMaterial);
+                            materialMap[currentMaterialName] = currentMaterial.id;
+                        }
+                        iss >> currentMaterialName;
+                        currentMaterial = Material{};
+                        currentMaterial.name = currentMaterialName;
+                    } else if (token == "Kd") {
+                        iss >> currentMaterial.diffuseColor.r >> currentMaterial.diffuseColor.g >> currentMaterial.diffuseColor.b;
+                    } else if (token == "map_Kd") {
+                        std::string texturePath;
+                        iss >> texturePath;
+                        currentMaterial.diffuseTexture = texturePath;
+                    } else if (token == "map_bump" || token == "bump") {
+                        std::string texturePath;
+                        iss >> texturePath;
+                        currentMaterial.normalTexture = texturePath;
+                    }
+                }
+                if (!currentMaterialName.empty()) {
+                    currentMaterial.id = materials.size();
+                    materials.push_back(currentMaterial);
+                    materialMap[currentMaterialName] = currentMaterial.id;
+                }
+                mtlFile.close();
+                std::cout << "[App::Engine] Загружено " << materials.size() << " материалов из " << mtlPath.string() << std::endl;
+            }
+        }
+
         // Собираем треугольники из OBJ (грани с текстурными координатами)
         struct Tri { int v1,v2,v3; int vt1,vt2,vt3; int material_id; };
         std::vector<Tri> tris;
         try {
-            auto resolvePathFn = [](const std::string& rel) -> std::filesystem::path {
-                std::filesystem::path input(rel);
-                if (std::filesystem::exists(input)) return std::filesystem::canonical(input);
-                std::vector<std::filesystem::path> roots;
-                roots.push_back(std::filesystem::current_path());
-                std::error_code ec;
-                auto exe = std::filesystem::read_symlink("/proc/self/exe", ec);
-                if (!ec) {
-                    auto exeDir = exe.parent_path();
-                    roots.push_back(exeDir);
-                    if (exeDir.has_parent_path()) roots.push_back(exeDir.parent_path());
-                    if (exeDir.has_parent_path() && exeDir.parent_path().has_parent_path())
-                        roots.push_back(exeDir.parent_path().parent_path());
-                }
-                for (const auto& r : roots) {
-                    auto cand = r / input;
-                    if (std::filesystem::exists(cand)) return std::filesystem::canonical(cand);
-                }
-                return input;
-            };
             std::filesystem::path p = resolvePathFn(data.scenePath);
             std::ifstream in2(p);
             if (in2) {
                 std::string line;
-                int currentMaterial = 0;
+                std::string currentMaterialName = "default";
+                int currentMaterialId = 0;
                 while (std::getline(in2, line)) {
+                    std::istringstream iss(line);
+                    std::string token;
+                    iss >> token;
+
                     // Отслеживаем текущий материал
-                    if (line.size() > 6 && line.substr(0, 6) == "usemtl") {
-                        // Примитивный подсчёт: каждый новый материал -> новый ID
-                        currentMaterial++;
-                    }
-                    if (line.size() > 2 && line[0]=='f' && line[1]==' ') {
-                        // формат: f v1/vt1 v2/vt2 v3/vt3
+                    if (token == "usemtl") {
+                        iss >> currentMaterialName;
+                        auto it = materialMap.find(currentMaterialName);
+                        if (it != materialMap.end()) {
+                            currentMaterialId = it->second;
+                        } else {
+                            currentMaterialId = 0;
+                        }
+                    } else if (token == "mtllib") {
+                        // Материалы уже загружены выше
+                    } else if (line.size() > 2 && line[0]=='f' && line[1]==' ') {
+                        // Парсим грань - может быть треугольником или четырехугольником
                         std::istringstream iss(line.substr(2));
-                        std::string t1,t2,t3;
-                        if (iss >> t1 >> t2 >> t3) {
+                        std::vector<std::string> vertices;
+                        std::string token;
+                        while (iss >> token) {
+                            vertices.push_back(token);
+                        }
+
+                        if (vertices.size() >= 3) {
                             auto parseIndices=[&](const std::string& t, int& v, int& vt){
                                 size_t s1 = t.find('/');
                                 size_t s2 = t.find('/', s1 + 1);
                                 v = std::stoi(s1==std::string::npos? t : t.substr(0,s1)) - 1;
                                 vt = (s2 != std::string::npos) ? std::stoi(t.substr(s1+1, s2-s1-1)) - 1 : -1;
                             };
-                            int v1, vt1, v2, vt2, v3, vt3;
-                            parseIndices(t1, v1, vt1);
-                            parseIndices(t2, v2, vt2);
-                            parseIndices(t3, v3, vt3);
-                            tris.push_back({v1, v2, v3, vt1, vt2, vt3, currentMaterial});
+
+                            // Для треугольника: v1, v2, v3
+                            if (vertices.size() == 3) {
+                                int v1, vt1, v2, vt2, v3, vt3;
+                                parseIndices(vertices[0], v1, vt1);
+                                parseIndices(vertices[1], v2, vt2);
+                                parseIndices(vertices[2], v3, vt3);
+                                tris.push_back({v1, v2, v3, vt1, vt2, vt3, currentMaterialId});
+                            }
+                            // Для четырехугольника: разбиваем на два треугольника v1,v2,v3 и v1,v3,v4
+                            else if (vertices.size() == 4) {
+                                int v1, vt1, v2, vt2, v3, vt3, v4, vt4;
+                                parseIndices(vertices[0], v1, vt1);
+                                parseIndices(vertices[1], v2, vt2);
+                                parseIndices(vertices[2], v3, vt3);
+                                parseIndices(vertices[3], v4, vt4);
+
+                                // Первый треугольник: v1, v2, v3
+                                tris.push_back({v1, v2, v3, vt1, vt2, vt3, currentMaterialId});
+                                // Второй треугольник: v1, v3, v4
+                                tris.push_back({v1, v3, v4, vt1, vt3, vt4, currentMaterialId});
+                            }
                         }
                     }
                 }
@@ -310,11 +406,39 @@ bool Engine::load_scene(const Vulkan::SceneData &data) {
 
         // Храним гауссианы в world-space 3D координатах (без проекции)
         std::vector<spectraforge::rendering::GaussianSplat> gs;
+
+        // DEBUG: Добавляем тестовый треугольник прямо перед камерой для проверки алгоритма
+        // Камера в (0, 3, 0) смотрит вперед (положительный Z), так что треугольник должен быть в Z > 3
+
+        // Создаем только тестовый треугольник для изоляции проблемы
+        std::vector<spectraforge::rendering::TriangleSplattingPass::Triangle> triangles;
+
+        // DEBUG: Минимальный тест Triangle Splatting с известными координатами
+        spectraforge::rendering::TriangleSplattingPass::Triangle testTriangle;
+        // Треугольник в координатах, которые должны работать независимо от системы координат
+        testTriangle.v0 = glm::vec3(-0.5f, -0.5f, 0.5f);  // Близко к камере
+        testTriangle.v1 = glm::vec3(0.5f, -0.5f, 0.5f);
+        testTriangle.v2 = glm::vec3(0.0f, 0.5f, 0.5f);
+        testTriangle.color = glm::vec3(1.0f, 0.0f, 0.0f); // Красный цвет
+        testTriangle.opacity = 1.0f;
+        testTriangle.sigma = 0.1f;
+
+        // Вычисляем нормаль (ориентирована на камеру)
+        glm::vec3 edge1 = testTriangle.v1 - testTriangle.v0;
+        glm::vec3 edge2 = testTriangle.v2 - testTriangle.v0;
+        testTriangle.normal = glm::normalize(glm::cross(edge1, edge2));
+
+        triangles.push_back(testTriangle);
+        std::cout << "[App::Engine] DEBUG: Минимальный тест - треугольник координаты: ("
+                  << testTriangle.v0.x << "," << testTriangle.v0.y << "," << testTriangle.v0.z << ") ("
+                  << testTriangle.v1.x << "," << testTriangle.v1.y << "," << testTriangle.v1.z << ") ("
+                  << testTriangle.v2.x << "," << testTriangle.v2.y << "," << testTriangle.v2.z << ")\n";
+
         if (!verts.empty() && !tris.empty()) {
             // ЗНАЧИТЕЛЬНО увеличиваем количество треугольников для плотного покрытия
             const size_t step = std::max<size_t>(1, tris.size() / 50000); // было 15000 → 50000
             gs.reserve((tris.size() / step) * 6); // резервируем с учётом subdivision до 6
-            
+
             // Генерируем палитру цветов для разных материалов
             std::vector<glm::vec3> materialColors;
             materialColors.push_back(glm::vec3(0.85f, 0.75f, 0.65f)); // бежевый (стены)
@@ -322,9 +446,9 @@ bool Engine::load_scene(const Vulkan::SceneData &data) {
             materialColors.push_back(glm::vec3(0.7f, 0.7f, 0.7f));    // серый (камень)
             materialColors.push_back(glm::vec3(0.8f, 0.6f, 0.4f));    // песочный
             materialColors.push_back(glm::vec3(0.4f, 0.3f, 0.25f));   // тёмно-коричневый
-            materialColors.push_back(glm::vec3(0.9f, 0.85f, 0.7f));   // светлый
+            materialColors.push_back(glm::vec3(0.9f, 0.85f, 0.7f));    // светлый
             materialColors.push_back(glm::vec3(0.6f, 0.4f, 0.3f));    // терракота
-            
+
             // Старый код гауссианов удален - теперь используем TriangleSplatting
         } else {
             // Fallback: процедурная сетка гауссианов
@@ -345,14 +469,13 @@ bool Engine::load_scene(const Vulkan::SceneData &data) {
         // === DUAL-PATH: Triangle Splatting для .obj, Gaussian для .ply ===
         auto h = std::dynamic_pointer_cast<Rendering::HybridFreGSRenderer>(renderer_);
         if (!h) return ok;
-        
+
         // Определяем формат файла
         std::string ext = data.scenePath.substr(data.scenePath.find_last_of(".") + 1);
-        
+
         if (ext == "obj" && !verts.empty() && !tris.empty()) {
             // ✅ OBJ → Triangle Splatting
-            std::vector<spectraforge::rendering::TriangleSplattingPass::Triangle> triangles;
-            triangles.reserve(tris.size());
+            triangles.reserve(tris.size() + 1); // +1 для тестового треугольника
             
             // Реалистичная палитра цветов для Sponza (камень, штукатурка, дерево)
             std::vector<glm::vec3> materialColors;
@@ -410,8 +533,11 @@ bool Engine::load_scene(const Vulkan::SceneData &data) {
                     t.texCoord2 = glm::vec2(0.0f);
                 }
 
-                // Цвет из материала (пока используем цвета, позже добавим текстуры)
+                // Цвет из материала или дефолтный
                 glm::vec3 color = materialColors[tri.material_id % materialColors.size()];
+                if (tri.material_id < (int)materials.size()) {
+                    color = materials[tri.material_id].diffuseColor;
+                }
                 // Повышаем яркость материалов для лучшей видимости в демо (временная калибровка)
                 t.color = glm::min(color * 1.5f, glm::vec3(1.0f));
                 t.opacity = 1.0f;
@@ -475,28 +601,45 @@ void Engine::update(float delta_time) {
         // Обработка событий каждый кадр, чтобы не зависала навигация/закрытие
         window_->pollEvents();
         
-        // Простое управление камерой (WASD)
+        // Управление камерой (WASD + мышь)
         GLFWwindow* win = window_->getNativeWindow();
         if (win) {
             float speed = 2.5f * delta_time;
-            glm::vec3 forward = cameraFront;
-            glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0,1,0)));
-            
-            if (glfwGetKey(win, GLFW_KEY_W) == GLFW_PRESS) cameraPos += forward * speed;
-            if (glfwGetKey(win, GLFW_KEY_S) == GLFW_PRESS) cameraPos -= forward * speed;
+
+            // Вычисляем направление взгляда камеры из yaw и pitch
+            glm::vec3 front;
+            front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+            front.y = sin(glm::radians(pitch));
+            front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+            cameraFront = glm::normalize(front);
+
+            // Вычисляем правую ось
+            glm::vec3 right = glm::normalize(glm::cross(cameraFront, glm::vec3(0,1,0)));
+
+            // Обработка клавиш WASD
+            if (glfwGetKey(win, GLFW_KEY_W) == GLFW_PRESS) cameraPos += cameraFront * speed;
+            if (glfwGetKey(win, GLFW_KEY_S) == GLFW_PRESS) cameraPos -= cameraFront * speed;
             if (glfwGetKey(win, GLFW_KEY_A) == GLFW_PRESS) cameraPos -= right * speed;
             if (glfwGetKey(win, GLFW_KEY_D) == GLFW_PRESS) cameraPos += right * speed;
             if (glfwGetKey(win, GLFW_KEY_SPACE) == GLFW_PRESS) cameraPos.y += speed;
             if (glfwGetKey(win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) cameraPos.y -= speed;
-            
+
             // Обновляем рендер-камеру после движения
             if (renderCamera_) {
                 renderCamera_->setPosition(Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z));
                 renderCamera_->lookAt(
                     Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z),
                     Math::Vector3(cameraPos.x + cameraFront.x, cameraPos.y + cameraFront.y, cameraPos.z + cameraFront.z),
-                    Math::Vector3(0.0f, 1.0f, 0.0f)
+                    Math::Vector3(0.0f, 1.0f, 0.0f)  // Up vector
                 );
+            }
+
+            // Вывод отладочной информации о камере
+            static int frameCount = 0;
+            if (frameCount++ % 300 == 0) {  // Каждые 5 секунд при 60 FPS
+                std::cout << "[Camera] Position: (" << cameraPos.x << ", " << cameraPos.y << ", " << cameraPos.z << ")" << std::endl;
+                std::cout << "[Camera] Direction: (" << cameraFront.x << ", " << cameraFront.y << ", " << cameraFront.z << ")" << std::endl;
+                std::cout << "[Camera] Yaw: " << yaw << "°, Pitch: " << pitch << "°" << std::endl;
             }
         }
     }

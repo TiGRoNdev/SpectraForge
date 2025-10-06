@@ -795,19 +795,20 @@ void HybridFreGSRenderer::renderFrame(const FrameData& /*frameData*/) {
             viewPrinted = true;
         }
         
-        // ИСПРАВЛЕНИЕ: Matrix4 хранится в ROW-MAJOR, копируем БЕЗ транспонирования!
+        // ИСПРАВЛЕНИЕ: Matrix4 хранится в ROW-MAJOR, GLM использует COLUMN-MAJOR
+        // Транспонируем матрицы при конвертации
         glm::mat4 viewGlm = glm::mat4(
-            view.m[0][0], view.m[0][1], view.m[0][2], view.m[0][3],
-            view.m[1][0], view.m[1][1], view.m[1][2], view.m[1][3],
-            view.m[2][0], view.m[2][1], view.m[2][2], view.m[2][3],
-            view.m[3][0], view.m[3][1], view.m[3][2], view.m[3][3]
+            view.m[0][0], view.m[1][0], view.m[2][0], view.m[3][0],
+            view.m[0][1], view.m[1][1], view.m[2][1], view.m[3][1],
+            view.m[0][2], view.m[1][2], view.m[2][2], view.m[3][2],
+            view.m[0][3], view.m[1][3], view.m[2][3], view.m[3][3]
         );
-        
+
         glm::mat4 projGlm = glm::mat4(
-            proj.m[0][0], proj.m[0][1], proj.m[0][2], proj.m[0][3],
-            proj.m[1][0], proj.m[1][1], proj.m[1][2], proj.m[1][3],
-            proj.m[2][0], proj.m[2][1], proj.m[2][2], proj.m[2][3],
-            proj.m[3][0], proj.m[3][1], proj.m[3][2], proj.m[3][3]
+            proj.m[0][0], proj.m[1][0], proj.m[2][0], proj.m[3][0],
+            proj.m[0][1], proj.m[1][1], proj.m[2][1], proj.m[3][1],
+            proj.m[0][2], proj.m[1][2], proj.m[2][2], proj.m[3][2],
+            proj.m[0][3], proj.m[1][3], proj.m[2][3], proj.m[3][3]
         );
         
         glm::mat4 viewProj = projGlm * viewGlm;

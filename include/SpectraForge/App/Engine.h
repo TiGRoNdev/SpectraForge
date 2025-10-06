@@ -66,8 +66,8 @@ class Engine final : public IApp {
     // Camera state - ВНУТРИ Sponza для корректного рендеринга
     // Sponza AABB: X=[-17..17], Y=[-0.9..15.6], Z=[-7.8..7.8]
     // Треугольники находятся в X=10.9, поэтому камера смотрит ВПРАВО (+X)
-    glm::vec3 cameraPos{0.0f, 3.0f, 0.0f};     // ✅ ВНУТРИ атриума на уровне глаз
-    glm::vec3 cameraFront{0.99f, -0.10f, 0.0f};  // Смотрим ВПРАВО (+X) и НЕМНОГО ВНИЗ
+    glm::vec3 cameraPos{0.0f, 2.0f, -5.0f};    // Камера снаружи сцены, смотрит вперед
+    glm::vec3 cameraFront{0.0f, 0.0f, 1.0f};   // Смотрим ВПЕРЕД (+Z) на сцену Sponza
     float yaw = 0.0f;                          // ✅ ВПРАВО (+X direction)
     float pitch = -5.0f;                       // НЕМНОГО ВНИЗ
     double lastMouseX = 0.0;
