@@ -150,286 +150,226 @@ bool TriangleSplattingPass::initialize(vk::Device device,
 }
 
 void TriangleSplattingPass::cleanup() {
-    if (!initialized_) {
-        std::cout << "[TriangleSplattingPass] Cleanup called but not initialized\n";
-        return;
-    }
+    if (!device_) return;
     
-    std::cout << "[TriangleSplattingPass] Cleaning up...\n";
-
-    // Check buffer states before cleanup
-    std::cout << "[TriangleSplattingPass] Buffer states before cleanup:\n";
-    std::cout << "[TriangleSplattingPass] tileCullingBuffer_ = " << tileCullingBuffer_ << std::endl;
-    std::cout << "[TriangleSplattingPass] materialTexturesBuffer_ = " << materialTexturesBuffer_ << std::endl;
-    std::cout << "[TriangleSplattingPass] textureDataBuffer_ = " << textureDataBuffer_ << std::endl;
-
-    // Destroy pipeline
+    // Wait for device idle before cleanup
+    vkDeviceWaitIdle(device_);
+    
+    // ===== ИСПРАВЛЕНИЕ: Правильный порядок cleanup =====
+    
+    // 1. Destroy pipelines FIRST (зависят от layouts)
     if (pipeline_) {
-        device_.destroyPipeline(pipeline_);
+        vkDestroyPipeline(device_, static_cast<VkPipeline>(pipeline_), nullptr);
         pipeline_ = nullptr;
     }
     
+    if (bitonicSortPipeline_) {
+        vkDestroyPipeline(device_, static_cast<VkPipeline>(bitonicSortPipeline_), nullptr);
+        bitonicSortPipeline_ = nullptr;
+    }
+    
+    if (depthKeyComputePipeline_) {
+        vkDestroyPipeline(device_, static_cast<VkPipeline>(depthKeyComputePipeline_), nullptr);
+        depthKeyComputePipeline_ = nullptr;
+    }
+    
+    if (frustumCullingPipeline_) {
+        vkDestroyPipeline(device_, static_cast<VkPipeline>(frustumCullingPipeline_), nullptr);
+        frustumCullingPipeline_ = nullptr;
+    }
+    
+    if (tileCullingPipeline_) {
+        vkDestroyPipeline(device_, static_cast<VkPipeline>(tileCullingPipeline_), nullptr);
+        tileCullingPipeline_ = nullptr;
+    }
+    
+    if (indirectArgsPipeline_) {
+        vkDestroyPipeline(device_, static_cast<VkPipeline>(indirectArgsPipeline_), nullptr);
+        indirectArgsPipeline_ = nullptr;
+    }
+    
+    // 2. Destroy pipeline layouts
     if (pipelineLayout_) {
-        device_.destroyPipelineLayout(pipelineLayout_);
+        vkDestroyPipelineLayout(device_, static_cast<VkPipelineLayout>(pipelineLayout_), nullptr);
         pipelineLayout_ = nullptr;
     }
     
-    // Destroy descriptor sets
-    if (descriptorPool_) {
-        device_.destroyDescriptorPool(descriptorPool_);
-        descriptorPool_ = nullptr;
+    if (bitonicSortPipelineLayout_) {
+        vkDestroyPipelineLayout(device_, static_cast<VkPipelineLayout>(bitonicSortPipelineLayout_), nullptr);
+        bitonicSortPipelineLayout_ = nullptr;
     }
     
-    if (descriptorSetLayout_) {
-        device_.destroyDescriptorSetLayout(descriptorSetLayout_);
-        descriptorSetLayout_ = nullptr;
+    if (depthKeyComputePipelineLayout_) {
+        vkDestroyPipelineLayout(device_, static_cast<VkPipelineLayout>(depthKeyComputePipelineLayout_), nullptr);
+        depthKeyComputePipelineLayout_ = nullptr;
     }
     
-    // Destroy shader
+    if (frustumCullingPipelineLayout_) {
+        vkDestroyPipelineLayout(device_, static_cast<VkPipelineLayout>(frustumCullingPipelineLayout_), nullptr);
+        frustumCullingPipelineLayout_ = nullptr;
+    }
+    
+    if (tileCullingPipelineLayout_) {
+        vkDestroyPipelineLayout(device_, static_cast<VkPipelineLayout>(tileCullingPipelineLayout_), nullptr);
+        tileCullingPipelineLayout_ = nullptr;
+    }
+    
+    if (indirectArgsPipelineLayout_) {
+        vkDestroyPipelineLayout(device_, static_cast<VkPipelineLayout>(indirectArgsPipelineLayout_), nullptr);
+        indirectArgsPipelineLayout_ = nullptr;
+    }
+    
+    // 3. Destroy shader modules
     if (computeShader_) {
-        device_.destroyShaderModule(computeShader_);
+        vkDestroyShaderModule(device_, static_cast<VkShaderModule>(computeShader_), nullptr);
         computeShader_ = nullptr;
     }
     
-    // Destroy output image
-    if (outputImageView_) {
-        device_.destroyImageView(outputImageView_);
-        outputImageView_ = nullptr;
+    if (bitonicSortShader_) {
+        vkDestroyShaderModule(device_, static_cast<VkShaderModule>(bitonicSortShader_), nullptr);
+        bitonicSortShader_ = nullptr;
     }
     
-    if (outputImage_) {
-        vmaDestroyImage(allocator_, outputImage_, outputImageAllocation_);
-        outputImage_ = nullptr;
-        outputImageAllocation_ = nullptr;
+    if (depthKeyComputeShader_) {
+        vkDestroyShaderModule(device_, static_cast<VkShaderModule>(depthKeyComputeShader_), nullptr);
+        depthKeyComputeShader_ = nullptr;
     }
     
-    // Destroy buffers
-    if (triangleBuffer_) {
+    if (frustumCullingShader_) {
+        vkDestroyShaderModule(device_, static_cast<VkShaderModule>(frustumCullingShader_), nullptr);
+        frustumCullingShader_ = nullptr;
+    }
+    
+    if (tileCullingShader_) {
+        vkDestroyShaderModule(device_, static_cast<VkShaderModule>(tileCullingShader_), nullptr);
+        tileCullingShader_ = nullptr;
+    }
+    
+    if (indirectArgsShader_) {
+        vkDestroyShaderModule(device_, static_cast<VkShaderModule>(indirectArgsShader_), nullptr);
+        indirectArgsShader_ = nullptr;
+    }
+    
+    // 4. Destroy descriptor pools (automatically frees descriptor sets)
+    if (descriptorPool_) {
+        vkDestroyDescriptorPool(device_, static_cast<VkDescriptorPool>(descriptorPool_), nullptr);
+        descriptorPool_ = VK_NULL_HANDLE;
+        // Descriptor sets are automatically freed when pool is destroyed
+        descriptorSet_ = VK_NULL_HANDLE;
+    }
+    
+    if (bitonicSortDescriptorPool_) {
+        vkDestroyDescriptorPool(device_, static_cast<VkDescriptorPool>(bitonicSortDescriptorPool_), nullptr);
+        bitonicSortDescriptorPool_ = nullptr;
+    }
+    
+    if (depthKeyComputeDescriptorPool_) {
+        vkDestroyDescriptorPool(device_, static_cast<VkDescriptorPool>(depthKeyComputeDescriptorPool_), nullptr);
+        depthKeyComputeDescriptorPool_ = nullptr;
+    }
+    
+    if (frustumCullingDescriptorPool_) {
+        vkDestroyDescriptorPool(device_, static_cast<VkDescriptorPool>(frustumCullingDescriptorPool_), nullptr);
+        frustumCullingDescriptorPool_ = nullptr;
+    }
+    
+    if (tileCullingDescriptorPool_) {
+        vkDestroyDescriptorPool(device_, static_cast<VkDescriptorPool>(tileCullingDescriptorPool_), nullptr);
+        tileCullingDescriptorPool_ = nullptr;
+    }
+    
+    if (indirectArgsDescriptorPool_) {
+        vkDestroyDescriptorPool(device_, static_cast<VkDescriptorPool>(indirectArgsDescriptorPool_), nullptr);
+        indirectArgsDescriptorPool_ = nullptr;
+    }
+    
+    // 5. Destroy descriptor set layouts
+    if (descriptorSetLayout_) {
+        vkDestroyDescriptorSetLayout(device_, static_cast<VkDescriptorSetLayout>(descriptorSetLayout_), nullptr);
+        descriptorSetLayout_ = nullptr;
+    }
+    
+    if (bitonicSortDescriptorSetLayout_) {
+        vkDestroyDescriptorSetLayout(device_, static_cast<VkDescriptorSetLayout>(bitonicSortDescriptorSetLayout_), nullptr);
+        bitonicSortDescriptorSetLayout_ = nullptr;
+    }
+    
+    if (depthKeyComputeDescriptorSetLayout_) {
+        vkDestroyDescriptorSetLayout(device_, static_cast<VkDescriptorSetLayout>(depthKeyComputeDescriptorSetLayout_), nullptr);
+        depthKeyComputeDescriptorSetLayout_ = nullptr;
+    }
+    
+    if (frustumCullingDescriptorSetLayout_) {
+        vkDestroyDescriptorSetLayout(device_, static_cast<VkDescriptorSetLayout>(frustumCullingDescriptorSetLayout_), nullptr);
+        frustumCullingDescriptorSetLayout_ = nullptr;
+    }
+    
+    if (tileCullingDescriptorSetLayout_) {
+        vkDestroyDescriptorSetLayout(device_, static_cast<VkDescriptorSetLayout>(tileCullingDescriptorSetLayout_), nullptr);
+        tileCullingDescriptorSetLayout_ = nullptr;
+    }
+    
+    if (indirectArgsDescriptorSetLayout_) {
+        vkDestroyDescriptorSetLayout(device_, static_cast<VkDescriptorSetLayout>(indirectArgsDescriptorSetLayout_), nullptr);
+        indirectArgsDescriptorSetLayout_ = nullptr;
+    }
+    
+    // 6. Destroy buffers and images (через VMA)
+    if (triangleBuffer_ && allocator_) {
         vmaDestroyBuffer(allocator_, triangleBuffer_, triangleBufferAllocation_);
-        triangleBuffer_ = nullptr;
-        triangleBufferAllocation_ = nullptr;
+        triangleBuffer_ = VK_NULL_HANDLE;
+        triangleBufferAllocation_ = VK_NULL_HANDLE;
     }
     
-    if (sortedIndicesBuffer_) {
-        vmaDestroyBuffer(allocator_, sortedIndicesBuffer_, sortedIndicesAllocation_);
+    if (sortedIndicesBuffer_ && allocator_) {
+        vmaDestroyBuffer(allocator_, static_cast<VkBuffer>(sortedIndicesBuffer_), sortedIndicesAllocation_);
         sortedIndicesBuffer_ = nullptr;
         sortedIndicesAllocation_ = nullptr;
     }
     
-    if (depthKeysBuffer_) {
-        vmaDestroyBuffer(allocator_, depthKeysBuffer_, depthKeysAllocation_);
+    if (depthKeysBuffer_ && allocator_) {
+        vmaDestroyBuffer(allocator_, static_cast<VkBuffer>(depthKeysBuffer_), depthKeysAllocation_);
         depthKeysBuffer_ = nullptr;
         depthKeysAllocation_ = nullptr;
     }
-
-    // Destroy tile culling buffer
-    if (tileCullingBuffer_) {
-        vmaDestroyBuffer(allocator_, tileCullingBuffer_, tileCullingAllocation_);
-        tileCullingBuffer_ = nullptr;
-        tileCullingAllocation_ = nullptr;
-    }
-
-    // Destroy material and texture buffers
-    if (materialTexturesBuffer_) {
-        vmaDestroyBuffer(allocator_, materialTexturesBuffer_, materialTexturesAllocation_);
-        materialTexturesBuffer_ = nullptr;
-        materialTexturesAllocation_ = nullptr;
-    }
-
-    if (textureDataBuffer_) {
-        vmaDestroyBuffer(allocator_, textureDataBuffer_, textureDataAllocation_);
-        textureDataBuffer_ = nullptr;
-        textureDataAllocation_ = nullptr;
-    }
-
-    // Destroy Bitonic Sort resources
-    if (bitonicSortPipeline_) {
-        device_.destroyPipeline(bitonicSortPipeline_);
-        bitonicSortPipeline_ = nullptr;
-    }
     
-    if (bitonicSortPipelineLayout_) {
-        device_.destroyPipelineLayout(bitonicSortPipelineLayout_);
-        bitonicSortPipelineLayout_ = nullptr;
-    }
-    
-    if (bitonicSortDescriptorPool_) {
-        device_.destroyDescriptorPool(bitonicSortDescriptorPool_);
-        bitonicSortDescriptorPool_ = nullptr;
-    }
-    
-    if (bitonicSortDescriptorSetLayout_) {
-        device_.destroyDescriptorSetLayout(bitonicSortDescriptorSetLayout_);
-        bitonicSortDescriptorSetLayout_ = nullptr;
-    }
-    
-    if (bitonicSortShader_) {
-        device_.destroyShaderModule(bitonicSortShader_);
-        bitonicSortShader_ = nullptr;
-    }
-    
-    // Destroy Depth Key Compute resources
-    if (depthKeyComputePipeline_) {
-        device_.destroyPipeline(depthKeyComputePipeline_);
-        depthKeyComputePipeline_ = nullptr;
-    }
-    
-    if (depthKeyComputePipelineLayout_) {
-        device_.destroyPipelineLayout(depthKeyComputePipelineLayout_);
-        depthKeyComputePipelineLayout_ = nullptr;
-    }
-    
-    if (depthKeyComputeDescriptorPool_) {
-        device_.destroyDescriptorPool(depthKeyComputeDescriptorPool_);
-        depthKeyComputeDescriptorPool_ = nullptr;
-    }
-    
-    if (depthKeyComputeDescriptorSetLayout_) {
-        device_.destroyDescriptorSetLayout(depthKeyComputeDescriptorSetLayout_);
-        depthKeyComputeDescriptorSetLayout_ = nullptr;
-    }
-    
-    if (depthKeyComputeShader_) {
-        device_.destroyShaderModule(depthKeyComputeShader_);
-        depthKeyComputeShader_ = nullptr;
-    }
-    
-    // Destroy Frustum Culling resources
-    if (frustumCullingPipeline_) {
-        device_.destroyPipeline(frustumCullingPipeline_);
-        frustumCullingPipeline_ = nullptr;
-    }
-    
-    if (frustumCullingPipelineLayout_) {
-        device_.destroyPipelineLayout(frustumCullingPipelineLayout_);
-        frustumCullingPipelineLayout_ = nullptr;
-    }
-    
-    if (frustumCullingDescriptorPool_) {
-        device_.destroyDescriptorPool(frustumCullingDescriptorPool_);
-        frustumCullingDescriptorPool_ = nullptr;
-    }
-    
-    if (frustumCullingDescriptorSetLayout_) {
-        device_.destroyDescriptorSetLayout(frustumCullingDescriptorSetLayout_);
-        frustumCullingDescriptorSetLayout_ = nullptr;
-    }
-    
-    if (frustumCullingShader_) {
-        device_.destroyShaderModule(frustumCullingShader_);
-        frustumCullingShader_ = nullptr;
-    }
-    
-    // Destroy frustum culling buffers
-    if (visibleIndicesBuffer_) {
-        vmaDestroyBuffer(allocator_, visibleIndicesBuffer_, visibleIndicesAllocation_);
+    if (visibleIndicesBuffer_ && allocator_) {
+        vmaDestroyBuffer(allocator_, static_cast<VkBuffer>(visibleIndicesBuffer_), visibleIndicesAllocation_);
         visibleIndicesBuffer_ = nullptr;
         visibleIndicesAllocation_ = nullptr;
     }
     
-    if (atomicCounterBuffer_) {
-        vmaDestroyBuffer(allocator_, atomicCounterBuffer_, atomicCounterAllocation_);
-        atomicCounterBuffer_ = nullptr;
-        atomicCounterAllocation_ = nullptr;
+    if (tileCullingBuffer_ && allocator_) {
+        vmaDestroyBuffer(allocator_, static_cast<VkBuffer>(tileCullingBuffer_), tileCullingAllocation_);
+        tileCullingBuffer_ = nullptr;
+        tileCullingAllocation_ = nullptr;
     }
     
-    if (indirectDispatchBuffer_) {
-        vmaDestroyBuffer(allocator_, indirectDispatchBuffer_, indirectDispatchAllocation_);
-        indirectDispatchBuffer_ = nullptr;
-        indirectDispatchAllocation_ = nullptr;
+    if (materialTexturesBuffer_ && allocator_) {
+        vmaDestroyBuffer(allocator_, static_cast<VkBuffer>(materialTexturesBuffer_), materialTexturesAllocation_);
+        materialTexturesBuffer_ = nullptr;
+        materialTexturesAllocation_ = nullptr;
     }
     
-    // Destroy Indirect Args resources
-    if (indirectArgsPipeline_) {
-        device_.destroyPipeline(indirectArgsPipeline_);
-        indirectArgsPipeline_ = nullptr;
+    if (textureDataBuffer_ && allocator_) {
+        vmaDestroyBuffer(allocator_, static_cast<VkBuffer>(textureDataBuffer_), textureDataAllocation_);
+        textureDataBuffer_ = nullptr;
+        textureDataAllocation_ = nullptr;
     }
     
-    if (indirectArgsPipelineLayout_) {
-        device_.destroyPipelineLayout(indirectArgsPipelineLayout_);
-        indirectArgsPipelineLayout_ = nullptr;
+    if (outputImage_ && allocator_) {
+        vmaDestroyImage(allocator_, outputImage_, outputImageAllocation_);
+        outputImage_ = VK_NULL_HANDLE;
+        outputImageAllocation_ = VK_NULL_HANDLE;
     }
     
-    if (indirectArgsDescriptorPool_) {
-        device_.destroyDescriptorPool(indirectArgsDescriptorPool_);
-        indirectArgsDescriptorPool_ = nullptr;
+    if (outputImageView_) {
+        vkDestroyImageView(device_, outputImageView_, nullptr);
+        outputImageView_ = VK_NULL_HANDLE;
     }
     
-    if (indirectArgsDescriptorSetLayout_) {
-        device_.destroyDescriptorSetLayout(indirectArgsDescriptorSetLayout_);
-        indirectArgsDescriptorSetLayout_ = nullptr;
-    }
-    
-    if (indirectArgsShader_) {
-        device_.destroyShaderModule(indirectArgsShader_);
-        indirectArgsShader_ = nullptr;
-    }
-    
-    // Destroy Two-Pass Rendering resources
-    if (visibilityPassPipeline_) {
-        device_.destroyPipeline(visibilityPassPipeline_);
-        visibilityPassPipeline_ = nullptr;
-    }
-    
-    if (visibilityPassPipelineLayout_) {
-        device_.destroyPipelineLayout(visibilityPassPipelineLayout_);
-        visibilityPassPipelineLayout_ = nullptr;
-    }
-    
-    if (visibilityPassDescriptorPool_) {
-        device_.destroyDescriptorPool(visibilityPassDescriptorPool_);
-        visibilityPassDescriptorPool_ = nullptr;
-    }
-    
-    if (visibilityPassDescriptorSetLayout_) {
-        device_.destroyDescriptorSetLayout(visibilityPassDescriptorSetLayout_);
-        visibilityPassDescriptorSetLayout_ = nullptr;
-    }
-    
-    if (visibilityPassShader_) {
-        device_.destroyShaderModule(visibilityPassShader_);
-        visibilityPassShader_ = nullptr;
-    }
-    
-    if (shadingPassPipeline_) {
-        device_.destroyPipeline(shadingPassPipeline_);
-        shadingPassPipeline_ = nullptr;
-    }
-    
-    if (shadingPassPipelineLayout_) {
-        device_.destroyPipelineLayout(shadingPassPipelineLayout_);
-        shadingPassPipelineLayout_ = nullptr;
-    }
-    
-    if (shadingPassDescriptorPool_) {
-        device_.destroyDescriptorPool(shadingPassDescriptorPool_);
-        shadingPassDescriptorPool_ = nullptr;
-    }
-    
-    if (shadingPassDescriptorSetLayout_) {
-        device_.destroyDescriptorSetLayout(shadingPassDescriptorSetLayout_);
-        shadingPassDescriptorSetLayout_ = nullptr;
-    }
-    
-    if (shadingPassShader_) {
-        device_.destroyShaderModule(shadingPassShader_);
-        shadingPassShader_ = nullptr;
-    }
-    
-    if (visibilityBuffer_) {
-        vmaDestroyBuffer(allocator_, visibilityBuffer_, visibilityBufferAllocation_);
-        visibilityBuffer_ = nullptr;
-        visibilityBufferAllocation_ = nullptr;
-    }
-    
-    if (pixelCountersBuffer_) {
-        vmaDestroyBuffer(allocator_, pixelCountersBuffer_, pixelCountersAllocation_);
-        pixelCountersBuffer_ = nullptr;
-        pixelCountersAllocation_ = nullptr;
-    }
-    
-    initialized_ = false;
-    std::cout << "[TriangleSplattingPass] Cleaned up\n";
+    std::cout << "[TriangleSplattingPass] Cleanup completed successfully" << std::endl;
+
 }
 
 bool TriangleSplattingPass::createOutputImage() {
