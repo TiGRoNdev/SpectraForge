@@ -11,6 +11,7 @@ add_executable(triangle_splatting_test
 target_link_libraries(triangle_splatting_test
     PRIVATE
     SpectraForge
+    FrameOutput
     GTest::gtest_main
     Vulkan::Vulkan
 )

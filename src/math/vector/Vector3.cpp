@@ -114,6 +114,19 @@ Vector3 Vector3::cross(const Vector3& other) const {
     return Vector3(y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x);
 }
 
+// Статические удобные перегрузки (в духе glm)
+float Vector3::dot(const Vector3& a, const Vector3& b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+Vector3 Vector3::cross(const Vector3& a, const Vector3& b) {
+    return Vector3(
+        a.y * b.z - a.z * b.y,
+        a.z * b.x - a.x * b.z,
+        a.x * b.y - a.y * b.x
+    );
+}
+
 float Vector3::magnitude() const {
     return std::sqrt(x * x + y * y + z * z);
 }

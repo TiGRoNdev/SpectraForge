@@ -82,7 +82,7 @@ add_library(SpectraForge STATIC
     $<TARGET_OBJECTS:SpectraForge_Vulkan>
 )
 
-# Подключаем Vulkan
+# Подключаем только Vulkan. PNG удалён из общей библиотеки и перенесён в FrameOutput.
 target_link_libraries(SpectraForge PUBLIC Vulkan::Vulkan)
 
 # Определения компилятора
@@ -115,6 +115,7 @@ if(BUILD_EXAMPLES)
         SpectraForge_Platform
         SpectraForge_Vulkan
         SpectraForge
+        FrameOutput
         glfw
     )
 
@@ -138,6 +139,7 @@ if(BUILD_EXAMPLES)
         SpectraForge_Platform
         SpectraForge_Vulkan
         SpectraForge
+        FrameOutput
         glfw
     )
 

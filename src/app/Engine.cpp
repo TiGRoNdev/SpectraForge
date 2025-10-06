@@ -648,6 +648,49 @@ void Engine::update(float delta_time) {
                 std::cout << "[Camera] Direction: (" << cameraFront.x << ", " << cameraFront.y << ", " << cameraFront.z << ")" << std::endl;
                 std::cout << "[Camera] Yaw: " << yaw << "°, Pitch: " << pitch << "°" << std::endl;
             }
+
+            // ===== ИСПРАВЛЕНО: Правильное формирование View Matrix =====
+    
+            // 1. Обновляем camera direction из yaw/pitch
+            cameraFront.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+            cameraFront.y = sin(glm::radians(pitch));
+            cameraFront.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+            cameraFront = glm::normalize(cameraFront);
+            
+            // 2. ИСПРАВЛЕНО: Правильный lookAt для Vulkan coordinate system
+            // Vulkan использует Y-down, Z-forward coordinate system
+            Math::Vector3 eyePos(cameraPos.x, cameraPos.y, cameraPos.z);
+            Math::Vector3 targetPos = eyePos + Math::Vector3(cameraFront.x, cameraFront.y, cameraFront.z);
+            Math::Vector3 upVector(0.0f, -1.0f, 0.0f); // ИСПРАВЛЕНО: Y-down для Vulkan
+            
+            if (renderCamera_) {
+                renderCamera_->lookAt(eyePos, targetPos, upVector);
+                
+                // 3. ИСПРАВЛЕНО: Правильная projection matrix для Vulkan
+                float aspect = static_cast<float>(config_.window_width) / static_cast<float>(config_.window_height);
+                renderCamera_->setPerspective(
+                    glm::radians(60.0f), // FOV
+                    aspect,              // aspect ratio  
+                    0.1f,               // near plane
+                    1000.0f             // far plane
+                );
+            }
+            
+            // 4. DEBUG: Выводим исправленную матрицу
+            if (frameCount_ % 60 == 0) { // Каждую секунду
+                auto viewMatrix = renderCamera_->getViewMatrix();
+                auto projMatrix = renderCamera_->getProjectionMatrix(); 
+                
+                std::cout << "\n===== ИСПРАВЛЕННЫЕ MATRICES =====" << std::endl;
+                std::cout << "Camera pos: (" << cameraPos.x << ", " << cameraPos.y << ", " << cameraPos.z << ")" << std::endl;
+                std::cout << "Camera front: (" << cameraFront.x << ", " << cameraFront.y << ", " << cameraFront.z << ")" << std::endl;
+                std::cout << "View Matrix:" << std::endl;
+                for (int i = 0; i < 4; i++) {
+                    std::cout << "  [" << viewMatrix.m[i][0] << ", " << viewMatrix.m[i][1] 
+                            << ", " << viewMatrix.m[i][2] << ", " << viewMatrix.m[i][3] << "]" << std::endl;
+                }
+                std::cout << "=================================\n" << std::endl;
+            }
         }
     }
 }

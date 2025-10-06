@@ -11,5 +11,8 @@ add_subdirectory(app)
 # Vulkan модуль
 add_subdirectory(rendering)
 
+# Output helpers (PNG writer)
+add_subdirectory(output)
+
 # Performance benchmarking
 add_subdirectory(performance)

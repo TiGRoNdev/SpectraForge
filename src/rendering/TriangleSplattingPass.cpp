@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cinttypes>
 #include <SpectraForge/Rendering/Mesh3D.h>
+#include <SpectraForge/rendering/FrameOutput.h>
 #include <cmath>
 
 // Конвертация half-float в float
@@ -3229,6 +3230,150 @@ void TriangleSplattingPass::saveFrameToPPM(const std::string& filename) {
     vmaDestroyBuffer(allocator_, stagingBufferVk, stagingAlloc);
     
     std::cout << "[TriangleSplattingPass] ✅ Frame saved to " << filename << " (" << config_.outputWidth << "x" << config_.outputHeight << ")\n";
+}
+
+void TriangleSplattingPass::saveFrameToPNG(const std::string& filename) {
+    if (!initialized_ || !outputImage_) {
+        std::cerr << "[TriangleSplattingPass] Cannot save frame - not initialized!\n";
+        return;
+    }
+
+    VkBufferCreateInfo stagingInfo{};
+    stagingInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    stagingInfo.size = config_.outputWidth * config_.outputHeight * 8; // RGBA16F
+    stagingInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    stagingInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VmaAllocationCreateInfo allocInfo{};
+    allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+    VkBuffer stagingBufferVk;
+    VmaAllocation stagingAlloc;
+    VmaAllocationInfo stagingAllocInfo;
+    vmaCreateBuffer(allocator_, &stagingInfo, &allocInfo, &stagingBufferVk, &stagingAlloc, &stagingAllocInfo);
+    vk::Buffer stagingBuffer(stagingBufferVk);
+
+    vk::CommandBufferAllocateInfo cmdAllocInfo;
+    cmdAllocInfo.commandPool = commandPool_;
+    cmdAllocInfo.level = vk::CommandBufferLevel::ePrimary;
+    cmdAllocInfo.commandBufferCount = 1;
+
+    auto cmdBuffers = device_.allocateCommandBuffers(cmdAllocInfo);
+    vk::CommandBuffer cmd = cmdBuffers[0];
+    vk::CommandBufferBeginInfo beginInfo;
+    beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+    cmd.begin(beginInfo);
+
+    vk::ImageMemoryBarrier toTransfer;
+    toTransfer.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+    toTransfer.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+    toTransfer.oldLayout = vk::ImageLayout::eGeneral;
+    toTransfer.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+    toTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    toTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    toTransfer.image = outputImage_;
+    toTransfer.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+    toTransfer.subresourceRange.baseMipLevel = 0;
+    toTransfer.subresourceRange.levelCount = 1;
+    toTransfer.subresourceRange.baseArrayLayer = 0;
+    toTransfer.subresourceRange.layerCount = 1;
+
+    cmd.pipelineBarrier(
+        vk::PipelineStageFlagBits::eComputeShader,
+        vk::PipelineStageFlagBits::eTransfer,
+        vk::DependencyFlags{},
+        0, nullptr, 0, nullptr, 1, &toTransfer
+    );
+
+    vk::BufferImageCopy region;
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = vk::Offset3D{0, 0, 0};
+    region.imageExtent = vk::Extent3D{config_.outputWidth, config_.outputHeight, 1};
+    cmd.copyImageToBuffer(outputImage_, vk::ImageLayout::eTransferSrcOptimal, stagingBuffer, 1, &region);
+
+    vk::ImageMemoryBarrier toGeneral;
+    toGeneral.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+    toGeneral.dstAccessMask = vk::AccessFlagBits::eShaderWrite;
+    toGeneral.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+    toGeneral.newLayout = vk::ImageLayout::eGeneral;
+    toGeneral.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    toGeneral.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    toGeneral.image = outputImage_;
+    toGeneral.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+    toGeneral.subresourceRange.baseMipLevel = 0;
+    toGeneral.subresourceRange.levelCount = 1;
+    toGeneral.subresourceRange.baseArrayLayer = 0;
+    toGeneral.subresourceRange.layerCount = 1;
+    cmd.pipelineBarrier(
+        vk::PipelineStageFlagBits::eTransfer,
+        vk::PipelineStageFlagBits::eComputeShader,
+        vk::DependencyFlags{},
+        0, nullptr, 0, nullptr, 1, &toGeneral
+    );
+    cmd.end();
+
+    vk::SubmitInfo submitInfo;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &cmd;
+    auto result = graphicsQueue_.submit(1, &submitInfo, nullptr);
+    if (result != vk::Result::eSuccess) {
+        throw std::runtime_error("Failed to submit graphics queue");
+    }
+    graphicsQueue_.waitIdle();
+
+    uint8_t* data = reinterpret_cast<uint8_t*>(stagingAllocInfo.pMappedData);
+
+    // Convert RGBA16F -> 8-bit RGBA buffer for PNG
+    const uint32_t w = config_.outputWidth;
+    const uint32_t h = config_.outputHeight;
+    std::vector<uint8_t> rgba8;
+    rgba8.resize(static_cast<size_t>(w) * h * 4);
+
+    for (uint32_t y = 0; y < h; ++y) {
+        for (uint32_t x = 0; x < w; ++x) {
+            uint32_t idx16 = (y * w + x) * 8;
+            uint16_t r16 = *reinterpret_cast<uint16_t*>(&data[idx16 + 0]);
+            uint16_t g16 = *reinterpret_cast<uint16_t*>(&data[idx16 + 2]);
+            uint16_t b16 = *reinterpret_cast<uint16_t*>(&data[idx16 + 4]);
+            uint16_t a16 = *reinterpret_cast<uint16_t*>(&data[idx16 + 6]);
+
+            float r = halfToFloat(r16);
+            float g = halfToFloat(g16);
+            float b = halfToFloat(b16);
+            float a = halfToFloat(a16);
+
+            auto to8 = [](float v) -> uint8_t {
+                v = std::max(0.0f, std::min(1.0f, v));
+                return static_cast<uint8_t>(v * 255.0f + 0.5f);
+            };
+
+            size_t idx8 = static_cast<size_t>(y) * w * 4 + x * 4;
+            rgba8[idx8 + 0] = to8(r);
+            rgba8[idx8 + 1] = to8(g);
+            rgba8[idx8 + 2] = to8(b);
+            rgba8[idx8 + 3] = to8(a);
+        }
+    }
+
+    // Делегируем сохранение PNG в отдельную библиотеку вывода
+    const bool ok = save_rgba8_to_png(filename, w, h, rgba8);
+ 
+    device_.freeCommandBuffers(commandPool_, 1, &cmd);
+    vmaDestroyBuffer(allocator_, stagingBufferVk, stagingAlloc);
+ 
+    if (ok) {
+        std::cout << "[TriangleSplattingPass] ✅ Frame saved to " << filename
+                  << " (" << w << "x" << h << ")\n";
+    } else {
+        std::cerr << "[TriangleSplattingPass] ❌ Failed to save PNG to: " << filename << "\n";
+    }
 }
 
 } // namespace rendering

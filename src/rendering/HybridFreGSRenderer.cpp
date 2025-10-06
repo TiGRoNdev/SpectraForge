@@ -568,10 +568,10 @@ void HybridFreGSRenderer::recordCommandBuffer(vk::CommandBuffer commandBuffer, u
 
             // Generate unique filename
             char filename[256];
-            snprintf(filename, sizeof(filename), "/home/tigron/Documents/GITHUB/SpectraForge/DEBUG_frame_%03d.ppm", frameSaveCounter / saveEveryNthFrame);
+            snprintf(filename, sizeof(filename), "/home/tigron/Documents/GITHUB/SpectraForge/DEBUG_frame_%03d.png", frameSaveCounter / saveEveryNthFrame);
 
             // Save frame to file
-            triangleSplattingPass_->saveFrameToPPM(filename);
+            triangleSplattingPass_->saveFrameToPNG(filename);
 
             // Restart command buffer
             vk::CommandBufferBeginInfo beginInfo;
@@ -1283,7 +1283,12 @@ bool HybridFreGSRenderer::saveScreenshot(const std::string& filename) const {
     }
     std::cout << "[HybridFreGSRenderer] Saving screenshot to: " << filename << std::endl;
     try {
-        triangleSplattingPass_->saveFrameToPPM(filename);
+        // Выбор по расширению: если .png, используем PNG, иначе оставим PPM как fallback
+        if (filename.size() >= 4 && filename.substr(filename.size()-4) == ".png") {
+            triangleSplattingPass_->saveFrameToPNG(filename);
+        } else {
+            triangleSplattingPass_->saveFrameToPPM(filename);
+        }
         return true;
     } catch (...) {
         return false;

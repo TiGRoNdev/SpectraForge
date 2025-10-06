@@ -17,6 +17,9 @@ add_library(SpectraForge_Vulkan OBJECT
     vulkan/HardwareDetector.cpp
 )
 
+# PNG (for debug frame saving)
+find_package(PNG REQUIRED)
+
 # Include directories
 target_include_directories(SpectraForge_Vulkan PUBLIC
     ${CMAKE_SOURCE_DIR}/include
@@ -27,6 +30,7 @@ target_link_libraries(SpectraForge_Vulkan PUBLIC
     Vulkan::Vulkan
     SpectraForge_Core
     SpectraForge_Math
+    PNG::PNG
 )
 
 # Compile definitions

@@ -57,6 +57,9 @@ class Vector3 {
     float angle(const Vector3& other) const;      // Угол между векторами
 
     // Статические методы
+    // Удобные перегрузки в стиле glm: статические реализации
+    static float dot(const Vector3& a, const Vector3& b);
+    static Vector3 cross(const Vector3& a, const Vector3& b);
     static Vector3 zero();
     static Vector3 one();
     static Vector3 unitX();

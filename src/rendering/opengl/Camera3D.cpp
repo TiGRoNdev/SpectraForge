@@ -164,18 +164,62 @@ void Camera3D::setFarPlane(float far) {
 }
 
 // Получение матриц
-Matrix4 Camera3D::getViewMatrix() const {
+
+Math::Matrix4 Camera3D::getViewMatrix() const {
     if (viewMatrixDirty) {
         updateViewMatrix();
+        viewMatrixDirty = false;
     }
     return viewMatrix;
 }
 
-Matrix4 Camera3D::getProjectionMatrix() const {
+void Camera3D::updateViewMatrix() const {
+    // ИСПРАВЛЕНО: Правильный lookAt для Vulkan coordinate system
+    Math::Vector3 forward = (target - position).normalized();
+    Math::Vector3 right = Math::Vector3::cross(forward, Math::Vector3(0.0f, -1.0f, 0.0f)).normalized();
+    Math::Vector3 up = Math::Vector3::cross(right, forward);
+    
+    // ИСПРАВЛЕНО: Правильная View Matrix без инверсии
+    // Vulkan NDC: X[-1,1], Y[-1,1] (Y-down), Z[0,1] (Z-forward)
+    viewMatrix = Math::Matrix4(
+        right.x,    up.x,    forward.x,   -Math::Vector3::dot(right, position),
+        right.y,    up.y,    forward.y,   -Math::Vector3::dot(up, position),  
+        right.z,    up.z,    forward.z,   -Math::Vector3::dot(forward, position),
+        0.0f,       0.0f,    0.0f,        1.0f
+    );
+}
+
+Math::Matrix4 Camera3D::getProjectionMatrix() const {
     if (projectionMatrixDirty) {
         updateProjectionMatrix();
+        projectionMatrixDirty = false;
     }
     return projectionMatrix;
+}
+
+void Camera3D::updateProjectionMatrix() const {
+    if (perspective) {
+        // ИСПРАВЛЕНО: Правильная perspective для Vulkan (Y-flip)
+        float tanHalfFov = tan(fieldOfView / 2.0f);
+        
+        projectionMatrix = Math::Matrix4::zero();
+        projectionMatrix.m[0][0] = 1.0f / (aspectRatio * tanHalfFov);
+        projectionMatrix.m[1][1] = -1.0f / tanHalfFov;  // ИСПРАВЛЕНО: Y-flip для Vulkan
+        projectionMatrix.m[2][2] = farPlane / (farPlane - nearPlane);
+        projectionMatrix.m[2][3] = -(farPlane * nearPlane) / (farPlane - nearPlane);
+        projectionMatrix.m[3][2] = 1.0f;
+        projectionMatrix.m[3][3] = 0.0f;
+    } else {
+        // Orthographic projection
+        projectionMatrix = Math::Matrix4(
+            2.0f / (orthoRight - orthoLeft), 0.0f, 0.0f, -(orthoRight + orthoLeft) / (orthoRight - orthoLeft),
+            0.0f, -2.0f / (orthoTop - orthoBottom), 0.0f, (orthoTop + orthoBottom) / (orthoTop - orthoBottom), // Y-flip
+            0.0f, 0.0f, 1.0f / (farPlane - nearPlane), -nearPlane / (farPlane - nearPlane),
+            0.0f, 0.0f, 0.0f, 1.0f
+        );
+    }
+    
+    projectionMatrixDirty = false;
 }
 
 Matrix4 Camera3D::getViewProjectionMatrix() const {
@@ -301,27 +345,6 @@ bool Camera3D::isInFrustum(const Vector3& center, float radius) const {
     }
 
     return true;
-}
-
-// Утилиты
-void Camera3D::updateViewMatrix() const {
-    if (perspective) {
-        Vector3 forward = getForward();
-        target = position + forward;
-    }
-
-    viewMatrix = Matrix4::lookAt(position, target, getUp());
-    viewMatrixDirty = false;
-}
-
-void Camera3D::updateProjectionMatrix() const {
-    if (perspective) {
-        projectionMatrix = Matrix4::perspective(fieldOfView, aspectRatio, nearPlane, farPlane);
-    } else {
-        projectionMatrix = Matrix4::orthographic(
-            orthoLeft, orthoRight, orthoBottom, orthoTop, nearPlane, farPlane);
-    }
-    projectionMatrixDirty = false;
 }
 
 }  // namespace Rendering

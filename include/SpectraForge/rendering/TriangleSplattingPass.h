@@ -191,6 +191,11 @@ public:
      */
     void saveFrameToPPM(const std::string& filename);
 
+    /**
+     * @brief Save current frame to PNG file (DEBUG)
+     */
+    void saveFrameToPNG(const std::string& filename);
+
     // =========================================================================
     // Совместимые синонимы API для интеграции с HybridFreGSRenderer
     // =========================================================================
