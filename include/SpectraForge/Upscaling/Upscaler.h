@@ -1,169 +1,161 @@
+/**
+ * @file Upscaler.h
+ * @brief Abstraction for AI upscaling (DLSS/FSR2)
+ *
+ * Implements SOLID principles:
+ * - SRP: Each upscaler handles specific vendor tech
+ * - OCP: Open for extension (new upscalers)
+ * - LSP: All upscalers substitutable
+ * - ISP: Minimal interface
+ * - DIP: Factory returns abstractions
+ *
+ * @author SpectraForge Core Team
+ * @date 2025-10-02
+ */
 
 #pragma once
 
-#include <glm/glm.hpp>
+#include <vulkan/vulkan.hpp>
 #include <memory>
+#include <string>
 
-namespace SpectraForge::Upscaling {
+namespace spectraforge {
+
+// Forward declaration
+class VulkanContext;
+
+namespace upscaling {
 
 /**
- * @brief Денойзированное изображение
+ * @brief Upscaling quality preset
  */
-struct DenoisedImage {
-    float* colorBuffer;  // Цветовой буфер
-    float* depthBuffer;  // Буфер глубины (опционально)
-    uint32_t width;
-    uint32_t height;
-    uint32_t channels;
+enum class UpscaleQuality {
+    PERFORMANCE,    // Lowest input resolution, highest perf
+    BALANCED,       // Balance quality/perf
+    QUALITY,        // Higher input resolution
+    ULTRA_QUALITY   // Highest quality, lowest perf boost
 };
 
 /**
- * @brief Целевое разрешение для upscaling
+ * @brief Upscaling configuration
  */
-struct ResolutionTarget {
-    uint32_t width;
-    uint32_t height;
-    float scaleFactor;  // Коэффициент масштабирования
+struct UpscaleConfig {
+    uint32_t inputWidth;
+    uint32_t inputHeight;
+    uint32_t outputWidth;
+    uint32_t outputHeight;
+    UpscaleQuality quality = UpscaleQuality::BALANCED;
+    bool enableSharpening = true;
+    float sharpness = 0.5f;  // [0, 1]
 };
 
 /**
- * @brief Финальное изображение после upscaling
+ * @brief Upscaling input/output
  */
-struct FinalImage {
-    float* colorBuffer;  // Финальный цветовой буфер
-    uint32_t width;
-    uint32_t height;
-    uint32_t channels;
+struct UpscaleResources {
+    vk::Image inputColor;
+    vk::ImageView inputColorView;
+    vk::Image inputDepth;
+    vk::ImageView inputDepthView;
+    vk::Image inputMotionVectors;
+    vk::ImageView inputMotionVectorsView;
+    vk::Image outputColor;
+    vk::ImageView outputColorView;
 };
 
 /**
- * @brief Конфигурация железа для upscaler
+ * @brief Base interface for upscalers (ISP: minimal interface)
  */
-struct HardwareConfig {
-    enum class VendorType { NVIDIA, AMD, INTEL, OTHER } vendor;
+class IUpscaler {
+public:
+    virtual ~IUpscaler() = default;
 
-    bool supportsRayTracing;
-    bool supportsTensorCores;
-    bool supportsAsyncCompute;
-    size_t vramSize;
-    std::string deviceName;
-};
-
-/**
- * @brief Абстрактный базовый класс для upscaling
- *
- * Определяет интерфейс для различных технологий upscaling
- * (DLSS, FSR, и потенциально других в будущем).
- */
-class Upscaler {
-  public:
     /**
-     * @brief Виртуальный деструктор
+     * @brief Initialize upscaler
      */
-    virtual ~Upscaler() = default;
+    virtual bool initialize(const VulkanContext& context,
+                           const UpscaleConfig& config) = 0;
 
     /**
-     * @brief Инициализация upscaler
-     * @param config Конфигурация железа
-     * @return true если инициализация успешна
+     * @brief Execute upscaling
      */
-    virtual bool init(const HardwareConfig& config) = 0;
+    virtual void execute(vk::CommandBuffer cmd, const UpscaleResources& resources,
+                        uint32_t frameIndex, float jitterX, float jitterY) = 0;
 
     /**
-     * @brief Завершение работы upscaler
+     * @brief Cleanup resources
      */
-    virtual void shutdown() = 0;
+    virtual void cleanup() = 0;
 
     /**
-     * @brief Upscaling изображения
-     * @param image Входное денойзированное изображение
-     * @param target Целевое разрешение
-     * @return Финальное изображение
+     * @brief Resize (for window resize events)
      */
-    virtual FinalImage upscaleImage(const DenoisedImage& image, const ResolutionTarget& target) = 0;
+    virtual bool resize(uint32_t newInputWidth, uint32_t newInputHeight,
+                       uint32_t newOutputWidth, uint32_t newOutputHeight) = 0;
 
     /**
-     * @brief Проверка поддержки данной конфигурации
-     * @param config Конфигурация железа
-     * @return true если конфигурация поддерживается
-     */
-    virtual bool isSupported(const HardwareConfig& config) const = 0;
-
-    /**
-     * @brief Получение имени upscaler
-     * @return Имя технологии upscaling
+     * @brief Get upscaler name
      */
     virtual const char* getName() const = 0;
 
     /**
-     * @brief Получение рекомендуемого коэффициента масштабирования
-     * @param inputWidth Ширина входного изображения
-     * @param inputHeight Высота входного изображения
-     * @param targetWidth Целевая ширина
-     * @param targetHeight Целевая высота
-     * @return Рекомендуемый коэффициент
-     */
-    virtual float getRecommendedScaleFactor(uint32_t inputWidth,
-                                            uint32_t inputHeight,
-                                            uint32_t targetWidth,
-                                            uint32_t targetHeight) const;
-
-    /**
-     * @brief Проверка инициализации
-     * @return true если upscaler инициализирован
+     * @brief Check if initialized
      */
     virtual bool isInitialized() const = 0;
 
-  protected:
     /**
-     * @brief Защищенный конструктор
+     * @brief Get recommended jitter sequence for TAA
      */
-    Upscaler() = default;
-
-    // Запрет копирования
-    Upscaler(const Upscaler&) = delete;
-    Upscaler& operator=(const Upscaler&) = delete;
+    virtual void getJitterOffset(uint32_t frameIndex, float& outX, float& outY) const = 0;
 };
 
 /**
- * @brief Фабрика для создания upscaler'ов
+ * @brief Base implementation with common functionality
  */
-class UpscalerFactory {
-  public:
-    /**
-     * @brief Типы доступных upscaler'ов
-     */
-    enum class Type {
-        DLSS,
-        FSR,
-        AUTO  // Автоматический выбор на основе железа
-    };
+class UpscalerBase : public IUpscaler {
+public:
+    explicit UpscalerBase(std::string name);
+    virtual ~UpscalerBase() override = default;
 
-    /**
-     * @brief Создание upscaler
-     * @param type Тип upscaler'а
-     * @param config Конфигурация железа
-     * @return Уникальный указатель на upscaler
-     */
-    static std::unique_ptr<Upscaler> create(Type type, const HardwareConfig& config);
+    // Disable copy (RAII)
+    UpscalerBase(const UpscalerBase&) = delete;
+    UpscalerBase& operator=(const UpscalerBase&) = delete;
 
-    /**
-     * @brief Автоматический выбор лучшего upscaler'а
-     * @param config Конфигурация железа
-     * @return Уникальный указатель на upscaler
-     */
-    static std::unique_ptr<Upscaler> createBest(const HardwareConfig& config);
+    // Enable move
+    UpscalerBase(UpscalerBase&&) noexcept = default;
+    UpscalerBase& operator=(UpscalerBase&&) noexcept = default;
 
-    /**
-     * @brief Проверка доступности типа upscaler'а
-     * @param type Тип upscaler'а
-     * @param config Конфигурация железа
-     * @return true если доступен
-     */
-    static bool isAvailable(Type type, const HardwareConfig& config);
+    const char* getName() const override { return name_.c_str(); }
 
-  private:
-    UpscalerFactory() = delete;
+protected:
+    /**
+     * @brief Halton sequence for jitter (common for TAA)
+     */
+    static void haltonSequence(uint32_t index, uint32_t base, float& out);
+
+    std::string name_;
+    UpscaleConfig config_;
+    bool initialized_ = false;
 };
 
-}  // namespace SpectraForge::Upscaling
+/**
+ * @brief Null upscaler (deprecated - use NativeUpscaler)
+ */
+class NullUpscaler : public UpscalerBase {
+public:
+    NullUpscaler();
+    
+    bool initialize(const VulkanContext& context,
+                   const UpscaleConfig& config) override;
+    void execute(vk::CommandBuffer cmd, const UpscaleResources& resources,
+                uint32_t frameIndex, float jitterX, float jitterY) override;
+    void cleanup() override;
+    bool resize(uint32_t newInputWidth, uint32_t newInputHeight,
+               uint32_t newOutputWidth, uint32_t newOutputHeight) override;
+    bool isInitialized() const override { return initialized_; }
+    void getJitterOffset(uint32_t frameIndex, float& outX, float& outY) const override;
+};
+
+} // namespace upscaling
+} // namespace spectraforge
+

@@ -34,3 +34,27 @@ enable_testing()
 
 # Add test to CTest
 add_test(NAME triangle_splatting_test COMMAND triangle_splatting_test)
+
+# Phase 1 connectivity tests
+add_executable(connectivity_phase1_test
+    connectivity_phase1_test.cpp
+)
+
+target_link_libraries(connectivity_phase1_test
+    PRIVATE
+    SpectraForge
+    GTest::gtest_main
+)
+
+set_target_properties(connectivity_phase1_test PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+
+add_custom_target(run_connectivity_phase1_tests
+    COMMAND connectivity_phase1_test
+    DEPENDS connectivity_phase1_test
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    COMMENT "Running Phase 1 connectivity tests"
+)
+
+add_test(NAME connectivity_phase1_test COMMAND connectivity_phase1_test)
