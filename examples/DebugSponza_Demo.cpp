@@ -1,6 +1,8 @@
 #include <iostream>
 #include <memory>
-#include <chrono> // для std::this_thread::sleep_for
+#include <chrono>
+#include <thread>
+#include <fstream>
 #include "SpectraForge/App/Engine.h"
 #include "SpectraForge/App/Config.h"
 #include "SpectraForge/Core/Console.h"
@@ -18,22 +20,21 @@ public:
     ~DebugDemo() = default;
 
     bool initialize() {
-        SAFE_PRINT_LINE("=== DEBUG DEMO FOR SPONZA RENDERING ===");
+        SAFE_PRINT_LINE("=== DEBUG DEMO FOR SPONZA RENDERING (ИСПРАВЛЕННАЯ ВЕРСИЯ) ===");
         SAFE_PRINT_LINE("");
         
-        // Конфигурация с debug параметрами
+        // Конфигурация с использованием ТОЛЬКО существующих полей
         SpectraForge::App::AppConfig cfg;
         cfg.window_width = 960;
         cfg.window_height = 540;
         cfg.window_title = "Debug Demo - Sponza Rendering";
         
-        // КРИТИЧНО: Добавить debug флаги
-        cfg.enableValidationLayers = true;  // Vulkan validation
-        cfg.enableDebugOutput = true;       // Detailed logging
-        cfg.enableFrameDebugger = true;     // Frame-by-frame analysis
+        // ИСПРАВЛЕНО: Используем ТОЛЬКО существующие поля
+        cfg.debug = true;    // Существующее поле debug
+        cfg.vsync = false;   // Отключаем для стабильности
         
         std::cout << "🔍 [DEBUG] Разрешение: " << cfg.window_width << "x" << cfg.window_height << std::endl;
-        std::cout << "🔍 [DEBUG] Validation layers: ENABLED" << std::endl;
+        std::cout << "🔍 [DEBUG] Debug mode: " << (cfg.debug ? "ENABLED" : "DISABLED") << std::endl;
         
         auto logger = std::make_shared<SpectraForge::Core::Logger>("", SpectraForge::Core::LogLevel::DEBUG_LEVEL);
         app_ = std::make_unique<SpectraForge::App::Engine>(cfg, logger);
@@ -45,7 +46,7 @@ public:
         
         std::cout << "✅ [DEBUG] Engine инициализирован" << std::endl;
         
-        // Загрузка сцены с подробной диагностикой
+        // Загрузка сцены с использованием ТОЛЬКО существующих полей
         SpectraForge::Vulkan::SceneData scene{};
         scene.scenePath = "examples/scenes/sponza/sponza.obj";
         
@@ -53,87 +54,90 @@ public:
         std::ifstream file(scene.scenePath);
         if (!file.good()) {
             std::cerr << "❌ [ERROR] Файл сцены не найден: " << scene.scenePath << std::endl;
-            std::cerr << "📝 [INFO] Проверьте путь к файлу и убедитесь что он существует" << std::endl;
-            return false;
+            std::cerr << "📝 [INFO] Попробуйте проверить пути:" << std::endl;
+            std::cerr << "   • examples/scenes/sponza/sponza.obj" << std::endl;
+            std::cerr << "   • assets/sponza/sponza.obj" << std::endl;
+            std::cerr << "   • models/sponza/sponza.obj" << std::endl;
+            
+            // Попробуем альтернативные пути
+            std::vector<std::string> alternativePaths = {
+                "assets/sponza/sponza.obj",
+                "models/sponza/sponza.obj",
+                "data/sponza/sponza.obj",
+                "../examples/scenes/sponza/sponza.obj",
+                "./sponza.obj"
+            };
+            
+            bool found = false;
+            for (const auto& path : alternativePaths) {
+                std::ifstream altFile(path);
+                if (altFile.good()) {
+                    scene.scenePath = path;
+                    std::cout << "✅ [DEBUG] Найден альтернативный путь: " << path << std::endl;
+                    found = true;
+                    break;
+                }
+            }
+            
+            if (!found) {
+                std::cerr << "❌ [ERROR] Файл Sponza не найден ни по одному из путей" << std::endl;
+                return false;
+            }
+        } else {
+            file.close();
+            std::cout << "✅ [DEBUG] Файл сцены найден: " << scene.scenePath << std::endl;
         }
-        file.close();
-        std::cout << "✅ [DEBUG] Файл сцены найден: " << scene.scenePath << std::endl;
         
         // Для отладки: уменьшаем количество треугольников
         scene.triangleStep = 100;
         
-        // КРИТИЧНО: Включить debug режимы
-        scene.enableDebugOutput = true;     // Подробный вывод загрузки
-        scene.enableBoundsCheck = true;     // Проверка AABB сцены
-        scene.enableMaterialDebug = true;   // Информация о материалах
-        
         std::cout << "🔺 [DEBUG] Загрузка сцены с triangle step = " << scene.triangleStep << std::endl;
         
-        // Загрузка с подробной диагностикой
-        bool sceneLoaded = app_->load_scene(scene);
+        // Загрузка с обработкой ошибок
+        bool sceneLoaded = false;
+        try {
+            sceneLoaded = app_->load_scene(scene);
+        } catch (const std::exception& e) {
+            std::cerr << "❌ [ERROR] Исключение при загрузке сцены: " << e.what() << std::endl;
+            return false;
+        }
+        
         if (!sceneLoaded) {
-            std::cerr << "❌ [ERROR] Не удалось загрузить сцену" << std::endl;
+            std::cerr << "❌ [ERROR] Не удалось загрузить сцену (load_scene вернул false)" << std::endl;
+            std::cerr << "📝 [INFO] Возможные причины:" << std::endl;
+            std::cerr << "   • Файл поврежден или неподдерживаемый формат" << std::endl;
+            std::cerr << "   • Недостаточно памяти" << std::endl;
+            std::cerr << "   • Ошибка в OBJ parser" << std::endl;
             return false;
         }
         
         std::cout << "✅ [DEBUG] Сцена загружена успешно" << std::endl;
         
-        // ДИАГНОСТИКА: Получить информацию о загруженной сцене
-        auto sceneInfo = app_->getSceneInfo();
-        std::cout << "📊 [DEBUG] Статистика сцены:" << std::endl;
-        std::cout << "   • Треугольников загружено: " << sceneInfo.triangleCount << std::endl;
-        std::cout << "   • Материалов: " << sceneInfo.materialCount << std::endl;
-        std::cout << "   • AABB сцены: min(" << sceneInfo.bounds.min.x << ", " << sceneInfo.bounds.min.y << ", " << sceneInfo.bounds.min.z << ")" << std::endl;
-        std::cout << "   • AABB сцены: max(" << sceneInfo.bounds.max.x << ", " << sceneInfo.bounds.max.y << ", " << sceneInfo.bounds.max.z << ")" << std::endl;
+        // ПРОСТАЯ ДИАГНОСТИКА через логи (без несуществующих методов)
+        std::cout << "📊 [DEBUG] Попытка получения базовой информации..." << std::endl;
         
-        // ДИАГНОСТИКА: Проверить и настроить камеру
-        auto camera = app_->getCamera();
-        if (camera) {
-            // Позиционировать камеру в центре Sponza
-            // Sponza обычно имеет размеры примерно (-12, -1, -5) до (12, 20, 5)
-            auto cameraPos = SpectraForge::Math::Vector3(0.0f, 5.0f, 10.0f);  // Смотрим в центр
-            auto lookAt = SpectraForge::Math::Vector3(0.0f, 5.0f, 0.0f);      // Центр сцены
-            auto up = SpectraForge::Math::Vector3(0.0f, 1.0f, 0.0f);
-            
-            camera->setPosition(cameraPos);
-            camera->lookAt(lookAt, up);
-            
-            std::cout << "📹 [DEBUG] Камера установлена:" << std::endl;
-            std::cout << "   • Позиция: (" << cameraPos.x << ", " << cameraPos.y << ", " << cameraPos.z << ")" << std::endl;
-            std::cout << "   • Направление: (" << lookAt.x << ", " << lookAt.y << ", " << lookAt.z << ")" << std::endl;
-            std::cout << "   • FOV: " << camera->getFOV() << "°" << std::endl;
-            std::cout << "   • Near: " << camera->getNear() << ", Far: " << camera->getFar() << std::endl;
-        }
-        
-        // КРИТИЧНО: Включить debug режимы в рендерере
-        auto renderer = app_->getRenderer();
-        if (renderer) {
-            // Включить различные debug режимы
-            renderer->setDebugMode(1);              // SDF visualization
-            renderer->enableWireframe(false);       // Пока отключим wireframe
-            renderer->enableBackfaceCulling(true);  // Стандартный backface culling
-            renderer->enableDepthTest(true);        // Depth testing
-            renderer->setBackgroundColor(0.1f, 0.2f, 0.3f, 1.0f); // Синий фон для контраста
-            
-            std::cout << "🎨 [DEBUG] Renderer настроен:" << std::endl;
-            std::cout << "   • Debug mode: SDF visualization" << std::endl;
-            std::cout << "   • Background: синий (0.1, 0.2, 0.3)" << std::endl;
-            std::cout << "   • Backface culling: включен" << std::endl;
-        }
+        // ИСПРАВЛЕНО: НЕ используем несуществующие методы
+        // Базовая информация через существующие каналы
+        std::cout << "   • Файл: " << scene.scenePath << std::endl;
+        std::cout << "   • Triangle step: " << scene.triangleStep << std::endl;
+        std::cout << "   • Debug mode: " << (cfg.debug ? "включен" : "отключен") << std::endl;
         
         SAFE_PRINT_LINE("");
-        SAFE_PRINT_LINE("✅ Debug инициализация завершена!");
+        SAFE_PRINT_LINE("✅ Инициализация завершена!");
         SAFE_PRINT_LINE("");
-        SAFE_PRINT_LINE("🔍 Debug режимы:");
-        SAFE_PRINT_LINE("   1 - SDF visualization (красный = внутри треугольника)");
-        SAFE_PRINT_LINE("   2 - Barycentric coordinates");
-        SAFE_PRINT_LINE("   0 - Нормальный рендеринг");
+        SAFE_PRINT_LINE("🔍 Простая диагностика:");
+        SAFE_PRINT_LINE("   • Файл сцены загружен");
+        SAFE_PRINT_LINE("   • Engine инициализирован");
+        SAFE_PRINT_LINE("   • Готов к рендерингу");
+        SAFE_PRINT_LINE("");
+        SAFE_PRINT_LINE("📋 Что проверить:");
+        SAFE_PRINT_LINE("   1. Если видите монотонный цвет - возможно камера неправильно позиционирована");
+        SAFE_PRINT_LINE("   2. Если экран черный - возможно проблема с lighting");
+        SAFE_PRINT_LINE("   3. Если синий/серый - возможно background color перезаписывает геометрию");
         SAFE_PRINT_LINE("");
         SAFE_PRINT_LINE("Управление:");
-        SAFE_PRINT_LINE("   WASD - движение камеры");
-        SAFE_PRINT_LINE("   Мышь - поворот камеры");
-        SAFE_PRINT_LINE("   1,2,0 - переключение debug режимов");
-        SAFE_PRINT_LINE("   R - сброс камеры");
+        SAFE_PRINT_LINE("   WASD - движение камеры (если реализовано в Engine)");
+        SAFE_PRINT_LINE("   Мышь - поворот камеры (если реализовано)");
         SAFE_PRINT_LINE("   ESC - выход");
         SAFE_PRINT_LINE("");
         
@@ -145,10 +149,10 @@ public:
         uint32_t frameCount = 0;
         float totalTime = 0.0f;
         
-        constexpr float TARGET_FPS = 30.0f;  // Понижаем для debug
+        constexpr float TARGET_FPS = 30.0f;  // Понижаем для стабильности
         constexpr float FRAME_TIME_MS = 1000.0f / TARGET_FPS;
         
-        std::cout << "🎮 [DEBUG] Запуск debug render loop (FPS target: " << TARGET_FPS << ")" << std::endl;
+        std::cout << "🎮 [DEBUG] Запуск render loop (FPS target: " << TARGET_FPS << ")" << std::endl;
         
         while (!app_->should_close()) {
             auto frameStart = std::chrono::high_resolution_clock::now();
@@ -156,16 +160,21 @@ public:
             deltaTime_ = std::chrono::duration<float>(currentTime - lastTime).count();
             lastTime = currentTime;
             
-            // Debug input handling
-            handleDebugInput();
+            // ПРОСТАЯ input обработка без несуществующих методов
+            handleSimpleInput();
             
             // Обновление и рендеринг
-            app_->update(deltaTime_);
-            app_->render();
+            try {
+                app_->update(deltaTime_);
+                app_->render();
+            } catch (const std::exception& e) {
+                std::cerr << "❌ [ERROR] Ошибка в render loop: " << e.what() << std::endl;
+                break;
+            }
             
             if (app_->should_close()) break;
             
-            // Подробная статистика FPS
+            // Базовая статистика FPS без несуществующих методов
             frameCount++;
             totalTime += deltaTime_;
             
@@ -177,10 +186,9 @@ public:
                 std::cout << "📊 [DEBUG] FPS: " << static_cast<int>(fps_) 
                          << " | Frame time: " << (1000.0f / fps_) << "ms" << std::endl;
                 
-                // Дополнительная статистика рендеринга
-                auto stats = app_->getRenderStats();
-                std::cout << "   • Треугольников после culling: " << stats.visibleTriangles << std::endl;
-                std::cout << "   • Draw calls: " << stats.drawCalls << std::endl;
+                // ПРОСТАЯ диагностика без несуществующих методов
+                std::cout << "   • Delta time: " << deltaTime_ << "s" << std::endl;
+                std::cout << "   • Should close: " << (app_->should_close() ? "true" : "false") << std::endl;
             }
             
             // Ограничение FPS
@@ -198,45 +206,26 @@ public:
         std::cout << "🏁 [DEBUG] Render loop завершён" << std::endl;
     }
     
-    void handleDebugInput() {
-        auto input = app_->getInputManager();
-        if (!input) return;
+    void handleSimpleInput() {
+        // ПРОСТАЯ обработка input без несуществующих API
+        // Все input processing происходит внутри Engine через update()
         
-        // Переключение debug режимов
-        if (input->isKeyPressed('1')) {
-            app_->getRenderer()->setDebugMode(1);  // SDF
-            std::cout << "🔍 [DEBUG] Режим: SDF visualization" << std::endl;
-        }
-        if (input->isKeyPressed('2')) {
-            app_->getRenderer()->setDebugMode(2);  // Barycentric
-            std::cout << "🔍 [DEBUG] Режим: Barycentric coordinates" << std::endl;
-        }
-        if (input->isKeyPressed('0')) {
-            app_->getRenderer()->setDebugMode(0);  // Normal
-            std::cout << "🔍 [DEBUG] Режим: Нормальный рендеринг" << std::endl;
-        }
+        // Можно добавить простые проверки, если Engine предоставляет такую возможность
+        // Но пока используем только существующие методы
         
-        // Сброс камеры
-        if (input->isKeyPressed('R')) {
-            auto camera = app_->getCamera();
-            if (camera) {
-                auto cameraPos = SpectraForge::Math::Vector3(0.0f, 5.0f, 10.0f);
-                auto lookAt = SpectraForge::Math::Vector3(0.0f, 5.0f, 0.0f);
-                auto up = SpectraForge::Math::Vector3(0.0f, 1.0f, 0.0f);
-                
-                camera->setPosition(cameraPos);
-                camera->lookAt(lookAt, up);
-                
-                std::cout << "📹 [DEBUG] Камера сброшена" << std::endl;
-            }
-        }
+        // Примечание: Real input handling должен быть в Engine::update()
+        // где есть доступ к GLFW window callbacks
     }
     
     void shutdown() {
         SAFE_PRINT_LINE("🔍 [DEBUG] Завершение debug demo...");
         if (app_) {
-            app_->shutdown();
-            app_.reset();
+            try {
+                app_->shutdown();
+                app_.reset();
+            } catch (const std::exception& e) {
+                std::cerr << "❌ [ERROR] Ошибка при завершении: " << e.what() << std::endl;
+            }
         }
         SAFE_PRINT_LINE("✅ [DEBUG] Завершено!");
     }
@@ -252,22 +241,37 @@ private:
 // ============================================================================
 
 int main() {
+    // Инициализация console system
     SpectraForge::Core::Console::initialize();
     
     DebugDemo demo;
     try {
+        std::cout << "🚀 [MAIN] Запуск debug demo..." << std::endl;
+        
         if (!demo.initialize()) {
             SAFE_ERROR("❌ [ERROR] Ошибка инициализации debug demo");
             return -1;
         }
         
+        std::cout << "🎮 [MAIN] Запуск главного цикла..." << std::endl;
         demo.run();
+        
+        std::cout << "🛑 [MAIN] Завершение..." << std::endl;
         demo.shutdown();
         
     } catch (const std::exception& e) {
         std::cerr << "💥 [CRITICAL] Критическая ошибка: " << e.what() << std::endl;
+        std::cerr << "📋 [INFO] Возможные причины:" << std::endl;
+        std::cerr << "   • Vulkan/OpenGL драйверы не установлены" << std::endl;
+        std::cerr << "   • Недостаточно памяти GPU" << std::endl;
+        std::cerr << "   • Несовместимость GPU с Triangle Splatting" << std::endl;
+        std::cerr << "   • Ошибки в shaders compilation" << std::endl;
+        return -1;
+    } catch (...) {
+        std::cerr << "💥 [CRITICAL] Неизвестная критическая ошибка" << std::endl;
         return -1;
     }
     
+    std::cout << "✅ [MAIN] Программа завершена успешно" << std::endl;
     return 0;
 }
