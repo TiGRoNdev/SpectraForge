@@ -136,22 +136,16 @@ float smoothWindowFunction(float phi, float phiCenter, float sigma) {
         return 0.0; // Degenerate или invalid triangle
     }
     
-    // ИСПРАВЛЕНИЕ: Если точка снаружи треугольника (phi > 0), weight = 0
+    // Если точка снаружи треугольника (phi > 0), weight = 0
     if (phi > 0.0) {
         return 0.0;
     }
     
-    // Нормализуем: phi/phiCenter должно быть в [0, 1]
-    // phi <= 0 (внутри), phiCenter < 0 (самая внутренняя точка)
-    // phi/phiCenter = 1 на границе, phi/phiCenter = 0 в центре
-    float normalized = clamp(phi / phiCenter, 0.0, 1.0);
+    // Нормализация: phi/phiCenter ∈ [0,1], 0 на границе, 1 в центре
+    float ratio = clamp(phi / phiCenter, 0.0, 1.0);
     
-    // ИСПРАВЛЕНИЕ: Инвертируем для правильного поведения
-    // 1 - normalized = 0 на границе, 1 в центре
-    float inverted = 1.0 - normalized;
-    
-    // Применяем сглаживание
-    return pow(inverted, sigma);
+    // Плавное окно по теории: I(p) = ReLU(φ/φ(s))^σ
+    return pow(ratio, sigma);
 }
 
 /**
@@ -220,13 +214,7 @@ void main() {
     uint tileCountClamped = min(tileData.triangleCount, uint(MAX_TRIANGLES_PER_TILE));
     uint loopCount = useTiles ? tileCountClamped : pc.triangleCount;
     
-    // Debug counters
-    uint trianglesProcessed = 0;
-    uint trianglesBehindCamera = 0;
-    uint trianglesBackFacing = 0;
-    uint trianglesOutsideAABB = 0;
-    uint trianglesOutsideSDF = 0;
-    uint trianglesRendered = 0;
+    // Debug counters удалены
     
     // ===== ИСПРАВЛЕННЫЙ TRIANGLE SPLATTING АЛГОРИТМ =====
     for (uint i = 0; i < loopCount; ++i) {
@@ -244,7 +232,6 @@ void main() {
             continue;
         }
         
-        trianglesProcessed++;
         Triangle tri = triangles[triIdx];
         
         // ===== 1. PROJECT TO SCREEN SPACE =====
@@ -258,20 +245,17 @@ void main() {
         
         // Skip if projection failed (behind camera)
         if (v0_screen.x < -1000.0 || v1_screen.x < -1000.0 || v2_screen.x < -1000.0) {
-            trianglesBehindCamera++;
             continue;
         }
         
         // ===== 2. BACKFACE CULLING =====
         if (isBackFacing(v0_screen, v1_screen, v2_screen)) {
-            trianglesBackFacing++;
             continue;
         }
         
         // ===== 3. AABB TEST (early rejection) =====
         vec4 aabb = computeTriangleAABB(v0_screen, v1_screen, v2_screen);
         if (!overlapsWithAABB(pixelPos, aabb)) {
-            trianglesOutsideAABB++;
             continue;
         }
         
@@ -283,7 +267,6 @@ void main() {
         
         // Skip if outside triangle
         if (phi > 0.0) {
-            trianglesOutsideSDF++;
             continue;
         }
         
@@ -310,7 +293,7 @@ void main() {
             continue;
         }
         
-        trianglesRendered++;
+        // Debug counters удалены
         
         // ===== 6. ПРОСТОЕ ОСВЕЩЕНИЕ =====
         vec3 ambient = vec3(0.3);
@@ -339,34 +322,12 @@ void main() {
         }
     }
     
-    // ===== 9. DEBUG VISUALIZATION =====
-    if (pc.debugMode == 1) {
-        // SDF Visualization - показываем статистику
-        float successRatio = (trianglesProcessed > 0) ? float(trianglesRendered) / float(trianglesProcessed) : 0.0;
-        if (successRatio > 0.1) {
-            accumColor = vec4(0.0, 1.0, 0.0, 1.0); // Зеленый - есть рендеринг
-        } else if (trianglesBehindCamera > trianglesProcessed / 2) {
-            accumColor = vec4(1.0, 0.0, 0.0, 1.0); // Красный - behind camera
-        } else if (trianglesBackFacing > trianglesProcessed / 2) {
-            accumColor = vec4(0.0, 0.0, 1.0, 1.0); // Синий - backfacing
-        } else if (trianglesOutsideAABB > trianglesProcessed / 2) {
-            accumColor = vec4(1.0, 1.0, 0.0, 1.0); // Желтый - AABB
-        } else if (trianglesOutsideSDF > trianglesProcessed / 2) {
-            accumColor = vec4(1.0, 0.0, 1.0, 1.0); // Магента - SDF
-        } else {
-            accumColor = vec4(0.5, 0.5, 0.5, 1.0); // Серый - другие проблемы
-        }
-        accumAlpha = 1.0;
-    }
+    // ===== 9. DEBUG VISUALIZATION удалено =====
     
     // ===== 10. BACKGROUND COLOR =====
     if (accumAlpha < 0.001) {
-        // ИСПРАВЛЕНО: Различные цвета фона для диагностики
-        if (trianglesProcessed == 0) {
-            accumColor = vec4(1.0, 0.0, 0.0, 1.0); // Красный - нет треугольников
-        } else {
-            accumColor = vec4(0.05, 0.1, 0.2, 1.0); // Темно-синий - есть треугольники но не рендерятся
-        }
+        // Единый спокойный фон
+        accumColor = vec4(0.05, 0.1, 0.2, 1.0);
     }
     
     // ===== 11. WRITE FINAL COLOR =====
