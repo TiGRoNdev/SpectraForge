@@ -151,6 +151,29 @@ if(BUILD_EXAMPLES)
     endif()
 
     message(STATUS "SpectraForge Example Demo created (Sponza scene with lighting)")
+
+    # Blue Cube minimal demo
+    add_executable(BlueCube_Demo
+        examples/BlueCube_Demo.cpp
+    )
+    target_link_libraries(BlueCube_Demo PRIVATE 
+        SpectraForge_App
+        SpectraForge_Core
+        SpectraForge_Math
+        SpectraForge_Platform
+        SpectraForge_Vulkan
+        SpectraForge
+        FrameOutput
+        glfw
+    )
+
+    if(UNIX AND NOT APPLE)
+        find_package(X11 REQUIRED)
+        target_include_directories(BlueCube_Demo PRIVATE ${X1_INCLUDE_DIR})
+        target_link_libraries(BlueCube_Demo PRIVATE ${X11_LIBRARIES})
+    endif()
+
+    message(STATUS "BlueCube_Demo created (rotating blue cube)")
 endif()
 
 # ============================================================
