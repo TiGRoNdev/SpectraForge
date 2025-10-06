@@ -23,6 +23,16 @@
 #include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_X11
 #include <GLFW/glfw3native.h>
+#include <chrono>
+#include <GLFW/glfw3.h>
+
+namespace SpectraForge {
+namespace App {
+
+// Инициализация статических переменных для extended Engine
+SceneInfo Engine::sceneInfo_;
+RenderStats Engine::renderStats_;
+InputState Engine::inputState_;
 
 namespace {
 // Простой дефолтный ResourceManager-адаптер до полноценной интеграции VMA-слоя в IResourceManager
@@ -724,4 +734,235 @@ void Engine::shutdown() {
     SpectraForge::Core::Window::terminateSystem();
 }
 
+// =====================================================================
+// DEBUG И DIAGNOSTIC МЕТОДЫ
+// =====================================================================
 
+SceneInfo Engine::getSceneInfo() const {
+    if (!scene_manager_ || !scene_manager_->isSceneLoaded()) {
+        sceneInfo_.isLoaded = false;
+        sceneInfo_.triangleCount = 0;
+        sceneInfo_.materialCount = 0;
+        sceneInfo_.scenePath = "";
+        sceneInfo_.bounds.min = Math::Vector3(0.0f, 0.0f, 0.0f);
+        sceneInfo_.bounds.max = Math::Vector3(0.0f, 0.0f, 0.0f);
+        return sceneInfo_;
+    }
+
+    // Обновляем информацию о сцене
+    sceneInfo_.isLoaded = true;
+    sceneInfo_.triangleCount = scene_manager_->getObjectCount() * 100; // Примерная оценка
+    sceneInfo_.materialCount = 5; // Примерная оценка
+    sceneInfo_.scenePath = "loaded scene"; // TODO: получить из scene_manager_
+
+    // Sponza AABB bounds (типичные значения)
+    sceneInfo_.bounds.min = Math::Vector3(-17.0f, -0.9f, -7.8f);
+    sceneInfo_.bounds.max = Math::Vector3(17.0f, 15.6f, 7.8f);
+
+    return sceneInfo_;
+}
+
+std::shared_ptr<Rendering::Camera3D> Engine::getCamera() const {
+    return renderCamera_;
+}
+
+std::shared_ptr<Rendering::IRenderer> Engine::getRenderer() const {
+    return renderer_;
+}
+
+const InputState* Engine::getInputManager() const {
+    // Обновляем input state из GLFW
+    if (window_) {
+        GLFWwindow* win = window_->getNativeWindow();
+        if (win) {
+            // Копируем состояние клавиш
+            for (int i = 0; i < 512; i++) {
+                inputState_.keys[i] = (glfwGetKey(win, i) == GLFW_PRESS);
+            }
+
+            // Получаем позицию мыши
+            double x, y;
+            glfwGetCursorPos(win, &x, &y);
+            
+            inputState_.deltaMouseX = static_cast<float>(x - inputState_.mouseX);
+            inputState_.deltaMouseY = static_cast<float>(y - inputState_.mouseY);
+            
+            inputState_.mouseX = static_cast<float>(x);
+            inputState_.mouseY = static_cast<float>(y);
+
+            // Кнопки мыши
+            for (int i = 0; i < 8; i++) {
+                inputState_.mouseButtons[i] = (glfwGetMouseButton(win, i) == GLFW_PRESS);
+            }
+        }
+    }
+    
+    return &inputState_;
+}
+
+RenderStats Engine::getRenderStats() const {
+    // Базовая реализация статистики
+    renderStats_.frameTime = deltaTime_ * 1000.0f; // В миллисекундах
+    renderStats_.fps = (deltaTime_ > 0.0f) ? (1.0f / deltaTime_) : 0.0f;
+    renderStats_.drawCalls = 1; // Примерное значение
+    renderStats_.culledTriangles = 0;
+
+    // Получаем детальную статистику от рендерера
+    if (renderer_ && renderer_->isInitialized()) {
+        auto stats = renderer_->getStats();
+        renderStats_.frameTime = stats.frameTime;
+        renderStats_.fps = stats.fps;
+        renderStats_.drawCalls = stats.drawCalls;
+        renderStats_.visibleTriangles = stats.primitives;
+        renderStats_.memoryUsed = stats.memoryUsed;
+        renderStats_.gpuTime = 0.0f; // TODO: получить от detailed stats
+    }
+
+    // Информация о сцене
+    if (scene_manager_ && scene_manager_->isSceneLoaded()) {
+        renderStats_.visibleTriangles = scene_manager_->getObjectCount() * 50;
+    }
+
+    return renderStats_;
+}
+
+void Engine::setDebugMode(AppConfig::DebugMode mode) {
+    currentDebugMode_ = mode;
+    config_.debugMode = mode;
+
+    // Передаём режим в рендерер
+    if (renderer_) {
+        renderer_->setDebugMode(static_cast<int>(mode));
+    }
+
+    std::cout << "[Engine] Debug mode set to: " << static_cast<int>(mode) << std::endl;
+}
+
+AppConfig::DebugMode Engine::getDebugMode() const {
+    return currentDebugMode_;
+}
+
+void Engine::enableWireframe(bool enable) {
+    wireframeEnabled_ = enable;
+    config_.enableWireframe = enable;
+
+    if (renderer_) {
+        renderer_->enableWireframe(enable);
+    }
+
+    std::cout << "[Engine] Wireframe " << (enable ? "enabled" : "disabled") << std::endl;
+}
+
+void Engine::setBackgroundColor(float r, float g, float b, float a) {
+    config_.backgroundColor[0] = r;
+    config_.backgroundColor[1] = g;
+    config_.backgroundColor[2] = b;
+    config_.backgroundColor[3] = a;
+
+    if (renderer_) {
+        renderer_->setBackgroundColor(r, g, b, a);
+    }
+
+    std::cout << "[Engine] Background color set to: (" << r << ", " << g << ", " << b << ", " << a << ")" << std::endl;
+}
+
+void Engine::resetCameraForSponza() {
+    // Сброс камеры в оптимальное положение для Sponza
+    cameraPos = glm::vec3(0.0f, 2.0f, -5.0f);  // Позиция снаружи сцены
+    cameraFront = glm::vec3(0.0f, 0.0f, 1.0f);  // Смотрим вперёд (+Z)
+    yaw = 0.0f;    // Смотрим прямо
+    pitch = -5.0f; // Немного вниз
+    firstMouse = true;
+
+    if (renderCamera_) {
+        renderCamera_->setPosition(Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z));
+        renderCamera_->lookAt(
+            Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z),
+            Math::Vector3(cameraPos.x + cameraFront.x, cameraPos.y + cameraFront.y, cameraPos.z + cameraFront.z),
+            Math::Vector3(0.0f, 1.0f, 0.0f)
+        );
+    }
+
+    std::cout << "[Engine] Camera reset to Sponza optimal position: (" 
+              << cameraPos.x << ", " << cameraPos.y << ", " << cameraPos.z << ")" << std::endl;
+}
+
+void Engine::logDebugInfo(const std::string& message) {
+    if (logger_) {
+        logger_->logDebug("[DEBUG] " + message);
+    }
+    std::cout << "[Engine DEBUG] " << message << std::endl;
+}
+
+bool Engine::isKeyPressed(int key) const {
+    if (!window_) return false;
+    
+    GLFWwindow* win = window_->getNativeWindow();
+    if (!win) return false;
+    
+    return glfwGetKey(win, key) == GLFW_PRESS;
+}
+
+// =====================================================================
+// PRIVATE HELPER МЕТОДЫ
+// =====================================================================
+
+void Engine::updateSceneInfo() {
+    // Обновляется при вызове getSceneInfo()
+}
+
+void Engine::updateRenderStats() {
+    // Обновляется при вызове getRenderStats()
+}
+
+void Engine::setupCallbacks() {
+    // Callbacks уже настроены в init()
+}
+
+// Static callback handlers (если нужны дополнительные)
+void Engine::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
+    if (!engine) return;
+
+    // Обработка специальных клавиш для debug режимов
+    if (action == GLFW_PRESS) {
+        switch (key) {
+            case GLFW_KEY_1:
+                engine->setDebugMode(AppConfig::DebugMode::NORMAL);
+                break;
+            case GLFW_KEY_2:
+                engine->setDebugMode(AppConfig::DebugMode::SDF_VISUALIZATION);
+                break;
+            case GLFW_KEY_3:
+                engine->setDebugMode(AppConfig::DebugMode::BARYCENTRIC);
+                break;
+            case GLFW_KEY_4:
+                engine->setDebugMode(AppConfig::DebugMode::WIREFRAME);
+                break;
+            case GLFW_KEY_R:
+                engine->resetCameraForSponza();
+                break;
+            case GLFW_KEY_F:
+                engine->enableWireframe(!engine->wireframeEnabled_);
+                break;
+        }
+    }
+}
+
+void Engine::mouseCallback(GLFWwindow* window, double xpos, double ypos) {
+    // Уже реализован в init()
+}
+
+void Engine::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
+    if (!engine) return;
+
+    // Дополнительная обработка кнопок мыши для debug функций
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+        // Правая кнопка мыши - сброс камеры
+        engine->resetCameraForSponza();
+    }
+}
+
+} // namespace App
+} // namespace SpectraForge

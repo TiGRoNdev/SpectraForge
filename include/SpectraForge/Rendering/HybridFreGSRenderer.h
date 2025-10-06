@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <functional>
+#include <glm/glm.hpp>
 #include <memory>
 #include <string>
 #include <vulkan/vulkan.hpp>
@@ -89,6 +91,94 @@ class HybridFreGSRenderer final : public IRenderer {
      */
     void setCamera(Camera3D* camera) { camera_ = camera; }
 
+    // НОВЫЕ DEBUG API МЕТОДЫ (реализуют расширенный IRenderer интерфейс):
+    
+    /**
+     * @brief Установить режим отладки
+     * @param mode 0=normal, 1=SDF, 2=barycentric, 3=depth, 4=wireframe
+     */
+     void setDebugMode(int mode) override;
+    
+     /**
+      * @brief Получить текущий режим отладки
+      */
+     int getDebugMode() const override;
+     
+     /**
+      * @brief Включить/выключить wireframe режим
+      */
+     void enableWireframe(bool enable) override;
+     
+     /**
+      * @brief Включить/выключить backface culling
+      */
+     void enableBackfaceCulling(bool enable) override;
+     
+     /**
+      * @brief Включить/выключить depth test
+      */
+     void enableDepthTest(bool enable) override;
+     
+     /**
+      * @brief Установить цвет фона
+      */
+     void setBackgroundColor(float r, float g, float b, float a = 1.0f) override;
+     
+     /**
+      * @brief Получить цвет фона
+      */
+     glm::vec4 getBackgroundColor() const override;
+     
+     /**
+      * @brief Установить viewport
+      */
+     void setViewport(int x, int y, int width, int height) override;
+     
+     /**
+      * @brief Включить/выключить alpha blending
+      */
+     void enableAlphaBlending(bool enable) override;
+     
+     /**
+      * @brief Установить triangle budget для performance tuning
+      */
+     void setTriangleBudget(uint32_t maxTriangles) override;
+     
+     /**
+      * @brief Включить/выключить early termination в alpha blending
+      */
+     void enableEarlyTermination(bool enable) override;
+     
+     /**
+      * @brief Получить подробную статистику производительности
+      */
+     DetailedRenderingStats getDetailedStats() const override;
+     
+     /**
+      * @brief Сохранить скриншот в файл
+      */
+     bool saveScreenshot(const std::string& filename) const override;
+     
+     /**
+      * @brief Получить данные framebuffer для анализа
+      */
+     std::vector<uint8_t> getFramebufferData() const override;
+     
+     /**
+      * @brief Установить debug callback для логирования
+      */
+     void setDebugCallback(std::function<void(const std::string&)> callback) override;
+     
+     /**
+      * @brief Принудительно обновить все uniform буферы
+      */
+     void flushUniforms() override;
+     
+     /**
+      * @brief Получить информацию о GPU
+      */
+     GPUInfo getGPUInfo() const override;
+
   private:
     bool initialized_ = false;
     RenderingStats stats_{};
@@ -115,6 +205,17 @@ class HybridFreGSRenderer final : public IRenderer {
     vk::Format swapchainFormat_ = vk::Format::eB8G8R8A8Unorm;
     vk::Extent2D swapchainExtent_{1920, 1080};
     vk::RenderPass renderPass_{};
+
+    // Debug state
+    int currentDebugMode_ = 0;
+    glm::vec4 backgroundColor_{0.1f, 0.2f, 0.3f, 1.0f};
+    bool wireframeEnabled_ = false;
+    bool depthTestEnabled_ = true;
+    bool backfaceCullingEnabled_ = true;
+    bool alphaBlendingEnabled_ = true;
+    uint32_t triangleBudget_ = 100000;
+    bool earlyTerminationEnabled_ = true;
+    vk::Viewport currentViewport_;
     
     // Command buffers
     std::vector<vk::CommandBuffer> commandBuffers_{};
@@ -158,6 +259,16 @@ class HybridFreGSRenderer final : public IRenderer {
     bool initializeTriangleSplatting();
     void destroySwapchainAndViews();
     void recordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
+    // Debug callback
+    std::function<void(const std::string&)> debugCallback_;
+    
+    // Debug logging helper
+    void debugLog(const std::string& message) const {
+        if (debugCallback_) {
+            debugCallback_(message);
+        }
+        std::cout << "[HybridFreGSRenderer DEBUG] " << message << std::endl;
+    }
 };
 
 }  // namespace Rendering

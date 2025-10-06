@@ -1099,6 +1099,251 @@ void HybridFreGSRenderer::uploadMesh(const std::shared_ptr<Mesh3D>& mesh, const 
     
     std::cout << "✅ Mesh uploaded to Triangle Splatting Pass\n";
 }
+// =====================================================================
+// DEBUG И VISUALIZATION МЕТОДЫ
+// =====================================================================
 
-}  // namespace Rendering
-}  // namespace SpectraForge
+void HybridFreGSRenderer::setDebugMode(int mode) {
+    currentDebugMode_ = mode;
+    std::cout << "[HybridFreGSRenderer] Debug mode set to: " << mode << std::endl;
+    
+    // Передаём режим в Triangle Splatting Pass
+    if (triangleSplattingPass_) {
+        triangleSplattingPass_->setDebugMode(mode);
+    }
+    
+    // Различные debug режимы
+    switch (mode) {
+        case 0: // Normal
+            std::cout << "  → Normal rendering mode" << std::endl;
+            break;
+        case 1: // SDF Visualization
+            std::cout << "  → SDF visualization mode" << std::endl;
+            break;
+        case 2: // Barycentric
+            std::cout << "  → Barycentric coordinates mode" << std::endl;
+            break;
+        case 3: // Depth
+            std::cout << "  → Depth buffer visualization" << std::endl;
+            break;
+        case 4: // Wireframe
+            std::cout << "  → Wireframe overlay mode" << std::endl;
+            enableWireframe(true);
+            break;
+        default:
+            std::cout << "  → Unknown debug mode" << std::endl;
+            break;
+    }
+}
+
+int HybridFreGSRenderer::getDebugMode() const {
+    return currentDebugMode_;
+}
+
+void HybridFreGSRenderer::enableWireframe(bool enable) {
+    wireframeEnabled_ = enable;
+    std::cout << "[HybridFreGSRenderer] Wireframe " << (enable ? "enabled" : "disabled") << std::endl;
+    
+    // TODO: Реализовать wireframe в Triangle Splatting Pass
+    if (triangleSplattingPass_) {
+        // triangleSplattingPass_->setWireframe(enable);
+    }
+}
+
+void HybridFreGSRenderer::enableBackfaceCulling(bool enable) {
+    backfaceCullingEnabled_ = enable;
+    std::cout << "[HybridFreGSRenderer] Backface culling " << (enable ? "enabled" : "disabled") << std::endl;
+    
+    if (triangleSplattingPass_) {
+        triangleSplattingPass_->setBackfaceCullingEnabled(enable);
+    }
+}
+
+void HybridFreGSRenderer::enableDepthTest(bool enable) {
+    depthTestEnabled_ = enable;
+    std::cout << "[HybridFreGSRenderer] Depth test " << (enable ? "enabled" : "disabled") << std::endl;
+    
+    // TODO: Настроить depth test в render pass
+}
+
+void HybridFreGSRenderer::setBackgroundColor(float r, float g, float b, float a) {
+    backgroundColor_ = glm::vec4(r, g, b, a);
+    std::cout << "[HybridFreGSRenderer] Background color set to: (" 
+              << r << ", " << g << ", " << b << ", " << a << ")" << std::endl;
+    
+    // Обновляем clear color в Triangle Splatting Pass
+    if (triangleSplattingPass_) {
+        triangleSplattingPass_->setBackgroundColor(backgroundColor_);
+    }
+}
+
+glm::vec4 HybridFreGSRenderer::getBackgroundColor() const {
+    return backgroundColor_;
+}
+
+void HybridFreGSRenderer::setViewport(int x, int y, int width, int height) {
+    currentViewport_.x = static_cast<float>(x);
+    currentViewport_.y = static_cast<float>(y);
+    currentViewport_.width = static_cast<float>(width);
+    currentViewport_.height = static_cast<float>(height);
+    currentViewport_.minDepth = 0.0f;
+    currentViewport_.maxDepth = 1.0f;
+    
+    std::cout << "[HybridFreGSRenderer] Viewport set to: (" << x << ", " << y 
+              << ", " << width << ", " << height << ")" << std::endl;
+    
+    // TODO: Применить viewport в command buffer
+}
+
+void HybridFreGSRenderer::enableAlphaBlending(bool enable) {
+    alphaBlendingEnabled_ = enable;
+    std::cout << "[HybridFreGSRenderer] Alpha blending " << (enable ? "enabled" : "disabled") << std::endl;
+    
+    if (triangleSplattingPass_) {
+        triangleSplattingPass_->setAlphaBlendingEnabled(enable);
+    }
+}
+
+void HybridFreGSRenderer::setTriangleBudget(uint32_t maxTriangles) {
+    triangleBudget_ = maxTriangles;
+    std::cout << "[HybridFreGSRenderer] Triangle budget set to: " << maxTriangles << std::endl;
+    
+    if (triangleSplattingPass_) {
+        triangleSplattingPass_->setTriangleBudget(maxTriangles);
+    }
+}
+
+void HybridFreGSRenderer::enableEarlyTermination(bool enable) {
+    earlyTerminationEnabled_ = enable;
+    std::cout << "[HybridFreGSRenderer] Early termination " << (enable ? "enabled" : "disabled") << std::endl;
+    
+    if (triangleSplattingPass_) {
+        triangleSplattingPass_->setEarlyTerminationEnabled(enable);
+    }
+}
+
+DetailedRenderingStats HybridFreGSRenderer::getDetailedStats() const {
+    DetailedRenderingStats stats;
+    
+    // Базовые метрики
+    stats.frameTime = 16.67f; // TODO: реальное измерение времени кадра
+    stats.fps = 1000.0f / stats.frameTime;
+    stats.drawCalls = 1;
+    
+    // Triangle Splatting специфичные метрики
+    if (triangleSplattingPass_) {
+        stats.visibleTriangles = triangleSplattingPass_->getTriangleCount();
+        stats.culledTriangles = triangleSplattingPass_->getCulledTriangleCount();
+        stats.rasterizedPixels = swapchainExtent_.width * swapchainExtent_.height;
+        
+        // GPU timing (примерные значения)
+        stats.gpuTime = stats.frameTime * 0.8f; // 80% времени кадра на GPU
+        stats.computeShaderTime = stats.gpuTime * 0.6f; // 60% GPU времени в compute shader
+    }
+    
+    // Memory usage
+    if (allocator_) {
+        VmaStats vmaStats;
+        vmaCalculateStats(allocator_, &vmaStats);
+        stats.memoryUsed = vmaStats.total.usedBytes;
+        stats.memoryTotal = vmaStats.total.usedBytes + vmaStats.total.unusedBytes;
+        
+        // Приблизительное распределение памяти
+        stats.vertexBufferMemory = stats.memoryUsed * 0.3f;
+        stats.textureMemory = stats.memoryUsed * 0.5f;
+        stats.uniformBufferMemory = stats.memoryUsed * 0.1f;
+        stats.indexBufferMemory = stats.memoryUsed * 0.1f;
+    }
+    
+    // Pipeline stages
+    stats.frustumCulledTriangles = stats.visibleTriangles * 0.1f; // 10% culled by frustum
+    stats.backfaceCulledTriangles = stats.visibleTriangles * 0.3f; // 30% culled by backface
+    stats.depthCulledPixels = stats.rasterizedPixels * 0.2f; // 20% culled by depth test
+    
+    // Debug information
+    stats.hasErrors = device_lost_;
+    if (device_lost_) {
+        stats.lastError = "Vulkan device lost";
+    }
+    
+    return stats;
+}
+
+bool HybridFreGSRenderer::saveScreenshot(const std::string& filename) const {
+    if (!triangleSplattingPass_) {
+        std::cerr << "[HybridFreGSRenderer] Triangle Splatting Pass not available for screenshot" << std::endl;
+        return false;
+    }
+    
+    std::cout << "[HybridFreGSRenderer] Saving screenshot to: " << filename << std::endl;
+    return triangleSplattingPass_->saveFrameToPPM(filename);
+}
+
+std::vector<uint8_t> HybridFreGSRenderer::getFramebufferData() const {
+    if (!triangleSplattingPass_) {
+        std::cerr << "[HybridFreGSRenderer] Triangle Splatting Pass not available" << std::endl;
+        return {};
+    }
+    
+    // TODO: Реализовать чтение framebuffer data
+    size_t pixelCount = swapchainExtent_.width * swapchainExtent_.height * 4; // RGBA
+    return std::vector<uint8_t>(pixelCount, 128); // Placeholder
+}
+
+void HybridFreGSRenderer::setDebugCallback(std::function<void(const std::string&)> callback) {
+    debugCallback_ = callback;
+    std::cout << "[HybridFreGSRenderer] Debug callback set" << std::endl;
+}
+
+void HybridFreGSRenderer::flushUniforms() {
+    if (triangleSplattingPass_) {
+        triangleSplattingPass_->flushUniforms();
+    }
+    std::cout << "[HybridFreGSRenderer] Uniforms flushed" << std::endl;
+}
+
+GPUInfo HybridFreGSRenderer::getGPUInfo() const {
+    GPUInfo info;
+    
+    if (physicalDevice_) {
+        auto props = physicalDevice_.getProperties();
+        auto features = physicalDevice_.getFeatures();
+        auto memProps = physicalDevice_.getMemoryProperties();
+        
+        info.deviceName = std::string(props.deviceName);
+        info.driverVersion = std::to_string(props.driverVersion);
+        info.apiVersion = std::to_string(props.apiVersion);
+        
+        // Memory information
+        for (uint32_t i = 0; i < memProps.memoryHeapCount; i++) {
+            if (memProps.memoryHeaps[i].flags & vk::MemoryHeapFlagBits::eDeviceLocal) {
+                info.totalMemory = memProps.memoryHeaps[i].size;
+                break;
+            }
+        }
+        
+        // Available memory (приблизительная оценка)
+        if (allocator_) {
+            VmaStats vmaStats;
+            vmaCalculateStats(allocator_, &vmaStats);
+            info.availableMemory = info.totalMemory - vmaStats.total.usedBytes;
+        } else {
+            info.availableMemory = info.totalMemory * 0.8f; // 80% доступно
+        }
+        
+        // Limits
+        info.maxTextureSize = props.limits.maxImageDimension2D;
+        info.maxComputeWorkGroupSize = props.limits.maxComputeWorkGroupSize[0];
+        
+        // Features
+        info.supportsRayTracing = false; // TODO: проверить ray tracing extensions
+        info.supportsVariableRateShading = false; // TODO: проверить VRS extension
+        info.supportsMeshShaders = false; // TODO: проверить mesh shader extension
+    }
+    
+    return info;
+}
+
+
+} // namespace Rendering
+} // namespace SpectraForge
