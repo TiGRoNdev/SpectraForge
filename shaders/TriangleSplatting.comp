@@ -158,23 +158,24 @@ float smoothWindowFunction(float phi, float phiCenter, float sigma) {
  * @brief Project 3D point to screen space
  */
 vec2 projectToScreen(vec3 worldPos) {
-    vec4 clipPos = pc.viewProj * vec4(worldPos, 1.0);
+    // ВРЕМЕННО: Упрощенная проекция без View-Proj matrix
+    // Предполагаем что треугольники уже в camera space
     
-    // Behind camera
-    if (clipPos.w <= 0.0001) {
-        return vec2(-10000.0, -10000.0);
+    // Простая perspective projection
+    if (worldPos.z <= 0.1) {
+        return vec2(-10000.0, -10000.0); // Behind camera
     }
     
-    // Perspective divide
-    vec3 ndc = clipPos.xyz / clipPos.w; // [-1, 1]
+    // Simple projection: x' = x/z, y' = y/z  
+    vec2 ndc = worldPos.xy / worldPos.z;
     
-    // Frustum culling
-    if (abs(ndc.x) > 1.0 || abs(ndc.y) > 1.0 || abs(ndc.z) > 1.0) {
-        return vec2(-10000.0, -10000.0);
-    }
+    // Scale to reasonable screen coordinates
+    ndc *= 100.0; // Масштабируем для видимости
     
-    // NDC → screen space [0, width/height]
-    vec2 screenPos = (ndc.xy * 0.5 + 0.5) * vec2(pc.outputWidth, pc.outputHeight);
+    // Center on screen
+    vec2 screenCenter = vec2(pc.outputWidth, pc.outputHeight) * 0.5;
+    vec2 screenPos = screenCenter + ndc;
+    
     return screenPos;
 }
 
