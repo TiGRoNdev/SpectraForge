@@ -29,10 +29,7 @@
 namespace SpectraForge {
 namespace App {
 
-// Инициализация статических переменных для extended Engine
-SceneInfo Engine::sceneInfo_;
-RenderStats Engine::renderStats_;
-InputState Engine::inputState_;
+// Удалено: sceneInfo_, renderStats_, inputState_ являются нестатическими членами
 
 namespace {
 // Простой дефолтный ResourceManager-адаптер до полноценной интеграции VMA-слоя в IResourceManager

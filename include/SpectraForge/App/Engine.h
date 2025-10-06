@@ -61,10 +61,10 @@ public:
      * @brief Упрощённый конструктор: движок сам выбирает рендерер и менеджер ресурсов
      * по умолчанию (HybridFreGS + оптимальный ResourceManager)
      */
-    explicit Engine(const AppConfig &config, std::shared_ptr<SpectraForge::Core::Logger> logger);
+    explicit Engine(const AppConfig &config, std::shared_ptr<SpectraForge::Core::ILogger> logger);
     
     explicit Engine(const AppConfig &config,
-                   std::shared_ptr<SpectraForge::Core::Logger> logger,
+                   std::shared_ptr<SpectraForge::Core::ILogger> logger,
                    std::shared_ptr<Rendering::IRenderer> renderer,
                    std::shared_ptr<Rendering::IResourceManager> resource_manager);
     
@@ -143,117 +143,49 @@ public:
      * @brief Проверка нажатия клавиши
      */
     bool isKeyPressed(int key) const;
-    // Debug и diagnostic методы
-    
-    /**
-     * @brief Получить информацию о загруженной сцене
-     */
-     SceneInfo getSceneInfo() const;
-    
-     /**
-      * @brief Получить камеру для управления
-      */
-     std::shared_ptr<Rendering::Camera3D> getCamera() const;
-     
-     /**
-      * @brief Получить рендерер
-      */
-     std::shared_ptr<Rendering::IRenderer> getRenderer() const;
-     
-     /**
-      * @brief Получить менеджер ввода (простая реализация)
-      */
-     const InputState* getInputManager() const;
-     
-     /**
-      * @brief Получить статистику рендеринга
-      */
-     RenderStats getRenderStats() const;
-     
-     /**
-      * @brief Установить режим отладки
-      */
-     void setDebugMode(AppConfig::DebugMode mode);
-     
-     /**
-      * @brief Получить текущий режим отладки
-      */
-     AppConfig::DebugMode getDebugMode() const;
-     
-     /**
-      * @brief Включить/выключить wireframe режим
-      */
-     void enableWireframe(bool enable);
-     
-     /**
-      * @brief Установить цвет фона
-      */
-     void setBackgroundColor(float r, float g, float b, float a = 1.0f);
-     
-     /**
-      * @brief Сбросить камеру в исходное положение для Sponza
-      */
-     void resetCameraForSponza();
-     
-     /**
-      * @brief Логирование debug информации
-      */
-     void logDebugInfo(const std::string& message);
-     
-     /**
-      * @brief Проверка нажатия клавиши
-      */
-     bool isKeyPressed(int key) const;
+    // Debug и diagnostic методы (уже объявлены выше)
  
  private:
-     
-     // Input management
-     mutable InputState inputState_;
-     
-     // Scene и render state
-     mutable SceneInfo sceneInfo_;
-     mutable RenderStats renderStats_;
-     
-     // Debug state
-     AppConfig::DebugMode currentDebugMode_ = AppConfig::DebugMode::NORMAL;
-     bool wireframeEnabled_ = false;
-     
-     // Timing
-     std::chrono::steady_clock::time_point lastFrameTime_;
-     float deltaTime_ = 0.0f;
-     uint32_t frameCount_ = 0;
-     
-     // Private helper методы
-     void updateInput(float deltaTime);
-     void updateCamera(float deltaTime);
-     void handleKeyboard(float deltaTime);
-     void handleMouse();
-     void updateSceneInfo();
-     void updateRenderStats();
-     void setupCallbacks();
-     
-     // GLFW callback обработчики
-     static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-     static void mouseCallback(GLFWwindow* window, double xpos, double ypos);
-     static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+    // Input management
+    mutable InputState inputState_;
+    
+    // Scene и render state
+    mutable SceneInfo sceneInfo_;
+    mutable RenderStats renderStats_;
+    
+    // Debug state
+    AppConfig::DebugMode currentDebugMode_ = AppConfig::DebugMode::NORMAL;
+    bool wireframeEnabled_ = false;
+    
+    // Timing
+    std::chrono::steady_clock::time_point lastFrameTime_;
+    float deltaTime_ = 0.0f;
+    uint32_t frameCount_ = 0;
+    
+    // Private helper методы
+    void updateInput(float deltaTime);
+    void updateCamera(float deltaTime);
+    void handleKeyboard(float deltaTime);
+    void handleMouse();
+    void updateSceneInfo();
+    void updateRenderStats();
+    void setupCallbacks();
+    
+    // GLFW callback обработчики
+    static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void mouseCallback(GLFWwindow* window, double xpos, double ypos);
+    static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 
     AppConfig config_;
     std::unique_ptr<SpectraForge::Core::Window> window_;
     std::unique_ptr<SpectraForge::Core::EngineCore> core_;
-    std::shared_ptr<SpectraForge::Core::Logger> logger_;
+    std::shared_ptr<SpectraForge::Core::ILogger> logger_;
     std::shared_ptr<Rendering::IRenderer> renderer_;
     std::shared_ptr<Rendering::IResourceManager> resource_manager_;
     std::unique_ptr<Vulkan::SceneManager> scene_manager_;
     
     // ДОБАВЛЕНО: Camera для рендеринга
     std::shared_ptr<Rendering::Camera3D> renderCamera_;
-    
-    // ДОБАВЛЕНО: Input management
-    mutable InputState inputState_;
-    
-    // ДОБАВЛЕНО: Scene и render state
-    mutable SceneInfo sceneInfo_;
-    mutable RenderStats renderStats_;
     
     // Camera state - ВНУТРИ Sponza для корректного рендеринга
     glm::vec3 cameraPos{0.0f, 2.0f, -5.0f}; // Камера снаружи сцены, смотрит вперед
@@ -264,28 +196,7 @@ public:
     double lastMouseY = 0.0;
     bool firstMouse = true;
     
-    // ДОБАВЛЕНО: Debug state
-    AppConfig::DebugMode currentDebugMode_ = AppConfig::DebugMode::NORMAL;
-    bool wireframeEnabled_ = false;
-    
-    // ДОБАВЛЕНО: Timing
-    std::chrono::steady_clock::time_point lastFrameTime_;
-    float deltaTime_ = 0.0f;
-    uint32_t frameCount_ = 0;
-    
-    // ДОБАВЛЕНО: Private helper методы
-    void updateInput(float deltaTime);
-    void updateCamera(float deltaTime);
-    void handleKeyboard(float deltaTime);
-    void handleMouse();
-    void updateSceneInfo();
-    void updateRenderStats();
-    void setupCallbacks();
-    
-    // ДОБАВЛЕНО: GLFW callback обработчики
-    static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-    static void mouseCallback(GLFWwindow* window, double xpos, double ypos);
-    static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+    // (Повторяющиеся блоки удалены)
 };
 
 } // namespace App

@@ -14,6 +14,7 @@
 #include <thread>
 #include <fstream>
 #include "SpectraForge/App/Engine.h"
+#include <GLFW/glfw3.h>
 #include "SpectraForge/App/Config.h"
 #include "SpectraForge/Core/Console.h"
 #include "SpectraForge/Core/Logger.h"

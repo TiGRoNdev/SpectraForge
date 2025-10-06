@@ -190,6 +190,26 @@ public:
      */
     void saveFrameToPPM(const std::string& filename);
 
+    // =========================================================================
+    // Совместимые синонимы API для интеграции с HybridFreGSRenderer
+    // =========================================================================
+public:
+    inline void setBackfaceCullingEnabled(bool enable) { setFrustumCullingEnabled(enable); }
+    inline void setBackgroundColor(const glm::vec4& /*color*/) { /* no-op, управляется в renderer */ }
+    inline void setAlphaBlendingEnabled(bool /*enable*/) { /* no-op until implemented */ }
+    inline void setTriangleBudget(uint32_t /*maxTriangles*/) { /* no-op until implemented */ }
+    inline void setEarlyTerminationEnabled(bool /*enable*/) { /* no-op until implemented */ }
+
+    inline uint32_t getCulledTriangleCount() const {
+        const uint32_t visible = getVisibleTriangleCount();
+        return (visible > 0u) ? (visible / 3u) : 0u; // эвристика до появления реального подсчёта
+    }
+
+    inline void flushUniforms() { /* no-op */ }
+
+    // Обёртка под bool не добавляется: базовая сигнатура уже void(std::string const&),
+    // возврат значения обеспечивается на уровне HybridFreGSRenderer через try/catch
+
 private:
     // Configuration
     Config config_;
