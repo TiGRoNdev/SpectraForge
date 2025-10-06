@@ -1063,38 +1063,51 @@ uint32_t TriangleSplattingPass::getVisibleTriangleCount() const {
 }
 
 void TriangleSplattingPass::uploadTriangles(const std::vector<Triangle>& triangles) {
-    // ===== КРИТИЧЕСКАЯ ВАЛИДАЦИЯ =====
+    // ===== КРИТИЧНА: Bounds checking и валидация =====
     if (triangles.empty()) {
-        std::cerr << "[TriangleSplattingPass] ❌ ОШИБКА: Нет треугольников для загрузки!\n";
-        std::cerr << "[TriangleSplattingPass]   Убедитесь, что вызываете uploadTriangles() ПЕРЕД renderFrame()\n";
+        std::cerr << "[TriangleSplattingPass] ERROR: Empty triangle array!" << std::endl;
         triangleCount_ = 0;
         pushConstants_.triangleCount = 0;
         return;
     }
-    
+
     if (triangles.size() > maxTriangles_) {
-        std::cerr << "[TriangleSplattingPass] ⚠️  ВНИМАНИЕ: Слишком много треугольников (" 
-                  << triangles.size() << "), обрезаем до " << maxTriangles_ << "\n";
+        std::cerr << "[TriangleSplattingPass] CRITICAL: Triangle count " << triangles.size()
+                  << " exceeds buffer capacity " << maxTriangles_ << "!" << std::endl;
         triangleCount_ = maxTriangles_;
+        std::cerr << "[TriangleSplattingPass] Using truncated count: " << maxTriangles_ << std::endl;
     } else {
         triangleCount_ = static_cast<uint32_t>(triangles.size());
     }
-    
-    // Логирование успешной загрузки
-    std::cout << "[TriangleSplattingPass] 📦 Загружаем " << triangleCount_ 
-              << " треугольников на GPU...\n";
 
-    // === DEBUG: вывод первых 5 треугольников ===
-    const uint32_t debugCount = std::min<uint32_t>(triangleCount_, 5);
-    for (uint32_t i = 0; i < debugCount; ++i) {
-        const auto& t = triangles[i];
-        std::cout << "  T" << i << ": v0(" << t.v0.x << "," << t.v0.y << "," << t.v0.z << ")  "
-                  << "v1(" << t.v1.x << "," << t.v1.y << "," << t.v1.z << ")  "
-                  << "v2(" << t.v2.x << "," << t.v2.y << "," << t.v2.z << ")  "
-                  << "opacity=" << t.opacity << " sigma=" << t.sigma << "\n";
+    // Validate triangle data
+    uint32_t validTriangles = 0;
+    const size_t limit = std::min(triangles.size(), static_cast<size_t>(maxTriangles_));
+    for (size_t i = 0; i < limit; ++i) {
+        const auto& tri = triangles[i];
+        bool isValid = true;
+        isValid &= std::isfinite(tri.v0.x) && std::isfinite(tri.v0.y) && std::isfinite(tri.v0.z);
+        isValid &= std::isfinite(tri.v1.x) && std::isfinite(tri.v1.y) && std::isfinite(tri.v1.z);
+        isValid &= std::isfinite(tri.v2.x) && std::isfinite(tri.v2.y) && std::isfinite(tri.v2.z);
+        isValid &= std::isfinite(tri.color.r) && std::isfinite(tri.color.g) && std::isfinite(tri.color.b);
+        isValid &= std::isfinite(tri.opacity) && tri.opacity >= 0.0f && tri.opacity <= 1.0f;
+        isValid &= std::isfinite(tri.sigma) && tri.sigma > 0.0f;
+        if (!isValid) {
+            std::cerr << "[TriangleSplattingPass] WARNING: Invalid triangle " << i << " detected and skipped" << std::endl;
+        } else {
+            validTriangles++;
+        }
     }
-    
-    pushConstants_.triangleCount = triangleCount_;
+
+    if (validTriangles == 0) {
+        std::cerr << "[TriangleSplattingPass] CRITICAL: No valid triangles found!" << std::endl;
+        triangleCount_ = 0;
+        pushConstants_.triangleCount = 0;
+        return;
+    }
+
+    std::cout << "[TriangleSplattingPass] Uploading " << validTriangles << " valid triangles to GPU..." << std::endl;
+    pushConstants_.triangleCount = validTriangles;
     
     // Create staging buffer
     vk::BufferCreateInfo stagingBufferInfo;

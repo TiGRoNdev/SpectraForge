@@ -269,6 +269,9 @@ class HybridFreGSRenderer final : public IRenderer {
         }
         std::cout << "[HybridFreGSRenderer DEBUG] " << message << std::endl;
     }
+
+    // Corrected View-Projection for Vulkan (proj * view) with Matrix4 -> glm::mat4 conversion
+    glm::mat4 getCorrectedViewProjMatrix() const;
 };
 
 }  // namespace Rendering

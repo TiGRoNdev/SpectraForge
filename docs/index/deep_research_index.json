@@ -1,0 +1,83 @@
+{
+  "version": "1.0",
+  "source_doc": "docs/SPECTRAFORGE-DEEP-RESEARCH.md",
+  "last_updated": "2025-10-06",
+  "summary": "Полный анализ Triangle Splatting: математика (SDF, smooth window), двухпроходный рендеринг, куллинг, барьеры, защита от ошибок и ожидаемые оптимизации.",
+  "topics": [
+    {
+      "id": "sdf_math_correctness",
+      "title": "SDF и Half-Plane Distance",
+      "summary": "Правильная формула φ(p)=max(L1,L2,L3), где L — расстояние до полуплоскости; внутри φ≤0.",
+      "code_refs": [
+        {"file": "shaders/TriangleSplatting.comp", "symbols": ["halfPlaneDistance", "computeTriangleSDF"]}
+      ],
+      "suggested_search": [
+        "halfPlaneDistance in TriangleSplatting.comp",
+        "computeTriangleSDF GLSL"
+      ]
+    },
+    {
+      "id": "smooth_window_function",
+      "title": "Smooth Window Function",
+      "summary": "I(p)=ReLU(φ/φ(s))^σ, центр s — incenter; φ(s)<0; плавное затухание к границе.",
+      "code_refs": [
+        {"file": "shaders/TriangleSplatting.comp", "symbols": ["computeIncenter", "smoothWindowFunction"]}
+      ]
+    },
+    {
+      "id": "two_pass_rendering",
+      "title": "Двухпроходный рендеринг (Visibility → Shading)",
+      "summary": "Сложность O(N+M×P); списки видимых треугольников на пиксель.",
+      "code_refs": [
+        {"file": "src/rendering/TriangleSplattingPass.cpp", "symbols": ["executeTwoPassRendering", "executeVisibilityPass", "executeShadingPass"]},
+        {"file": "shaders/TriangleVisibility.comp"},
+        {"file": "shaders/TriangleShading.comp"}
+      ]
+    },
+    {
+      "id": "frustum_culling",
+      "title": "Фрустум-куллинг и сортировка по глубине",
+      "summary": "Извлечение плоскостей из VP, тест видимости, сортировка по глубине по центру треугольника.",
+      "code_refs": [
+        {"file": "shaders/FrustumCulling.comp", "symbols": ["extractFrustumPlanes", "isTriangleVisible", "main"]},
+        {"file": "src/rendering/TriangleSplattingPass.cpp", "symbols": ["computeDepthKeys", "sortTrianglesByDepth"]}
+      ]
+    },
+    {
+      "id": "atomic_barriers",
+      "title": "Гонки атомарных счётчиков и барьеры",
+      "summary": "После atomicAdd требуется memoryBarrierBuffer() до/после записи в буферы видимых индексов.",
+      "code_refs": [
+        {"file": "shaders/FrustumCulling.comp", "lines_hint": "atomicAdd(visibleCount, ..); memoryBarrierBuffer(); visibleIndices[...] = idx; memoryBarrierBuffer();"}
+      ]
+    },
+    {
+      "id": "bounds_checking_and_nan",
+      "title": "Bounds checking и NaN/Inf защита",
+      "summary": "Усечение по maxTriangles, проверка валидности вершин/параметров до загрузки на GPU.",
+      "code_refs": [
+        {"file": "src/rendering/TriangleSplattingPass.cpp", "symbols": ["uploadTriangles"]}
+      ]
+    },
+    {
+      "id": "unified_push_constants",
+      "title": "Единые push constants (96 байт)",
+      "summary": "Матрица viewProj + габариты + triangleCount + флаги, единый layout на всех compute-пайплайнах.",
+      "code_refs": [
+        {"file": "include/SpectraForge/rendering/TriangleSplattingPass.h", "symbols": ["UnifiedPushConstants"]},
+        {"file": "src/rendering/TriangleSplattingPass.cpp", "symbols": ["cmd.pushConstants(..., 96, &pc)"]}
+      ]
+    },
+    {
+      "id": "projection_unification",
+      "title": "Унификация проекции (proj*view)",
+      "summary": "Конвертация Matrix4 (row-major) → glm::mat4 (column-major), затем proj*view в одном месте.",
+      "code_refs": [
+        {"file": "include/SpectraForge/Rendering/HybridFreGSRenderer.h", "symbols": ["getCorrectedViewProjMatrix"]},
+        {"file": "src/rendering/HybridFreGSRenderer.cpp", "symbols": ["getCorrectedViewProjMatrix", "setDebugMode", "renderFrame"]},
+        {"file": "shaders/TriangleSplatting.comp", "symbols": ["pc.viewProj", "projectToScreen"]}
+      ]
+    }
+  ]
+}
+

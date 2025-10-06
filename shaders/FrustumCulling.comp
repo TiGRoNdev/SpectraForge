@@ -204,7 +204,16 @@ void main() {
         // Atomically increment visible count and get index
         uint visibleIndex = atomicAdd(visibleCount, 1);
         
-        // Store original triangle index in compacted visible list
-        visibleIndices[visibleIndex] = idx;
+        // Memory barrier to ensure prior atomic is visible before the write
+        memoryBarrierBuffer();
+        
+        // Bounds check: assume visibleIndices capacity >= triangleCount
+        if (visibleIndex < pushConstants.triangleCount) {
+            // Store original triangle index in compacted visible list
+            visibleIndices[visibleIndex] = idx;
+        }
+
+        // Barrier after write for safety (producer-consumer with next stage)
+        memoryBarrierBuffer();
     }
 }

@@ -158,25 +158,16 @@ float smoothWindowFunction(float phi, float phiCenter, float sigma) {
  * @brief Project 3D point to screen space
  */
 vec2 projectToScreen(vec3 worldPos) {
-    // ВРЕМЕННО: Упрощенная проекция без View-Proj matrix
-    // Предполагаем что треугольники уже в camera space
-    
-    // Простая perspective projection
-    if (worldPos.z <= 0.1) {
-        return vec2(-10000.0, -10000.0); // Behind camera
+    // Полноценная проекция через View-Projection
+    vec4 clip = pc.viewProj * vec4(worldPos, 1.0);
+    if (clip.w <= 1e-5) {
+        return vec2(-10000.0, -10000.0);
     }
-    
-    // Simple projection: x' = x/z, y' = y/z  
-    vec2 ndc = worldPos.xy / worldPos.z;
-    
-    // Scale to reasonable screen coordinates
-    ndc *= 100.0; // Масштабируем для видимости
-    
-    // Center on screen
-    vec2 screenCenter = vec2(pc.outputWidth, pc.outputHeight) * 0.5;
-    vec2 screenPos = screenCenter + ndc;
-    
-    return screenPos;
+    vec3 ndc = clip.xyz / clip.w; // [-1,1]
+    // NDC -> screen
+    float x = (ndc.x * 0.5 + 0.5) * float(pc.outputWidth);
+    float y = (1.0 - (ndc.y * 0.5 + 0.5)) * float(pc.outputHeight); // Vulkan Y-down
+    return vec2(x, y);
 }
 
 /**
@@ -240,6 +231,10 @@ void main() {
     // ===== ИСПРАВЛЕННЫЙ TRIANGLE SPLATTING АЛГОРИТМ =====
     for (uint i = 0; i < loopCount; ++i) {
         uint triIdx = useTiles ? tileData.triangleIndices[i] : sortedIndices[i];
+        // Bounds check triIdx against pc.triangleCount
+        if (triIdx >= pc.triangleCount) {
+            continue;
+        }
         
         // Skip invalid indices
         if (!useTiles && triIdx == 0xFFFFFFFFu) {
@@ -256,6 +251,10 @@ void main() {
         vec2 v0_screen = projectToScreen(tri.v0);
         vec2 v1_screen = projectToScreen(tri.v1);
         vec2 v2_screen = projectToScreen(tri.v2);
+        // NaN/Inf guard for screen coords
+        if (any(isnan(vec4(v0_screen, v1_screen))) || any(isinf(vec4(v0_screen, v1_screen)))) {
+            continue;
+        }
         
         // Skip if projection failed (behind camera)
         if (v0_screen.x < -1000.0 || v1_screen.x < -1000.0 || v2_screen.x < -1000.0) {
@@ -278,6 +277,9 @@ void main() {
         
         // ===== 4. ИСПРАВЛЕНО: ПРАВИЛЬНОЕ SDF COMPUTATION =====
         float phi = computeTriangleSDF(pixelPos, v0_screen, v1_screen, v2_screen);
+        if (isnan(phi) || isinf(phi)) {
+            continue;
+        }
         
         // Skip if outside triangle
         if (phi > 0.0) {
@@ -288,6 +290,9 @@ void main() {
         // ===== 5. ИСПРАВЛЕНО: ПРАВИЛЬНАЯ SMOOTH WINDOW FUNCTION =====
         vec2 incenter = computeIncenter(v0_screen, v1_screen, v2_screen);
         float phiCenter = computeTriangleSDF(incenter, v0_screen, v1_screen, v2_screen);
+        if (isnan(phiCenter) || isinf(phiCenter)) {
+            continue;
+        }
         
         // Skip degenerate triangles
         if (phiCenter >= -0.0001) {
@@ -296,6 +301,9 @@ void main() {
         
         // ИСПРАВЛЕНО: Правильное вычисление weight
         float weight = smoothWindowFunction(phi, phiCenter, tri.sigma);
+        if (isnan(weight) || isinf(weight)) {
+            continue;
+        }
         
         // Если weight близок к 0, треугольник почти не виден
         if (weight < 0.001) {
@@ -309,9 +317,14 @@ void main() {
         vec3 lightDir = normalize(vec3(0.0, 1.0, 1.0)); // Диагональный свет
         float diffuse = max(dot(tri.normal, lightDir), 0.0);
         vec3 litColor = tri.color * (ambient + diffuse * 0.7);
+        // sanitize color
+        litColor = clamp(litColor, vec3(0.0), vec3(10.0));
         
         // ===== 7. ИСПРАВЛЕНО: ПРАВИЛЬНОЕ ALPHA BLENDING =====
         float alpha = tri.opacity * weight;
+        if (isnan(alpha) || isinf(alpha)) {
+            continue;
+        }
         
         // КРИТИЧНО: Убеждаемся что alpha > 0
         if (alpha > 0.001) {

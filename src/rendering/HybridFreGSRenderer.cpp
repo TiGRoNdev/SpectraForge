@@ -775,15 +775,12 @@ void HybridFreGSRenderer::recordCommandBuffer(vk::CommandBuffer commandBuffer, u
 void HybridFreGSRenderer::renderFrame(const FrameData& /*frameData*/) {
     if (!device_ || device_lost_) return;
     
-    // Update camera view-projection matrix
+    // Update camera view-projection matrix (унифицировано)
     if (camera_ && triangleSplattingPass_) {
-        // Convert SpectraForge Matrix4 to glm::mat4
-        const auto& view = camera_->getViewMatrix();
-        const auto& proj = camera_->getProjectionMatrix();
-        
-        // DEBUG: Вывод view матрицы ОДИН РАЗ
+        // DEBUG: вывести матрицу вида один раз
         static bool viewPrinted = false;
         if (!viewPrinted) {
+            const auto& view = camera_->getViewMatrix();
             std::cout << "\n===== DEBUG: View Matrix =====\n";
             for (int row = 0; row < 4; row++) {
                 std::cout << "  [" << view.m[row][0] << ", " << view.m[row][1] << ", " 
@@ -794,27 +791,10 @@ void HybridFreGSRenderer::renderFrame(const FrameData& /*frameData*/) {
             std::cout << "==============================\n\n";
             viewPrinted = true;
         }
-        
-        // ИСПРАВЛЕНИЕ: Matrix4 хранится в ROW-MAJOR, GLM использует COLUMN-MAJOR
-        // Транспонируем матрицы при конвертации
-        glm::mat4 viewGlm = glm::mat4(
-            view.m[0][0], view.m[1][0], view.m[2][0], view.m[3][0],
-            view.m[0][1], view.m[1][1], view.m[2][1], view.m[3][1],
-            view.m[0][2], view.m[1][2], view.m[2][2], view.m[3][2],
-            view.m[0][3], view.m[1][3], view.m[2][3], view.m[3][3]
-        );
 
-        glm::mat4 projGlm = glm::mat4(
-            proj.m[0][0], proj.m[1][0], proj.m[2][0], proj.m[3][0],
-            proj.m[0][1], proj.m[1][1], proj.m[2][1], proj.m[3][1],
-            proj.m[0][2], proj.m[1][2], proj.m[2][2], proj.m[3][2],
-            proj.m[0][3], proj.m[1][3], proj.m[2][3], proj.m[3][3]
-        );
-        
-        glm::mat4 viewProj = projGlm * viewGlm;
+        const glm::mat4 viewProj = getCorrectedViewProjMatrix();
         triangleSplattingPass_->setViewProjection(viewProj);
-        
-        // Set camera position for depth sorting
+
         const auto& camPos = camera_->getPosition();
         triangleSplattingPass_->setCameraPosition(glm::vec3(camPos.x, camPos.y, camPos.z));
     }
@@ -1109,7 +1089,10 @@ void HybridFreGSRenderer::setDebugMode(int mode) {
     
     // Передаём режим в Triangle Splatting Pass
     if (triangleSplattingPass_) {
-        triangleSplattingPass_->setDebugMode(mode);
+        // КРИТИЧНО: Всегда обновляем корректную матрицу перед передачей режима
+        const glm::mat4 corrected = getCorrectedViewProjMatrix();
+        triangleSplattingPass_->setViewProjection(corrected);
+        triangleSplattingPass_->setDebugMode(static_cast<uint32_t>(mode));
     }
     
     // Различные debug режимы
@@ -1366,6 +1349,28 @@ GPUInfo HybridFreGSRenderer::getGPUInfo() const {
     return info;
 }
 
+
+glm::mat4 HybridFreGSRenderer::getCorrectedViewProjMatrix() const {
+    if (!camera_) {
+        return glm::mat4(1.0f);
+    }
+    const auto& view = camera_->getViewMatrix();
+    const auto& proj = camera_->getProjectionMatrix();
+
+    glm::mat4 viewGlm = glm::mat4(
+        view.m[0][0], view.m[1][0], view.m[2][0], view.m[3][0],
+        view.m[0][1], view.m[1][1], view.m[2][1], view.m[3][1],
+        view.m[0][2], view.m[1][2], view.m[2][2], view.m[3][2],
+        view.m[0][3], view.m[1][3], view.m[2][3], view.m[3][3]
+    );
+    glm::mat4 projGlm = glm::mat4(
+        proj.m[0][0], proj.m[1][0], proj.m[2][0], proj.m[3][0],
+        proj.m[0][1], proj.m[1][1], proj.m[2][1], proj.m[3][1],
+        proj.m[0][2], proj.m[1][2], proj.m[2][2], proj.m[3][2],
+        proj.m[0][3], proj.m[1][3], proj.m[2][3], proj.m[3][3]
+    );
+    return projGlm * viewGlm;
+}
 
 } // namespace Rendering
 } // namespace SpectraForge
