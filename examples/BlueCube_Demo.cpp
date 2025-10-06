@@ -73,7 +73,7 @@ public:
             r->setBackgroundColor(cfg.backgroundColor[0], cfg.backgroundColor[1],
                                   cfg.backgroundColor[2], cfg.backgroundColor[3]);
             r->enableDepthTest(true);
-            r->enableBackfaceCulling(true);
+            r->enableBackfaceCulling(false);
         }
 
         // Подготовим базовую геометрию куба (вершины и индексы)
@@ -143,18 +143,18 @@ private:
 
         // Две триады на грань (всего 12 треугольников)
         cube_indices_ = {
-            // front
+            // front  
             0, 1, 2, 2, 3, 0,
-            // back
-            4, 5, 6, 6, 7, 4,
-            // left
-            4, 0, 3, 3, 5, 4,
-            // right
-            1, 7, 6, 6, 2, 1,
-            // bottom
-            4, 7, 1, 1, 0, 4,
-            // top
-            3, 2, 6, 6, 5, 3
+            // back - ИСПРАВЛЕНО
+            4, 6, 5, 6, 7, 4,
+            // left - ИСПРАВЛЕНО  
+            4, 3, 0, 3, 5, 4,
+            // right - ИСПРАВЛЕНО
+            1, 7, 6, 7, 2, 1,
+            // bottom - ИСПРАВЛЕНО
+            4, 1, 7, 1, 0, 4,
+            // top - ИСПРАВЛЕНО  
+            3, 2, 6, 2, 5, 3
         };
     }
 
@@ -193,7 +193,7 @@ private:
             float area2 = glm::length(n);
             t.normal = (area2 > 1e-6f) ? (n / area2) : glm::vec3(0, 0, 1);
             // Sigma чуть меньше для чётких граней
-            t.sigma = 0.15f;
+            t.sigma = 1.5f;
             t.materialId = 0;
             tris.push_back(t);
         }
