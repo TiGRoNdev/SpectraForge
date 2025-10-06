@@ -126,7 +126,51 @@ struct ConnectedTriangle {
 
         float denom = d00 * d11 - d01 * d01;
         if (std::abs(denom) < 1e-8f) {
-            return Math::Vector3(1.0f, 0.0f, 0.0f);
+            // Вырожденный треугольник: сводим к отрезку (или точке)
+            // Выбираем самое длинное ребро и проектируем точку на него
+            const Math::Vector3 e01 = v1 - v0;
+            const Math::Vector3 e12 = v2 - v1;
+            const Math::Vector3 e20 = v0 - v2;
+
+            const float l01 = Math::Vector3::dot(e01, e01);
+            const float l12 = Math::Vector3::dot(e12, e12);
+            const float l20 = Math::Vector3::dot(e20, e20);
+
+            uint32_t i = 0, j = 1, k = 2;  // пара вершин ребра (i,j), k — оставшаяся
+            Math::Vector3 a = v0;
+            Math::Vector3 b = v1;
+            float max_len2 = l01;
+
+            if (l12 > max_len2) {
+                max_len2 = l12; i = 1; j = 2; k = 0; a = v1; b = v2;
+            }
+            if (l20 > max_len2) {
+                max_len2 = l20; i = 2; j = 0; k = 1; a = v2; b = v0;
+            }
+
+            // Все вершины практически совпадают — выбираем ближайшую к точке
+            if (max_len2 < 1e-12f) {
+                const float d0 = Math::Vector3::dot(point - v0, point - v0);
+                const float d1 = Math::Vector3::dot(point - v1, point - v1);
+                const float d2 = Math::Vector3::dot(point - v2, point - v2);
+                float w0 = 0.0f, w1 = 0.0f, w2 = 0.0f;
+                if (d0 <= d1 && d0 <= d2) w0 = 1.0f;
+                else if (d1 <= d0 && d1 <= d2) w1 = 1.0f;
+                else w2 = 1.0f;
+                return Math::Vector3(w0, w1, w2);
+            }
+
+            float t = Math::Vector3::dot(point - a, b - a) / max_len2;
+            t = std::clamp(t, 0.0f, 1.0f);
+
+            float w0 = 0.0f, w1 = 0.0f, w2 = 0.0f;
+            const float wi = 1.0f - t;
+            const float wj = t;
+
+            if (i == 0) w0 = wi; else if (i == 1) w1 = wi; else w2 = wi;
+            if (j == 0) w0 = wj; else if (j == 1) w1 = wj; else w2 = wj;
+            // Вес третьей вершины k остаётся 0
+            return Math::Vector3(w0, w1, w2);
         }
 
         float v = (d11 * d20 - d01 * d21) / denom;
