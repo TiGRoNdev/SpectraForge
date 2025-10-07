@@ -98,7 +98,7 @@ public:
      * @brief Включить/выключить внешнее управление камерой
      * @param external Если true, Engine не будет автоматически обновлять позицию камеры
      */
-    void setExternalCameraControl(bool external) { externalCameraControl_ = external; }
+    void setExternalCameraControl(bool external);
     
     /**
      * @brief Получить рендерер
