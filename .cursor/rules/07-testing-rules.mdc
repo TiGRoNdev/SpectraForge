@@ -2,7 +2,7 @@
 description: Test automation framework - Design patterns, best practices, AAA pattern enforcement
 globs: ["**/*.cpp", "**/*.h", "**/*.hpp", "**/tests/**/*"]
 alwaysApply: true
-priority: 400
+priority: 600
 ---
 
 # Test Automation Framework for SpectraForge
@@ -14,11 +14,10 @@ priority: 400
   "priority": 400,
   "applies_to": "All test files and automation scripts",
   "supported_patterns": ["AAA Pattern", "Factory", "Mock Objects", "Test Fixtures"],
-  "frameworks": ["Google Test", "Catch2"],
-  "ai_model": "Claude 4.5 Sonnet"
+  "frameworks": ["Google Test", "Catch2"]
 }
 
-> **CLAUDE DIRECTIVE**: ALL tests MUST follow AAA pattern (Arrange, Act, Assert). NO exceptions.
+> ALL tests MUST follow AAA pattern (Arrange, Act, Assert). NO exceptions.
 
 ## 1. Design Patterns Overview
 Use these patterns to enhance code quality and maintainability.
@@ -114,4 +113,3 @@ Guidelines for effective implementation.
 - Use descriptive test names: TEST(ComponentName, WhatIsBeingTested)
 
 ---
-**Version**: 2.0 | **Optimized for**: Claude 4.5 Sonnet

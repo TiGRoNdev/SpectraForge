@@ -3,7 +3,7 @@
  * @brief Реализация современного рендерера согласно SOLID принципам
  */
 
-#include "SpectraForge/Rendering/ModernRenderer3D.h"
+#include "SpectraForge/Rendering/RendererAdapter.h"
 #include <algorithm>
 #include <stdexcept>
 #include "SpectraForge/Core/SafeConsole.h"

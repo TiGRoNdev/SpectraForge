@@ -8,7 +8,7 @@
  * rendering system, including FPS measurements, memory usage tracking, and GPU utilization.
  */
 
-#include <SpectraForge/rendering/TriangleSplattingPass.h>
+#include "SpectraForge/Rendering/RenderPass/TriangleSplattingPass.h"
 #include <SpectraForge/Rendering/HybridFreGSRenderer.h>
 #include <SpectraForge/Rendering/Mesh3D.h>
 #include <chrono>

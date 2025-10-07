@@ -18,7 +18,7 @@
 #include "SpectraForge/Rendering/Camera3D.h"
 #include "SpectraForge/Vulkan/SceneManager.h"
 #include "SpectraForge/Rendering/HybridFreGSRenderer.h"
-#include "SpectraForge/rendering/TriangleSplattingPass.h"
+#include "SpectraForge/Rendering/RenderPass/TriangleSplattingPass.h"
 
 using namespace SpectraForge;
 

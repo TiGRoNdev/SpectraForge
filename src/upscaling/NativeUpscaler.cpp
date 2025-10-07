@@ -6,8 +6,8 @@
  * @date 2025-10-02
  */
 
-#include "SpectraForge/upscaling/NativeUpscaler.h"
-#include "SpectraForge/core/VulkanContext.h"
+#include "SpectraForge/Upscaling/NativeUpscaler.h"
+#include "SpectraForge/Core/VulkanContext.h"
 #include <iostream>
 
 namespace spectraforge {

@@ -1,5 +1,5 @@
 ---
-description: MASTER RULES - Coordination and strict enforcement for all SpectraForge development rules with Claude 4.5 Sonnet optimization
+description: MASTER RULES - Coordination and strict enforcement for all SpectraForge development rules
 globs: ["**/*"]
 alwaysApply: true
 priority: 1000
@@ -9,16 +9,15 @@ priority: 1000
 
 @context {
   "type": "master_coordinator",
-  "purpose": "Ensure STRICT enforcement of all project rules with Claude 4.5 Sonnet optimization, use context7",
+  "purpose": "Ensure STRICT enforcement of all project rules, use context7",
   "priority": "CRITICAL",
   "format_version": "2.0",
-  "applies_to": "ALL project files and operations",
-  "ai_model": "Claude 4.5 Sonnet"
+  "applies_to": "ALL project files and operations"
 }
 
 ## ⚠️ CRITICAL DIRECTIVES - MANDATORY EXECUTION
 
-> **ATTENTION CLAUDE 4.5 SONNET**: These directives are MANDATORY and MUST be followed WITHOUT EXCEPTION.
+> These directives are MANDATORY and MUST be followed WITHOUT EXCEPTION.
 
 ### 1. Rule Execution Priority
 
@@ -39,13 +38,11 @@ priority: 1000
 
 ```
 Priority Order (highest to lowest):
-1. MASTER RULES (this file)          - Priority 1000
+1. MASTER RULES (this file)            - Priority 1000
 2. Architecture Rules                  - Priority 900
 3. Coding Standards                    - Priority 800
 4. Console Output Rules                - Priority 700
-5. Build Instructions                  - Priority 600
-6. Feature Workflow                    - Priority 500
-7. Test Automation                     - Priority 400
+7. Test Automation                     - Priority 600
 ```
 
 @priority_rules [
@@ -105,41 +102,6 @@ STEP 6: Report compliance status
 
 ### 4. MCP Tools Integration - MANDATORY USAGE
 
-**GitHub MCP Tools - MUST USE when applicable:**
-
-@github_mcp_mandatory [
-  {
-    "id": "issue_creation",
-    "rule": "ALWAYS use mcp_github_create_issue for bug/feature tracking",
-    "severity": "high",
-    "when": "User reports bug or requests feature"
-  },
-  {
-    "id": "pr_creation",
-    "rule": "ALWAYS use mcp_github_create_pull_request for code changes",
-    "severity": "high",
-    "when": "Code changes ready for review"
-  },
-  {
-    "id": "branch_creation",
-    "rule": "ALWAYS use mcp_github_create_branch for new features/fixes",
-    "severity": "high",
-    "when": "Starting new development work"
-  },
-  {
-    "id": "workflow_execution",
-    "rule": "ALWAYS use mcp_github_run_workflow for CI/CD triggers",
-    "severity": "medium",
-    "when": "Testing or deployment needed"
-  },
-  {
-    "id": "code_review",
-    "rule": "SUGGEST mcp_github_request_copilot_review for PR reviews",
-    "severity": "medium",
-    "when": "PR created and needs review"
-  }
-]
-
 **Research & Web MCP Tools - USE when needed:**
 
 @research_mcp_tools [
@@ -180,6 +142,7 @@ STEP 6: Report compliance status
   }
 ]
 
+
 ### 5. Repository Information - HARDCODED
 
 ```yaml
@@ -189,11 +152,9 @@ REPOSITORY:
   url: "https://github.com/TiGRoNdev/SpectraForge"
   
 DEVELOPMENT:
-  main_branch: "main"
-  develop_branch: "develop"
+  main_branch: "release/master"
   feature_prefix: "feature/"
-  bugfix_prefix: "bugfix/"
-  hotfix_prefix: "hotfix/"
+  bugfix_prefix: "fix/"
   
 PROJECT:
   name: "SpectraForge"
@@ -201,8 +162,6 @@ PROJECT:
   language: "C++17/20"
   build_system: "CMake 3.16+"
 ```
-
-**ALWAYS use these values when creating GitHub operations!**
 
 ### 6. Strict SOLID Principles Enforcement
 
@@ -382,22 +341,6 @@ PROJECT:
   }
 ]
 
-### 12. Workflow Integration
-
-@workflow_integration [
-  {
-    "id": "github_workflow",
-    "rule": "For each feature: 1) Create branch, 2) Develop with TDD, 3) Create PR, 4) Request review",
-    "severity": "high",
-    "tools": ["mcp_github_create_branch", "mcp_github_create_pull_request", "mcp_github_request_copilot_review"]
-  },
-  {
-    "id": "ci_integration",
-    "rule": "After PR creation, trigger CI workflow",
-    "severity": "medium",
-    "tools": ["mcp_github_run_workflow"]
-  }
-]
 
 ## 📊 Compliance Reporting Format
 
@@ -451,13 +394,10 @@ PROJECT:
 ## 📚 Rule File References
 
 ```yaml
-Architecture:      .cursor/rules/architecture.mdc
-Coding Standards:  .cursor/rules/coding-rules.mdc
-Console Output:    .cursor/rules/console-output.mdc
-Engine Scheme:     .cursor/rules/engine-architecture-scheme.mdc
-Build Instructions: .cursor/rules/build-instructions.mdc
-Feature Workflow:  .cursor/rules/feature-development-workflow.mdc
-Test Framework:    .cursor/rules/test-automation-framework.mdc
+Architecture:      .cursor/rules/01-arch-rules.mdc
+Coding Standards:  .cursor/rules/03-coding-rules.mdc
+Console Output:    .cursor/rules/04-console-rules.mdc
+Test Framework:    .cursor/rules/07-testing-rules.mdc
 ```
 
 ---
@@ -465,10 +405,3 @@ Test Framework:    .cursor/rules/test-automation-framework.mdc
 **🎯 REMEMBER: These rules exist to ensure code quality, maintainability, and team collaboration. Strict enforcement = Better software!**
 
 ---
-
-## Version History
-
-- v2.0 (2025-09-30): Created master rules with Claude 4.5 Sonnet optimization
-- Full MCP integration (GitHub, Perplexity, Web, Library docs)
-- Strict enforcement directives added
-- Compliance reporting system implemented

@@ -1,4 +1,4 @@
-#include "SpectraForge/rendering/FrameOutput.h"
+#include "SpectraForge/Rendering/FrameOutput.h"
 
 #include <cstdio>
 #include <png.h>

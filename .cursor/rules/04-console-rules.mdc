@@ -13,11 +13,10 @@ priority: 700
   "format_version": "2.0",
   "priority": 700,
   "applies_to": "All files using console output",
-  "supported_macros": ["SAFE_TO_STRING", "SAFE_*"],
-  "ai_model": "Claude 4.5 Sonnet"
+  "supported_macros": ["SAFE_TO_STRING", "SAFE_*"]
 }
 
-> **CLAUDE DIRECTIVE**: ALWAYS use SAFE_TO_STRING macros for console output to prevent crashes.
+> ALWAYS use SAFE_TO_STRING macros for console output to prevent crashes.
 
 ## 1. Console Output Standards
 Follow these for safe printing.
@@ -67,4 +66,3 @@ SAFE_DOUBLE(2.718)
 ```
 
 ---
-**Version**: 2.0 | **Optimized for**: Claude 4.5 Sonnet

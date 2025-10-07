@@ -12,8 +12,8 @@
  * @date 2025-10-02
  */
 
-#include "SpectraForge/upscaling/DLSSUpscaler.h"
-#include "SpectraForge/core/VulkanContext.h"
+#include "SpectraForge/Upscaling/DLSSUpscaler.h"
+#include "SpectraForge/Core/VulkanContext.h"
 #include <iostream>
 #include <cmath>
 

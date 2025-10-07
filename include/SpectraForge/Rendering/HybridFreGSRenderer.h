@@ -12,8 +12,8 @@
 #include <vulkan/vulkan.hpp>
 #include <vk_mem_alloc.h>
 #include "SpectraForge/Rendering/Common/IRenderer.h"
-#include "SpectraForge/rendering/TriangleSplattingPass.h"
-#include "SpectraForge/rendering/FreGSPass.h"
+#include "SpectraForge/Rendering/RenderPass/TriangleSplattingPass.h"
+#include "SpectraForge/Rendering/RenderPass/FreGSPass.h"
 #include "SpectraForge/Rendering/Mesh3D.h"
 #include "SpectraForge/Rendering/Camera3D.h"
 // #include "SpectraForge/rendering/WaveletPass.h"

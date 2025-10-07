@@ -17,7 +17,7 @@
 #include "SpectraForge/OptiX/DenoiseModule.h"
 // #include "SpectraForge/OptiX/OptiXRayTracer.h" // Временно отключено - CUDA не установлена
 #endif
-#include "SpectraForge/Upscaling/Upscaler.h"
+#include "SpectraForge/Upscaling/UpscalerFactory.h"
 #include "SpectraForge/Vulkan/ResourceManager.h"
 
 using namespace SpectraForge::Vulkan;

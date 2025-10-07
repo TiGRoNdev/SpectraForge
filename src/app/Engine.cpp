@@ -12,8 +12,8 @@
 #include "SpectraForge/Rendering/RendererFactory.h"
 #include "SpectraForge/Rendering/Common/IResourceManager.h"
 #include "SpectraForge/Rendering/HybridFreGSRenderer.h"
-#include "SpectraForge/rendering/TriangleSplattingPass.h"
-#include "SpectraForge/rendering/FreGSPass.h"
+#include "SpectraForge/Rendering/RenderPass/TriangleSplattingPass.h"
+#include "SpectraForge/Rendering/RenderPass/FreGSPass.h"
 #include "SpectraForge/Core/Logger.h"
 #include <filesystem>
 #include <fstream>

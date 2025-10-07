@@ -2,14 +2,16 @@
 
 # Create rendering module as object library
 add_library(SpectraForge_Vulkan OBJECT
-    SpectraForge_Vulkan.cpp
     HybridFreGSRenderer.cpp
     VulkanValidation.cpp
     TriangleSplattingPass.cpp
-    # OpenGL-compatible rendering classes (используются для базовой геометрии)
+    FreGSPass.cpp
+    WaveletPass.cpp
+    RenderPass.cpp
+    # Minimal OpenGL-compatible components used across the engine
     opengl/Camera3D.cpp
     opengl/Mesh3D.cpp
-    # Vulkan subsystem files
+    # Vulkan subsystem files only (Vulkan-only build)
     vulkan/VulkanRenderer.cpp
     vulkan/VulkanEngine.cpp
     vulkan/ResourceManager.cpp

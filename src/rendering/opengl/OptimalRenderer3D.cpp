@@ -1,4 +1,4 @@
-#include "SpectraForge/Rendering/OptimalRenderer3D.h"
+#include "SpectraForge/Rendering/RendererAdapter.h"
 #include <algorithm>
 #include <chrono>
 #include <cmath>

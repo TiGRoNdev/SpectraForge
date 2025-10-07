@@ -17,7 +17,7 @@
 
 #include "RenderPass.h"
 #include "WaveletPass.h"
-#include "SpectraForge/core/VMAMemoryManager.h"
+#include "SpectraForge/Core/VMAMemoryManager.h"
 #include <vulkan/vulkan.hpp>
 #include <glm/glm.hpp>
 #include <vector>

@@ -12,8 +12,8 @@
  * @date 2025-10-02
  */
 
-#include "SpectraForge/upscaling/FSR2Upscaler.h"
-#include "SpectraForge/core/VulkanContext.h"
+#include "SpectraForge/Upscaling/FSR2Upscaler.h"
+#include "SpectraForge/Core/VulkanContext.h"
 #include <iostream>
 #include <cmath>
 

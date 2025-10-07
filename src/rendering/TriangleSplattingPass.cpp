@@ -1,11 +1,11 @@
-#include <SpectraForge/rendering/TriangleSplattingPass.h>
+#include "SpectraForge/Rendering/RenderPass/TriangleSplattingPass.h"
+#include "SpectraForge/Rendering/FrameOutput.h"
 #include <fstream>
 #include <algorithm>
 #include <iostream>
 #include <cstring>
 #include <cinttypes>
 #include <SpectraForge/Rendering/Mesh3D.h>
-#include <SpectraForge/rendering/FrameOutput.h>
 #include <cmath>
 
 // Конвертация half-float в float

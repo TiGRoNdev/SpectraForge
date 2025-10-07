@@ -7,7 +7,8 @@
 
 #include <memory>
 #include <string>
-#include "SpectraForge/Rendering/ModernRenderer3D.h"
+// Forward declarations to decouple from non-existent headers
+namespace SpectraForge { namespace Rendering { class IRenderStrategy; } }
 
 namespace SpectraForge::Rendering {
 

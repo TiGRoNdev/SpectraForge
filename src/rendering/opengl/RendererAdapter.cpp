@@ -3,7 +3,6 @@
 #include <stdexcept>
 #include "SpectraForge/Core/Console.h"
 #include "SpectraForge/Core/SafeConsole.h"
-#include "SpectraForge/Rendering/Renderer3D.h"
 
 // Условная компиляция для Vulkan
 #ifdef ENGINE3D_ENABLE_VULKAN

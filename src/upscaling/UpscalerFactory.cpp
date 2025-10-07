@@ -6,10 +6,10 @@
  * @date 2025-10-02
  */
 
-#include "SpectraForge/upscaling/UpscalerFactory.h"
-#include "SpectraForge/upscaling/NativeUpscaler.h"
-#include "SpectraForge/upscaling/DLSSUpscaler.h"
-#include "SpectraForge/upscaling/FSR2Upscaler.h"
+#include "SpectraForge/Upscaling/UpscalerFactory.h"
+#include "SpectraForge/Upscaling/NativeUpscaler.h"
+#include "SpectraForge/Upscaling/DLSSUpscaler.h"
+#include "SpectraForge/Upscaling/FSR2Upscaler.h"
 #include <iostream>
 
 namespace spectraforge {

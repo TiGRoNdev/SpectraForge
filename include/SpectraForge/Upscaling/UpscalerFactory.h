@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "SpectraForge/upscaling/Upscaler.h"
+#include "SpectraForge/Upscaling/Upscaler.h"
 #include <memory>
 #include <string>
 

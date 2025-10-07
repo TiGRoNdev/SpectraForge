@@ -1,5 +1,5 @@
 ---
-description: C++ Coding Standards for SpectraForge with GitHub MCP integration
+description: C++ Coding Standards for SpectraForge
 globs: ["**/*.cpp", "**/*.h", "**/*.hpp"]
 alwaysApply: true
 priority: 800
@@ -10,8 +10,7 @@ priority: 800
 @context {
   "type": "coding_standards",
   "priority": 800,
-  "applies_to": "All C++ files",
-  "ai_model": "Claude 4.5 Sonnet"
+  "applies_to": "All C++ files"
 }
 
 ## 🎨 Style Rules (CRITICAL)
@@ -136,34 +135,6 @@ priority: 800
   }
 ]
 
-## 🔧 GitHub MCP Workflow
-
-@github_mcp [
-  {
-    "id": "issues",
-    "mcp_tool": "mcp_github_create_issue",
-    "when": "Bug reports, features",
-    "params": {"owner": "TiGRoNdev", "repo": "SpectraForge"}
-  },
-  {
-    "id": "branches",
-    "mcp_tool": "mcp_github_create_branch",
-    "when": "Start new work",
-    "format": "feature/* | bugfix/* | hotfix/*"
-  },
-  {
-    "id": "pull_requests",
-    "mcp_tool": "mcp_github_create_pull_request",
-    "when": "Code ready for review",
-    "params": {"owner": "TiGRoNdev", "repo": "SpectraForge"}
-  },
-  {
-    "id": "copilot_review",
-    "mcp_tool": "mcp_github_request_copilot_review",
-    "when": "PR created"
-  }
-]
-
 ## 🛡️ Security (CRITICAL)
 
 @security [
@@ -225,4 +196,3 @@ priority: 800
 | LOW | Optional | NO |
 
 ---
-**Version**: 2.0 | **Optimized for**: Claude 4.5 Sonnet

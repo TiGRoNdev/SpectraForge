@@ -25,9 +25,12 @@ class OptiXRayTracer;
 }  // namespace OptiX
 
 namespace Upscaling {
-class Upscaler;
+class Upscaler; // legacy fwd-decl, not used
 }
 }  // namespace SpectraForge
+
+// Correct forward declaration for upscaler interface (actual namespace in headers)
+namespace spectraforge { namespace upscaling { class IUpscaler; } }
 
 namespace SpectraForge::Vulkan {
 
@@ -195,7 +198,7 @@ class VulkanRenderer {
     // std::unique_ptr<SpectraForge::OptiX::OptiXRayTracer> rayTracer; // Временно отключено - CUDA не доступна
     std::unique_ptr<SpectraForge::OptiX::DenoiseModule> denoiseModule;
 #endif
-    std::unique_ptr<SpectraForge::Upscaling::Upscaler> upscaler;
+    std::unique_ptr<spectraforge::upscaling::IUpscaler> upscaler;
 
     bool initialized = false;
 

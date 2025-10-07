@@ -1,4 +1,4 @@
-#include "SpectraForge/Rendering/HybridRenderer3D.h"
+#include "SpectraForge/Rendering/HybridFreGSRenderer.h"
 #include <algorithm>
 #include <chrono>
 #include <functional>

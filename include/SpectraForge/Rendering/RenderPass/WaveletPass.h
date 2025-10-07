@@ -16,7 +16,7 @@
 #pragma once
 
 #include "RenderPass.h"
-#include "SpectraForge/core/VMAMemoryManager.h"
+#include "SpectraForge/Core/VMAMemoryManager.h"
 #include <vulkan/vulkan.hpp>
 #include <array>
 

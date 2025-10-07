@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <SpectraForge/rendering/TriangleSplattingPass.h>
+#include "SpectraForge/Rendering/RenderPass/TriangleSplattingPass.h"
 #include <SpectraForge/Rendering/Mesh3D.h>
 #include <vector>
 

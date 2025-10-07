@@ -8,8 +8,8 @@
  * @date 2025-10-02
  */
 
-#include "SpectraForge/rendering/RenderPass.h"
-#include "SpectraForge/core/VulkanContext.h"
+#include "SpectraForge/Rendering/RenderPass/RenderPass.h"
+#include "SpectraForge/Core/VulkanContext.h"
 #include <fstream>
 #include <stdexcept>
 #include <iostream>

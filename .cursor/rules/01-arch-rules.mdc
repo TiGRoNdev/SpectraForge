@@ -14,10 +14,9 @@ priority: 900
   "priority": 900,
   "applies_to": "All project files and architecture decisions",
   "supported_languages": ["C++17", "C++20"],
-  "ai_model": "Claude 4.5 Sonnet"
 }
 
-> **CLAUDE DIRECTIVE**: STRICTLY enforce SOLID principles in ALL code generation. Violations of SRP, OCP, LSP, ISP, or DIP are CRITICAL errors.
+> STRICTLY enforce SOLID principles in ALL code generation. Violations of SRP, OCP, LSP, ISP, or DIP are CRITICAL errors.
 
 ## 1. Core Principles
 Adhere to these foundational principles to ensure maintainable and extensible code. Prioritize modern C++ features for better performance and safety.
@@ -78,34 +77,7 @@ Adhere to these foundational principles to ensure maintainable and extensible co
     "example": "Avoid adding advanced 4D rotation features until required by the project."
   }
 ]
-
 - Apply these principles during design reviews to maintain code quality.
-
-## 2. Project Structure Requirements
-Maintain a flat, modular structure to facilitate navigation and scalability.
-
-@structure_rules {
-  "src": "Source code implementation files with modular subdirectories",
-  "src/core": "Core engine components (GameObject, Component, Transform)",
-  "src/math": "Mathematical library (Vector3/4, Matrix4, Quaternion)",
-  "src/rendering": "Rendering systems (OpenGL, Vulkan backends)",
-  "src/physics": "Physics simulation components",
-  "src/input": "Input handling system",
-  "src/cuda": "CUDA integration for GPU acceleration",
-  "src/optix": "OptiX ray tracing integration",
-  "src/upscaling": "AI upscaling (DLSS/FSR)",
-  "include": "Header files for interfaces and declarations",
-  "tests": "Unit and integration tests mirroring source structure",
-  "docs": "Technical documentation and architecture diagrams",
-  "examples": "Usage examples and demo applications",
-  "build": "Build artifacts (add to .gitignore)",
-  "scripts": "Build scripts, utilities, and automation tools",
-  "cmake": "CMake modules and find scripts",
-  "shaders": "GLSL/HLSL shader files"
-}
-
-- Place headers and sources together for easy navigation in small projects; use subdirectories for modules in larger ones.
-- Include documentation files: README.md (overview), API_Reference.md (API docs), Examples.md (tutorials), CONTRIBUTING.md (guidelines), CHANGELOG.md (history), ARCHITECTURE.md (design decisions).
 
 ## 3. Code Quality Standards
 Enforce readability and maintainability through consistent practices.
@@ -190,27 +162,6 @@ Use CMake for cross-platform builds.
   }
 ]
 
-- Integrate with GitHub Actions using mcp_github_run_workflow.
-
-## 6. Documentation Standards
-Use Doxygen for code docs.
-
-@documentation_rules [
-  {
-    "id": "code",
-    "rule": "Document public APIs with Doxygen comments; include examples.",
-    "severity": "medium",
-    "example": "/** @brief Renders a frame. */"
-  },
-  {
-    "id": "technical",
-    "rule": "Include architecture diagrams, API specs, deployment guides.",
-    "severity": "medium"
-  }
-]
-
-- Generate docs automatically in CI.
-
 ## 7. Performance and Optimization
 Profile and optimize based on data.
 
@@ -243,24 +194,6 @@ Follow secure coding practices.
 
 - Use tools like CERT C++ checker.
 
-## 9. Version Control
-Follow Git Flow with feature branches.
-
-@version_control_rules [
-  {
-    "id": "workflow",
-    "rule": "Use feature branches, atomic commits, conventional commits.",
-    "severity": "high",
-    "example": "git checkout -b feature/new-renderer"
-  },
-  {
-    "id": "review",
-    "rule": "Require PRs with approvals; use mcp_github_create_pull_request.",
-    "severity": "high"
-  }
-]
-
-- Manage issues with mcp_github_create_issue.
 
 ## 10. Monitoring and Logging
 Implement structured logging.
@@ -392,4 +325,3 @@ Document and approve exceptions.
 - BLOCK merges that violate critical architecture rules
 
 ---
-**Version**: 2.0 | **Optimized for**: Claude 4.5 Sonnet

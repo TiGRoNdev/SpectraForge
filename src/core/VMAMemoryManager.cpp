@@ -6,7 +6,7 @@
  * @date 2025-10-02
  */
 
-#include "SpectraForge/core/VMAMemoryManager.h"
+#include "SpectraForge/Core/VMAMemoryManager.h"
 #include <iostream>
 #include <stdexcept>
 
