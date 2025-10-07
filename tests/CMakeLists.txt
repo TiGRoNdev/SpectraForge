@@ -1,130 +1,123 @@
 # Test configuration for SpectraForge
+# Comprehensive test suite with >98% code coverage target
 
 # Find Google Test
 find_package(GTest REQUIRED)
 
-# Triangle Splatting tests
-add_executable(triangle_splatting_test
-    triangle_splatting_test.cpp
-)
+# Compiler flags for code coverage
+option(ENABLE_COVERAGE "Enable code coverage reporting" ON)
 
-target_link_libraries(triangle_splatting_test
-    PRIVATE
-    SpectraForge
-    FrameOutput
-    GTest::gtest_main
-    Vulkan::Vulkan
-)
+if(ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    message(STATUS "Code coverage enabled")
+    set(COVERAGE_FLAGS "--coverage -fprofile-arcs -ftest-coverage")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${COVERAGE_FLAGS}")
+endif()
 
-# Set output directory
-set_target_properties(triangle_splatting_test PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-)
-
-# Add test target
-add_custom_target(run_triangle_splatting_tests
-    COMMAND triangle_splatting_test
-    DEPENDS triangle_splatting_test
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-    COMMENT "Running Triangle Splatting tests"
-)
+# Helper function to create test executable
+function(add_spectraforge_test TEST_NAME SOURCE_FILE)
+    add_executable(${TEST_NAME} ${SOURCE_FILE})
+    
+    target_link_libraries(${TEST_NAME}
+        PRIVATE
+        SpectraForge
+        GTest::gtest_main
+        Vulkan::Vulkan
+        ${ARGN}  # Additional libraries
+    )
+    
+    set_target_properties(${TEST_NAME} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON
+    )
+    
+    # Add to CTest
+    add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+    
+    # Custom target for running individual test
+    add_custom_target(run_${TEST_NAME}
+        COMMAND ${TEST_NAME}
+        DEPENDS ${TEST_NAME}
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        COMMENT "Running ${TEST_NAME}"
+    )
+endfunction()
 
 # Enable testing
 enable_testing()
 
-# Add test to CTest
-add_test(NAME triangle_splatting_test COMMAND triangle_splatting_test)
+# ============================================================================
+# Math Module Tests
+# ============================================================================
+
+add_spectraforge_test(math_vector3_test math_vector3_test.cpp)
+add_spectraforge_test(math_matrix4_test math_matrix4_test.cpp)
+add_spectraforge_test(math_quaternion_test math_quaternion_test.cpp)
+add_spectraforge_test(math_vector_extra_test math_vector_extra_test.cpp)
+
+# ============================================================================
+# Core Module Tests
+# ============================================================================
+
+add_spectraforge_test(core_transform3d_test core_transform3d_test.cpp)
+add_spectraforge_test(core_logger_test core_logger_test.cpp)
+add_spectraforge_test(core_gameobject3d_test core_gameobject3d_test.cpp)
+add_spectraforge_test(core_vma_memory_test core_vma_memory_test.cpp)
+
+# ============================================================================
+# Rendering Module Tests
+# ============================================================================
+
+add_spectraforge_test(rendering_camera3d_test rendering_camera3d_test.cpp)
+
+# ============================================================================
+# Input Module Tests
+# ============================================================================
+
+add_spectraforge_test(input_system_test input_system_test.cpp)
+
+# ============================================================================
+# Physics Module Tests
+# ============================================================================
+
+add_spectraforge_test(physics_system_test physics_system_test.cpp)
+
+# ============================================================================
+# Upscaling Module Tests
+# ============================================================================
+
+add_spectraforge_test(upscaling_system_test upscaling_system_test.cpp)
+
+# ============================================================================
+# Existing Tests
+# ============================================================================
+
+# Triangle Splatting tests
+add_spectraforge_test(triangle_splatting_test triangle_splatting_test.cpp FrameOutput)
+add_spectraforge_test(triangle_splatting_minimal_test triangle_splatting_minimal_test.cpp FrameOutput)
 
 # Phase 1 connectivity tests
-add_executable(connectivity_phase1_test
-    connectivity_phase1_test.cpp
-)
+add_spectraforge_test(connectivity_phase1_test connectivity_phase1_test.cpp)
 
-target_link_libraries(connectivity_phase1_test
-    PRIVATE
-    SpectraForge
-    GTest::gtest_main
-)
+# Render strategy tests
+add_spectraforge_test(render_strategy_interfaces_test render_strategy_interfaces_test.cpp)
+add_spectraforge_test(render_strategy_factory_test render_strategy_factory_test.cpp)
 
-set_target_properties(connectivity_phase1_test PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-)
-
-add_custom_target(run_connectivity_phase1_tests
-    COMMAND connectivity_phase1_test
-    DEPENDS connectivity_phase1_test
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-    COMMENT "Running Phase 1 connectivity tests"
-)
-
-add_test(NAME connectivity_phase1_test COMMAND connectivity_phase1_test)
-
-# Interfaces (Week 1) tests
-add_executable(render_strategy_interfaces_test
-    render_strategy_interfaces_test.cpp
-)
-
-target_link_libraries(render_strategy_interfaces_test
-    PRIVATE
-    SpectraForge
-    GTest::gtest_main
-    Vulkan::Vulkan
-)
-
-set_target_properties(render_strategy_interfaces_test PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-)
-
-add_custom_target(run_render_strategy_interfaces_tests
-    COMMAND render_strategy_interfaces_test
-    DEPENDS render_strategy_interfaces_test
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-    COMMENT "Running Render Strategy Interfaces tests"
-)
-
-add_test(NAME render_strategy_interfaces_test COMMAND render_strategy_interfaces_test)
-
-# Week 2: Strategy factory tests
-add_executable(render_strategy_factory_test
-    render_strategy_factory_test.cpp
-)
-
-target_link_libraries(render_strategy_factory_test
-    PRIVATE
-    SpectraForge
-    GTest::gtest_main
-)
-
-set_target_properties(render_strategy_factory_test PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-)
-
-add_custom_target(run_render_strategy_factory_tests
-    COMMAND render_strategy_factory_test
-    DEPENDS render_strategy_factory_test
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-    COMMENT "Running Strategy Factory tests"
-)
-
-add_test(NAME render_strategy_factory_test COMMAND render_strategy_factory_test)
+# Integration tests
+add_spectraforge_test(integration_pipeline_test integration_pipeline_test.cpp)
 
 # Instanced Mesh tests (CPU-only)
-add_executable(instanced_mesh_test
-    instanced_mesh_test.cpp
-)
-
+add_executable(instanced_mesh_test instanced_mesh_test.cpp)
 target_link_libraries(instanced_mesh_test
     PRIVATE
     GTest::gtest_main
 )
-
-# Include GLM headers (header-only library)
 target_include_directories(instanced_mesh_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
-
 set_target_properties(instanced_mesh_test PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
-
+add_test(NAME instanced_mesh_test COMMAND instanced_mesh_test)
 add_custom_target(run_instanced_mesh_tests
     COMMAND instanced_mesh_test
     DEPENDS instanced_mesh_test
@@ -132,4 +125,168 @@ add_custom_target(run_instanced_mesh_tests
     COMMENT "Running Instanced Mesh data packing tests"
 )
 
-add_test(NAME instanced_mesh_test COMMAND instanced_mesh_test)
+# ============================================================================
+# Test Suites
+# ============================================================================
+
+# Run all tests
+add_custom_target(run_all_tests
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --verbose
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    COMMENT "Running all tests"
+)
+
+# Run only Math tests
+add_custom_target(run_math_tests
+    DEPENDS 
+        run_math_vector3_test 
+        run_math_matrix4_test 
+        run_math_quaternion_test
+        run_math_vector_extra_test
+    COMMENT "Running all Math tests"
+)
+
+# Run only Core tests
+add_custom_target(run_core_tests
+    DEPENDS 
+        run_core_transform3d_test 
+        run_core_logger_test 
+        run_core_gameobject3d_test
+        run_core_vma_memory_test
+    COMMENT "Running all Core tests"
+)
+
+# Run only Rendering tests
+add_custom_target(run_rendering_tests
+    DEPENDS run_rendering_camera3d_test
+    COMMENT "Running all Rendering tests"
+)
+
+# Run only Input tests
+add_custom_target(run_input_tests
+    DEPENDS run_input_system_test
+    COMMENT "Running all Input tests"
+)
+
+# Run only Physics tests
+add_custom_target(run_physics_tests
+    DEPENDS run_physics_system_test
+    COMMENT "Running all Physics tests"
+)
+
+# Run only Upscaling tests
+add_custom_target(run_upscaling_tests
+    DEPENDS run_upscaling_system_test
+    COMMENT "Running all Upscaling tests"
+)
+
+# Run unit tests only (fast tests)
+add_custom_target(run_unit_tests
+    DEPENDS run_math_tests run_core_tests
+    COMMENT "Running fast unit tests"
+)
+
+# Run integration tests
+add_custom_target(run_integration_tests
+    DEPENDS run_integration_pipeline_test
+    COMMENT "Running integration tests"
+)
+
+# ============================================================================
+# Code Coverage Target
+# ============================================================================
+
+if(ENABLE_COVERAGE)
+    # Find lcov and genhtml
+    find_program(LCOV_PATH lcov)
+    find_program(GENHTML_PATH genhtml)
+    
+    if(LCOV_PATH AND GENHTML_PATH)
+        message(STATUS "Found lcov: ${LCOV_PATH}")
+        message(STATUS "Found genhtml: ${GENHTML_PATH}")
+        
+        # Coverage target
+        add_custom_target(coverage
+            # Reset coverage counters
+            COMMAND ${LCOV_PATH} --directory . --zerocounters
+            
+            # Run all tests
+            COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+            
+            # Capture coverage data
+            COMMAND ${LCOV_PATH} 
+                --directory . 
+                --capture 
+                --output-file coverage.info
+                
+            # Filter out system headers and test files
+            COMMAND ${LCOV_PATH}
+                --remove coverage.info 
+                '/usr/*' 
+                '*/tests/*' 
+                '*/build/*'
+                '*/examples/*'
+                --output-file coverage_filtered.info
+                
+            # Generate HTML report
+            COMMAND ${GENHTML_PATH} 
+                coverage_filtered.info 
+                --output-directory coverage_report
+                --title "SpectraForge Code Coverage"
+                --legend
+                
+            # Display summary
+            COMMAND ${LCOV_PATH} 
+                --summary coverage_filtered.info
+                
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Generating code coverage report..."
+        )
+        
+        # Clean coverage target
+        add_custom_target(coverage_clean
+            COMMAND ${CMAKE_COMMAND} -E remove coverage.info coverage_filtered.info
+            COMMAND ${CMAKE_COMMAND} -E remove_directory coverage_report
+            COMMAND ${LCOV_PATH} --directory . --zerocounters
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Cleaning coverage data"
+        )
+        
+        message(STATUS "Coverage targets added: 'make coverage' and 'make coverage_clean'")
+    else()
+        message(WARNING "lcov or genhtml not found. Coverage reporting disabled.")
+        message(STATUS "Install lcov: sudo apt-get install lcov")
+    endif()
+endif()
+
+# ============================================================================
+# Test Summary
+# ============================================================================
+
+message(STATUS "")
+message(STATUS "=== Test Configuration Summary ===")
+message(STATUS "Total test executables: 19")
+message(STATUS "  Math tests: 4")
+message(STATUS "  Core tests: 4")
+message(STATUS "  Rendering tests: 7 (Camera3D + existing)")
+message(STATUS "  Input tests: 1")
+message(STATUS "  Physics tests: 1")
+message(STATUS "  Upscaling tests: 1")
+message(STATUS "  Integration tests: 1")
+message(STATUS "")
+message(STATUS "Available targets:")
+message(STATUS "  make run_all_tests         - Run all tests")
+message(STATUS "  make run_unit_tests        - Run fast unit tests")
+message(STATUS "  make run_math_tests        - Run Math module tests")
+message(STATUS "  make run_core_tests        - Run Core module tests")
+message(STATUS "  make run_rendering_tests   - Run Rendering module tests")
+message(STATUS "  make run_input_tests       - Run Input module tests")
+message(STATUS "  make run_physics_tests     - Run Physics module tests")
+message(STATUS "  make run_upscaling_tests   - Run Upscaling module tests")
+message(STATUS "  make run_integration_tests - Run integration tests")
+if(ENABLE_COVERAGE)
+    message(STATUS "  make coverage             - Generate coverage report")
+    message(STATUS "  make coverage_clean       - Clean coverage data")
+endif()
+message(STATUS "==================================")
+message(STATUS "")
