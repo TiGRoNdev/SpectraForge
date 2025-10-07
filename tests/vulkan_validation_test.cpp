@@ -59,14 +59,20 @@ protected:
     void SetUp() override {
         // Создаем instance с validation layers
         try {
-            vk::ApplicationInfo appInfo{};
+            // CRITICAL FIX: Properly initialize Vulkan structs with sType
+            vk::ApplicationInfo appInfo;
+            appInfo.sType = vk::StructureType::eApplicationInfo;
+            appInfo.pNext = nullptr;
             appInfo.pApplicationName = "VulkanValidation Test";
             appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.pEngineName = "SpectraForge Test";
             appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.apiVersion = VK_API_VERSION_1_0;
 
-            vk::InstanceCreateInfo createInfo{};
+            vk::InstanceCreateInfo createInfo;
+            createInfo.sType = vk::StructureType::eInstanceCreateInfo;
+            createInfo.pNext = nullptr;
+            createInfo.flags = {};
             createInfo.pApplicationInfo = &appInfo;
 
             // Добавляем validation layers если поддерживаются

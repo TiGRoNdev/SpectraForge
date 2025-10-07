@@ -10,12 +10,13 @@ using namespace SpectraForge::Math;
 
 // Конструкторы
 /**
- * @brief Конструктор по умолчанию создает нулевую матрицу
+ * @brief Конструктор по умолчанию создает единичную матрицу
  *
- * Для создания единичной матрицы используйте Matrix4::identity()
+ * Соответствует стандарту GLM и математическим библиотекам.
+ * Для создания нулевой матрицы используйте Matrix4::zero()
  */
 Matrix4::Matrix4() : m{} {
-    setZero();
+    setIdentity();
 }
 
 Matrix4::Matrix4(const Matrix4& other) = default;
@@ -501,7 +502,8 @@ Vector3 Matrix4::transformDirection(const Vector3& direction) const {
     result.x = m[0][0] * direction.x + m[0][1] * direction.y + m[0][2] * direction.z;
     result.y = m[1][0] * direction.x + m[1][1] * direction.y + m[1][2] * direction.z;
     result.z = m[2][0] * direction.x + m[2][1] * direction.y + m[2][2] * direction.z;
-    return result;
+    // Нормализуем результат, чтобы направление оставалось единичным
+    return result.normalized();
 }
 
 Vector3 Matrix4::transformVector(const Vector3& vector) const {

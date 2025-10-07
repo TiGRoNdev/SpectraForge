@@ -71,6 +71,7 @@ add_subdirectory(src)
 # Подключаем тесты (если включены)
 option(ENABLE_TESTS "Enable tests" ON)
 if(ENABLE_TESTS)
+    enable_testing()
     add_subdirectory(tests)
 endif()
 
@@ -80,10 +81,13 @@ add_library(SpectraForge STATIC
     $<TARGET_OBJECTS:SpectraForge_Math>
     $<TARGET_OBJECTS:SpectraForge_Platform>
     $<TARGET_OBJECTS:SpectraForge_Vulkan>
+    $<TARGET_OBJECTS:SpectraForge_Upscaling>
+    $<TARGET_OBJECTS:SpectraForge_Input>
+    $<TARGET_OBJECTS:SpectraForge_Physics>
 )
 
 # Подключаем только Vulkan. PNG удалён из общей библиотеки и перенесён в FrameOutput.
-target_link_libraries(SpectraForge PUBLIC Vulkan::Vulkan)
+target_link_libraries(SpectraForge PUBLIC Vulkan::Vulkan glfw)
 
 # Определения компилятора
 target_compile_definitions(SpectraForge PUBLIC

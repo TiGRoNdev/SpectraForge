@@ -27,6 +27,12 @@ HardwareDetector::~HardwareDetector() {
 
 bool HardwareDetector::init(vk::PhysicalDevice device) {
     try {
+        // CRITICAL FIX: Check if device is valid before using it
+        if (!device) {
+            std::cerr << "[HardwareDetector] Ошибка: передан null physical device" << std::endl;
+            return false;
+        }
+        
         this->physicalDevice = device;
 
         // Получаем свойства устройства

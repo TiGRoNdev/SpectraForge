@@ -30,11 +30,19 @@ namespace upscaling {
  * @brief Upscaling quality preset
  */
 enum class UpscaleQuality {
-    PERFORMANCE,    // Lowest input resolution, highest perf
-    BALANCED,       // Balance quality/perf
-    QUALITY,        // Higher input resolution
-    ULTRA_QUALITY   // Highest quality, lowest perf boost
+    PERFORMANCE,                // Lowest input resolution, highest perf
+    BALANCED,                   // Balance quality/perf
+    QUALITY,                    // Higher input resolution
+    ULTRA_QUALITY,              // Highest quality, lowest perf boost
+    // Aliases for backward compatibility
+    Performance = PERFORMANCE,
+    Balanced = BALANCED,
+    Quality = QUALITY,
+    UltraQuality = ULTRA_QUALITY
 };
+
+// Type alias for backward compatibility
+using UpscalerQuality = UpscaleQuality;
 
 /**
  * @brief Upscaling configuration

@@ -40,8 +40,9 @@ TEST_F(Camera3DTest, DefaultConstructor) {
     // Arrange & Act
     Camera3D cam;
     
-    // Assert
-    EXPECT_TRUE(vectorsEqual(cam.getPosition(), Vector3::zero()));
+    // Assert - по умолчанию камера на позиции (0, 0, 5), смотрит на (0, 0, 0)
+    EXPECT_TRUE(vectorsEqual(cam.getPosition(), Vector3(0.0f, 0.0f, 5.0f)));
+    EXPECT_TRUE(vectorsEqual(cam.getTarget(), Vector3::zero()));
 }
 
 TEST_F(Camera3DTest, SetPosition) {
@@ -105,7 +106,14 @@ TEST_F(Camera3DTest, LookAtDirection) {
     // Act
     Vector3 forward = camera->getForward();
     
-    // Assert - forward должен указывать на target
+    // Debug output
+    std::cout << "Forward vector: (" << forward.x << ", " << forward.y << ", " << forward.z << ")" << std::endl;
+    std::cout << "Expected: (0, 0, -1)" << std::endl;
+    std::cout << "Magnitude: " << forward.magnitude() << std::endl;
+    
+    // Assert - forward должен указывать на target (от камеры к цели = отрицательное Z)
+    EXPECT_TRUE(nearlyEqual(forward.x, 0.0f));
+    EXPECT_TRUE(nearlyEqual(forward.y, 0.0f));
     EXPECT_TRUE(nearlyEqual(forward.z, -1.0f));
 }
 

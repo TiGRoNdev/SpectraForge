@@ -292,8 +292,10 @@ Quaternion Quaternion::lookRotation(const Vector3& forward, const Vector3& up) {
     const Vector3 normalizedUp = up.normalized();
 
     const Vector3 right = normalizedUp.cross(normalizedForward).normalized();
-    const Vector3 actualUp = normalizedForward.cross(right);
+    const Vector3 actualUp = normalizedForward.cross(right).normalized();  // Нормализуем!
 
+    // Создаем матрицу вращения
+    // Forward уже в правильном направлении, не инвертируем
     Matrix4 rotationMatrix;
     rotationMatrix.m[0][0] = right.x;
     rotationMatrix.m[0][1] = right.y;

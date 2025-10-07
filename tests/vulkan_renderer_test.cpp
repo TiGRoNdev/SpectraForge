@@ -297,13 +297,10 @@ TEST_F(VulkanRendererTest, RasterizePrimaryEmptyGaussiansTest) {
     Gaussians gaussians;
     gaussians.count = 0;
 
-    // Act
-    PrimaryImage image = renderer->rasterizePrimary(gaussians);
-
-    // Assert: Должен вернуть пустое изображение или выбросить исключение
-    EXPECT_NO_THROW({
+    // Act & Assert: Должен выбросить исключение для пустых данных
+    EXPECT_THROW({
         renderer->rasterizePrimary(gaussians);
-    });
+    }, std::invalid_argument);
 }
 
 TEST_F(VulkanRendererTest, RasterizePrimaryLargeCountTest) {
@@ -371,10 +368,10 @@ TEST_F(VulkanRendererTest, RayTraceSecondaryInvalidSizeTest) {
     primaryImage.width = 0;
     primaryImage.height = 0;
 
-    // Act & Assert: Должен обработать невалидный размер
-    EXPECT_NO_THROW({
+    // Act & Assert: Должен выбросить исключение для невалидного размера
+    EXPECT_THROW({
         renderer->rayTraceSecondary(primaryImage);
-    });
+    }, std::invalid_argument);
 }
 
 TEST_F(VulkanRendererTest, RayTraceSecondaryBeforeInitTest) {
@@ -505,10 +502,10 @@ TEST_F(VulkanRendererTest, UpscaleZeroFactorTest) {
     target.height = 0;
     target.scaleFactor = 0.0f;
 
-    // Act & Assert: Должен обработать невалидный фактор
-    EXPECT_NO_THROW({
+    // Act & Assert: Должен выбросить исключение для невалидного фактора
+    EXPECT_THROW({
         renderer->upscale(denoisedImage, target);
-    });
+    }, std::invalid_argument);
 }
 
 TEST_F(VulkanRendererTest, UpscaleBeforeInitTest) {
@@ -664,9 +661,9 @@ TEST_F(VulkanRendererTest, InvalidInputHandlingTest) {
     Gaussians invalidGaussians;
     invalidGaussians.count = 0;
     
-    EXPECT_NO_THROW({
+    EXPECT_THROW({
         renderer->rasterizePrimary(invalidGaussians);
-    });
+    }, std::invalid_argument);
 }
 
 TEST_F(VulkanRendererTest, OutOfOrderOperationsTest) {
@@ -784,10 +781,10 @@ TEST_F(VulkanRendererTest, ExtremeHighResolutionTest) {
     primaryImage.width = 16384;  // 16K
     primaryImage.height = 8192;
 
-    // Act & Assert: Очень высокое разрешение
-    EXPECT_NO_THROW({
+    // Act & Assert: Очень высокое разрешение должно вызвать исключение
+    EXPECT_THROW({
         renderer->rayTraceSecondary(primaryImage);
-    });
+    }, std::invalid_argument);
 }
 
 TEST_F(VulkanRendererTest, VeryLargeGaussianCountTest) {
@@ -797,10 +794,10 @@ TEST_F(VulkanRendererTest, VeryLargeGaussianCountTest) {
     Gaussians gaussians;
     gaussians.count = 10000000;  // 10 миллионов
 
-    // Act & Assert: Очень большое количество
-    EXPECT_NO_THROW({
+    // Act & Assert: Очень большое количество должно вызвать исключение
+    EXPECT_THROW({
         renderer->rasterizePrimary(gaussians);
-    });
+    }, std::invalid_argument);
 }
 
 // ============================================================================

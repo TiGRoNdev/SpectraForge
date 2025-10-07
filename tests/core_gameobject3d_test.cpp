@@ -384,10 +384,10 @@ TEST_F(GameObject3DTest, RemoveComponent) {
 TEST_F(GameObject3DTest, RemoveComponentByType) {
     // Arrange
     GameObject3D obj;
-    obj.addComponent<Transform3D>();
+    Transform3D* comp = obj.addComponent<Transform3D>();
     
     // Act
-    obj.removeComponent("Transform3D");
+    obj.removeComponent(comp);
     
     // Assert
     Transform3D* found = obj.getComponent<Transform3D>();

@@ -25,16 +25,25 @@ public:
 
     bool create() {
         try {
-            // Создаем instance
-            vk::ApplicationInfo appInfo{};
+            // CRITICAL FIX: Properly initialize Vulkan structs with sType
+            vk::ApplicationInfo appInfo;
+            appInfo.sType = vk::StructureType::eApplicationInfo;
+            appInfo.pNext = nullptr;
             appInfo.pApplicationName = "ResourceManager Test";
             appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.pEngineName = "SpectraForge Test";
             appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.apiVersion = VK_API_VERSION_1_0;
 
-            vk::InstanceCreateInfo createInfo{};
+            vk::InstanceCreateInfo createInfo;
+            createInfo.sType = vk::StructureType::eInstanceCreateInfo;
+            createInfo.pNext = nullptr;
+            createInfo.flags = {};
             createInfo.pApplicationInfo = &appInfo;
+            createInfo.enabledLayerCount = 0;
+            createInfo.ppEnabledLayerNames = nullptr;
+            createInfo.enabledExtensionCount = 0;
+            createInfo.ppEnabledExtensionNames = nullptr;
 
             instance = vk::createInstance(createInfo);
             if (!instance) return false;
@@ -345,7 +354,7 @@ TEST_F(ResourceManagerTest, CreateTextureTest) {
     ImageData imageData{};
     imageData.width = 256;
     imageData.height = 256;
-    imageData.format = vk::Format::eR8G8B8A8Srgb;
+    imageData.format = static_cast<uint32_t>(vk::Format::eR8G8B8A8Srgb);
     imageData.data = nullptr;  // Заглушка
     imageData.dataSize = 256 * 256 * 4;
 
@@ -362,7 +371,7 @@ TEST_F(ResourceManagerTest, CreateTextureInvalidSizeTest) {
     ImageData imageData{};
     imageData.width = 0;  // Невалидный размер
     imageData.height = 0;
-    imageData.format = vk::Format::eR8G8B8A8Srgb;
+    imageData.format = static_cast<uint32_t>(vk::Format::eR8G8B8A8Srgb);
     imageData.data = nullptr;
     imageData.dataSize = 0;
 
@@ -384,13 +393,13 @@ TEST_F(ResourceManagerTest, CreateTextureDifferentFormatsTest) {
     imageData.dataSize = 256 * 256 * 4;
 
     EXPECT_NO_THROW({
-        imageData.format = vk::Format::eR8G8B8A8Srgb;
+        imageData.format = static_cast<uint32_t>(vk::Format::eR8G8B8A8Srgb);
         resourceManager->createTexture(imageData);
 
-        imageData.format = vk::Format::eR8G8B8A8Unorm;
+        imageData.format = static_cast<uint32_t>(vk::Format::eR8G8B8A8Unorm);
         resourceManager->createTexture(imageData);
 
-        imageData.format = vk::Format::eR32G32B32A32Sfloat;
+        imageData.format = static_cast<uint32_t>(vk::Format::eR32G32B32A32Sfloat);
         resourceManager->createTexture(imageData);
     });
 }
@@ -402,7 +411,7 @@ TEST_F(ResourceManagerTest, CreateTextureMipmapsTest) {
     ImageData imageData{};
     imageData.width = 512;
     imageData.height = 512;
-    imageData.format = vk::Format::eR8G8B8A8Srgb;
+    imageData.format = static_cast<uint32_t>(vk::Format::eR8G8B8A8Srgb);
     imageData.data = nullptr;
     imageData.dataSize = 512 * 512 * 4;
     imageData.mipLevels = 4;  // 4 мип уровня
@@ -424,7 +433,7 @@ TEST_F(ResourceManagerTest, FreeImageTest) {
     ImageData imageData{};
     imageData.width = 256;
     imageData.height = 256;
-    imageData.format = vk::Format::eR8G8B8A8Srgb;
+    imageData.format = static_cast<uint32_t>(vk::Format::eR8G8B8A8Srgb);
     imageData.dataSize = 256 * 256 * 4;
 
     vk::Image image = resourceManager->createTexture(imageData);
@@ -754,7 +763,7 @@ TEST_F(ResourceManagerTest, FullTextureWorkflowTest) {
     ImageData imageData{};
     imageData.width = 512;
     imageData.height = 512;
-    imageData.format = vk::Format::eR8G8B8A8Srgb;
+    imageData.format = static_cast<uint32_t>(vk::Format::eR8G8B8A8Srgb);
     imageData.dataSize = 512 * 512 * 4;
     imageData.mipLevels = 1;
 
@@ -786,7 +795,7 @@ TEST_F(ResourceManagerTest, MultipleResourcesTest) {
         ImageData imageData{};
         imageData.width = 128 * (i + 1);
         imageData.height = 128 * (i + 1);
-        imageData.format = vk::Format::eR8G8B8A8Srgb;
+        imageData.format = static_cast<uint32_t>(vk::Format::eR8G8B8A8Srgb);
         imageData.dataSize = imageData.width * imageData.height * 4;
         images.push_back(resourceManager->createTexture(imageData));
     }

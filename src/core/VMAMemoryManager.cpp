@@ -72,6 +72,12 @@ void* VMABuffer::map() {
         return mappedData_;  // Already mapped
     }
     
+    // CRITICAL FIX: Check if allocator and allocation are valid before mapping
+    if (allocator_ == nullptr || allocation_ == nullptr) {
+        std::cerr << "VMABuffer::map() - Cannot map: buffer is not initialized (allocator or allocation is null)\n";
+        return nullptr;
+    }
+    
     VkResult result = vmaMapMemory(allocator_, allocation_, &mappedData_);
     if (result != VK_SUCCESS) {
         std::cerr << "Failed to map buffer memory: " << result << "\n";
@@ -82,7 +88,7 @@ void* VMABuffer::map() {
 }
 
 void VMABuffer::unmap() {
-    if (mappedData_ != nullptr) {
+    if (mappedData_ != nullptr && allocator_ != nullptr && allocation_ != nullptr) {
         vmaUnmapMemory(allocator_, allocation_);
         mappedData_ = nullptr;
     }

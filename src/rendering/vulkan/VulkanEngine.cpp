@@ -142,7 +142,7 @@ void VulkanEngine::renderFrame(const CameraParams& params) {
 
     if (!initialized) {
         SAFE_ERROR("[VulkanEngine] Ошибка: Движок не инициализирован");
-        return;
+        throw std::runtime_error("VulkanEngine не инициализирован");
     }
 
     try {

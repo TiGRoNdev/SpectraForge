@@ -8,6 +8,8 @@
 #include <SpectraForge/Core/LogLevel.h>
 #include <fstream>
 #include <filesystem>
+#include <thread>
+#include <vector>
 
 using namespace SpectraForge::Core;
 

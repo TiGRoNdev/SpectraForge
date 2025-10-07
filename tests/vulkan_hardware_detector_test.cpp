@@ -21,15 +21,25 @@ public:
     static vk::Instance createMockInstance() {
         // Создаем реальный Vulkan instance для тестирования
         try {
-            vk::ApplicationInfo appInfo{};
+            // CRITICAL FIX: Properly initialize Vulkan structs with sType
+            vk::ApplicationInfo appInfo;
+            appInfo.sType = vk::StructureType::eApplicationInfo;
+            appInfo.pNext = nullptr;
             appInfo.pApplicationName = "HardwareDetector Test";
             appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.pEngineName = "SpectraForge Test";
             appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
             appInfo.apiVersion = VK_API_VERSION_1_0;
 
-            vk::InstanceCreateInfo createInfo{};
+            vk::InstanceCreateInfo createInfo;
+            createInfo.sType = vk::StructureType::eInstanceCreateInfo;
+            createInfo.pNext = nullptr;
+            createInfo.flags = {};
             createInfo.pApplicationInfo = &appInfo;
+            createInfo.enabledLayerCount = 0;
+            createInfo.ppEnabledLayerNames = nullptr;
+            createInfo.enabledExtensionCount = 0;
+            createInfo.ppEnabledExtensionNames = nullptr;
 
             // Создаем instance без validation layers для тестов
             return vk::createInstance(createInfo);

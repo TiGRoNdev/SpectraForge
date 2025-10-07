@@ -5,6 +5,7 @@
 
 #include <gtest/gtest.h>
 #include <SpectraForge/Core/VMAMemoryManager.h>
+#include <thread>
 
 using namespace spectraforge::core;
 

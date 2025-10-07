@@ -99,7 +99,7 @@ std::string Logger::levelToString(LogLevel level) const {
         case LogLevel::INFO_LEVEL:
             return "INFO";
         case LogLevel::WARNING_LEVEL:
-            return "WARN";
+            return "WARNING";
         case LogLevel::ERROR_LEVEL:
             return "ERROR";
         default:

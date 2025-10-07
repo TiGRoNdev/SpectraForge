@@ -28,7 +28,9 @@ Camera3D::Camera3D()
 // Настройка позиции и ориентации
 void Camera3D::setPosition(const Vector3& pos) {
     std::cout << "[Camera3D] setPosition вызван: (" << pos.x << ", " << pos.y << ", " << pos.z << ")" << std::endl;
+    Vector3 offset = pos - position;
     position = pos;
+    target += offset;  // Сохраняем направление взгляда
     markViewMatrixDirty();
 }
 
@@ -49,8 +51,8 @@ void Camera3D::lookAt(const Vector3& pos, const Vector3& newTarget, const Vector
     target = newTarget;
 
     Vector3 forward = (newTarget - pos).normalized();
-    Vector3 right = up.cross(forward).normalized();
-    Vector3 actualUp = forward.cross(right);
+    Vector3 right = forward.cross(up).normalized();  // Правильный порядок: forward × up = right
+    Vector3 actualUp = right.cross(forward).normalized();  // right × forward = up
 
     rotation = Quaternion::lookRotation(forward, actualUp);
     markViewMatrixDirty();
@@ -58,15 +60,19 @@ void Camera3D::lookAt(const Vector3& pos, const Vector3& newTarget, const Vector
 
 // Направления камеры
 Vector3 Camera3D::getForward() const {
-    return rotation.rotate(Vector3::forward());
+    // Вычисляем forward напрямую из target и position
+    return (target - position).normalized();
 }
 
 Vector3 Camera3D::getRight() const {
-    return rotation.rotate(Vector3::right());
+    Vector3 forward = getForward();
+    return forward.cross(Vector3::up()).normalized();
 }
 
 Vector3 Camera3D::getUp() const {
-    return rotation.rotate(Vector3::up());
+    Vector3 forward = getForward();
+    Vector3 right = getRight();
+    return right.cross(forward).normalized();
 }
 
 // Навигация
@@ -280,40 +286,45 @@ Camera3D::Frustum Camera3D::getFrustum() const {
 
     Matrix4 viewProj = getViewProjectionMatrix();
 
-    // Извлекаем плоскости фрустума из матрицы view-projection
-    // Левая плоскость
-    frustum.planes[0] = Vector3(viewProj.m[0][3] + viewProj.m[0][0],
-                                viewProj.m[1][3] + viewProj.m[1][0],
-                                viewProj.m[2][3] + viewProj.m[2][0]);
-    frustum.distances[0] = viewProj.m[3][3] + viewProj.m[3][0];
+    // CRITICAL FIX: Извлекаем плоскости фрустума с правильной ориентацией нормалей
+    // Нормали ДОЛЖНЫ указывать ВНУТРЬ frustum для корректной проверки signed distance
+    // Для row-major матриц: используем ПРОТИВОПОЛОЖНЫЕ знаки для инверсии нормалей
+    
+    // Левая плоскость: -(row3 + row0) для инверсии нормали внутрь
+    frustum.planes[0] = Vector3(-(viewProj.m[3][0] + viewProj.m[0][0]),
+                                -(viewProj.m[3][1] + viewProj.m[0][1]),
+                                -(viewProj.m[3][2] + viewProj.m[0][2]));
+    frustum.distances[0] = -(viewProj.m[3][3] + viewProj.m[0][3]);
 
-    // Правая плоскость
-    frustum.planes[1] = Vector3(viewProj.m[0][3] - viewProj.m[0][0],
-                                viewProj.m[1][3] - viewProj.m[1][0],
-                                viewProj.m[2][3] - viewProj.m[2][0]);
-    frustum.distances[1] = viewProj.m[3][3] - viewProj.m[3][0];
+    // Правая плоскость: -(row3 - row0)
+    frustum.planes[1] = Vector3(-(viewProj.m[3][0] - viewProj.m[0][0]),
+                                -(viewProj.m[3][1] - viewProj.m[0][1]),
+                                -(viewProj.m[3][2] - viewProj.m[0][2]));
+    frustum.distances[1] = -(viewProj.m[3][3] - viewProj.m[0][3]);
 
-    // Нижняя плоскость
-    frustum.planes[2] = Vector3(viewProj.m[0][3] + viewProj.m[0][1],
-                                viewProj.m[1][3] + viewProj.m[1][1],
-                                viewProj.m[2][3] + viewProj.m[2][1]);
-    frustum.distances[2] = viewProj.m[3][3] + viewProj.m[3][1];
+    // Нижняя плоскость: -(row3 + row1)
+    frustum.planes[2] = Vector3(-(viewProj.m[3][0] + viewProj.m[1][0]),
+                                -(viewProj.m[3][1] + viewProj.m[1][1]),
+                                -(viewProj.m[3][2] + viewProj.m[1][2]));
+    frustum.distances[2] = -(viewProj.m[3][3] + viewProj.m[1][3]);
 
-    // Верхняя плоскость
-    frustum.planes[3] = Vector3(viewProj.m[0][3] - viewProj.m[0][1],
-                                viewProj.m[1][3] - viewProj.m[1][1],
-                                viewProj.m[2][3] - viewProj.m[2][1]);
-    frustum.distances[3] = viewProj.m[3][3] - viewProj.m[3][1];
+    // Верхняя плоскость: -(row3 - row1)
+    frustum.planes[3] = Vector3(-(viewProj.m[3][0] - viewProj.m[1][0]),
+                                -(viewProj.m[3][1] - viewProj.m[1][1]),
+                                -(viewProj.m[3][2] - viewProj.m[1][2]));
+    frustum.distances[3] = -(viewProj.m[3][3] - viewProj.m[1][3]);
 
-    // Ближняя плоскость
-    frustum.planes[4] = Vector3(viewProj.m[0][2], viewProj.m[1][2], viewProj.m[2][2]);
-    frustum.distances[4] = viewProj.m[3][2];
+    // Ближняя плоскость: -(row3 + row2) for Vulkan [0,1] depth
+    frustum.planes[4] = Vector3(-(viewProj.m[3][0] + viewProj.m[2][0]),
+                                -(viewProj.m[3][1] + viewProj.m[2][1]), 
+                                -(viewProj.m[3][2] + viewProj.m[2][2]));
+    frustum.distances[4] = -(viewProj.m[3][3] + viewProj.m[2][3]);
 
-    // Дальняя плоскость
-    frustum.planes[5] = Vector3(viewProj.m[0][3] - viewProj.m[0][2],
-                                viewProj.m[1][3] - viewProj.m[1][2],
-                                viewProj.m[2][3] - viewProj.m[2][2]);
-    frustum.distances[5] = viewProj.m[3][3] - viewProj.m[3][2];
+    // Дальняя плоскость: -(row3 - row2)
+    frustum.planes[5] = Vector3(-(viewProj.m[3][0] - viewProj.m[2][0]),
+                                -(viewProj.m[3][1] - viewProj.m[2][1]),
+                                -(viewProj.m[3][2] - viewProj.m[2][2]));
+    frustum.distances[5] = -(viewProj.m[3][3] - viewProj.m[2][3]);
 
     // Нормализуем плоскости
     for (int i = 0; i < 6; ++i) {

@@ -231,10 +231,10 @@ TEST_F(Matrix4Test, Transpose) {
     // Act
     Matrix4 result = mat.transpose();
     
-    // Assert
-    EXPECT_FLOAT_EQ(result.m[0][1], 5.0f);
-    EXPECT_FLOAT_EQ(result.m[1][0], 2.0f);
-    EXPECT_FLOAT_EQ(result.m[2][3], 12.0f);
+    // Assert - после транспонирования m[i][j] -> m[j][i]
+    EXPECT_FLOAT_EQ(result.m[0][1], 5.0f);   // было m[1][0]
+    EXPECT_FLOAT_EQ(result.m[1][0], 2.0f);   // было m[0][1]
+    EXPECT_FLOAT_EQ(result.m[3][2], 12.0f);  // было m[2][3]
 }
 
 TEST_F(Matrix4Test, TransposeIdentity) {

@@ -1,16 +1,24 @@
 # Система ввода SpectraForge
-cmake_minimum_required(VERSION 3.16)
 
 message(STATUS "Настройка SpectraForge_Input")
 
-# Пока заглушка - будет реализовано в следующих этапах
-add_library(SpectraForge_Input INTERFACE)
-
-target_include_directories(SpectraForge_Input 
-    INTERFACE ${CMAKE_SOURCE_DIR}/include
+# Create input module as object library
+add_library(SpectraForge_Input OBJECT
+    Input3D.cpp
 )
 
-# Создание alias
-add_library(SpectraForge::Input ALIAS SpectraForge_Input)
+# Include directories
+target_include_directories(SpectraForge_Input PUBLIC
+    ${CMAKE_SOURCE_DIR}/include
+)
 
-message(STATUS "SpectraForge_Input заглушка создана")
+# Link GLFW
+find_package(glfw3 REQUIRED)
+target_link_libraries(SpectraForge_Input PUBLIC glfw)
+
+# Compile definitions
+target_compile_definitions(SpectraForge_Input PUBLIC
+    SPECTRAFORGE_INPUT_BUILD
+)
+
+message(STATUS "SpectraForge_Input module configured")

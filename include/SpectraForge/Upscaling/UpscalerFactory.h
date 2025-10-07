@@ -25,7 +25,8 @@ enum class UpscalerType {
     AUTO,           ///< Automatic selection (DLSS for NVIDIA, FSR2 for others)
     DLSS,           ///< NVIDIA DLSS (requires RTX GPU)
     FSR2,           ///< AMD FidelityFX Super Resolution 2 (vendor-agnostic)
-    NONE            ///< No upscaling (native resolution)
+    NONE,           ///< No upscaling (native resolution)
+    Native = NONE   ///< Alias for NONE (backward compatibility)
 };
 
 /**
@@ -88,6 +89,17 @@ public:
      * @return Human-readable name
      */
     static const char* getTypeName(UpscalerType type);
+    
+    /**
+     * @brief Create upscaler with simplified API (for testing/backward compatibility)
+     * @param type Upscaler type
+     * @return Unique pointer to upscaler
+     */
+    static std::unique_ptr<IUpscaler> createUpscaler(UpscalerType type) {
+        UpscalerConfig config;
+        config.type = type;
+        return create(config, 0);
+    }
 
 private:
     /**

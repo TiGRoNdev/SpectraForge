@@ -32,9 +32,8 @@ Vector3 Vector3::operator*(float scalar) const {
 }
 
 Vector3 Vector3::operator/(float scalar) const {
-    if (std::abs(scalar) < std::numeric_limits<float>::epsilon()) {
-        throw std::invalid_argument("Деление на ноль");
-    }
+    // IEEE 754 поведение: деление на ноль возвращает inf/nan
+    // Это более производительно и соответствует стандарту
     return Vector3(x / scalar, y / scalar, z / scalar);
 }
 
@@ -60,9 +59,7 @@ Vector3& Vector3::operator*=(float scalar) {
 }
 
 Vector3& Vector3::operator/=(float scalar) {
-    if (std::abs(scalar) < std::numeric_limits<float>::epsilon()) {
-        throw std::invalid_argument("Деление на ноль");
-    }
+    // IEEE 754 поведение: деление на ноль возвращает inf/nan
     x /= scalar;
     y /= scalar;
     z /= scalar;

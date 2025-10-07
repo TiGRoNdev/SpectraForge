@@ -35,7 +35,7 @@ echo "✅ Vulkan SDK найден в системе"
 echo "✅ Проверки зависимостей пройдены"
 
 # Создаем директорию сборки если её нет
-BUILD_DIR="build_linux"
+BUILD_DIR="build"
 if [ ! -d "$BUILD_DIR" ]; then
     echo "📁 Создаём директорию сборки: $BUILD_DIR"
     mkdir -p "$BUILD_DIR"
@@ -53,7 +53,8 @@ cmake .. \
     -DVULKAN_SDK_PATH="$VULKAN_SDK_PATH" \
     -DCMAKE_PREFIX_PATH="$VULKAN_SDK_PATH" \
     -DBUILD_EXAMPLES=ON \
-    -DBUILD_TESTS=OFF
+    -DBUILD_TESTS=ON \
+    -DENABLE_VULKAN_BACKEND=ON \
 
 # Сборка проекта
 echo "🔨 Сборка проекта..."

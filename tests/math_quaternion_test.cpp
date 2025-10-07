@@ -507,9 +507,10 @@ TEST_F(QuaternionTest, CompositionOfRotations) {
     Quaternion q2 = Quaternion::fromAxisAngle(Vector3::unitY(), M_PI / 2.0f);
     
     // Act
+    // В математике кватернионов: (q1 * q2).rotate(v) = q1.rotate(q2.rotate(v))
     Quaternion combined = q1 * q2;
     Vector3 v(0, 0, 1);
-    Vector3 result1 = q2.rotate(q1.rotate(v));
+    Vector3 result1 = q1.rotate(q2.rotate(v));  // Правильный порядок
     Vector3 result2 = combined.rotate(v);
     
     // Assert - композиция должна давать тот же результат

@@ -7,6 +7,7 @@
 
 #include <gtest/gtest.h>
 #include "SpectraForge/Vulkan/SceneManager.h"
+#include "SpectraForge/Vulkan/VulkanRenderer.h"
 #include <memory>
 
 using namespace SpectraForge::Vulkan;

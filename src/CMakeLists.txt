@@ -16,3 +16,12 @@ add_subdirectory(output)
 
 # Performance benchmarking
 add_subdirectory(performance)
+
+# Input module
+add_subdirectory(input)
+
+# Physics module
+add_subdirectory(physics)
+
+# Upscaling module
+add_subdirectory(upscaling)

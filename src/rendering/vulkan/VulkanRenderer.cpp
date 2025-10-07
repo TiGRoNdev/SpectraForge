@@ -197,7 +197,7 @@ RawEffects VulkanRenderer::rayTraceSecondary(const PrimaryImage& image) {
 DenoisedImage VulkanRenderer::denoiseAI(const RawEffects& effects) {
     if (!initialized) {
         SAFE_ERROR("[VulkanRenderer] Ошибка: Рендерер не инициализирован");
-        return DenoisedImage{};
+        throw std::runtime_error("VulkanRenderer не инициализирован");
     }
 
     SAFE_PRINT_LINE("[VulkanRenderer] AI деноизинг эффектов");
@@ -260,7 +260,7 @@ FinalImage VulkanRenderer::upscale(const DenoisedImage& image, const ResolutionT
 void VulkanRenderer::presentFinalImage() {
     if (!initialized) {
         SAFE_ERROR("[VulkanRenderer] Ошибка: Рендерер не инициализирован");
-        return;
+        throw std::runtime_error("VulkanRenderer не инициализирован");
     }
 
     SAFE_PRINT_LINE("[VulkanRenderer] Презентация финального изображения");
