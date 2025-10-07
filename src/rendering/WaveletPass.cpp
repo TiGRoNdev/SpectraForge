@@ -9,17 +9,19 @@
  * @date 2025-10-02
  */
 
-#include "SpectraForge/rendering/WaveletPass.h"
-#include "SpectraForge/core/VulkanContext.h"
+#include "SpectraForge/Rendering/RenderPass/WaveletPass.h"
+#include "SpectraForge/Core/VulkanContext.h"
 #include <vulkan/vulkan.h>
-#include "SpectraForge/core/VMAMemoryManager.h"
+#include "SpectraForge/Core/VMAMemoryManager.h"
 #include <fstream>
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
 #include <vector>
 #include <string>
+#ifdef SPECTRAFORGE_ENABLE_SHADERC
 #include <shaderc/shaderc.hpp>
+#endif
 
 namespace spectraforge {
 namespace rendering {
@@ -577,45 +579,49 @@ std::vector<uint32_t> WaveletPass::loadShaderSPIRV() const {
         }
     }
 
-    // 2) Fallback: compile GLSL at runtime using shaderc
-    std::vector<std::string> glslPaths = {
-        "shaders/WaveletLifting.comp",
-        "../shaders/WaveletLifting.comp",
-        "../../shaders/WaveletLifting.comp"
-    };
+    // 2) Fallback: compile GLSL at runtime using shaderc (optional)
+#ifdef SPECTRAFORGE_ENABLE_SHADERC
+    {
+        std::vector<std::string> glslPaths = {
+            "shaders/WaveletLifting.comp",
+            "../shaders/WaveletLifting.comp",
+            "../../shaders/WaveletLifting.comp"
+        };
 
-    for (const auto& path : glslPaths) {
-        std::ifstream file(path);
-        if (!file.is_open()) continue;
+        for (const auto& path : glslPaths) {
+            std::ifstream file(path);
+            if (!file.is_open()) continue;
 
-        std::stringstream ss;
-        ss << file.rdbuf();
-        std::string source = ss.str();
-        file.close();
+            std::stringstream ss;
+            ss << file.rdbuf();
+            std::string source = ss.str();
+            file.close();
 
-        shaderc::Compiler compiler;
-        shaderc::CompileOptions options;
-        options.SetSourceLanguage(shaderc_source_language_glsl);
-        options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
-        options.SetOptimizationLevel(shaderc_optimization_level_performance);
+            shaderc::Compiler compiler;
+            shaderc::CompileOptions options;
+            options.SetSourceLanguage(shaderc_source_language_glsl);
+            options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+            options.SetOptimizationLevel(shaderc_optimization_level_performance);
 
-        auto result = compiler.CompileGlslToSpv(
-            source.c_str(), source.size(),
-            shaderc_compute_shader,
-            "WaveletLifting.comp",
-            options
-        );
+            auto result = compiler.CompileGlslToSpv(
+                source.c_str(), source.size(),
+                shaderc_compute_shader,
+                "WaveletLifting.comp",
+                options
+            );
 
-        if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-            std::cerr << "WaveletLifting: shaderc compile error: " << result.GetErrorMessage() << "\n";
-            continue;
+            if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
+                std::cerr << "WaveletLifting: shaderc compile error: " << result.GetErrorMessage() << "\n";
+                continue;
+            }
+
+            std::vector<uint32_t> spirv(result.cbegin(), result.cend());
+            std::cout << "Compiled GLSL to SPIR-V at runtime from: " << path
+                      << " (" << spirv.size()*sizeof(uint32_t) << " bytes)\n";
+            return spirv;
         }
-
-        std::vector<uint32_t> spirv(result.cbegin(), result.cend());
-        std::cout << "Compiled GLSL to SPIR-V at runtime from: " << path
-                  << " (" << spirv.size()*sizeof(uint32_t) << " bytes)\n";
-        return spirv;
     }
+#endif
 
     std::cerr << "Failed to load or compile WaveletLifting.comp(.spv)\n";
     return {};

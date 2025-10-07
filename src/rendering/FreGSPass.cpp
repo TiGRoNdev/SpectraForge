@@ -9,16 +9,18 @@
  * @date 2025-10-02
  */
 
-#include "SpectraForge/rendering/FreGSPass.h"
-#include "SpectraForge/core/VulkanContext.h"
-#include "SpectraForge/core/VMAMemoryManager.h"
+#include "SpectraForge/Rendering/RenderPass/FreGSPass.h"
+#include "SpectraForge/Core/VulkanContext.h"
+#include "SpectraForge/Core/VMAMemoryManager.h"
 #include <fstream>
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
 #include <vector>
 #include <string>
+#ifdef SPECTRAFORGE_ENABLE_SHADERC
 #include <shaderc/shaderc.hpp>
+#endif
 #include <cstring>
 
 namespace spectraforge {
@@ -481,45 +483,49 @@ std::vector<uint32_t> FreGSPass::loadShaderSPIRV() const {
         }
     }
 
-    // 2) Fallback: compile GLSL at runtime
-    std::vector<std::string> glslPaths = {
-        "shaders/GaussFreqSplat.comp",
-        "../shaders/GaussFreqSplat.comp",
-        "../../shaders/GaussFreqSplat.comp"
-    };
+    // 2) Fallback: compile GLSL at runtime (optional)
+#ifdef SPECTRAFORGE_ENABLE_SHADERC
+    {
+        std::vector<std::string> glslPaths = {
+            "shaders/GaussFreqSplat.comp",
+            "../shaders/GaussFreqSplat.comp",
+            "../../shaders/GaussFreqSplat.comp"
+        };
 
-    for (const auto& path : glslPaths) {
-        std::ifstream file(path);
-        if (!file.is_open()) continue;
+        for (const auto& path : glslPaths) {
+            std::ifstream file(path);
+            if (!file.is_open()) continue;
 
-        std::stringstream ss;
-        ss << file.rdbuf();
-        std::string source = ss.str();
-        file.close();
+            std::stringstream ss;
+            ss << file.rdbuf();
+            std::string source = ss.str();
+            file.close();
 
-        shaderc::Compiler compiler;
-        shaderc::CompileOptions options;
-        options.SetSourceLanguage(shaderc_source_language_glsl);
-        options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
-        options.SetOptimizationLevel(shaderc_optimization_level_performance);
+            shaderc::Compiler compiler;
+            shaderc::CompileOptions options;
+            options.SetSourceLanguage(shaderc_source_language_glsl);
+            options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+            options.SetOptimizationLevel(shaderc_optimization_level_performance);
 
-        auto result = compiler.CompileGlslToSpv(
-            source.c_str(), source.size(),
-            shaderc_compute_shader,
-            "GaussFreqSplat.comp",
-            options
-        );
+            auto result = compiler.CompileGlslToSpv(
+                source.c_str(), source.size(),
+                shaderc_compute_shader,
+                "GaussFreqSplat.comp",
+                options
+            );
 
-        if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-            std::cerr << "GaussFreqSplat: shaderc compile error: " << result.GetErrorMessage() << "\n";
-            continue;
+            if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
+                std::cerr << "GaussFreqSplat: shaderc compile error: " << result.GetErrorMessage() << "\n";
+                continue;
+            }
+
+            std::vector<uint32_t> spirv(result.cbegin(), result.cend());
+            std::cout << "Compiled GLSL to SPIR-V at runtime from: " << path
+                      << " (" << spirv.size()*sizeof(uint32_t) << " bytes)\n";
+            return spirv;
         }
-
-        std::vector<uint32_t> spirv(result.cbegin(), result.cend());
-        std::cout << "Compiled GLSL to SPIR-V at runtime from: " << path
-                  << " (" << spirv.size()*sizeof(uint32_t) << " bytes)\n";
-        return spirv;
     }
+#endif
 
     std::cerr << "Failed to load or compile GaussFreqSplat.comp(.spv)\n";
     return {};

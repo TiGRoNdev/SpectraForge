@@ -58,3 +58,52 @@ add_custom_target(run_connectivity_phase1_tests
 )
 
 add_test(NAME connectivity_phase1_test COMMAND connectivity_phase1_test)
+
+# Interfaces (Week 1) tests
+add_executable(render_strategy_interfaces_test
+    render_strategy_interfaces_test.cpp
+)
+
+target_link_libraries(render_strategy_interfaces_test
+    PRIVATE
+    SpectraForge
+    GTest::gtest_main
+    Vulkan::Vulkan
+)
+
+set_target_properties(render_strategy_interfaces_test PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+
+add_custom_target(run_render_strategy_interfaces_tests
+    COMMAND render_strategy_interfaces_test
+    DEPENDS render_strategy_interfaces_test
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    COMMENT "Running Render Strategy Interfaces tests"
+)
+
+add_test(NAME render_strategy_interfaces_test COMMAND render_strategy_interfaces_test)
+
+# Week 2: Strategy factory tests
+add_executable(render_strategy_factory_test
+    render_strategy_factory_test.cpp
+)
+
+target_link_libraries(render_strategy_factory_test
+    PRIVATE
+    SpectraForge
+    GTest::gtest_main
+)
+
+set_target_properties(render_strategy_factory_test PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+
+add_custom_target(run_render_strategy_factory_tests
+    COMMAND render_strategy_factory_test
+    DEPENDS render_strategy_factory_test
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    COMMENT "Running Strategy Factory tests"
+)
+
+add_test(NAME render_strategy_factory_test COMMAND render_strategy_factory_test)

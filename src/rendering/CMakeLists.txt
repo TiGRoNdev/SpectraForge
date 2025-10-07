@@ -3,6 +3,8 @@
 # Create rendering module as object library
 add_library(SpectraForge_Vulkan OBJECT
     HybridFreGSRenderer.cpp
+    FreGSRenderStrategy.cpp
+    StrategyFactory.cpp
     VulkanValidation.cpp
     TriangleSplattingPass.cpp
     FreGSPass.cpp
