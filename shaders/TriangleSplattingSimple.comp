@@ -1,0 +1,37 @@
+/**
+ * @file TriangleSplattingSimple.comp
+ * @brief Максимально простой шейдер для проверки работы рендеринга
+ */
+
+#version 460
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+// Output image - единственное что нам нужно
+layout(set = 0, binding = 0, rgba8) uniform image2D outImage;
+
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 imageSize = imageSize(outImage);
+    
+    // Проверка границ
+    if (pixel.x >= imageSize.x || pixel.y >= imageSize.y) {
+        return;
+    }
+    
+    // Рисуем простой градиент
+    vec2 uv = vec2(pixel) / vec2(imageSize);
+    vec3 color = vec3(uv.x, 0.5 - 0.5 * uv.y, uv.y);
+    
+    // Добавим сетку для видимости
+    if ((pixel.x % 50) == 0 || (pixel.y % 50) == 0) {
+        color = vec3(1.0, 1.0, 0.0); // Жёлтые линии
+    }
+    
+    // Центральный крест
+    if (abs(pixel.x - imageSize.x/2) < 2 || abs(pixel.y - imageSize.y/2) < 2) {
+        color = vec3(1.0, 0.0, 0.0); // Красный крест
+    }
+    
+    imageStore(outImage, pixel, vec4(color, 1.0));
+}

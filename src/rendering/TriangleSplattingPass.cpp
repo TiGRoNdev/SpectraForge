@@ -25,7 +25,10 @@ inline float halfToFloat(uint16_t h) {
         uint32_t f_exp = h_exp + 112;  // Смещение экспоненты для float
         uint32_t f_mant = h_mant << 13; // Смещение мантиссы для float
         uint32_t f = (h & 0x8000) << 16 | (f_exp << 23) | f_mant; // Знак + экспонента + мантисса
-        return *reinterpret_cast<float*>(&f);
+        // Используем memcpy для избежания strict-aliasing
+        float result;
+        std::memcpy(&result, &f, sizeof(float));
+        return result;
     }
 }
 
@@ -1307,8 +1310,6 @@ TriangleSplattingPass::convertMeshToTriangles(const SpectraForge::Rendering::Mes
         tri.normal = glm::normalize(normal);
         
         tri.materialId = 0; // Default material
-        tri.padding[0] = 0.0f;
-        tri.padding[1] = 0.0f;
         
         triangles.push_back(tri);
     }

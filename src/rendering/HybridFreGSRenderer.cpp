@@ -777,11 +777,11 @@ void HybridFreGSRenderer::renderFrame(const FrameData& /*frameData*/) {
     
     // Update camera view-projection matrix (унифицировано)
     if (camera_ && triangleSplattingPass_) {
-        // DEBUG: вывести матрицу вида один раз
-        static bool viewPrinted = false;
-        if (!viewPrinted) {
+        // DEBUG: вывести матрицу вида для первых 3 кадров
+        static int viewPrintCount = 0;
+        if (viewPrintCount < 3) {
             const auto& view = camera_->getViewMatrix();
-            std::cout << "\n===== DEBUG: View Matrix =====\n";
+            std::cout << "\n===== DEBUG: View Matrix [кадр " << viewPrintCount << "] =====\n";
             for (int row = 0; row < 4; row++) {
                 std::cout << "  [" << view.m[row][0] << ", " << view.m[row][1] << ", " 
                           << view.m[row][2] << ", " << view.m[row][3] << "]\n";
@@ -789,7 +789,7 @@ void HybridFreGSRenderer::renderFrame(const FrameData& /*frameData*/) {
             std::cout << "Камера position: (" << camera_->getPosition().x << ", " 
                       << camera_->getPosition().y << ", " << camera_->getPosition().z << ")\n";
             std::cout << "==============================\n\n";
-            viewPrinted = true;
+            viewPrintCount++;
         }
 
         const glm::mat4 viewProj = getCorrectedViewProjMatrix();
@@ -1357,19 +1357,25 @@ glm::mat4 HybridFreGSRenderer::getCorrectedViewProjMatrix() const {
     const auto& view = camera_->getViewMatrix();
     const auto& proj = camera_->getProjectionMatrix();
 
+    // КРИТИЧНО: НЕ транспонировать матрицы! Копировать как есть
     glm::mat4 viewGlm = glm::mat4(
-        view.m[0][0], view.m[1][0], view.m[2][0], view.m[3][0],
-        view.m[0][1], view.m[1][1], view.m[2][1], view.m[3][1],
-        view.m[0][2], view.m[1][2], view.m[2][2], view.m[3][2],
-        view.m[0][3], view.m[1][3], view.m[2][3], view.m[3][3]
+        view.m[0][0], view.m[0][1], view.m[0][2], view.m[0][3],
+        view.m[1][0], view.m[1][1], view.m[1][2], view.m[1][3],
+        view.m[2][0], view.m[2][1], view.m[2][2], view.m[2][3],
+        view.m[3][0], view.m[3][1], view.m[3][2], view.m[3][3]
     );
     glm::mat4 projGlm = glm::mat4(
-        proj.m[0][0], proj.m[1][0], proj.m[2][0], proj.m[3][0],
-        proj.m[0][1], proj.m[1][1], proj.m[2][1], proj.m[3][1],
-        proj.m[0][2], proj.m[1][2], proj.m[2][2], proj.m[3][2],
-        proj.m[0][3], proj.m[1][3], proj.m[2][3], proj.m[3][3]
+        proj.m[0][0], proj.m[0][1], proj.m[0][2], proj.m[0][3],
+        proj.m[1][0], proj.m[1][1], proj.m[1][2], proj.m[1][3],
+        proj.m[2][0], proj.m[2][1], proj.m[2][2], proj.m[2][3],
+        proj.m[3][0], proj.m[3][1], proj.m[3][2], proj.m[3][3]
     );
-    return projGlm * viewGlm;
+    
+    glm::mat4 viewProj = projGlm * viewGlm;
+    
+    // Debug отключен - матрицы проверены и исправлены
+    
+    return viewProj;
 }
 
 } // namespace Rendering

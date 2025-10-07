@@ -198,6 +198,147 @@ void main() {
         return;
     }
     
+    // DEBUG MODE 1: Проверка viewProj и рисование градиента
+    if (pc.debugMode == 1) {
+        vec2 uv = vec2(globalID) / vec2(pc.outputWidth, pc.outputHeight);
+        vec3 color = vec3(uv.x, 0.5, uv.y);
+        
+        // Проверка viewProj матрицы
+        if (abs(pc.viewProj[0][0] - 1.0) < 0.01 && abs(pc.viewProj[1][1] - 1.0) < 0.01) {
+            color = vec3(1.0, 0.0, 0.0); // Красный = единичная матрица (не установлена)
+        } else if (abs(pc.viewProj[3][3]) < 0.01) {
+            color = vec3(0.0, 1.0, 0.0); // Зелёный = нулевая матрица
+        }
+        
+        // Сетка
+        if ((globalID.x % 50) == 0 || (globalID.y % 50) == 0) {
+            color = vec3(1.0, 1.0, 0.0);
+        }
+        
+        // Информация о треугольниках
+        if (globalID.x < 200 && globalID.y < 50) {
+            float t = float(pc.triangleCount) / 1000.0;
+            color = vec3(t, t, t);
+        }
+        
+        imageStore(outImage, globalID, vec4(color, 1.0));
+        return;
+    }
+    
+    // DEBUG MODE 2: Визуализация проекции треугольников
+    if (pc.debugMode == 2) {
+        vec3 color = vec3(0.0, 0.0, 0.2); // Тёмно-синий фон
+        
+        // Проходим по всем треугольникам
+        for (uint i = 0; i < pc.triangleCount; ++i) {
+            Triangle tri = triangles[i];
+            
+            // Проецируем вершины
+            vec2 v0_screen = projectToScreen(tri.v0);
+            vec2 v1_screen = projectToScreen(tri.v1);
+            vec2 v2_screen = projectToScreen(tri.v2);
+            
+            // Рисуем белые точки в вершинах
+            float pointRadius = 10.0;
+            vec2 pixelPos = vec2(globalID);
+            
+            if (distance(pixelPos, v0_screen) < pointRadius) {
+                color = vec3(1.0, 0.0, 0.0); // Красная точка для v0
+            } else if (distance(pixelPos, v1_screen) < pointRadius) {
+                color = vec3(0.0, 1.0, 0.0); // Зелёная точка для v1
+            } else if (distance(pixelPos, v2_screen) < pointRadius) {
+                color = vec3(0.0, 0.0, 1.0); // Синяя точка для v2
+            }
+            
+            // Показываем центр экрана белым крестом
+            if (abs(int(globalID.x) - 400) < 2 || abs(int(globalID.y) - 300) < 2) {
+                color = vec3(1.0, 1.0, 1.0); // Белый крест в центре
+            }
+            
+            // Если вершины вне экрана, рисуем индикаторы на краях
+            if (i == 0) {
+                vec2 screenCenter = vec2(400, 300);
+                vec2 dir0 = normalize(v0_screen - screenCenter);
+                vec2 dir1 = normalize(v1_screen - screenCenter);
+                vec2 dir2 = normalize(v2_screen - screenCenter);
+                
+                // Рисуем стрелки указывающие на вершины за экраном
+                float edgeDist = 50.0;
+                vec2 edge0 = screenCenter + dir0 * (350.0 - edgeDist);
+                vec2 edge1 = screenCenter + dir1 * (350.0 - edgeDist);
+                vec2 edge2 = screenCenter + dir2 * (350.0 - edgeDist);
+                
+                if (v0_screen.x < 0 || v0_screen.x > 800 || v0_screen.y < 0 || v0_screen.y > 600) {
+                    if (distance(vec2(globalID), edge0) < 5.0) color = vec3(1.0, 0.0, 0.0);
+                }
+                if (v1_screen.x < 0 || v1_screen.x > 800 || v1_screen.y < 0 || v1_screen.y > 600) {
+                    if (distance(vec2(globalID), edge1) < 5.0) color = vec3(0.0, 1.0, 0.0);
+                }
+                if (v2_screen.x < 0 || v2_screen.x > 800 || v2_screen.y < 0 || v2_screen.y > 600) {
+                    if (distance(vec2(globalID), edge2) < 5.0) color = vec3(0.0, 0.0, 1.0);
+                }
+            }
+        }
+        
+        imageStore(outImage, globalID, vec4(color, 1.0));
+        return;
+    }
+    
+    // DEBUG MODE 3: Простая визуализация треугольника без проекции
+    if (pc.debugMode == 3) {
+        vec3 color = vec3(0.0, 0.0, 0.2); // Тёмно-синий фон
+        
+        if (pc.triangleCount > 0) {
+            Triangle tri = triangles[0];
+            
+            // Проецируем первую вершину для проверки
+            vec4 clip = pc.viewProj * vec4(tri.v0, 1.0);
+            vec3 ndc = clip.xyz / clip.w;
+            vec2 screen = (ndc.xy * 0.5 + 0.5) * vec2(pc.outputWidth, pc.outputHeight);
+            
+            // Рисуем информацию о координатах
+            if (globalID.x < 400 && globalID.y < 200) {
+                // Градиент для визуализации области текста
+                color = vec3(0.1, 0.1, 0.3);
+            }
+            
+            // Рисуем большую точку в проекции первой вершины
+            if (distance(vec2(globalID), screen) < 20.0) {
+                color = vec3(1.0, 0.0, 0.0); // Красная точка
+            }
+            
+            // Центр экрана
+            if (abs(int(globalID.x) - 400) < 2 || abs(int(globalID.y) - 300) < 2) {
+                color = vec3(1.0, 1.0, 1.0); // Белый крест
+            }
+            
+            // Показываем координаты NDC как цвет в углу
+            if (globalID.x < 100 && globalID.y < 100) {
+                // Кодируем NDC координаты в цвет
+                color.r = ndc.x * 0.5 + 0.5;
+                color.g = ndc.y * 0.5 + 0.5;
+                color.b = ndc.z * 0.5 + 0.5;
+            }
+            
+            // Показываем экранные координаты во втором углу
+            if (globalID.x >= 700 && globalID.x < 800 && globalID.y < 100) {
+                // Нормализуем screen координаты к [0, 1]
+                color.r = screen.x / float(pc.outputWidth);
+                color.g = screen.y / float(pc.outputHeight);
+                color.b = 0.5;
+            }
+            
+            // Показываем clip.w в третьем углу
+            if (globalID.x < 100 && globalID.y >= 500 && globalID.y < 600) {
+                float w_normalized = clip.w / 10.0; // Нормализуем
+                color = vec3(w_normalized, w_normalized, w_normalized);
+            }
+        }
+        
+        imageStore(outImage, globalID, vec4(color, 1.0));
+        return;
+    }
+    
     vec2 pixelPos = vec2(globalID) + 0.5; // Pixel center
     
     // Accumulation buffers (front-to-back alpha blending)

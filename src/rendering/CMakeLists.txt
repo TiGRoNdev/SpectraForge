@@ -9,6 +9,7 @@ add_library(SpectraForge_Vulkan OBJECT
     TriangleSplattingPass.cpp
     FreGSPass.cpp
     WaveletPass.cpp
+    InstancedMeshPass.cpp
     RenderPass.cpp
     # Minimal OpenGL-compatible components used across the engine
     opengl/Camera3D.cpp

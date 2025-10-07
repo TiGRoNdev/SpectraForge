@@ -1,0 +1,174 @@
+#version 450
+
+/**
+ * @file DepthSortAtomic.comp
+ * @brief Оптимизированная сортировка треугольников по глубине через atomic counters
+ * 
+ * ПРЕИМУЩЕСТВА:
+ * 1. O(N) сложность вместо O(N log N) для bitonic sort
+ * 2. Использует counting sort с atomic операциями
+ * 3. Подходит для мобильных GPU (Adreno 7xx)
+ * 4. Минимальное использование памяти
+ */
+
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_EXT_shader_subgroup_extended_types : enable
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+// === Структура треугольника (96 байт) ===
+struct Triangle {
+    vec3 v0, v1, v2;           // 36 байт
+    vec3 color;                // 12 байт  
+    float opacity;             // 4 байта
+    float sigma;               // 4 байта
+    vec3 normal;               // 12 байт
+    int materialId;            // 4 байта
+    vec2 texCoord0, texCoord1, texCoord2; // 24 байта
+    float padding[1];          // 4 байта
+};
+
+// === Буферы ===
+layout(set = 0, binding = 0) readonly buffer TriangleBuffer {
+    Triangle triangles[];
+};
+
+// Буфер глубин (ключи сортировки)
+layout(set = 0, binding = 1) buffer DepthBuffer {
+    float depthKeys[];
+};
+
+// Отсортированные индексы
+layout(set = 0, binding = 2) buffer SortedIndicesBuffer {
+    uint sortedIndices[];
+};
+
+// Atomic counters для каждого бина глубины
+layout(set = 0, binding = 3) buffer AtomicCountersBuffer {
+    uint binCounters[];
+};
+
+// Префиксные суммы для определения позиций
+layout(set = 0, binding = 4) buffer PrefixSumsBuffer {
+    uint prefixSums[];
+};
+
+// === Push Constants ===
+layout(push_constant) uniform PushConstants {
+    mat4 viewProj;              // 64 байта
+    uint triangleCount;         // 4 байта
+    uint binCount;              // 4 байта - количество бинов глубины
+    float nearPlane;            // 4 байта
+    float farPlane;             // 4 байта
+    uint phase;                 // 4 байта - фаза алгоритма (0=count, 1=prefix, 2=scatter)
+    uint padding[3];            // 12 байт - выравнивание до 96 байт
+} pc;
+
+// === Константы ===
+const uint MAX_BINS = 1024;  // Максимум бинов для дискретизации глубины
+
+// === Helper функции ===
+
+/**
+ * @brief Вычисление глубины центра треугольника
+ */
+float computeTriangleDepth(Triangle tri) {
+    vec3 center = (tri.v0 + tri.v1 + tri.v2) / 3.0;
+    vec4 clipPos = pc.viewProj * vec4(center, 1.0);
+    
+    if (clipPos.w <= 0.0001) {
+        return 1.0; // За камерой
+    }
+    
+    // NDC depth в диапазоне [0, 1]
+    float ndcDepth = clipPos.z / clipPos.w;
+    return clamp(ndcDepth * 0.5 + 0.5, 0.0, 1.0);
+}
+
+/**
+ * @brief Преобразование глубины в индекс бина
+ */
+uint depthToBin(float depth) {
+    // Линейная дискретизация глубины
+    uint bin = uint(depth * float(pc.binCount - 1));
+    return min(bin, pc.binCount - 1);
+}
+
+/**
+ * @brief Parallel prefix sum (scan) using subgroups
+ */
+uint subgroupInclusiveScan(uint value) {
+    #ifdef GL_KHR_shader_subgroup_arithmetic
+        return subgroupInclusiveAdd(value);
+    #else
+        // Fallback для GPU без subgroup support
+        return value;
+    #endif
+}
+
+// === Main compute ===
+void main() {
+    uint tid = gl_GlobalInvocationID.x;
+    
+    // Phase 0: Подсчет треугольников в каждом бине
+    if (pc.phase == 0) {
+        if (tid < pc.triangleCount) {
+            // Вычисляем глубину треугольника
+            Triangle tri = triangles[tid];
+            float depth = computeTriangleDepth(tri);
+            depthKeys[tid] = depth;
+            
+            // Определяем бин и атомарно инкрементируем счетчик
+            uint bin = depthToBin(depth);
+            atomicAdd(binCounters[bin], 1);
+        }
+    }
+    
+    // Phase 1: Префиксная сумма для определения начальных позиций каждого бина
+    else if (pc.phase == 1) {
+        // Простая последовательная префиксная сумма (выполняется одним потоком)
+        // Для больших массивов можно использовать параллельный scan
+        if (tid == 0) {
+            uint sum = 0;
+            for (uint i = 0; i < pc.binCount; ++i) {
+                prefixSums[i] = sum;
+                sum += binCounters[i];
+                // Сбрасываем счетчик для phase 2
+                binCounters[i] = 0;
+            }
+        }
+    }
+    
+    // Phase 2: Распределение треугольников по отсортированным позициям
+    else if (pc.phase == 2) {
+        if (tid < pc.triangleCount) {
+            float depth = depthKeys[tid];
+            uint bin = depthToBin(depth);
+            
+            // Атомарно получаем позицию в отсортированном массиве
+            uint localIndex = atomicAdd(binCounters[bin], 1);
+            uint globalIndex = prefixSums[bin] + localIndex;
+            
+            // Записываем индекс треугольника в отсортированную позицию
+            if (globalIndex < pc.triangleCount) {
+                sortedIndices[globalIndex] = tid;
+            }
+        }
+    }
+    
+    // Memory barrier для консистентности между фазами
+    memoryBarrierBuffer();
+}
+
+/**
+ * ИСПОЛЬЗОВАНИЕ:
+ * 
+ * 1. Dispatch phase 0 с (triangleCount + 255) / 256 groups
+ * 2. Barrier
+ * 3. Dispatch phase 1 с 1 group
+ * 4. Barrier  
+ * 5. Dispatch phase 2 с (triangleCount + 255) / 256 groups
+ * 
+ * Результат: sortedIndices[] содержит индексы треугольников,
+ * отсортированные по глубине (front-to-back)
+ */

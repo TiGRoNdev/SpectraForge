@@ -69,6 +69,13 @@ class HybridFreGSRenderer final : public IRenderer {
      * @brief Загрузка треугольников для Triangle Splatting (meshes)
      */
     void uploadTriangles(const std::vector<spectraforge::rendering::TriangleSplattingPass::Triangle>& triangles);
+    
+    /**
+     * @brief Получить указатель на Triangle Splatting Pass для отладки
+     */
+    spectraforge::rendering::TriangleSplattingPass* getTriangleSplattingPass() { 
+        return triangleSplattingPass_.get(); 
+    }
 
     /**
      * @brief Установить режим рендеринга

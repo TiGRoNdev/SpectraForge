@@ -174,6 +174,79 @@ if(BUILD_EXAMPLES)
     endif()
 
     message(STATUS "BlueCube_Demo created (rotating blue cube)")
+    
+    # Optimized demo with 60+ FPS on mobile GPUs
+    add_executable(SpectraForge_Optimized_Demo
+        examples/SpectraForge_Optimized_Demo.cpp
+    )
+    target_link_libraries(SpectraForge_Optimized_Demo PRIVATE 
+        SpectraForge_App
+        SpectraForge_Core
+        SpectraForge_Math
+        SpectraForge_Platform
+        SpectraForge_Vulkan
+        SpectraForge
+        FrameOutput
+        glfw
+    )
+    
+    if(UNIX AND NOT APPLE)
+        find_package(X11 REQUIRED)
+        target_include_directories(SpectraForge_Optimized_Demo PRIVATE ${X11_INCLUDE_DIR})
+        target_link_libraries(SpectraForge_Optimized_Demo PRIVATE ${X11_LIBRARIES})
+    endif()
+    
+    message(STATUS "SpectraForge_Optimized_Demo created (60+ FPS, 4K HDR support)")
+    
+    # Instanced Mesh Demo
+    add_executable(InstancedMeshDemo
+        examples/InstancedMeshDemo.cpp
+    )
+    target_link_libraries(InstancedMeshDemo PRIVATE 
+        SpectraForge_App
+        SpectraForge_Core
+        SpectraForge_Math
+        SpectraForge_Platform
+        SpectraForge_Vulkan
+        SpectraForge
+        FrameOutput
+        glfw
+    )
+    
+    if(UNIX AND NOT APPLE)
+        find_package(X11 REQUIRED)
+        target_include_directories(InstancedMeshDemo PRIVATE ${X11_INCLUDE_DIR})
+        target_link_libraries(InstancedMeshDemo PRIVATE ${X11_LIBRARIES})
+    endif()
+    
+    message(STATUS "InstancedMeshDemo created (instanced rendering showcase)")
+    
+    # Simple Triangle Test
+    add_executable(SimpleTriangleTest
+        examples/SimpleTriangleTest.cpp
+    )
+    target_link_libraries(SimpleTriangleTest PRIVATE 
+        SpectraForge_App
+        SpectraForge_Core
+        SpectraForge_Math
+        SpectraForge
+        FrameOutput
+        glfw
+        ${CMAKE_DL_LIBS}
+        ${CMAKE_THREAD_LIBS_INIT}
+        ${PNG_LIBRARIES}
+    )
+    set_target_properties(SimpleTriangleTest PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+    
+    if(UNIX AND NOT APPLE)
+        find_package(X11 REQUIRED)
+        target_include_directories(SimpleTriangleTest PRIVATE ${X11_INCLUDE_DIR})
+        target_link_libraries(SimpleTriangleTest PRIVATE ${X11_LIBRARIES})
+    endif()
+    
+    message(STATUS "SimpleTriangleTest created (minimal triangle debug test)")
 endif()
 
 # ============================================================

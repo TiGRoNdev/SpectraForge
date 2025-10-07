@@ -107,3 +107,29 @@ add_custom_target(run_render_strategy_factory_tests
 )
 
 add_test(NAME render_strategy_factory_test COMMAND render_strategy_factory_test)
+
+# Instanced Mesh tests (CPU-only)
+add_executable(instanced_mesh_test
+    instanced_mesh_test.cpp
+)
+
+target_link_libraries(instanced_mesh_test
+    PRIVATE
+    GTest::gtest_main
+)
+
+# Include GLM headers (header-only library)
+target_include_directories(instanced_mesh_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+
+set_target_properties(instanced_mesh_test PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+
+add_custom_target(run_instanced_mesh_tests
+    COMMAND instanced_mesh_test
+    DEPENDS instanced_mesh_test
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    COMMENT "Running Instanced Mesh data packing tests"
+)
+
+add_test(NAME instanced_mesh_test COMMAND instanced_mesh_test)

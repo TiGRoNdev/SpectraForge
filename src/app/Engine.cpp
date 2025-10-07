@@ -631,8 +631,8 @@ void Engine::update(float delta_time) {
             if (glfwGetKey(win, GLFW_KEY_SPACE) == GLFW_PRESS) cameraPos.y += speed;
             if (glfwGetKey(win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) cameraPos.y -= speed;
 
-            // Обновляем рендер-камеру после движения
-            if (renderCamera_) {
+            // Обновляем рендер-камеру после движения (только если нет внешнего управления)
+            if (renderCamera_ && !externalCameraControl_) {
                 renderCamera_->setPosition(Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z));
                 renderCamera_->lookAt(
                     Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z),
@@ -663,7 +663,7 @@ void Engine::update(float delta_time) {
             Math::Vector3 targetPos = eyePos + Math::Vector3(cameraFront.x, cameraFront.y, cameraFront.z);
             Math::Vector3 upVector(0.0f, -1.0f, 0.0f); // ИСПРАВЛЕНО: Y-down для Vulkan
             
-            if (renderCamera_) {
+            if (renderCamera_ && !externalCameraControl_) {
                 renderCamera_->lookAt(eyePos, targetPos, upVector);
                 
                 // 3. ИСПРАВЛЕНО: Правильная projection matrix для Vulkan

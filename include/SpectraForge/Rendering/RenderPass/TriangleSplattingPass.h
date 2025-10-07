@@ -24,41 +24,44 @@ class TriangleSplattingPass final {
 public:
     /**
      * @brief Triangle primitive with learnable parameters
+     * КРИТИЧНО: Структура должна ТОЧНО соответствовать GLSL layout!
      */
+    #pragma pack(push, 1)
     struct Triangle {
-        // Vertices (3D world space)
+        // Vertices (3D world space) - 36 bytes
         glm::vec3 v0, v1, v2;
-
-        // Texture coordinates for each vertex
+        
+        // Appearance - 16 bytes  
+        glm::vec3 color;       // RGB color - 12 bytes
+        float opacity;         // Alpha - 4 bytes
+        
+        // Rendering parameters - 4 bytes
+        float sigma;           // Smoothness parameter
+        
+        // Lighting - 12 bytes
+        glm::vec3 normal;      // Face normal
+        
+        // Material - 4 bytes
+        int materialId;        // Material index
+        
+        // Texture coordinates - 24 bytes
         glm::vec2 texCoord0, texCoord1, texCoord2;
-
-        // Appearance
-        glm::vec3 color;       // RGB color (learnable)
-        float opacity;         // Alpha (learnable)
-
-        // Rendering parameters
-        float sigma;           // Smoothness parameter for window function
-
-        // Lighting
-        glm::vec3 normal;      // Face normal for lighting
-
-        // Material properties
-        int materialId;        // Material index for texture lookup
-        float padding[2];      // Align to 96 bytes
-
+        
+        // No padding needed with pragma pack
+        
         Triangle()
             : v0(0.0f), v1(0.0f), v2(0.0f)
-            , texCoord0(0.0f), texCoord1(0.0f), texCoord2(0.0f)
             , color(0.8f, 0.7f, 0.6f)
             , opacity(1.0f)
             , sigma(1.0f)
-            , normal(0.0f, 1.0f, 0.0f)  // Default up normal
+            , normal(0.0f, 1.0f, 0.0f)
             , materialId(0)
-            , padding{0.0f, 0.0f}
+            , texCoord0(0.0f), texCoord1(0.0f), texCoord2(0.0f)
         {}
     };
+    #pragma pack(pop)
     
-    static_assert(sizeof(Triangle) == 104, "Triangle must be 104 bytes for alignment (3 vec3 vertices + 3 vec2 texCoords + vec3 color + float opacity + float sigma + vec3 normal + int materialId + padding)");
+    static_assert(sizeof(Triangle) == 96, "Triangle must be EXACTLY 96 bytes to match GLSL struct!");
 
 public:
     /**

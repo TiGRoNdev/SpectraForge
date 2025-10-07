@@ -81,12 +81,23 @@ echo "📦 Компиляция Two-Pass Triangle Splatting шейдеров..."
 compile_shader "shaders/TriangleVisibility.comp" "shaders/TriangleVisibility.comp.spv"
 compile_shader "shaders/TriangleShading.comp" "shaders/TriangleShading.comp.spv"
 
+echo ""
+echo "📦 Компиляция Instanced Mesh шейдеров..."
+compile_shader "shaders/InstancedMesh.vert" "shaders/InstancedMesh.vert.spv"
+compile_shader "shaders/InstancedMesh.frag" "shaders/InstancedMesh.frag.spv"
+
 # === ДОПОЛНИТЕЛЬНЫЕ ШЕЙДЕРЫ (если есть) ===
 
 echo ""
 echo "📦 Компиляция Wavelet/FreGS шейдеров (если есть)..."
 compile_shader "shaders/HaarWavelet.comp" "shaders/HaarWavelet.comp.spv" || true
 compile_shader "shaders/GaussFreqSplat.comp" "shaders/GaussFreqSplat.comp.spv" || true
+
+echo ""
+echo "📦 Компиляция оптимизированных шейдеров..."
+echo "  Компилируем: shaders/DepthSortAtomic.comp → shaders/DepthSortAtomic.comp.spv"
+glslc -fshader-stage=compute --target-env=vulkan1.1 shaders/DepthSortAtomic.comp -o shaders/DepthSortAtomic.comp.spv && echo "  ✅ Успешно" || echo "  ❌ Ошибка"
+compile_shader "shaders/MobileUpscalingHDR.comp" "shaders/MobileUpscalingHDR.comp.spv"
 
 # === ФИНАЛЬНАЯ ПРОВЕРКА ===
 

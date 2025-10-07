@@ -95,6 +95,12 @@ public:
     std::shared_ptr<Rendering::Camera3D> getCamera() const;
     
     /**
+     * @brief Включить/выключить внешнее управление камерой
+     * @param external Если true, Engine не будет автоматически обновлять позицию камеры
+     */
+    void setExternalCameraControl(bool external) { externalCameraControl_ = external; }
+    
+    /**
      * @brief Получить рендерер
      */
     std::shared_ptr<Rendering::IRenderer> getRenderer() const;
@@ -156,6 +162,7 @@ public:
     // Debug state
     AppConfig::DebugMode currentDebugMode_ = AppConfig::DebugMode::NORMAL;
     bool wireframeEnabled_ = false;
+    bool externalCameraControl_ = false; // Флаг внешнего управления камерой
     
     // Timing
     std::chrono::steady_clock::time_point lastFrameTime_;

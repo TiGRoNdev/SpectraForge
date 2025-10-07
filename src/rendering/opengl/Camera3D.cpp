@@ -1,5 +1,6 @@
 #include "SpectraForge/Rendering/Camera3D.h"
 #include <cmath>
+#include <iostream>
 
 using namespace SpectraForge::Math;
 using namespace SpectraForge::Rendering;
@@ -26,6 +27,7 @@ Camera3D::Camera3D()
 
 // Настройка позиции и ориентации
 void Camera3D::setPosition(const Vector3& pos) {
+    std::cout << "[Camera3D] setPosition вызван: (" << pos.x << ", " << pos.y << ", " << pos.z << ")" << std::endl;
     position = pos;
     markViewMatrixDirty();
 }
@@ -41,6 +43,8 @@ void Camera3D::setRotation(const Quaternion& newRotation) {
 }
 
 void Camera3D::lookAt(const Vector3& pos, const Vector3& newTarget, const Vector3& up) {
+    std::cout << "[Camera3D] lookAt вызван: pos=(" << pos.x << ", " << pos.y << ", " << pos.z 
+              << "), target=(" << newTarget.x << ", " << newTarget.y << ", " << newTarget.z << ")" << std::endl;
     position = pos;
     target = newTarget;
 
@@ -207,7 +211,7 @@ void Camera3D::updateProjectionMatrix() const {
         projectionMatrix.m[1][1] = -1.0f / tanHalfFov;  // ИСПРАВЛЕНО: Y-flip для Vulkan
         projectionMatrix.m[2][2] = farPlane / (farPlane - nearPlane);
         projectionMatrix.m[2][3] = -(farPlane * nearPlane) / (farPlane - nearPlane);
-        projectionMatrix.m[3][2] = 1.0f;
+        projectionMatrix.m[3][2] = -1.0f;  // ИСПРАВЛЕНО: Для правильной проекции в Vulkan должно быть -1
         projectionMatrix.m[3][3] = 0.0f;
     } else {
         // Orthographic projection
