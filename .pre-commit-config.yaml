@@ -48,24 +48,26 @@ repos:
               vcpkg_installed/.*
           )$
 
-  # Локальные хуки для специфических проверок HyperEngine
+  # Локальные хуки для специфических проверок SpectraForge
   - repo: local
     hooks:
-      # Проверка namespace'ов
-      - id: check-namespaces
-        name: Check HyperEngine namespaces
-        entry: scripts/check_namespaces.sh
+      # SOLID Compliance Audit
+      - id: solid-audit
+        name: SOLID Compliance Check
+        entry: scripts/solid_audit.sh
         language: script
         files: \.(cpp|h|hpp)$
         pass_filenames: false
+        stages: [commit]
 
-      # Проверка include guards
-      - id: check-include-guards
-        name: Check include guards
-        entry: scripts/check_include_guards.sh
+      # SAFE_TO_STRING Check
+      - id: safe-to-string-check
+        name: SAFE_TO_STRING Compliance
+        entry: scripts/check_safe_to_string.sh
         language: script
-        files: \.h$
+        files: \.(cpp|c|cc|cxx)$
         pass_filenames: false
+        stages: [commit]
 
       # Быстрая проверка безопасности
       - id: security-check-quick
@@ -84,31 +86,37 @@ repos:
         language: system
         files: \.(cpp|h|hpp|c|cc|cxx)$
 
-      # Проверка на использование std::cout без SAFE_TO_STRING
-      - id: check-console-output
-        name: Check console output safety
+      # God Class Detection (SRP)
+      - id: god-class-check
+        name: God Class Detection (>500 lines)
         entry: bash
-        args: [-c, 'if grep -n "std::cout.*<<.*[^)]$" $@ | grep -v "SAFE_TO_STRING\|std::string\|\""; then echo "Используйте SAFE_TO_STRING для вывода переменных"; exit 1; fi']
+        args: [-c, 'for file in "$@"; do lines=$(wc -l < "$file"); if [ "$lines" -gt 500 ]; then echo "❌ SRP VIOLATION: $file has $lines lines (limit: 500)"; exit 1; fi; done']
+        language: system
+        files: \.(cpp|h|hpp)$
+
+      # Raw pointer check (RAII/DIP)
+      - id: raw-pointer-check
+        name: Raw Pointer Check (use smart pointers)
+        entry: bash
+        args: [-c, 'if grep -n "new \|delete " "$@" | grep -v "//"; then echo "❌ Use std::make_unique/make_shared instead of raw new/delete"; exit 1; fi']
         language: system
         files: \.(cpp|c|cc|cxx)$
 
-      # Автоматическое форматирование с помощью локального скрипта
-      - id: format-code-local
-        name: Format code with local script
-        entry: scripts/format_code.bat
-        language: script
-        files: \.(cpp|h|hpp|c|cc|cxx)$
-        pass_filenames: false
-        stages: [manual]  # Запускается только при явном вызове
+      # Using namespace std in headers
+      - id: no-using-namespace-std
+        name: No "using namespace std" in headers
+        entry: bash
+        args: [-c, 'if grep -n "using namespace std" "$@"; then echo "❌ NEVER use using namespace std in headers!"; exit 1; fi']
+        language: system
+        files: \.(h|hpp)$
 
-      # Быстрая проверка перед коммитом
-      - id: pre-commit-check
-        name: Quick pre-commit validation
-        entry: scripts/pre_commit_check.sh
-        language: script
-        files: \.(cpp|h|hpp|c|cc|cxx)$
-        pass_filenames: false
-        stages: [commit]
+      # Pragma once check
+      - id: pragma-once-check
+        name: Ensure #pragma once in headers
+        entry: bash
+        args: [-c, 'for file in "$@"; do if ! grep -q "#pragma once" "$file"; then echo "❌ Missing #pragma once in $file"; exit 1; fi; done']
+        language: system
+        files: \.(h|hpp)$
 
 # Конфигурация
 default_stages: [commit]

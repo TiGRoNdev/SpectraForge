@@ -1,0 +1,234 @@
+name: SOLID Compliance Check
+
+on:
+  push:
+    branches: [ feature/*, refactor/*, develop, release/* ]
+  pull_request:
+    branches: [ develop, release/master ]
+
+jobs:
+  solid-audit:
+    name: SOLID Principles Audit
+    runs-on: ubuntu-22.04
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang-tidy \
+            cppcheck \
+            cloc \
+            bc
+      
+      - name: Run SOLID Audit
+        id: solid_audit
+        run: |
+          bash scripts/solid_audit.sh
+        continue-on-error: true
+      
+      - name: Run SAFE_TO_STRING Check
+        id: safe_to_string
+        run: |
+          bash scripts/check_safe_to_string.sh
+        continue-on-error: true
+      
+      - name: Generate SOLID Report
+        if: always()
+        run: |
+          echo "# 📊 SOLID Compliance Report" > solid_report.md
+          echo "" >> solid_report.md
+          echo "**Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> solid_report.md
+          echo "**Branch:** ${{ github.ref_name }}" >> solid_report.md
+          echo "**Commit:** ${{ github.sha }}" >> solid_report.md
+          echo "" >> solid_report.md
+          
+          # SRP Check - File size
+          echo "## 📏 SRP: File Size Check (500 lines limit)" >> solid_report.md
+          echo "" >> solid_report.md
+          LARGE_FILES=$(find src/ include/ -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.hpp" \) -exec wc -l {} \; | awk '$1 > 500 {print}' | sort -nr)
+          if [ -z "$LARGE_FILES" ]; then
+            echo "✅ **PASSED**: No files exceed 500 lines" >> solid_report.md
+          else
+            echo "❌ **FAILED**: Files exceeding 500 lines:" >> solid_report.md
+            echo '```' >> solid_report.md
+            echo "$LARGE_FILES" >> solid_report.md
+            echo '```' >> solid_report.md
+          fi
+          
+          # DIP Check - Raw pointers
+          echo "" >> solid_report.md
+          echo "## 🔌 DIP: Raw Pointer Check" >> solid_report.md
+          echo "" >> solid_report.md
+          RAW_NEW=$(grep -rn "new " src/ --include="*.cpp" | grep -v "//" | wc -l)
+          RAW_DELETE=$(grep -rn "delete " src/ --include="*.cpp" | grep -v "//" | wc -l)
+          if [ "$RAW_NEW" -eq 0 ] && [ "$RAW_DELETE" -eq 0 ]; then
+            echo "✅ **PASSED**: No raw pointers (new/delete) found" >> solid_report.md
+          else
+            echo "⚠️  **WARNING**: Found $RAW_NEW 'new' and $RAW_DELETE 'delete'" >> solid_report.md
+            echo "Use std::make_unique<> / std::make_shared<> instead" >> solid_report.md
+          fi
+          
+          # SAFE_TO_STRING Check
+          echo "" >> solid_report.md
+          echo "## 🛡️  Console Safety Check" >> solid_report.md
+          echo "" >> solid_report.md
+          UNSAFE_COUT=$(grep -rn "std::cout" src/ --include="*.cpp" | grep -v "SAFE_TO_STRING" | grep -v '<<.*"' | wc -l)
+          if [ "$UNSAFE_COUT" -eq 0 ]; then
+            echo "✅ **PASSED**: All std::cout use SAFE_TO_STRING" >> solid_report.md
+          else
+            echo "❌ **FAILED**: Found $UNSAFE_COUT unsafe std::cout" >> solid_report.md
+            echo "Wrap variables in SAFE_TO_STRING()" >> solid_report.md
+          fi
+          
+          # Code Metrics
+          echo "" >> solid_report.md
+          echo "## 📊 Code Metrics" >> solid_report.md
+          echo "" >> solid_report.md
+          echo '```' >> solid_report.md
+          cloc src/ include/ --quiet >> solid_report.md
+          echo '```' >> solid_report.md
+          
+          cat solid_report.md
+      
+      - name: Upload SOLID Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: solid-compliance-report
+          path: solid_report.md
+      
+      - name: Comment PR with SOLID Report
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            let report = '';
+            try {
+              report = fs.readFileSync('solid_report.md', 'utf8');
+            } catch (error) {
+              report = '⚠️  Could not generate SOLID report';
+            }
+            
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+      
+      - name: Fail if SOLID violations found
+        if: steps.solid_audit.outcome == 'failure' || steps.safe_to_string.outcome == 'failure'
+        run: |
+          echo "❌ SOLID Compliance check failed!"
+          echo "Please fix violations before merging"
+          exit 1
+
+  file-size-check:
+    name: God Class Detection
+    runs-on: ubuntu-22.04
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Find God Classes (>500 lines)
+        run: |
+          echo "🔍 Поиск God Classes (файлы >500 строк)..."
+          
+          GOD_CLASSES=$(find src/ include/ -type f \( -name "*.cpp" -o -name "*.h" -o -name "*.hpp" \) -exec sh -c '
+            lines=$(wc -l < "$1")
+            if [ "$lines" -gt 500 ]; then
+              printf "%5d lines: %s\n" "$lines" "$1"
+            fi
+          ' sh {} \; | sort -rn)
+          
+          if [ -z "$GOD_CLASSES" ]; then
+            echo "✅ Нет файлов больше 500 строк - SRP соблюдается!"
+            exit 0
+          else
+            echo "❌ КРИТИЧЕСКОЕ: Найдены God Classes:"
+            echo "$GOD_CLASSES"
+            
+            COUNT=$(echo "$GOD_CLASSES" | wc -l)
+            echo ""
+            echo "Всего God Classes: $COUNT"
+            echo ""
+            echo "⚠️  Эти файлы нарушают Single Responsibility Principle"
+            echo "Пожалуйста, декомпозируйте их на более мелкие классы"
+            
+            # Блокируем merge если найдены God Classes
+            exit 1
+          fi
+
+  dependency-injection-check:
+    name: DIP Compliance (Constructor Injection)
+    runs-on: ubuntu-22.04
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check for hardcoded dependencies
+        run: |
+          echo "🔌 Проверка на hardcoded dependencies..."
+          
+          # Поиск прямого использования new для создания объектов
+          HARDCODED=$(grep -rn "= new " src/ --include="*.cpp" | grep -v "//" | grep -v "test")
+          
+          if [ -z "$HARDCODED" ]; then
+            echo "✅ Hardcoded dependencies не найдены"
+            exit 0
+          else
+            echo "⚠️  Найдены возможные hardcoded dependencies:"
+            echo "$HARDCODED"
+            echo ""
+            echo "Рассмотрите использование Dependency Injection через конструктор"
+            # Не блокируем merge, только предупреждение
+            exit 0
+          fi
+
+  naming-convention-check:
+    name: Naming Conventions
+    runs-on: ubuntu-22.04
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check naming conventions
+        run: |
+          echo "📝 Проверка naming conventions..."
+          
+          # Проверка 'using namespace std' в headers
+          USING_NS=$(grep -rn "using namespace std" include/ --include="*.h" --include="*.hpp")
+          
+          if [ ! -z "$USING_NS" ]; then
+            echo "❌ CRITICAL: Найдено 'using namespace std' в headers:"
+            echo "$USING_NS"
+            echo ""
+            echo "NEVER use 'using namespace std;' in header files!"
+            exit 1
+          fi
+          
+          # Проверка #pragma once
+          echo "Проверка #pragma once..."
+          MISSING_PRAGMA=$(find include/ -name "*.h" -o -name "*.hpp" | while read file; do
+            if ! grep -q "#pragma once" "$file"; then
+              echo "$file"
+            fi
+          done)
+          
+          if [ ! -z "$MISSING_PRAGMA" ]; then
+            echo "⚠️  Заголовки без #pragma once:"
+            echo "$MISSING_PRAGMA"
+          fi
+          
+          echo "✅ Naming conventions check complete"
+
