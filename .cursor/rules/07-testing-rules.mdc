@@ -108,7 +108,7 @@ Guidelines for effective implementation.
 ## 5. Best Practices and Enforcement
 
 - Adhere to maintainability and reusability principles
-- Minimum 80% code coverage for all new code
+- Minimum 99% code coverage for all new code
 - Tests MUST be independent and run in any order
 - Use descriptive test names: TEST(ComponentName, WhatIsBeingTested)
 
