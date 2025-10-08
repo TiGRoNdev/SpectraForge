@@ -6,11 +6,19 @@ add_library(SpectraForge_Vulkan OBJECT
     FreGSRenderStrategy.cpp
     StrategyFactory.cpp
     VulkanValidation.cpp
-    TriangleSplattingPass.cpp
     FreGSPass.cpp
     WaveletPass.cpp
     InstancedMeshPass.cpp
     RenderPass.cpp
+    # Triangle Splatting Pass (Decomposed - P0.1 Refactoring)
+    triangle_splatting/TriangleSplattingCore.cpp
+    triangle_splatting/TriangleBufferManager.cpp
+    triangle_splatting/FrustumCullingPass.cpp
+    triangle_splatting/DepthSortingPass.cpp
+    triangle_splatting/TriangleRasterizationPass.cpp
+    triangle_splatting/TriangleSplattingDebugger.cpp
+    triangle_splatting/TriangleSplattingStatistics.cpp
+    triangle_splatting/TriangleSplattingPass.cpp
     # Minimal OpenGL-compatible components used across the engine
     opengl/Camera3D.cpp
     opengl/Mesh3D.cpp
