@@ -54,7 +54,7 @@ TEST_F(TriangleSplattingPassOrchestratorTest, UploadTrianglesDelegatesToBufferMa
     ASSERT_TRUE(orchestrator.initialize(device_, allocator_,
         computeQueue_, graphicsQueue_, commandPool_));
     
-    std::vector<TriangleSplattingPass::Triangle> triangles(10);
+    std::vector<spectraforge::rendering::Triangle> triangles(10);
     
     EXPECT_NO_THROW(orchestrator.uploadTriangles(triangles));
     EXPECT_EQ(orchestrator.getTriangleCount(), 10u);

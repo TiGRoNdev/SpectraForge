@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <cstring>
 
+using SpectraForge::Core::Console;
+
 namespace spectraforge {
 namespace rendering {
 
@@ -11,7 +13,7 @@ bool TriangleBufferManager::initialize(vk::Device device,
                                        VmaAllocator allocator, 
                                        uint32_t maxTriangles) {
     if (initialized_) {
-        Console::warn("TriangleBufferManager already initialized");
+        Console::info("TriangleBufferManager already initialized");
         return true;
     }
     
@@ -115,7 +117,7 @@ void TriangleBufferManager::uploadTriangles(const std::vector<Triangle>& triangl
     }
     
     if (triangles.empty()) {
-        Console::warn("Uploading 0 triangles");
+        Console::info("Uploading 0 triangles");
         triangleCount_ = 0;
         return;
     }

@@ -5,6 +5,8 @@
 #include <fstream>
 #include <stdexcept>
 
+using SpectraForge::Core::Console;
+
 namespace spectraforge {
 namespace rendering {
 
@@ -14,7 +16,7 @@ bool TriangleRasterizationPass::initialize(vk::Device device,
                                            const TriangleBufferManager& bufferManager,
                                            const Config& config) {
     if (initialized_) {
-        Console::warn("TriangleRasterizationPass already initialized");
+        Console::info("TriangleRasterizationPass already initialized");
         return true;
     }
     
@@ -36,7 +38,7 @@ bool TriangleRasterizationPass::initialize(vk::Device device,
     
     // Создаем visibility buffer для Two-Pass
     if (config_.enableTwoPassRendering) {
-        if (!createVisibilityBuffer(core.getOutputWidth(), core.getOutputHeight())) {
+        if (!createVisibilityBuffer(config_.outputWidth, config_.outputHeight)) {
             Console::error("Failed to create visibility buffer");
             cleanup();
             return false;
@@ -118,7 +120,7 @@ void TriangleRasterizationPass::execute(vk::CommandBuffer cmd,
     }
     
     if (triangleCount == 0) {
-        Console::warn("TriangleRasterizationPass: zero triangles to render");
+        Console::info("TriangleRasterizationPass: zero triangles to render");
         return;
     }
     

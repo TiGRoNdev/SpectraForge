@@ -9,6 +9,8 @@
 #include <SpectraForge/Core/Console.h>
 #include <stdexcept>
 
+using SpectraForge::Core::Console;
+
 namespace spectraforge {
 namespace rendering {
 
@@ -28,7 +30,7 @@ bool TriangleSplattingPass::initialize(vk::Device device,
                                        vk::Queue graphicsQueue,
                                        vk::CommandPool commandPool) {
     if (initialized_) {
-        Console::warn("TriangleSplattingPass already initialized");
+        Console::info("TriangleSplattingPass already initialized");
         return true;
     }
     
@@ -67,11 +69,18 @@ bool TriangleSplattingPass::initializeSubsystems() {
     statistics_ = std::make_unique<TriangleSplattingStatistics>();
     
     // 2. Initialize Core (must be first)
+    VulkanContext context;
+    context.device = device_;
+    context.allocator = allocator_;
+    context.computeQueue = computeQueue_;
+    context.graphicsQueue = graphicsQueue_;
+    context.commandPool = commandPool_;
+    
     TriangleSplattingCore::Config coreConfig;
     coreConfig.outputWidth = config_.outputWidth;
     coreConfig.outputHeight = config_.outputHeight;
     
-    if (!core_->initialize(device_, allocator_, coreConfig)) {
+    if (!core_->initialize(context, coreConfig)) {
         Console::error("Failed to initialize TriangleSplattingCore");
         return false;
     }
@@ -97,11 +106,14 @@ bool TriangleSplattingPass::initializeSubsystems() {
             return false;
         }
         
-        sortingPass_->setSortMode(config_.sortMode);
+        // Use default AtomicBinning sort mode
+        sortingPass_->setSortMode(DepthSortingPass::SortMode::AtomicBinning);
     }
     
     // 6. Initialize TriangleRasterizationPass (зависит от Core и BufferManager)
     TriangleRasterizationPass::Config rasterConfig;
+    rasterConfig.outputWidth = config_.outputWidth;
+    rasterConfig.outputHeight = config_.outputHeight;
     rasterConfig.enableEarlyTermination = config_.enableEarlyTermination;
     rasterConfig.alphaThreshold = config_.alphaThreshold;
     rasterConfig.enableTwoPassRendering = config_.enableTwoPassRendering;
@@ -129,7 +141,7 @@ void TriangleSplattingPass::cleanup() {
     if (sortingPass_) sortingPass_->cleanup();
     if (cullingPass_) cullingPass_->cleanup();
     if (bufferManager_) bufferManager_->cleanup();
-    if (core_) core_->cleanup();
+    if (core_) core_->shutdown();
     
     // Reset subsystems
     statistics_.reset();
@@ -153,7 +165,7 @@ void TriangleSplattingPass::execute(vk::CommandBuffer cmd, uint32_t frameIndex) 
     const uint32_t triangleCount = bufferManager_->getTriangleCount();
     
     if (triangleCount == 0) {
-        Console::warn("TriangleSplattingPass: No triangles to render");
+        Console::info("TriangleSplattingPass: No triangles to render");
         return;
     }
     

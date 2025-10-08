@@ -569,10 +569,10 @@ bool Engine::load_scene(const Vulkan::SceneData &data) {
         // Камера в (0, 3, 0) смотрит вперед (положительный Z), так что треугольник должен быть в Z > 3
 
         // Создаем только тестовый треугольник для изоляции проблемы
-        std::vector<spectraforge::rendering::TriangleSplattingPass::Triangle> triangles;
+        std::vector<spectraforge::rendering::spectraforge::rendering::Triangle> triangles;
 
         // DEBUG: Минимальный тест Triangle Splatting с известными координатами
-        spectraforge::rendering::TriangleSplattingPass::Triangle testTriangle;
+        spectraforge::rendering::spectraforge::rendering::Triangle testTriangle;
         // Треугольник в координатах, которые должны работать независимо от системы координат
         testTriangle.v0 = glm::vec3(-0.5f, -0.5f, 0.5f);  // Близко к камере
         testTriangle.v1 = glm::vec3(0.5f, -0.5f, 0.5f);
@@ -669,7 +669,7 @@ bool Engine::load_scene(const Vulkan::SceneData &data) {
                     continue;
                 }
 
-                spectraforge::rendering::TriangleSplattingPass::Triangle t;
+                spectraforge::rendering::spectraforge::rendering::Triangle t;
                 t.v0 = verts[tri.v1];
                 t.v1 = verts[tri.v2];
                 t.v2 = verts[tri.v3];
@@ -734,7 +734,7 @@ bool Engine::load_scene(const Vulkan::SceneData &data) {
             
             std::cout << "[App::Engine] 🔺 Загружено " << triangles.size() 
                       << " треугольников для Triangle Splatting (" 
-                      << (triangles.size() * sizeof(spectraforge::rendering::TriangleSplattingPass::Triangle) / 1024) 
+                      << (triangles.size() * sizeof(spectraforge::rendering::spectraforge::rendering::Triangle) / 1024) 
                       << " KB)\n";
             h->uploadTriangles(triangles);
             

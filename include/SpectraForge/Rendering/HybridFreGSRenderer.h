@@ -68,7 +68,7 @@ class HybridFreGSRenderer final : public IRenderer {
     /**
      * @brief Загрузка треугольников для Triangle Splatting (meshes)
      */
-    void uploadTriangles(const std::vector<spectraforge::rendering::TriangleSplattingPass::Triangle>& triangles);
+    void uploadTriangles(const std::vector<spectraforge::rendering::Triangle>& triangles);
     
     /**
      * @brief Получить указатель на Triangle Splatting Pass для отладки
@@ -250,7 +250,7 @@ class HybridFreGSRenderer final : public IRenderer {
     Camera3D* camera_ = nullptr;
 
     // Helpers
-    std::vector<spectraforge::rendering::TriangleSplattingPass::Triangle> convertMeshToTriangles(
+    std::vector<spectraforge::rendering::Triangle> convertMeshToTriangles(
         const Mesh3D& mesh, const Math::Matrix4& transform);
     bool createInstance();
     bool pickPhysicalDevice();

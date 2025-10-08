@@ -75,9 +75,9 @@ private:
         }
         
         // Создаём один треугольник в NDC координатах
-        std::vector<TriangleSplattingPass::Triangle> triangles;
+        std::vector<spectraforge::rendering::Triangle> triangles;
         
-        TriangleSplattingPass::Triangle tri;
+        spectraforge::rendering::Triangle tri;
         
         // Треугольник ДАЛЕКО перед камерой для тестирования
         tri.v0 = glm::vec3(-5.0f, -5.0f, -10.0f);

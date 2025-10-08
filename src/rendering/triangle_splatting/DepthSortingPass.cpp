@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <cmath>
 
+using SpectraForge::Core::Console;
+
 namespace spectraforge {
 namespace rendering {
 
@@ -14,7 +16,7 @@ bool DepthSortingPass::initialize(vk::Device device,
                                   vk::CommandPool commandPool,
                                   vk::Queue queue) {
     if (initialized_) {
-        Console::warn("DepthSortingPass already initialized");
+        Console::info("DepthSortingPass already initialized");
         return true;
     }
     
@@ -107,7 +109,7 @@ void DepthSortingPass::execute(vk::CommandBuffer cmd,
     }
     
     if (visibleTriangleCount == 0) {
-        Console::warn("DepthSortingPass: zero triangles to sort");
+        Console::info("DepthSortingPass: zero triangles to sort");
         return;
     }
     

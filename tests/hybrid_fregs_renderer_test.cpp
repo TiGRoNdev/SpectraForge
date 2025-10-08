@@ -566,8 +566,8 @@ TEST_F(HybridFreGSRendererTest, UploadTrianglesTest) {
         GTEST_SKIP() << "Vulkan not available";
     }
     
-    std::vector<spectraforge::rendering::TriangleSplattingPass::Triangle> triangles;
-    spectraforge::rendering::TriangleSplattingPass::Triangle tri;
+    std::vector<spectraforge::rendering::spectraforge::rendering::Triangle> triangles;
+    spectraforge::rendering::spectraforge::rendering::Triangle tri;
     tri.v0 = glm::vec3(0.0f, 0.0f, 0.0f);
     tri.v1 = glm::vec3(1.0f, 0.0f, 0.0f);
     tri.v2 = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -584,7 +584,7 @@ TEST_F(HybridFreGSRendererTest, UploadTrianglesTest) {
 TEST_F(HybridFreGSRendererTest, UploadTrianglesEmptyTest) {
     // Arrange
     renderer->initialize();
-    std::vector<spectraforge::rendering::TriangleSplattingPass::Triangle> triangles;
+    std::vector<spectraforge::rendering::spectraforge::rendering::Triangle> triangles;
     
     // Act & Assert
     EXPECT_NO_THROW(renderer->uploadTriangles(triangles));

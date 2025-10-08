@@ -4,6 +4,8 @@
 #include <vector>
 #include <cstring>
 
+using SpectraForge::Core::Console;
+
 namespace spectraforge {
 namespace rendering {
 
@@ -111,7 +113,7 @@ bool TriangleSplattingDebugger::saveFrameToPNG(const std::string& filename,
                                                uint32_t height) {
     // PNG saving requires libpng
     // Для упрощения, используем PPM вместо PNG
-    Console::warn("PNG saving not implemented, using PPM instead");
+    Console::info("PNG saving not implemented, using PPM instead");
     return saveFrameToPPM(filename + ".ppm", image, device, allocator, commandPool, queue, width, height);
 }
 

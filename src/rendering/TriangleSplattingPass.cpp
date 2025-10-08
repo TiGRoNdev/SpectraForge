@@ -35,7 +35,7 @@ inline float halfToFloat(uint16_t h) {
 namespace spectraforge {
 namespace rendering {
 
-TriangleSplattingPass::TriangleSplattingPass(const Config& config)
+spectraforge::rendering::TriangleSplattingPass(const Config& config)
     : config_(config)
 {
     std::cout << "[TriangleSplattingPass] Created with resolution " 
@@ -1261,7 +1261,7 @@ void TriangleSplattingPass::uploadTriangles(const std::vector<Triangle>& triangl
               << " triangles to GPU\n";
 }
 
-std::vector<TriangleSplattingPass::Triangle> 
+std::vector<spectraforge::rendering::Triangle> 
 TriangleSplattingPass::convertMeshToTriangles(const SpectraForge::Rendering::Mesh3D& mesh, float sigma) {
     std::vector<Triangle> triangles;
     

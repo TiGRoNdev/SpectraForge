@@ -570,8 +570,9 @@ void HybridFreGSRenderer::recordCommandBuffer(vk::CommandBuffer commandBuffer, u
             char filename[256];
             snprintf(filename, sizeof(filename), "/home/tigron/Documents/GITHUB/SpectraForge/DEBUG_frame_%03d.png", frameSaveCounter / saveEveryNthFrame);
 
-            // Save frame to file
-            triangleSplattingPass_->saveFrameToPNG(filename);
+            // TODO: Implement screenshot functionality after refactoring
+            // triangleSplattingPass_->saveFrameToPNG(filename);
+            std::cout << "[HybridFreGSRenderer] Screenshot disabled during refactoring: " << filename << "\n";
 
             // Restart command buffer
             vk::CommandBufferBeginInfo beginInfo;
@@ -948,7 +949,7 @@ void HybridFreGSRenderer::uploadGaussians(const std::vector<spectraforge::render
     std::cout << "[HybridFreGSRenderer] Uploaded " << gaussians.size() << " Gaussians\n";
 }
 
-void HybridFreGSRenderer::uploadTriangles(const std::vector<spectraforge::rendering::TriangleSplattingPass::Triangle>& triangles) {
+void HybridFreGSRenderer::uploadTriangles(const std::vector<spectraforge::rendering::Triangle>& triangles) {
     if (!triangleSplattingPass_) {
         std::cerr << "[HybridFreGSRenderer] Triangle Splatting Pass not initialized!\n";
         return;
@@ -979,7 +980,7 @@ bool HybridFreGSRenderer::initializeTriangleSplatting() {
     spectraforge::rendering::TriangleSplattingPass::Config config;
     config.outputWidth = swapchainExtent_.width;
     config.outputHeight = swapchainExtent_.height;
-    config.enableDepthSort = false;         // Отключаем для отладки
+    config.enableDepthSorting = false;         // Отключаем для отладки
     config.enableEarlyTermination = false;  // Отключаем для отладки
     config.alphaThreshold = 0.99f;
     config.enableTwoPassRendering = false; // Start with single-pass
@@ -1000,9 +1001,9 @@ bool HybridFreGSRenderer::initializeTriangleSplatting() {
     return true;
 }
 
-std::vector<spectraforge::rendering::TriangleSplattingPass::Triangle> 
+std::vector<spectraforge::rendering::Triangle>
 HybridFreGSRenderer::convertMeshToTriangles(const Mesh3D& mesh, const Math::Matrix4& transform) {
-    std::vector<spectraforge::rendering::TriangleSplattingPass::Triangle> triangles;
+    std::vector<spectraforge::rendering::Triangle> triangles;
     
     const auto& vertices = mesh.getVertices();
     const auto& indices = mesh.getIndices();
@@ -1034,7 +1035,7 @@ HybridFreGSRenderer::convertMeshToTriangles(const Mesh3D& mesh, const Math::Matr
         normal = transform.transformDirection(normal).normalized();
         
         // Create triangle
-        spectraforge::rendering::TriangleSplattingPass::Triangle tri;
+        spectraforge::rendering::Triangle tri;
         tri.v0 = glm::vec3(p0.x, p0.y, p0.z);
         tri.v1 = glm::vec3(p1.x, p1.y, p1.z);
         tri.v2 = glm::vec3(p2.x, p2.y, p2.z);
@@ -1266,12 +1267,14 @@ bool HybridFreGSRenderer::saveScreenshot(const std::string& filename) const {
     }
     std::cout << "[HybridFreGSRenderer] Saving screenshot to: " << filename << std::endl;
     try {
+        // TODO: Implement screenshot functionality after refactoring
+        std::cout << "[HybridFreGSRenderer] Screenshot disabled during refactoring: " << filename << "\n";
         // Выбор по расширению: если .png, используем PNG, иначе оставим PPM как fallback
-        if (filename.size() >= 4 && filename.substr(filename.size()-4) == ".png") {
-            triangleSplattingPass_->saveFrameToPNG(filename);
-        } else {
-            triangleSplattingPass_->saveFrameToPPM(filename);
-        }
+        // if (filename.size() >= 4 && filename.substr(filename.size()-4) == ".png") {
+        //     triangleSplattingPass_->saveFrameToPNG(filename);
+        // } else {
+        //     triangleSplattingPass_->saveFrameToPPM(filename);
+        // }
         return true;
     } catch (...) {
         return false;

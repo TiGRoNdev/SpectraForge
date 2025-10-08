@@ -21,7 +21,7 @@ int main() {
         spectraforge::rendering::TriangleSplattingPass::Config config;
         config.outputWidth = 960;
         config.outputHeight = 540;
-        config.enableDepthSort = false;
+        config.enableDepthSorting = false;
         config.enableEarlyTermination = false;
         config.alphaThreshold = 0.99f;
         config.enableTwoPassRendering = false;
@@ -41,9 +41,9 @@ int main() {
         std::cout << "Triangle Splatting Pass создан\n";
 
         // Создаем тестовый треугольник с известными координатами
-        std::vector<spectraforge::rendering::TriangleSplattingPass::Triangle> triangles;
+        std::vector<spectraforge::rendering::spectraforge::rendering::Triangle> triangles;
 
-        spectraforge::rendering::TriangleSplattingPass::Triangle testTriangle;
+        spectraforge::rendering::spectraforge::rendering::Triangle testTriangle;
         // Треугольник в координатах, которые должны быть видимыми
         testTriangle.v0 = glm::vec3(-0.5f, -0.5f, 0.5f);  // Близко к камере
         testTriangle.v1 = glm::vec3(0.5f, -0.5f, 0.5f);

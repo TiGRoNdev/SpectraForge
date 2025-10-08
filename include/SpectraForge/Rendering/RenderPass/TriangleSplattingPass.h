@@ -57,8 +57,6 @@ public:
         bool enableEarlyTermination = true;
         float alphaThreshold = 0.99f;
         bool enableTwoPassRendering = true;
-        
-        DepthSortingPass::SortMode sortMode = DepthSortingPass::SortMode::AtomicBinning;
     };
     
     /**

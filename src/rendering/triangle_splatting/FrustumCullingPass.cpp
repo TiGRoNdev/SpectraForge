@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <cstring>
 
+using SpectraForge::Core::Console;
+
 namespace spectraforge {
 namespace rendering {
 
@@ -14,7 +16,7 @@ bool FrustumCullingPass::initialize(vk::Device device,
                                     vk::CommandPool commandPool,
                                     vk::Queue queue) {
     if (initialized_) {
-        Console::warn("FrustumCullingPass already initialized");
+        Console::info("FrustumCullingPass already initialized");
         return true;
     }
     
@@ -119,7 +121,7 @@ void FrustumCullingPass::execute(vk::CommandBuffer cmd,
     }
     
     if (triangleCount == 0) {
-        Console::warn("FrustumCullingPass: zero triangles to cull");
+        Console::info("FrustumCullingPass: zero triangles to cull");
         return;
     }
     

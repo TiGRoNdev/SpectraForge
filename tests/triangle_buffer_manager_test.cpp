@@ -64,8 +64,8 @@ TEST_F(TriangleBufferManagerTest, UploadTrianglesSuccess) {
     ASSERT_TRUE(manager.initialize(device_, allocator_, maxTriangles_));
     
     // ARRANGE
-    std::vector<TriangleSplattingPass::Triangle> triangles;
-    TriangleSplattingPass::Triangle tri;
+    std::vector<spectraforge::rendering::Triangle> triangles;
+    spectraforge::rendering::Triangle tri;
     tri.v0 = glm::vec3(0.0f, 1.0f, 0.0f);
     tri.v1 = glm::vec3(-1.0f, -1.0f, 0.0f);
     tri.v2 = glm::vec3(1.0f, -1.0f, 0.0f);
@@ -91,7 +91,7 @@ TEST_F(TriangleBufferManagerTest, UploadEmptyTrianglesDoesNotCrash) {
     ASSERT_TRUE(manager.initialize(device_, allocator_, maxTriangles_));
     
     // ACT
-    std::vector<TriangleSplattingPass::Triangle> emptyTriangles;
+    std::vector<spectraforge::rendering::Triangle> emptyTriangles;
     vk::CommandBuffer cmd = vk::CommandBuffer(nullptr);
     vk::Queue queue = vk::Queue(nullptr);
     
@@ -108,7 +108,7 @@ TEST_F(TriangleBufferManagerTest, UploadExceedsMaxTrianglesThrows) {
     ASSERT_TRUE(manager.initialize(device_, allocator_, maxTriangles_));
     
     // ARRANGE - Create 11 triangles (exceeds limit)
-    std::vector<TriangleSplattingPass::Triangle> triangles(11);
+    std::vector<spectraforge::rendering::Triangle> triangles(11);
     vk::CommandBuffer cmd = vk::CommandBuffer(nullptr);
     vk::Queue queue = vk::Queue(nullptr);
     
@@ -127,7 +127,7 @@ TEST_F(TriangleBufferManagerTest, GetTriangleCountReturnsCorrectValue) {
     EXPECT_EQ(manager.getTriangleCount(), 0u);
     
     // After upload
-    std::vector<TriangleSplattingPass::Triangle> triangles(5);
+    std::vector<spectraforge::rendering::Triangle> triangles(5);
     vk::CommandBuffer cmd = vk::CommandBuffer(nullptr);
     vk::Queue queue = vk::Queue(nullptr);
     manager.uploadTriangles(triangles, cmd, queue);
@@ -181,12 +181,12 @@ TEST_F(TriangleBufferManagerTest, MultipleUploadsWork) {
     vk::Queue queue = vk::Queue(nullptr);
     
     // First upload
-    std::vector<TriangleSplattingPass::Triangle> triangles1(5);
+    std::vector<spectraforge::rendering::Triangle> triangles1(5);
     manager.uploadTriangles(triangles1, cmd, queue);
     EXPECT_EQ(manager.getTriangleCount(), 5u);
     
     // Second upload (should replace)
-    std::vector<TriangleSplattingPass::Triangle> triangles2(10);
+    std::vector<spectraforge::rendering::Triangle> triangles2(10);
     manager.uploadTriangles(triangles2, cmd, queue);
     EXPECT_EQ(manager.getTriangleCount(), 10u);
 }
@@ -200,7 +200,7 @@ TEST_F(TriangleBufferManagerTest, UploadLargeDatasetPerformance) {
     ASSERT_TRUE(manager.initialize(device_, allocator_, maxTriangles_));
     
     // ARRANGE - Large dataset
-    std::vector<TriangleSplattingPass::Triangle> triangles(50000);
+    std::vector<spectraforge::rendering::Triangle> triangles(50000);
     vk::CommandBuffer cmd = vk::CommandBuffer(nullptr);
     vk::Queue queue = vk::Queue(nullptr);
     

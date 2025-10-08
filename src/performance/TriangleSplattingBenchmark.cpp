@@ -152,9 +152,10 @@ public:
             trianglePass->setFrustumCullingEnabled(enableFrustumCulling);
             trianglePass->setDebugMode(debugMode);
 
-            // Convert mesh to triangles
-            auto triangles = TriangleSplattingPass::convertMeshToTriangles(mesh);
-            trianglePass->uploadTriangles(triangles);
+            // TODO: convertMeshToTriangles is now in HybridFreGSRenderer
+            // auto triangles = TriangleSplattingPass::convertMeshToTriangles(mesh);
+            // trianglePass->uploadTriangles(triangles);
+            std::cerr << "Benchmark temporarily disabled - convertMeshToTriangles moved to HybridFreGSRenderer\n";
         }
         
         // Reset metrics
@@ -309,7 +310,7 @@ private:
      */
     static size_t estimateMemoryUsage(uint32_t triangleCount) {
         // Estimate based on triangle data size and buffers
-        size_t triangleDataSize = triangleCount * sizeof(rendering::TriangleSplattingPass::Triangle);
+        size_t triangleDataSize = triangleCount * sizeof(spectraforge::rendering::Triangle);
         size_t bufferOverhead = triangleDataSize * 2; // Additional buffers (sorted, visible, etc.)
         size_t totalBytes = triangleDataSize + bufferOverhead;
         return totalBytes / (1024 * 1024); // Convert to MB

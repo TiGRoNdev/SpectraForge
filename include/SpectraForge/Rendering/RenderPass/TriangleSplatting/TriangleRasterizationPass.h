@@ -38,6 +38,8 @@ public:
      * @brief Конфигурация rasterization pass
      */
     struct Config {
+        uint32_t outputWidth = 1920;          ///< Ширина output image
+        uint32_t outputHeight = 1080;         ///< Высота output image
         bool enableEarlyTermination = true;   ///< Ранняя остановка при alpha > threshold
         float alphaThreshold = 0.99f;         ///< Порог для early termination
         bool enableTwoPassRendering = true;   ///< Two-Pass optimization (O(N+M))

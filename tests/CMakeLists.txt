@@ -104,6 +104,8 @@ add_spectraforge_test(vulkan_validation_test vulkan_validation_test.cpp)
 # ============================================================================
 
 # Фаза 1: Критический приоритет (44 функции, 70 тестов)
+# P0.2: Декомпозиция HybridFreGSRenderer - TDD RED tests (64 теста)
+add_spectraforge_test(hybrid_fregs_renderer_decomposition_test hybrid_fregs_renderer_decomposition_test.cpp)
 # TODO: Требуется GoogleMock
 # add_spectraforge_test(hybrid_fregs_renderer_test hybrid_fregs_renderer_test.cpp)
 

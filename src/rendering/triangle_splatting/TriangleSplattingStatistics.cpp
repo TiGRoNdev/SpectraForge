@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <cmath>
 
+using SpectraForge::Core::Console;
+
 namespace spectraforge {
 namespace rendering {
 
