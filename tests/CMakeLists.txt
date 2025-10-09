@@ -64,6 +64,9 @@ add_spectraforge_test(core_logger_test core_logger_test.cpp)
 add_spectraforge_test(core_gameobject3d_test core_gameobject3d_test.cpp)
 add_spectraforge_test(core_vma_memory_test core_vma_memory_test.cpp)
 
+# P0.6: DI Container Tests (25 tests)
+add_spectraforge_test(core_di_container_test core_di_container_test.cpp)
+
 # ============================================================================
 # Rendering Module Tests
 # ============================================================================
@@ -198,7 +201,8 @@ add_custom_target(run_core_tests
         run_core_logger_test 
         run_core_gameobject3d_test
         run_core_vma_memory_test
-    COMMENT "Running all Core tests"
+        run_core_di_container_test
+    COMMENT "Running all Core tests (including P0.6 DI Container)"
 )
 
 # Run only Rendering tests
