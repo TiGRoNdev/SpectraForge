@@ -2,7 +2,18 @@
 
 # Create rendering module as object library
 add_library(SpectraForge_Vulkan OBJECT
+    # P0.2 REFACTORING: Core components (SOLID-compliant)
+    core/RendererCore.cpp
+    core/SwapchainManager.cpp
+    core/FrameManager.cpp
+    core/PipelineManager.cpp
+    core/RendererDebugger.cpp
+    core/RendererStatistics.cpp
+    
+    # HybridFreGSRenderer (Refactored orchestrator ~250 lines - P0.2 Complete)
     HybridFreGSRenderer.cpp
+    
+    # Other rendering components
     FreGSRenderStrategy.cpp
     StrategyFactory.cpp
     VulkanValidation.cpp
@@ -10,6 +21,7 @@ add_library(SpectraForge_Vulkan OBJECT
     WaveletPass.cpp
     InstancedMeshPass.cpp
     RenderPass.cpp
+    
     # Triangle Splatting Pass (Decomposed - P0.1 Refactoring)
     triangle_splatting/TriangleSplattingCore.cpp
     triangle_splatting/TriangleBufferManager.cpp
@@ -19,9 +31,11 @@ add_library(SpectraForge_Vulkan OBJECT
     triangle_splatting/TriangleSplattingDebugger.cpp
     triangle_splatting/TriangleSplattingStatistics.cpp
     triangle_splatting/TriangleSplattingPass.cpp
+    
     # Minimal OpenGL-compatible components used across the engine
     opengl/Camera3D.cpp
     opengl/Mesh3D.cpp
+    
     # Vulkan subsystem files only (Vulkan-only build)
     vulkan/VulkanRenderer.cpp
     vulkan/VulkanEngine.cpp

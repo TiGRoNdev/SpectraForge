@@ -106,6 +106,15 @@ add_spectraforge_test(vulkan_validation_test vulkan_validation_test.cpp)
 # Фаза 1: Критический приоритет (44 функции, 70 тестов)
 # P0.2: Декомпозиция HybridFreGSRenderer - TDD RED tests (64 теста)
 add_spectraforge_test(hybrid_fregs_renderer_decomposition_test hybrid_fregs_renderer_decomposition_test.cpp)
+
+# P0.2: Core Components Tests (40 тестов)
+add_spectraforge_test(renderer_core_test rendering/renderer_core_test.cpp)
+add_spectraforge_test(renderer_debugger_test rendering/renderer_debugger_test.cpp)
+add_spectraforge_test(renderer_statistics_test rendering/renderer_statistics_test.cpp)
+add_spectraforge_test(swapchain_manager_test rendering/swapchain_manager_test.cpp)
+add_spectraforge_test(frame_manager_test rendering/frame_manager_test.cpp)
+add_spectraforge_test(pipeline_manager_test rendering/pipeline_manager_test.cpp)
+
 # TODO: Требуется GoogleMock
 # add_spectraforge_test(hybrid_fregs_renderer_test hybrid_fregs_renderer_test.cpp)
 
@@ -194,8 +203,15 @@ add_custom_target(run_core_tests
 
 # Run only Rendering tests
 add_custom_target(run_rendering_tests
-    DEPENDS run_rendering_camera3d_test
-    COMMENT "Running all Rendering tests"
+    DEPENDS 
+        run_rendering_camera3d_test
+        run_renderer_core_test
+        run_renderer_debugger_test
+        run_renderer_statistics_test
+        run_swapchain_manager_test
+        run_frame_manager_test
+        run_pipeline_manager_test
+    COMMENT "Running all Rendering tests (including P0.2 Core Components)"
 )
 
 # Run only Input tests
