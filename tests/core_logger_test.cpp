@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 #include <SpectraForge/Core/Logger.h>
 #include <SpectraForge/Core/LogLevel.h>
+#include <SpectraForge/Core/SafeConsole.h>
 #include <fstream>
 #include <filesystem>
 #include <thread>
@@ -376,7 +377,7 @@ TEST_F(LoggerTest, ConcurrentLogging) {
     std::vector<std::thread> threads;
     for (int i = 0; i < 10; ++i) {
         threads.emplace_back([&logger, i]() {
-            logger.logInfo("Thread message " + std::to_string(i));
+            logger.logInfo("Thread message " + SpectraForge::Core::SAFE_TO_STRING(i));
         });
     }
     
@@ -387,7 +388,7 @@ TEST_F(LoggerTest, ConcurrentLogging) {
     // Assert - все сообщения должны быть записаны
     std::string content = readLogFile();
     for (int i = 0; i < 10; ++i) {
-        EXPECT_TRUE(content.find("Thread message " + std::to_string(i)) != std::string::npos);
+        EXPECT_TRUE(content.find("Thread message " + SpectraForge::Core::SAFE_TO_STRING(i)) != std::string::npos);
     }
 }
 

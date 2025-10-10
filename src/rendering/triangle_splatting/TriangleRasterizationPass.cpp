@@ -2,6 +2,7 @@
 #include <SpectraForge/Rendering/RenderPass/TriangleSplatting/TriangleSplattingCore.h>
 #include <SpectraForge/Rendering/RenderPass/TriangleSplatting/TriangleBufferManager.h>
 #include <SpectraForge/Core/Console.h>
+#include <SpectraForge/Core/SafeConsole.h>
 #include <fstream>
 #include <stdexcept>
 
@@ -190,7 +191,7 @@ void TriangleRasterizationPass::executeTwoPass(vk::CommandBuffer cmd,
 
 void TriangleRasterizationPass::setDebugMode(uint32_t mode) {
     config_.debugMode = mode;
-    Console::info("TriangleRasterizationPass debug mode set to " + std::to_string(mode));
+    Console::info("TriangleRasterizationPass debug mode set to " + SpectraForge::Core::SAFE_TO_STRING(mode));
 }
 
 bool TriangleRasterizationPass::loadShaders() {

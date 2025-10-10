@@ -1,16 +1,25 @@
-# App module - High-level Engine facade
+# ============================================================================
+# App Layer - High-level application components (P0.3 decomposition)
+# ============================================================================
 
-add_library(SpectraForge_App STATIC
-    Engine.cpp
+set(APP_SOURCES
+    # P0.3: Engine decomposition components
+    GameLoopManager.cpp
+    WindowManager.cpp
+    InputManager.cpp
+    SceneCoordinator.cpp
 )
 
-target_include_directories(SpectraForge_App PUBLIC
-    ${CMAKE_SOURCE_DIR}/include
+# Create object library for App module
+add_library(SpectraForge_App OBJECT ${APP_SOURCES})
+
+# Include directories
+target_include_directories(SpectraForge_App 
+    PUBLIC 
+        ${CMAKE_SOURCE_DIR}/include
 )
 
-target_link_libraries(SpectraForge_App PUBLIC
-    SpectraForge_Math
-    SpectraForge_Core
-    SpectraForge_Vulkan
-)
+# Link dependencies
+target_link_libraries(SpectraForge_App PUBLIC glfw)
 
+message(STATUS "App layer configured (P0.3 Engine decomposition)")

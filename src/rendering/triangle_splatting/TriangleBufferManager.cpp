@@ -1,6 +1,7 @@
 #include <SpectraForge/Rendering/RenderPass/TriangleSplatting/TriangleBufferManager.h>
 #include <SpectraForge/Rendering/RenderPass/TriangleSplatting/TriangleSplattingTypes.h>
 #include <SpectraForge/Core/Console.h>
+#include <SpectraForge/Core/SafeConsole.h>
 #include <stdexcept>
 #include <cstring>
 
@@ -87,7 +88,7 @@ bool TriangleBufferManager::initialize(vk::Device device,
     
     initialized_ = true;
     Console::info("TriangleBufferManager initialized successfully (max triangles: " + 
-                 std::to_string(maxTriangles) + ")");
+                 SpectraForge::Core::SAFE_TO_STRING(maxTriangles) + ")");
     
     return true;
 }
@@ -123,8 +124,8 @@ void TriangleBufferManager::uploadTriangles(const std::vector<Triangle>& triangl
     }
     
     if (triangles.size() > maxTriangles_) {
-        throw std::runtime_error("Triangle count (" + std::to_string(triangles.size()) + 
-                                ") exceeds max (" + std::to_string(maxTriangles_) + ")");
+        throw std::runtime_error("Triangle count (" + SpectraForge::Core::SAFE_TO_STRING(triangles.size()) + 
+                                ") exceeds max (" + SpectraForge::Core::SAFE_TO_STRING(maxTriangles_) + ")");
     }
     
     // Создаем staging buffer
@@ -179,7 +180,7 @@ void TriangleBufferManager::uploadTriangles(const std::vector<Triangle>& triangl
     
     triangleCount_ = static_cast<uint32_t>(triangles.size());
     
-    Console::info("Uploaded " + std::to_string(triangleCount_) + " triangles to GPU");
+    Console::info("Uploaded " + SpectraForge::Core::SAFE_TO_STRING(triangleCount_) + " triangles to GPU");
 }
 
 uint64_t TriangleBufferManager::getTotalMemoryUsage() const {

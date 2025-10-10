@@ -9,6 +9,7 @@
 #include <SpectraForge/Math/Vector3.h>
 #include <SpectraForge/Math/Matrix4.h>
 #include <SpectraForge/Math/Quaternion.h>
+#include <SpectraForge/Core/SafeConsole.h>
 
 using namespace SpectraForge::Core;
 using namespace SpectraForge::Math;
@@ -156,7 +157,7 @@ TEST_F(IntegrationPipelineTest, MassObjectCreation) {
     // Arrange & Act
     std::vector<GameObject3D*> objects;
     for (int i = 0; i < 100; ++i) {
-        GameObject3D* obj = GameObject3D::create("Object_" + std::to_string(i));
+        GameObject3D* obj = GameObject3D::create("Object_" + SpectraForge::Core::SAFE_TO_STRING(i));
         obj->getTransform()->setPosition(Vector3(i, i, i));
         objects.push_back(obj);
     }
@@ -217,7 +218,7 @@ TEST_F(IntegrationPipelineTest, AnimatedScene) {
 TEST_F(IntegrationPipelineTest, FindPerformance) {
     // Arrange - создаем много объектов
     for (int i = 0; i < 1000; ++i) {
-        GameObject3D* obj = GameObject3D::create("Object_" + std::to_string(i));
+        GameObject3D* obj = GameObject3D::create("Object_" + SpectraForge::Core::SAFE_TO_STRING(i));
         if (i % 10 == 0) {
             obj->setTag("Special");
         }
@@ -279,7 +280,7 @@ TEST_F(IntegrationPipelineTest, TransformStressTest) {
     
     // Act - создаем глубокую иерархию
     for (int i = 0; i < 10; ++i) {
-        GameObject3D* child = GameObject3D::create("Level_" + std::to_string(i));
+        GameObject3D* child = GameObject3D::create("Level_" + SpectraForge::Core::SAFE_TO_STRING(i));
         child->getTransform()->setPosition(Vector3(1, 0, 0));
         current->addChild(child->getTransform());
         current = child->getTransform();

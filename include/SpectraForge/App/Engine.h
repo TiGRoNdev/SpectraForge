@@ -9,9 +9,12 @@
 #include <string>
 #include "SpectraForge/App/Config.h"
 #include "SpectraForge/App/IApp.h"
+#include "SpectraForge/App/Core/GameLoopManager.h"
+#include "SpectraForge/App/Core/WindowManager.h"
+#include "SpectraForge/App/Core/InputManager.h"
+#include "SpectraForge/App/Core/SceneCoordinator.h"
 #include "SpectraForge/Core/EngineCore.h"
 #include "SpectraForge/Core/Logger.h"
-#include "SpectraForge/Core/Window.h"
 #include "SpectraForge/Rendering/Common/IRenderer.h"
 #include "SpectraForge/Rendering/Common/IResourceManager.h"
 #include "SpectraForge/Rendering/Camera3D.h"
@@ -42,15 +45,8 @@ struct RenderStats {
     float gpuTime = 0.0f;
 };
 
-struct InputState {
-    bool keys[512] = {false};
-    float mouseX = 0.0f;
-    float mouseY = 0.0f;
-    float deltaMouseX = 0.0f;
-    float deltaMouseY = 0.0f;
-    bool mouseButtons[8] = {false};
-    bool firstMouse = true;
-};
+// P0.3 REFACTORED: Используем InputState из Core::InputManager
+using InputState = Core::InputState;
 
 /**
  * @brief Высокоуровневый фасад, упрощающий запуск и цикл приложения (РАСШИРЕННАЯ ВЕРСИЯ)
@@ -80,7 +76,7 @@ public:
     /**
      * @brief Признак, что окно запрошено к закрытию
      */
-    bool should_close() const { return window_ ? window_->shouldClose() : true; }
+    bool should_close() const { return windowManager_->shouldClose(); }
 
     // ДОБАВЛЕНО: Debug и diagnostic методы
     
@@ -92,7 +88,7 @@ public:
     /**
      * @brief Получить камеру для управления
      */
-    std::shared_ptr<Rendering::Camera3D> getCamera() const;
+    std::shared_ptr<Rendering::Camera3D> getCamera() const { return sceneCoordinator_->getCamera(); }
     
     /**
      * @brief Включить/выключить внешнее управление камерой
@@ -108,7 +104,7 @@ public:
     /**
      * @brief Получить менеджер ввода (простая реализация)
      */
-    const InputState* getInputManager() const;
+    const InputState* getInputManager() const { return inputManager_->getState(); }
     
     /**
      * @brief Получить статистику рендеринга
@@ -152,10 +148,13 @@ public:
     // Debug и diagnostic методы (уже объявлены выше)
  
  private:
-    // Input management
-    mutable InputState inputState_;
+    // P0.3 REFACTORED: Композиция компонентов вместо God Class
+    std::unique_ptr<Core::GameLoopManager> gameLoop_;
+    std::unique_ptr<Core::WindowManager> windowManager_;
+    std::unique_ptr<Core::InputManager> inputManager_;
+    std::unique_ptr<Core::SceneCoordinator> sceneCoordinator_;
     
-    // Scene и render state
+    // Scene и render state (агрегируется из компонентов)
     mutable SceneInfo sceneInfo_;
     mutable RenderStats renderStats_;
     
@@ -164,46 +163,15 @@ public:
     bool wireframeEnabled_ = false;
     bool externalCameraControl_ = false; // Флаг внешнего управления камерой
     
-    // Timing
-    std::chrono::steady_clock::time_point lastFrameTime_;
-    float deltaTime_ = 0.0f;
-    uint32_t frameCount_ = 0;
-    
     // Private helper методы
-    void updateInput(float deltaTime);
-    void updateCamera(float deltaTime);
-    void handleKeyboard(float deltaTime);
-    void handleMouse();
-    void updateSceneInfo();
     void updateRenderStats();
-    void setupCallbacks();
-    
-    // GLFW callback обработчики
-    static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-    static void mouseCallback(GLFWwindow* window, double xpos, double ypos);
-    static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 
     AppConfig config_;
-    std::unique_ptr<SpectraForge::Core::Window> window_;
     std::unique_ptr<SpectraForge::Core::EngineCore> core_;
     std::shared_ptr<SpectraForge::Core::ILogger> logger_;
     std::shared_ptr<Rendering::IRenderer> renderer_;
     std::shared_ptr<Rendering::IResourceManager> resource_manager_;
     std::unique_ptr<Vulkan::SceneManager> scene_manager_;
-    
-    // ДОБАВЛЕНО: Camera для рендеринга
-    std::shared_ptr<Rendering::Camera3D> renderCamera_;
-    
-    // Camera state - ВНУТРИ Sponza для корректного рендеринга
-    glm::vec3 cameraPos{0.0f, 2.0f, -5.0f}; // Камера снаружи сцены, смотрит вперед
-    glm::vec3 cameraFront{0.0f, 0.0f, 1.0f}; // Смотрим ВПЕРЕД (+Z) на сцену Sponza
-    float yaw = 0.0f; // ✅ ВПРАВО (+X direction)
-    float pitch = -5.0f; // НЕМНОГО ВНИЗ
-    double lastMouseX = 0.0;
-    double lastMouseY = 0.0;
-    bool firstMouse = true;
-    
-    // (Повторяющиеся блоки удалены)
 };
 
 } // namespace App

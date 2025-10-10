@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 #include "SpectraForge/Vulkan/SceneManager.h"
 #include "SpectraForge/Vulkan/VulkanRenderer.h"
+#include "SpectraForge/Core/SafeConsole.h"
 #include <memory>
 
 using namespace SpectraForge::Vulkan;
@@ -181,7 +182,7 @@ TEST_F(SceneManagerTest, LoadMultipleScenesTest) {
     // Act: Загружаем несколько сцен подряд
     for (int i = 0; i < 3; i++) {
         SceneData data;
-        data.scenePath = "scene_" + std::to_string(i) + ".obj";
+        data.scenePath = "scene_" + SpectraForge::Core::SAFE_TO_STRING(i) + ".obj";
         
         EXPECT_NO_THROW({
             sceneManager->loadScene(data);
@@ -419,7 +420,7 @@ TEST_F(SceneManagerTest, AddMultipleObjectsTest) {
     // Act: Добавляем несколько объектов
     std::vector<uint32_t> objectIds;
     for (int i = 0; i < 10; i++) {
-        uint32_t id = sceneManager->addObject("object_" + std::to_string(i) + ".obj");
+        uint32_t id = sceneManager->addObject("object_" + SpectraForge::Core::SAFE_TO_STRING(i) + ".obj");
         objectIds.push_back(id);
     }
 
@@ -608,7 +609,7 @@ TEST_F(SceneManagerTest, SceneLoadUnloadCycleTest) {
     // Act: Несколько циклов загрузки/выгрузки
     for (int i = 0; i < 5; i++) {
         SceneData data;
-        data.scenePath = "scene_" + std::to_string(i) + ".obj";
+        data.scenePath = "scene_" + SpectraForge::Core::SAFE_TO_STRING(i) + ".obj";
         sceneManager->loadScene(data);
 
         sceneManager->addObject("obj1.obj");
@@ -633,7 +634,7 @@ TEST_F(SceneManagerTest, AddObjectPerformanceTest) {
 
     // Act: Добавляем 1000 объектов
     for (int i = 0; i < 1000; i++) {
-        sceneManager->addObject("obj_" + std::to_string(i) + ".obj");
+        sceneManager->addObject("obj_" + SpectraForge::Core::SAFE_TO_STRING(i) + ".obj");
     }
 
     auto end = std::chrono::high_resolution_clock::now();

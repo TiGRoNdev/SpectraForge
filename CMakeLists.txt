@@ -84,6 +84,7 @@ add_library(SpectraForge STATIC
     $<TARGET_OBJECTS:SpectraForge_Upscaling>
     $<TARGET_OBJECTS:SpectraForge_Input>
     $<TARGET_OBJECTS:SpectraForge_Physics>
+    $<TARGET_OBJECTS:SpectraForge_App>
 )
 
 # Подключаем только Vulkan. PNG удалён из общей библиотеки и перенесён в FrameOutput.

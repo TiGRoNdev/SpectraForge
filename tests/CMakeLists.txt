@@ -132,6 +132,15 @@ add_spectraforge_test(pipeline_manager_test rendering/pipeline_manager_test.cpp)
 # add_spectraforge_test(app_engine_test app_engine_test.cpp)
 # add_spectraforge_test(x11_window_test x11_window_test.cpp)
 
+# P0.3: Engine Decomposition Tests (51 tests)
+add_spectraforge_test(game_loop_manager_test game_loop_manager_test.cpp)
+add_spectraforge_test(window_manager_test window_manager_test.cpp)
+add_spectraforge_test(input_manager_test input_manager_test.cpp)
+add_spectraforge_test(scene_coordinator_test scene_coordinator_test.cpp)
+
+# P0.7: DI Integration Tests
+add_spectraforge_test(di_setup_test di_setup_test.cpp)
+
 # ============================================================================
 # Existing Tests
 # ============================================================================

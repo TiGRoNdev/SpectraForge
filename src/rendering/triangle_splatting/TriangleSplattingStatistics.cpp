@@ -1,5 +1,6 @@
 #include <SpectraForge/Rendering/RenderPass/TriangleSplatting/TriangleSplattingStatistics.h>
 #include <SpectraForge/Core/Console.h>
+#include <SpectraForge/Core/SafeConsole.h>
 #include <sstream>
 #include <iomanip>
 #include <cmath>
@@ -51,21 +52,21 @@ void TriangleSplattingStatistics::calculateFPS() {
 void TriangleSplattingStatistics::printStats() const {
     Console::info("=== Triangle Splatting Statistics ===");
     Console::info("Triangles:");
-    Console::info("  Total:   " + std::to_string(stats_.totalTriangles));
-    Console::info("  Visible: " + std::to_string(stats_.visibleTriangles));
-    Console::info("  Culled:  " + std::to_string(stats_.culledTriangles) + 
-                 " (" + std::to_string(static_cast<int>(stats_.cullingRatio * 100)) + "%)");
+    Console::info("  Total:   " + SpectraForge::Core::SAFE_TO_STRING(stats_.totalTriangles));
+    Console::info("  Visible: " + SpectraForge::Core::SAFE_TO_STRING(stats_.visibleTriangles));
+    Console::info("  Culled:  " + SpectraForge::Core::SAFE_TO_STRING(stats_.culledTriangles) + 
+                 " (" + SpectraForge::Core::SAFE_TO_STRING(static_cast<int>(stats_.cullingRatio * 100)) + "%)");
     
     Console::info("Timings:");
-    Console::info("  Frustum Culling: " + std::to_string(stats_.frustumCullingTimeMs) + " ms");
-    Console::info("  Depth Sorting:   " + std::to_string(stats_.depthSortingTimeMs) + " ms");
-    Console::info("  Rasterization:   " + std::to_string(stats_.rasterizationTimeMs) + " ms");
-    Console::info("  Total Frame:     " + std::to_string(stats_.totalFrameTimeMs) + " ms");
-    Console::info("  FPS:             " + std::to_string(static_cast<int>(stats_.fps)));
+    Console::info("  Frustum Culling: " + SpectraForge::Core::SAFE_TO_STRING(stats_.frustumCullingTimeMs) + " ms");
+    Console::info("  Depth Sorting:   " + SpectraForge::Core::SAFE_TO_STRING(stats_.depthSortingTimeMs) + " ms");
+    Console::info("  Rasterization:   " + SpectraForge::Core::SAFE_TO_STRING(stats_.rasterizationTimeMs) + " ms");
+    Console::info("  Total Frame:     " + SpectraForge::Core::SAFE_TO_STRING(stats_.totalFrameTimeMs) + " ms");
+    Console::info("  FPS:             " + SpectraForge::Core::SAFE_TO_STRING(static_cast<int>(stats_.fps)));
     
     Console::info("Memory:");
     const float memoryMB = static_cast<float>(stats_.memoryUsageBytes) / (1024.0f * 1024.0f);
-    Console::info("  Usage: " + std::to_string(memoryMB) + " MB");
+    Console::info("  Usage: " + SpectraForge::Core::SAFE_TO_STRING(memoryMB) + " MB");
     
     Console::info("=====================================");
 }

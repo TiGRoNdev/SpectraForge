@@ -4,6 +4,7 @@
  */
 
 #include "SpectraForge/Rendering/Core/RendererStatistics.h"
+#include "SpectraForge/Core/SafeConsole.h"
 #include <iostream>
 
 namespace SpectraForge {
@@ -48,10 +49,10 @@ GPUInfo RendererStatistics::getGPUInfo() const {
     if (physicalDevice_) {
         auto props = physicalDevice_.getProperties();
         info.deviceName = std::string(props.deviceName.data());
-        info.driverVersion = std::to_string(props.driverVersion);
-        info.apiVersion = std::to_string(VK_API_VERSION_MAJOR(props.apiVersion)) + "." +
-                         std::to_string(VK_API_VERSION_MINOR(props.apiVersion)) + "." +
-                         std::to_string(VK_API_VERSION_PATCH(props.apiVersion));
+        info.driverVersion = SpectraForge::Core::SAFE_TO_STRING(props.driverVersion);
+        info.apiVersion = SpectraForge::Core::SAFE_TO_STRING(VK_API_VERSION_MAJOR(props.apiVersion)) + "." +
+                         SpectraForge::Core::SAFE_TO_STRING(VK_API_VERSION_MINOR(props.apiVersion)) + "." +
+                         SpectraForge::Core::SAFE_TO_STRING(VK_API_VERSION_PATCH(props.apiVersion));
         
         // Memory
         auto memProps = physicalDevice_.getMemoryProperties();

@@ -13,6 +13,9 @@ add_library(SpectraForge_Vulkan OBJECT
     # HybridFreGSRenderer (Refactored orchestrator ~250 lines - P0.2 Complete)
     HybridFreGSRenderer.cpp
     
+    # P0.5: Camera3D (recreated after OpenGL removal)
+    Camera3D.cpp
+    
     # Other rendering components
     FreGSRenderStrategy.cpp
     StrategyFactory.cpp
@@ -32,11 +35,10 @@ add_library(SpectraForge_Vulkan OBJECT
     triangle_splatting/TriangleSplattingStatistics.cpp
     triangle_splatting/TriangleSplattingPass.cpp
     
-    # Minimal OpenGL-compatible components used across the engine
-    opengl/Camera3D.cpp
-    opengl/Mesh3D.cpp
+    # P0.5: Legacy OpenGL removed (4657 lines deleted)
+    # Vulkan-only build (Pure C++ 3D Engine)
     
-    # Vulkan subsystem files only (Vulkan-only build)
+    # Vulkan subsystem files only
     vulkan/VulkanRenderer.cpp
     vulkan/VulkanEngine.cpp
     vulkan/ResourceManager.cpp

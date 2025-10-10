@@ -7,6 +7,7 @@
 #include <SpectraForge/Core/GameObject3D.h>
 #include <SpectraForge/Core/Transform3D.h>
 #include <SpectraForge/Math/Vector3.h>
+#include <SpectraForge/Core/SafeConsole.h>
 
 using namespace SpectraForge::Core;
 using namespace SpectraForge::Math;
@@ -465,7 +466,7 @@ TEST_F(GameObject3DTest, MultipleCleanupCalls) {
 TEST_F(GameObject3DTest, LargeNumberOfObjects) {
     // Arrange & Act
     for (int i = 0; i < 1000; ++i) {
-        GameObject3D::create("Object_" + std::to_string(i));
+        GameObject3D::create("Object_" + SpectraForge::Core::SAFE_TO_STRING(i));
     }
     
     // Assert
@@ -475,7 +476,7 @@ TEST_F(GameObject3DTest, LargeNumberOfObjects) {
 TEST_F(GameObject3DTest, FindPerformance) {
     // Arrange
     for (int i = 0; i < 100; ++i) {
-        GameObject3D::create("Object_" + std::to_string(i));
+        GameObject3D::create("Object_" + SpectraForge::Core::SAFE_TO_STRING(i));
     }
     GameObject3D::create("TargetObject");
     
@@ -490,7 +491,7 @@ TEST_F(GameObject3DTest, FindPerformance) {
 TEST_F(GameObject3DTest, TagPerformance) {
     // Arrange
     for (int i = 0; i < 100; ++i) {
-        GameObject3D* obj = GameObject3D::create("Tagged_" + std::to_string(i));
+        GameObject3D* obj = GameObject3D::create("Tagged_" + SpectraForge::Core::SAFE_TO_STRING(i));
         obj->setTag("TestTag");
     }
     

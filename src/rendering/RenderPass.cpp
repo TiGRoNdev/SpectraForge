@@ -10,6 +10,7 @@
 
 #include "SpectraForge/Rendering/RenderPass/RenderPass.h"
 #include "SpectraForge/Core/VulkanContext.h"
+#include "SpectraForge/Core/SafeConsole.h"
 #include <fstream>
 #include <stdexcept>
 #include <iostream>
@@ -51,7 +52,7 @@ vk::Pipeline RenderPassBase::createComputePipeline(
     VkShaderModule rawModule = VK_NULL_HANDLE;
     VkResult rm = vkCreateShaderModule(rawDev, &moduleInfo, nullptr, &rawModule);
     if (rm != VK_SUCCESS) {
-        throw std::runtime_error("vkCreateShaderModule failed: " + std::to_string(rm));
+        throw std::runtime_error("vkCreateShaderModule failed: " + SpectraForge::Core::SAFE_TO_STRING(rm));
     }
 
     // Create compute pipeline (C API)
@@ -71,7 +72,7 @@ vk::Pipeline RenderPassBase::createComputePipeline(
     // Destroy shader module
     vkDestroyShaderModule(rawDev, rawModule, nullptr);
     if (rp != VK_SUCCESS) {
-        throw std::runtime_error("vkCreateComputePipelines failed: " + std::to_string(rp));
+        throw std::runtime_error("vkCreateComputePipelines failed: " + SpectraForge::Core::SAFE_TO_STRING(rp));
     }
     return vk::Pipeline(rawPipe);
 }
@@ -100,7 +101,7 @@ vk::DescriptorSetLayout RenderPassBase::createDescriptorSetLayout(
     VkDescriptorSetLayout rawLayout = VK_NULL_HANDLE;
     VkResult r = vkCreateDescriptorSetLayout(rawDev, &ci, nullptr, &rawLayout);
     if (r != VK_SUCCESS) {
-        throw std::runtime_error("vkCreateDescriptorSetLayout failed: " + std::to_string(r));
+        throw std::runtime_error("vkCreateDescriptorSetLayout failed: " + SpectraForge::Core::SAFE_TO_STRING(r));
     }
     return vk::DescriptorSetLayout(rawLayout);
 }

@@ -7,6 +7,7 @@
  */
 
 #include "SpectraForge/Core/VMAMemoryManager.h"
+#include "SpectraForge/Core/SafeConsole.h"
 #include <iostream>
 #include <stdexcept>
 
@@ -287,7 +288,7 @@ VMABuffer VMAMemoryManager::createBuffer(
     VkResult result = vmaCreateBuffer(allocator_, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
     
     if (result != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create VMA buffer: " + std::to_string(result));
+        throw std::runtime_error("Failed to create VMA buffer: " + SpectraForge::Core::SAFE_TO_STRING(result));
     }
     
     // Update statistics
@@ -320,7 +321,7 @@ VMAImage VMAMemoryManager::createImage(
     VkResult result = vmaCreateImage(allocator_, &vkImageInfo, &allocInfo, &image, &allocation, nullptr);
     
     if (result != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create VMA image: " + std::to_string(result));
+        throw std::runtime_error("Failed to create VMA image: " + SpectraForge::Core::SAFE_TO_STRING(result));
     }
     
     // Estimate image size for statistics
@@ -371,7 +372,7 @@ VMABuffer VMAMemoryManager::createTransientBuffer(size_t size, vk::BufferUsageFl
         allocInfo.pool = VK_NULL_HANDLE;
         result = vmaCreateBuffer(allocator_, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
         if (result != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create transient buffer: " + std::to_string(result));
+            throw std::runtime_error("Failed to create transient buffer: " + SpectraForge::Core::SAFE_TO_STRING(result));
         }
     }
     
@@ -413,7 +414,7 @@ VMAImage VMAMemoryManager::createTransientImage(const vk::ImageCreateInfo& image
         allocInfo.pool = VK_NULL_HANDLE;
         result = vmaCreateImage(allocator_, &vkImageInfo, &allocInfo, &image, &allocation, nullptr);
         if (result != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create transient image: " + std::to_string(result));
+            throw std::runtime_error("Failed to create transient image: " + SpectraForge::Core::SAFE_TO_STRING(result));
         }
     }
     

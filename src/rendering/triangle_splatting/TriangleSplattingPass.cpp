@@ -7,6 +7,7 @@
 #include <SpectraForge/Rendering/RenderPass/TriangleSplatting/TriangleSplattingDebugger.h>
 #include <SpectraForge/Rendering/RenderPass/TriangleSplatting/TriangleSplattingStatistics.h>
 #include <SpectraForge/Core/Console.h>
+#include <SpectraForge/Core/SafeConsole.h>
 #include <stdexcept>
 
 using SpectraForge::Core::Console;
@@ -225,7 +226,7 @@ void TriangleSplattingPass::uploadTriangles(const std::vector<Triangle>& triangl
     
     device_.freeCommandBuffers(commandPool_, 1, &cmd);
     
-    Console::info("Uploaded " + std::to_string(triangles.size()) + " triangles");
+    Console::info("Uploaded " + SpectraForge::Core::SAFE_TO_STRING(triangles.size()) + " triangles");
 }
 
 void TriangleSplattingPass::setViewProjection(const glm::mat4& viewProj) {

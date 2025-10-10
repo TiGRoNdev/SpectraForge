@@ -384,7 +384,7 @@ private:
             if (renderer) {
                 auto timestamp = std::chrono::duration_cast<std::chrono::seconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-                std::string filename = "screenshot_" + std::to_string(timestamp) + ".png";
+                std::string filename = "screenshot_" + SpectraForge::Core::SAFE_TO_STRING(timestamp) + ".png";
                 if (renderer->saveScreenshot(filename)) {
                     app_->logDebugInfo("Screenshot saved: " + filename);
                 } else {

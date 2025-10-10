@@ -11,6 +11,7 @@
 
 #include "SpectraForge/Rendering/RenderPass/WaveletPass.h"
 #include "SpectraForge/Core/VulkanContext.h"
+#include "SpectraForge/Core/SafeConsole.h"
 #include <vulkan/vulkan.h>
 #include "SpectraForge/Core/VMAMemoryManager.h"
 #include <fstream>
@@ -109,7 +110,7 @@ bool WaveletPass::initialize(const VulkanContext& context) {
         VkPipelineLayout rawLayout = VK_NULL_HANDLE;
         VkResult rpl = vkCreatePipelineLayout(static_cast<VkDevice>(context.getDevice()), &pli, nullptr, &rawLayout);
         if (rpl != VK_SUCCESS) {
-            throw std::runtime_error("vkCreatePipelineLayout failed: " + std::to_string(rpl));
+            throw std::runtime_error("vkCreatePipelineLayout failed: " + SpectraForge::Core::SAFE_TO_STRING(rpl));
         }
         pipelineLayout_ = vk::PipelineLayout(rawLayout);
         std::cout << "[WaveletPass] createPipelineLayout done" << std::endl;
@@ -470,7 +471,7 @@ bool WaveletPass::createSubbandImages(const VulkanContext& context) {
             VkImageView raw = VK_NULL_HANDLE;
             VkResult r = vkCreateImageView(static_cast<VkDevice>(device), &ci, nullptr, &raw);
             if (r != VK_SUCCESS) {
-                throw std::runtime_error("vkCreateImageView failed with code " + std::to_string(r));
+                throw std::runtime_error("vkCreateImageView failed with code " + SpectraForge::Core::SAFE_TO_STRING(r));
             }
             out = vk::ImageView(raw);
         };
@@ -671,7 +672,7 @@ void WaveletPass::ensureInputImage(const VulkanContext& context) {
     VkImageView rawView = VK_NULL_HANDLE;
     VkResult r = vkCreateImageView(static_cast<VkDevice>(device), &ci, nullptr, &rawView);
     if (r != VK_SUCCESS) {
-        throw std::runtime_error("ensureInputImage: vkCreateImageView failed: " + std::to_string(r));
+        throw std::runtime_error("ensureInputImage: vkCreateImageView failed: " + SpectraForge::Core::SAFE_TO_STRING(r));
     }
     inputView_ = vk::ImageView(rawView);
     std::cout << "[WaveletPass] ensureInputImage: view ok" << std::endl;

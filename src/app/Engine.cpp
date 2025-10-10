@@ -71,6 +71,12 @@ Engine::Engine(const AppConfig &config, std::shared_ptr<Core::ILogger> logger)
     if (!logger_ || !renderer_ || !resource_manager_) {
         throw std::invalid_argument("App::Engine: зависимости не могут быть nullptr");
     }
+    
+    // P0.3 REFACTORED: Создаем компоненты
+    gameLoop_ = std::make_unique<Core::GameLoopManager>();
+    windowManager_ = std::make_unique<Core::WindowManager>();
+    inputManager_ = std::make_unique<Core::InputManager>();
+    sceneCoordinator_ = std::make_unique<Core::SceneCoordinator>();
 }
 
 Engine::Engine(const AppConfig &config,
@@ -84,6 +90,12 @@ Engine::Engine(const AppConfig &config,
     if (!logger_ || !renderer_ || !resource_manager_) {
         throw std::invalid_argument("App::Engine: зависимости не могут быть nullptr");
     }
+    
+    // P0.3 REFACTORED: Создаем компоненты
+    gameLoop_ = std::make_unique<Core::GameLoopManager>();
+    windowManager_ = std::make_unique<Core::WindowManager>();
+    inputManager_ = std::make_unique<Core::InputManager>();
+    sceneCoordinator_ = std::make_unique<Core::SceneCoordinator>();
 }
 
 Engine::~Engine() { shutdown(); }
@@ -95,65 +107,33 @@ void Engine::setExternalCameraControl(bool enabled) {
 }
 
 bool Engine::init() {
-    // Инициализируем GLFW ДО всего остального
+    // P0.3 REFACTORED: Используем WindowManager для инициализации
     logger_->logInfo("[App::Engine] Инициализация GLFW системы...");
-    if (!Core::Window::initializeSystem()) {
+    if (!windowManager_->initializeSystem()) {
         SAFE_ERROR("[App::Engine] Ошибка инициализации GLFW");
         return false;
     }
     logger_->logInfo("[App::Engine] GLFW инициализирована успешно");
 
-    // Окно - создаем ДО инициализации EngineCore
+    // Создаем окно через WindowManager
     logger_->logInfo("[App::Engine] Создание окна...");
-    Core::Window::Config wc;
-    wc.title = config_.window_title;
-    wc.width = config_.window_width;
-    wc.height = config_.window_height;
-    wc.vSync = config_.vsync;
-    
     setenv("SPECTRAFORGE_PRESENT_VULKAN", "1", 1);
-    window_ = std::make_unique<Core::Window>(wc);
-    if (!window_->initialize()) {
-        SAFE_ERROR("[App::Engine] Ошибка инициализации окна");
+    
+    if (!windowManager_->createWindow(config_.window_title, config_.window_width, config_.window_height)) {
+        SAFE_ERROR("[App::Engine] Ошибка создания окна");
         return false;
     }
     logger_->logInfo("[App::Engine] Окно создано успешно");
     
-    // ✅ ФИКС #2: Правильная настройка обработчика мыши
-    GLFWwindow* win = window_->getNativeWindow();
+    // P0.3 REFACTORED: Используем InputManager для настройки callbacks
+    GLFWwindow* win = windowManager_->getWindow()->getNativeWindow();
     if (win) {
+        inputManager_->setupCallbacks(win);
+        
         // Скрываем курсор только если НЕ используется внешнее управление
         if (!externalCameraControl_) {
             glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
-        
-        glfwSetWindowUserPointer(win, this);
-        glfwSetCursorPosCallback(win, [](GLFWwindow* w, double x, double y) {
-            auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(w));
-            if (!engine || engine->externalCameraControl_) return; // ✅ Не обрабатываем если внешнее управление
-            
-            if (engine->firstMouse) {
-                engine->lastMouseX = x;
-                engine->lastMouseY = y;
-                engine->firstMouse = false;
-            }
-            float dx = static_cast<float>(x - engine->lastMouseX);
-            float dy = static_cast<float>(engine->lastMouseY - y);
-            engine->lastMouseX = x;
-            engine->lastMouseY = y;
-            
-            const float sens = 0.1f;
-            engine->yaw += dx * sens;
-            engine->pitch += dy * sens;
-            if (engine->pitch > 89.0f) engine->pitch = 89.0f;
-            if (engine->pitch < -89.0f) engine->pitch = -89.0f;
-            
-            glm::vec3 front;
-            front.x = cos(glm::radians(engine->yaw)) * cos(glm::radians(engine->pitch));
-            front.y = sin(glm::radians(engine->pitch));
-            front.z = sin(glm::radians(engine->yaw)) * cos(glm::radians(engine->pitch));
-            engine->cameraFront = glm::normalize(front);
-        });
     }
 
     // Ядро - инициализируем ПОСЛЕ создания окна
