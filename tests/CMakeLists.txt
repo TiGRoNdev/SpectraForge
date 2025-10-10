@@ -35,11 +35,18 @@ function(add_spectraforge_test TEST_NAME SOURCE_FILE)
         SpectraForge
         GTest::gtest_main
         Vulkan::Vulkan
+        VulkanMemoryAllocator
         ${ARGN}  # Additional libraries
     )
     if(TARGET GTest::gmock)
         target_link_libraries(${TEST_NAME} PRIVATE GTest::gmock)
     endif()
+    
+    # Добавляем include пути для VMA
+    target_include_directories(${TEST_NAME} PRIVATE 
+        ${VMA_INCLUDE_DIR}
+        ${CMAKE_BINARY_DIR}/_deps/vma-src/include
+    )
     
     set_target_properties(${TEST_NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"

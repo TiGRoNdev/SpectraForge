@@ -77,14 +77,20 @@ void VulkanValidation::setDebugCallback(std::function<void(const std::string&)> 
 }
 
 void VulkanValidation::populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo) {
-    createInfo = vk::DebugUtilsMessengerCreateInfoEXT();
-    createInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
-                                vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-                                vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
-    createInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-                           vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
-                           vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
-    createInfo.pfnUserCallback = debugCallback;
+    // Используем C API для создания, так как C++ wrapper имеет несовместимую сигнатуру callback
+    VkDebugUtilsMessengerCreateInfoEXT cCreateInfo = {};
+    cCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    cCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                  VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    cCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                              VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                              VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    cCreateInfo.pfnUserCallback = debugCallback;
+    cCreateInfo.pUserData = nullptr;
+    
+    // Копируем данные в C++ структуру
+    createInfo = *reinterpret_cast<vk::DebugUtilsMessengerCreateInfoEXT*>(&cCreateInfo);
 }
 
 void VulkanValidation::destroyDebugMessenger(vk::Instance instance, vk::DebugUtilsMessengerEXT debugMessenger) {
