@@ -157,13 +157,13 @@ private:
         auto renderer = std::dynamic_pointer_cast<SpectraForge::Rendering::HybridFreGSRenderer>(app_->getRenderer());
         if (!renderer) return;
 
-        std::vector<spectraforge::rendering::spectraforge::rendering::Triangle> triangles;
+        std::vector<spectraforge::rendering::Triangle> triangles;
 
         // Создаем треугольники которые ГАРАНТИРОВАННО видны из камеры (0, 5, 2) → (0, 2, -3)
         // Размещаем их в области Z ∈ [-6, 0] прямо перед камерой
 
         for (int i = 0; i < 7; ++i) {
-            spectraforge::rendering::spectraforge::rendering::Triangle tri;
+            spectraforge::rendering::Triangle tri;
             
             float z = -1.0f - i * 0.8f;  // z = -1, -1.8, -2.6, -3.4, -4.2, -5.0, -5.8
             float x = (i - 3) * 3.0f;    // Разносим по X: -9, -6, -3, 0, 3, 6, 9
