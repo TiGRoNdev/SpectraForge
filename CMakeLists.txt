@@ -34,22 +34,51 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 # ============================================================================
 
 # Используем системный Vulkan SDK
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(VULKAN REQUIRED vulkan)
+find_package(Vulkan QUIET)
 
-if(NOT VULKAN_FOUND)
-    message(FATAL_ERROR "Vulkan SDK not found. Please install Vulkan SDK.")
+if(NOT Vulkan_FOUND)
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(VULKAN QUIET vulkan)
+    endif()
+
+    if(VULKAN_FOUND)
+        message(STATUS "Found Vulkan SDK via pkg-config")
+        message(STATUS "Vulkan include: ${VULKAN_INCLUDE_DIRS}")
+        message(STATUS "Vulkan libraries: ${VULKAN_LIBRARIES}")
+
+        add_library(Vulkan::Vulkan INTERFACE IMPORTED)
+        set_target_properties(Vulkan::Vulkan PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${VULKAN_INCLUDE_DIRS}"
+            INTERFACE_LINK_LIBRARIES "${VULKAN_LIBRARIES}"
+        )
+    endif()
+else()
+    message(STATUS "Found Vulkan SDK via find_package")
 endif()
 
-message(STATUS "Found Vulkan SDK via pkg-config")
-message(STATUS "Vulkan include: ${VULKAN_INCLUDE_DIRS}")
-message(STATUS "Vulkan libraries: ${VULKAN_LIBRARIES}")
+if(NOT TARGET Vulkan::Vulkan)
+    message(FATAL_ERROR "Vulkan SDK not found. Please install Vulkan SDK or provide pkg-config file.")
+endif()
 
-# Создаем цель для Vulkan
-add_library(Vulkan::Vulkan INTERFACE IMPORTED)
-set_target_properties(Vulkan::Vulkan PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${VULKAN_INCLUDE_DIRS}"
-    INTERFACE_LINK_LIBRARIES "${VULKAN_LIBRARIES}"
+# Vulkan Memory Allocator (header-only dependency)
+include(FetchContent)
+FetchContent_Declare(
+    vma
+    URL https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/tags/v3.1.0.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_GetProperties(vma)
+if(NOT vma_POPULATED)
+    FetchContent_Populate(vma)
+endif()
+
+set(VMA_INCLUDE_DIR ${vma_SOURCE_DIR}/include)
+message(STATUS "VulkanMemoryAllocator include dir: ${VMA_INCLUDE_DIR}")
+
+add_library(VulkanMemoryAllocator INTERFACE)
+target_include_directories(VulkanMemoryAllocator INTERFACE
+    ${VMA_INCLUDE_DIR}
 )
 
 # Добавляем дополнительные пути поиска для GLSLC (shader compiler)
@@ -174,7 +203,7 @@ if(BUILD_EXAMPLES)
 
     if(UNIX AND NOT APPLE)
         find_package(X11 REQUIRED)
-        target_include_directories(BlueCube_Demo PRIVATE ${X1_INCLUDE_DIR})
+        target_include_directories(BlueCube_Demo PRIVATE ${X11_INCLUDE_DIR})
         target_link_libraries(BlueCube_Demo PRIVATE ${X11_LIBRARIES})
     endif()
 

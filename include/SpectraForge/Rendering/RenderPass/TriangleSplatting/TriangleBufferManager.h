@@ -24,6 +24,8 @@ struct Triangle;
  */
 class TriangleBufferManager {
 public:
+    virtual ~TriangleBufferManager() = default;
+
     /**
      * @brief Инициализация менеджера буферов
      * @param device Vulkan device
@@ -31,14 +33,14 @@ public:
      * @param maxTriangles Максимальное количество треугольников
      * @return true если успешно
      */
-    bool initialize(vk::Device device, 
-                   VmaAllocator allocator, 
-                   uint32_t maxTriangles);
+    virtual bool initialize(vk::Device device,
+                            VmaAllocator allocator,
+                            uint32_t maxTriangles);
     
     /**
      * @brief Очистка всех буферов
      */
-    void cleanup();
+    virtual void cleanup();
     
     /**
      * @brief Загрузка треугольников на GPU
@@ -47,23 +49,23 @@ public:
      * @param transferQueue Transfer queue
      * @throws std::runtime_error если triangles.size() > maxTriangles
      */
-    void uploadTriangles(const std::vector<Triangle>& triangles,
-                        vk::CommandBuffer cmd,
-                        vk::Queue transferQueue);
+    virtual void uploadTriangles(const std::vector<Triangle>& triangles,
+                                 vk::CommandBuffer cmd,
+                                 vk::Queue transferQueue);
     
     // Getters для буферов
-    vk::Buffer getTriangleBuffer() const { return triangleBuffer_; }
-    vk::Buffer getVisibleIndicesBuffer() const { return visibleIndicesBuffer_; }
-    vk::Buffer getSortedIndicesBuffer() const { return sortedIndicesBuffer_; }
-    vk::Buffer getDepthKeysBuffer() const { return depthKeysBuffer_; }
-    vk::Buffer getAtomicCounterBuffer() const { return atomicCounterBuffer_; }
-    
+    virtual vk::Buffer getTriangleBuffer() const { return triangleBuffer_; }
+    virtual vk::Buffer getVisibleIndicesBuffer() const { return visibleIndicesBuffer_; }
+    virtual vk::Buffer getSortedIndicesBuffer() const { return sortedIndicesBuffer_; }
+    virtual vk::Buffer getDepthKeysBuffer() const { return depthKeysBuffer_; }
+    virtual vk::Buffer getAtomicCounterBuffer() const { return atomicCounterBuffer_; }
+
     // Getters для статистики
-    uint32_t getTriangleCount() const { return triangleCount_; }
-    uint32_t getMaxTriangles() const { return maxTriangles_; }
-    uint64_t getTotalMemoryUsage() const;
-    
-    bool isInitialized() const { return initialized_; }
+    virtual uint32_t getTriangleCount() const { return triangleCount_; }
+    virtual uint32_t getMaxTriangles() const { return maxTriangles_; }
+    virtual uint64_t getTotalMemoryUsage() const;
+
+    virtual bool isInitialized() const { return initialized_; }
 
 private:
     bool initialized_ = false;

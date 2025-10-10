@@ -19,50 +19,52 @@ namespace rendering {
  */
 class TriangleSplattingDebugger {
 public:
+    virtual ~TriangleSplattingDebugger() = default;
+
     /**
      * @brief Установка debug режима
      * @param mode 0=normal, 1=SDF visualization, 2=barycentric coordinates, 3=depth buffer
      */
-    void setDebugMode(uint32_t mode);
+    virtual void setDebugMode(uint32_t mode);
     
     /**
      * @brief Включение wireframe режима
      */
-    void enableWireframe(bool enable);
+    virtual void enableWireframe(bool enable);
     
     /**
      * @brief Установка background color
      */
-    void setBackgroundColor(const glm::vec4& color);
+    virtual void setBackgroundColor(const glm::vec4& color);
     
     /**
      * @brief Сохранение кадра в PPM формат
      */
-    bool saveFrameToPPM(const std::string& filename,
-                       vk::Image image,
-                       vk::Device device,
-                       VmaAllocator allocator,
-                       vk::CommandPool commandPool,
-                       vk::Queue queue,
-                       uint32_t width,
-                       uint32_t height);
+    virtual bool saveFrameToPPM(const std::string& filename,
+                                vk::Image image,
+                                vk::Device device,
+                                VmaAllocator allocator,
+                                vk::CommandPool commandPool,
+                                vk::Queue queue,
+                                uint32_t width,
+                                uint32_t height);
     
     /**
      * @brief Сохранение кадра в PNG формат (требует libpng)
      */
-    bool saveFrameToPNG(const std::string& filename,
-                       vk::Image image,
-                       vk::Device device,
-                       VmaAllocator allocator,
-                       vk::CommandPool commandPool,
-                       vk::Queue queue,
-                       uint32_t width,
-                       uint32_t height);
+    virtual bool saveFrameToPNG(const std::string& filename,
+                                vk::Image image,
+                                vk::Device device,
+                                VmaAllocator allocator,
+                                vk::CommandPool commandPool,
+                                vk::Queue queue,
+                                uint32_t width,
+                                uint32_t height);
     
     // Getters
-    uint32_t getDebugMode() const { return debugMode_; }
-    bool isWireframeEnabled() const { return wireframeEnabled_; }
-    glm::vec4 getBackgroundColor() const { return backgroundColor_; }
+    virtual uint32_t getDebugMode() const { return debugMode_; }
+    virtual bool isWireframeEnabled() const { return wireframeEnabled_; }
+    virtual glm::vec4 getBackgroundColor() const { return backgroundColor_; }
 
 private:
     uint32_t debugMode_ = 0;

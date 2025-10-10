@@ -17,6 +17,8 @@ namespace rendering {
  */
 class TriangleSplattingStatistics {
 public:
+    virtual ~TriangleSplattingStatistics() = default;
+
     /**
      * @brief Структура со статистикой
      */
@@ -43,42 +45,42 @@ public:
     /**
      * @brief Сброс всех статистик
      */
-    void reset();
+    virtual void reset();
     
     /**
      * @brief Обновление triangle counts
      */
-    void update(uint32_t totalTriangles, uint32_t visibleTriangles);
+    virtual void update(uint32_t totalTriangles, uint32_t visibleTriangles);
     
     /**
      * @brief Установка timings
      */
-    void setTimings(float frustumMs, float sortMs, float rasterMs);
+    virtual void setTimings(float frustumMs, float sortMs, float rasterMs);
     
     /**
      * @brief Установка memory usage
      */
-    void setMemoryUsage(uint64_t bytes);
+    virtual void setMemoryUsage(uint64_t bytes);
     
     /**
      * @brief Вычисление FPS на основе frame time
      */
-    void calculateFPS();
+    virtual void calculateFPS();
     
     /**
      * @brief Получить статистику
      */
-    const Stats& getStats() const { return stats_; }
+    virtual const Stats& getStats() const { return stats_; }
     
     /**
      * @brief Вывести статистику в console
      */
-    void printStats() const;
+    virtual void printStats() const;
     
     /**
      * @brief Экспорт статистики в JSON формат
      */
-    std::string toJSON() const;
+    virtual std::string toJSON() const;
 
 private:
     Stats stats_;

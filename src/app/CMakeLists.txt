@@ -4,6 +4,7 @@
 
 set(APP_SOURCES
     # P0.3: Engine decomposition components
+    Engine.cpp
     GameLoopManager.cpp
     WindowManager.cpp
     InputManager.cpp
@@ -14,12 +15,13 @@ set(APP_SOURCES
 add_library(SpectraForge_App OBJECT ${APP_SOURCES})
 
 # Include directories
-target_include_directories(SpectraForge_App 
-    PUBLIC 
+target_include_directories(SpectraForge_App
+    PUBLIC
         ${CMAKE_SOURCE_DIR}/include
+        ${VMA_INCLUDE_DIR}
 )
 
 # Link dependencies
-target_link_libraries(SpectraForge_App PUBLIC glfw)
+target_link_libraries(SpectraForge_App PUBLIC glfw VulkanMemoryAllocator)
 
 message(STATUS "App layer configured (P0.3 Engine decomposition)")

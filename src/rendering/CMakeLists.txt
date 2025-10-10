@@ -23,6 +23,7 @@ add_library(SpectraForge_Vulkan OBJECT
     FreGSPass.cpp
     WaveletPass.cpp
     InstancedMeshPass.cpp
+    utils/DynamicBuffer.cpp
     RenderPass.cpp
     
     # Triangle Splatting Pass (Decomposed - P0.1 Refactoring)
@@ -52,11 +53,13 @@ find_package(PNG REQUIRED)
 # Include directories
 target_include_directories(SpectraForge_Vulkan PUBLIC
     ${CMAKE_SOURCE_DIR}/include
+    ${VulkanMemoryAllocator_SOURCE_DIR}/include
 )
 
 # Link with Vulkan and core modules
 target_link_libraries(SpectraForge_Vulkan PUBLIC
     Vulkan::Vulkan
+    VulkanMemoryAllocator
     SpectraForge_Core
     SpectraForge_Math
     PNG::PNG

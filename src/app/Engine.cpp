@@ -1,862 +1,246 @@
 /**
  * @file Engine.cpp
- * @brief Реализация фасада App::Engine
+ * @brief Simplified implementation of the high level App::Engine facade.
+ *
+ * This version wires together the refactored subsystems (window/input/scene
+ * managers) and the Vulkan renderer so the demos can run inside the new
+ * SOLID compliant architecture.
  */
 
 #include "SpectraForge/App/Engine.h"
-#include <stdexcept>
+
+#include "SpectraForge/App/DISetup.h"
+#include "SpectraForge/Core/DependencyInjection/Container.h"
 #include "SpectraForge/Core/SafeConsole.h"
-#include <fstream>
-#include <sstream>
-#include <filesystem>
-#include "SpectraForge/Rendering/RendererFactory.h"
-#include "SpectraForge/Rendering/Common/IResourceManager.h"
 #include "SpectraForge/Rendering/HybridFreGSRenderer.h"
 #include "SpectraForge/Rendering/RenderPass/TriangleSplattingPass.h"
-#include "SpectraForge/Rendering/RenderPass/FreGSPass.h"
-#include "SpectraForge/Core/Logger.h"
-#include <filesystem>
-#include <fstream>
-#include <sstream>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+
 #include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_X11
 #include <GLFW/glfw3native.h>
-#include <chrono>
-#include <GLFW/glfw3.h>
+
+#include <glm/gtc/type_ptr.hpp>
+
+#include <stdexcept>
 
 namespace SpectraForge {
 namespace App {
 
-// Удалено: sceneInfo_, renderStats_, inputState_ являются нестатическими членами
+Engine::Engine(const AppConfig& config, std::shared_ptr<SpectraForge::Core::ILogger> logger)
+    : Engine(config,
+             std::move(logger),
+             []() {
+                 auto& container = SpectraForge::Core::DI::ServiceLocator::getInstance();
+                 if (!container.isRegistered<Rendering::IRenderer>()) {
+                     App::DISetup::configure(container);
+                 }
+                 return container.resolve<Rendering::IRenderer>();
+             }(),
+             SpectraForge::Core::DI::ServiceLocator::get<Rendering::IWindowBinder>(),
+             SpectraForge::Core::DI::ServiceLocator::get<Rendering::IResourceManager>(),
+             SpectraForge::Core::DI::ServiceLocator::get<Core::IGameLoopManager>(),
+             SpectraForge::Core::DI::ServiceLocator::get<Core::IWindowManager>(),
+             SpectraForge::Core::DI::ServiceLocator::get<Core::IInputManager>(),
+             SpectraForge::Core::DI::ServiceLocator::get<Core::ISceneCoordinator>(),
+             SpectraForge::Core::DI::ServiceLocator::get<Vulkan::ISceneManager>(),
+             SpectraForge::Core::DI::ServiceLocator::get<SpectraForge::Core::IEngineCore>()) {}
 
-namespace {
-// Простой дефолтный ResourceManager-адаптер до полноценной интеграции VMA-слоя в IResourceManager
-class NullResourceManager final : public SpectraForge::Rendering::IResourceManager {
-  public:
-    bool initialize() override { return true; }
-    void shutdown() override {}
-    SpectraForge::Rendering::BufferHandle createBuffer(const SpectraForge::Rendering::BufferDesc&) override { return SpectraForge::Rendering::INVALID_HANDLE; }
-    void updateBuffer(SpectraForge::Rendering::BufferHandle, const void*, size_t, size_t) override {}
-    void readBuffer(SpectraForge::Rendering::BufferHandle, void*, size_t, size_t) override {}
-    SpectraForge::Rendering::TextureHandle createTexture(const SpectraForge::Rendering::TextureDesc&) override { return SpectraForge::Rendering::INVALID_HANDLE; }
-    void updateTexture(SpectraForge::Rendering::TextureHandle, const void*, uint32_t, uint32_t) override {}
-    SpectraForge::Rendering::ShaderHandle createShader(const std::string&, SpectraForge::Rendering::ShaderType) override { return SpectraForge::Rendering::INVALID_HANDLE; }
-    SpectraForge::Rendering::ShaderHandle createShaderFromFile(const std::string&, SpectraForge::Rendering::ShaderType) override { return SpectraForge::Rendering::INVALID_HANDLE; }
-    void releaseResource(SpectraForge::Rendering::ResourceHandle) override {}
-    void releaseAllResources() override {}
-    bool isValid(SpectraForge::Rendering::ResourceHandle) const override { return false; }
-    size_t getResourceSize(SpectraForge::Rendering::ResourceHandle) const override { return 0; }
-    SpectraForge::Rendering::MemoryStats getMemoryStats() const override { return {}; }
-    void waitForCompletion() override {}
-    void flush() override {}
-};
-}
-
-using namespace SpectraForge;
-using namespace SpectraForge::App;
-
-Engine::Engine(const AppConfig &config, std::shared_ptr<Core::ILogger> logger)
-    : config_(config), logger_(std::move(logger))
-{
-    // Дефолт: Жёстко выбираем HybridFreGSRenderer для соответствия требованиям
-    std::shared_ptr<Rendering::IRenderer> rendererShared =
-        std::make_shared<Rendering::HybridFreGSRenderer>();
-    std::shared_ptr<Rendering::IResourceManager> rm = std::make_shared<NullResourceManager>();
-
-    renderer_ = std::move(rendererShared);
-    resource_manager_ = std::move(rm);
-
-    if (!logger_ || !renderer_ || !resource_manager_) {
-        throw std::invalid_argument("App::Engine: зависимости не могут быть nullptr");
-    }
-    
-    // P0.3 REFACTORED: Создаем компоненты
-    gameLoop_ = std::make_unique<Core::GameLoopManager>();
-    windowManager_ = std::make_unique<Core::WindowManager>();
-    inputManager_ = std::make_unique<Core::InputManager>();
-    sceneCoordinator_ = std::make_unique<Core::SceneCoordinator>();
-}
-
-Engine::Engine(const AppConfig &config,
-               std::shared_ptr<Core::ILogger> logger,
+Engine::Engine(const AppConfig& config,
+               std::shared_ptr<SpectraForge::Core::ILogger> logger,
                std::shared_ptr<Rendering::IRenderer> renderer,
-               std::shared_ptr<Rendering::IResourceManager> resource_manager)
-    : config_(config),
+               std::shared_ptr<Rendering::IWindowBinder> windowBinder,
+               std::shared_ptr<Rendering::IResourceManager> resourceManager,
+               std::shared_ptr<Core::IGameLoopManager> gameLoop,
+               std::shared_ptr<Core::IWindowManager> windowManager,
+               std::shared_ptr<Core::IInputManager> inputManager,
+               std::shared_ptr<Core::ISceneCoordinator> sceneCoordinator,
+               std::shared_ptr<Vulkan::ISceneManager> sceneManager,
+               std::shared_ptr<SpectraForge::Core::IEngineCore> engineCore)
+    : gameLoop_(std::move(gameLoop)),
+      windowManager_(std::move(windowManager)),
+      inputManager_(std::move(inputManager)),
+      sceneCoordinator_(std::move(sceneCoordinator)),
+      config_(config),
       logger_(std::move(logger)),
       renderer_(std::move(renderer)),
-      resource_manager_(std::move(resource_manager)) {
-    if (!logger_ || !renderer_ || !resource_manager_) {
-        throw std::invalid_argument("App::Engine: зависимости не могут быть nullptr");
+      windowBinder_(std::move(windowBinder)),
+      resource_manager_(std::move(resourceManager)),
+      scene_manager_(std::move(sceneManager)),
+      core_(std::move(engineCore)) {
+    if (!logger_ || !renderer_ || !resource_manager_ || !windowBinder_ || !gameLoop_ || !windowManager_
+        || !inputManager_ || !sceneCoordinator_ || !scene_manager_ || !core_) {
+        throw std::invalid_argument("App::Engine: dependencies must not be null");
     }
-    
-    // P0.3 REFACTORED: Создаем компоненты
-    gameLoop_ = std::make_unique<Core::GameLoopManager>();
-    windowManager_ = std::make_unique<Core::WindowManager>();
-    inputManager_ = std::make_unique<Core::InputManager>();
-    sceneCoordinator_ = std::make_unique<Core::SceneCoordinator>();
 }
 
 Engine::~Engine() { shutdown(); }
 
-// ✅ ФИКС #1: Добавляем метод setExternalCameraControl в публичный интерфейс
-void Engine::setExternalCameraControl(bool enabled) {
-    externalCameraControl_ = enabled;
-    std::cout << "[Engine] External camera control " << (enabled ? "ENABLED" : "DISABLED") << std::endl;
-}
-
 bool Engine::init() {
-    // P0.3 REFACTORED: Используем WindowManager для инициализации
-    logger_->logInfo("[App::Engine] Инициализация GLFW системы...");
     if (!windowManager_->initializeSystem()) {
-        SAFE_ERROR("[App::Engine] Ошибка инициализации GLFW");
+        SAFE_ERROR("[App::Engine] Failed to initialise window system");
         return false;
     }
-    logger_->logInfo("[App::Engine] GLFW инициализирована успешно");
 
-    // Создаем окно через WindowManager
-    logger_->logInfo("[App::Engine] Создание окна...");
-    setenv("SPECTRAFORGE_PRESENT_VULKAN", "1", 1);
-    
     if (!windowManager_->createWindow(config_.window_title, config_.window_width, config_.window_height)) {
-        SAFE_ERROR("[App::Engine] Ошибка создания окна");
+        SAFE_ERROR("[App::Engine] Failed to create window");
         return false;
     }
-    logger_->logInfo("[App::Engine] Окно создано успешно");
-    
-    // P0.3 REFACTORED: Используем InputManager для настройки callbacks
-    GLFWwindow* win = windowManager_->getWindow()->getNativeWindow();
-    if (win) {
-        inputManager_->setupCallbacks(win);
-        
-        // Скрываем курсор только если НЕ используется внешнее управление
-        if (!externalCameraControl_) {
-            glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }
+
+    auto* window = windowManager_->getWindow();
+    if (!window) {
+        SAFE_ERROR("[App::Engine] Window handle is null");
+        return false;
     }
 
-    // Ядро - инициализируем ПОСЛЕ создания окна
-    logger_->logInfo("[App::Engine] Инициализация EngineCore...");
-    core_ = std::make_unique<Core::EngineCore>(renderer_, resource_manager_, logger_);
+    GLFWwindow* nativeWindow = window->getNativeWindow();
+    if (!nativeWindow) {
+        SAFE_ERROR("[App::Engine] Native GLFW window is null");
+        return false;
+    }
+
+    inputManager_->setupCallbacks(nativeWindow);
+    if (!externalCameraControl_) {
+        glfwSetInputMode(nativeWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
+
     if (!core_->initialize()) {
-        SAFE_ERROR("[App::Engine] Ошибка инициализации EngineCore");
+        SAFE_ERROR("[App::Engine] EngineCore initialisation failed");
         return false;
     }
-    logger_->logInfo("[App::Engine] EngineCore инициализирован успешно");
 
-    // Привязываем окно к рендереру
-    auto* hybridRenderer = dynamic_cast<Rendering::HybridFreGSRenderer*>(renderer_.get());
-    if (hybridRenderer && win) {
-        logger_->logInfo("[App::Engine] Привязка окна к рендереру...");
+    // Attach the OS window to the Vulkan renderer when possible.
+#ifdef GLFW_EXPOSE_NATIVE_X11
+    if (windowBinder_) {
         Display* display = glfwGetX11Display();
-        Window x11Window = glfwGetX11Window(win);
-        if (!hybridRenderer->attachWindow(display, reinterpret_cast<void*>(x11Window), config_.window_width, config_.window_height)) {
-            SAFE_ERROR("[App::Engine] Ошибка привязки окна к рендереру");
-            return false;
+        Window x11Window = glfwGetX11Window(nativeWindow);
+        if (display && x11Window) {
+            if (!windowBinder_->attachWindow(display,
+                                             reinterpret_cast<void*>(x11Window),
+                                             static_cast<uint32_t>(config_.window_width),
+                                             static_cast<uint32_t>(config_.window_height))) {
+                SAFE_ERROR("[App::Engine] Failed to attach window to HybridFreGSRenderer");
+                return false;
+            }
         }
-        logger_->logInfo("[App::Engine] Окно успешно привязано к рендереру");
     }
-    
-    // ✅ ФИКС #3: Правильная инициализация камеры с правильными координатами
-    renderCamera_ = std::make_unique<Rendering::Camera3D>();
-    float aspectRatio = static_cast<float>(config_.window_width) / static_cast<float>(config_.window_height);
-    renderCamera_->setPerspective(60.0f, aspectRatio, 0.1f, 1000.0f);
-    
-    // ✅ ФИКС #4: Используем правильные начальные координаты камеры
-    // Позиция по умолчанию для хорошего обзора большинства сцен
-    cameraPos = glm::vec3(0.0f, 2.0f, 5.0f);  // Немного выше и дальше
-    cameraFront = glm::vec3(0.0f, 0.0f, -1.0f); // Смотрим в -Z направлении
-    yaw = -90.0f;   // Смотрим прямо вперед
-    pitch = -15.0f; // Немного вниз для лучшего обзора
-    
-    renderCamera_->setPosition(Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z));
-    renderCamera_->lookAt(
-        Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z),
-        Math::Vector3(cameraPos.x + cameraFront.x, cameraPos.y + cameraFront.y, cameraPos.z + cameraFront.z),
-        Math::Vector3(0.0f, 1.0f, 0.0f)
-    );
+#endif
 
-    std::cout << "[Engine] 🎥 Camera initialized at: (" << cameraPos.x << ", "
-              << cameraPos.y << ", " << cameraPos.z << ")" << std::endl;
-    std::cout << "[Engine] 👁️ Camera looking: (" << cameraFront.x << ", "
-              << cameraFront.y << ", " << cameraFront.z << ")" << std::endl;
-    std::cout << "[Engine] 🔒 External control: " << (externalCameraControl_ ? "ENABLED" : "DISABLED") << std::endl;
-    
-    // Передаём камеру в рендерер
-    if (hybridRenderer) {
-        hybridRenderer->setCamera(renderCamera_.get());
-        logger_->logInfo("[App::Engine] Камера создана и передана в рендерер");
+    // Ensure the scene coordinator owns a camera.
+    if (!sceneCoordinator_->getCamera()) {
+        auto camera = std::make_shared<Rendering::Camera3D>();
+        float aspect = static_cast<float>(config_.window_width) / static_cast<float>(config_.window_height);
+        camera->setPerspective(60.0f, aspect, 0.1f, 1000.0f);
+        sceneCoordinator_->setCamera(camera);
     }
 
-    // Сцена
-    scene_manager_ = std::make_unique<Vulkan::SceneManager>();
     if (!scene_manager_->init()) {
-        SAFE_ERROR("[App::Engine] Ошибка инициализации SceneManager");
+        SAFE_ERROR("[App::Engine] SceneManager initialisation failed");
         return false;
     }
 
-    logger_->logInfo("App::Engine инициализирован");
+    updateRenderStats();
+    sceneInfo_ = sceneCoordinator_->getSceneInfo();
     return true;
 }
 
-void Engine::update(float delta_time) {
-    if (core_) {
-        (void)delta_time;
+bool Engine::load_scene(const Vulkan::SceneData& data) {
+    if (!scene_manager_->loadScene(data)) {
+        SAFE_ERROR("[App::Engine] SceneManager failed to load scene");
+        return false;
     }
-    if (window_) {
-        window_->pollEvents();
-        
-        // ✅ ФИКС #5: Управление камерой ТОЛЬКО если НЕ включено внешнее управление
-        GLFWwindow* win = window_->getNativeWindow();
-        if (win && !externalCameraControl_) {
-            float speed = 2.5f * delta_time;
 
-            // Вычисляем направление взгляда камеры из yaw и pitch
-            glm::vec3 front;
-            front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-            front.y = sin(glm::radians(pitch));
-            front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-            cameraFront = glm::normalize(front);
-
-            // Вычисляем правую ось
-            glm::vec3 right = glm::normalize(glm::cross(cameraFront, glm::vec3(0,1,0)));
-
-            // Обработка клавиш WASD
-            if (glfwGetKey(win, GLFW_KEY_W) == GLFW_PRESS) cameraPos += cameraFront * speed;
-            if (glfwGetKey(win, GLFW_KEY_S) == GLFW_PRESS) cameraPos -= cameraFront * speed;
-            if (glfwGetKey(win, GLFW_KEY_A) == GLFW_PRESS) cameraPos -= right * speed;
-            if (glfwGetKey(win, GLFW_KEY_D) == GLFW_PRESS) cameraPos += right * speed;
-            if (glfwGetKey(win, GLFW_KEY_SPACE) == GLFW_PRESS) cameraPos.y += speed;
-            if (glfwGetKey(win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) cameraPos.y -= speed;
-
-            // Обновляем рендер-камеру после движения
-            if (renderCamera_) {
-                renderCamera_->setPosition(Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z));
-                renderCamera_->lookAt(
-                    Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z),
-                    Math::Vector3(cameraPos.x + cameraFront.x, cameraPos.y + cameraFront.y, cameraPos.z + cameraFront.z),
-                    Math::Vector3(0.0f, 1.0f, 0.0f)
-                );
-            }
-
-            // Отладочная информация о камере (реже)
-            static int frameCount = 0;
-            if (frameCount++ % 300 == 0) {
-                std::cout << "[Camera] Position: (" << cameraPos.x << ", " << cameraPos.y << ", " << cameraPos.z << ")" << std::endl;
-                std::cout << "[Camera] Direction: (" << cameraFront.x << ", " << cameraFront.y << ", " << cameraFront.z << ")" << std::endl;
-                std::cout << "[Camera] Yaw: " << yaw << "°, Pitch: " << pitch << "°" << std::endl;
-            }
-        } else if (externalCameraControl_) {
-            // ✅ ФИКС #6: При внешнем управлении - НЕ обновляем камеру из input
-            // Камера управляется внешним кодом через setCamera() или прямые вызовы
-            static bool logged = false;
-            if (!logged) {
-                std::cout << "[Engine] 🔒 External camera control active - ignoring WASD/mouse input" << std::endl;
-                logged = true;
-            }
-        }
-    }
+    sceneCoordinator_->loadScene(data);
+    sceneInfo_ = sceneCoordinator_->getSceneInfo();
+    return true;
 }
 
-// ✅ ФИКС #7: Улучшенная render() функция с правильным coordinate system
+void Engine::update(float deltaTime) {
+    lastFrameDelta_ = deltaTime;
+
+    windowManager_->pollEvents();
+    inputManager_->update();
+    sceneCoordinator_->updateCamera(deltaTime, inputManager_->getState(), externalCameraControl_);
+    scene_manager_->updateDynamics(deltaTime);
+    sceneInfo_ = sceneCoordinator_->getSceneInfo();
+}
+
 void Engine::render() {
-    if (!renderer_ || !renderer_->isInitialized()) return;
-    
-    // Проверяем размер окна перед рендерингом
-    if (window_) {
-        auto fb = window_->getFramebufferSize();
-        if (fb.x <= 0.0f || fb.y <= 0.0f) {
-            static bool logged = false;
-            if (!logged) {
-                std::cout << "[Engine] ⏸️ Window minimized, rendering paused" << std::endl;
-                logged = true;
-            }
-            return;
-        }
+    if (!renderer_) {
+        return;
     }
-    
-    renderer_->beginFrame();
-    
-    // ✅ ФИКС #8: Правильное формирование данных кадра с исправленным coordinate system
+
     Rendering::FrameData frame{};
-    if (window_) {
-        auto fb = window_->getFramebufferSize();
-        frame.renderTargetSize.width = static_cast<int>(fb.x);
-        frame.renderTargetSize.height = static_cast<int>(fb.y);
-        
-        // Правильные camera parameters
-        float aspect = fb.x / std::max(1.0f, fb.y);
-        frame.camera.position = {cameraPos.x, cameraPos.y, cameraPos.z};
-        glm::vec3 center = cameraPos + cameraFront;
-        frame.camera.target = {center.x, center.y, center.z};
-        frame.camera.up = {0.0f, 1.0f, 0.0f};
-        frame.camera.fov = 60.0f;
-        frame.camera.nearPlane = 0.1f;
-        frame.camera.farPlane = 1000.0f;  // Увеличили дальность отсечения
-        
-        // ✅ ФИКС #9: Правильные view и projection матрицы для Vulkan
-        glm::vec3 upGlm(0.0f, 1.0f, 0.0f);
-        frame.camera.viewMatrix = glm::lookAt(cameraPos, center, upGlm);
-        
-        // Правильная проекционная матрица для Vulkan (Y-flip учитывается в shader)
-        frame.camera.projectionMatrix = glm::perspective(
-            glm::radians(frame.camera.fov), 
-            aspect, 
-            frame.camera.nearPlane, 
-            frame.camera.farPlane
-        );
-    }
-    
-    // Проверка потери устройства
-    if (auto h = std::dynamic_pointer_cast<Rendering::HybridFreGSRenderer>(renderer_)) {
-        if (h->isDeviceLost()) {
-            std::cerr << "[App::Engine] ❌ Device lost — closing window" << std::endl;
-            if (window_) window_->close();
-            return;
-        }
+    frame.renderTargetSize.width = config_.window_width;
+    frame.renderTargetSize.height = config_.window_height;
+    frame.timing.deltaTime = lastFrameDelta_;
+    frame.timing.frameNumber = frameCounter_++;
+
+    if (auto camera = sceneCoordinator_->getCamera()) {
+        const auto& pos = camera->getPosition();
+        const auto& target = camera->getTarget();
+        const auto up = camera->getUp();
+
+        frame.camera.position = pos;
+        frame.camera.target = target;
+        frame.camera.up = up;
+        frame.camera.fov = camera->getFieldOfView();
+        frame.camera.nearPlane = camera->getNearPlane();
+        frame.camera.farPlane = camera->getFarPlane();
+
+        auto view = camera->getViewMatrix();
+        auto proj = camera->getProjectionMatrix();
+        frame.camera.viewMatrix = glm::make_mat4(view.data());
+        frame.camera.projectionMatrix = glm::make_mat4(proj.data());
     }
 
+    renderer_->beginFrame();
     renderer_->renderFrame(frame);
-
-    if (auto h2 = std::dynamic_pointer_cast<Rendering::HybridFreGSRenderer>(renderer_)) {
-        if (h2->isDeviceLost()) {
-            std::cerr << "[App::Engine] ❌ Device lost after renderFrame — closing window" << std::endl;
-            if (window_) window_->close();
-            return;
-        }
-    }
-    
     renderer_->endFrame();
-}
 
-// ✅ ФИКС #10: Улучшенная load_scene с правильной инициализацией debug режима
-bool Engine::load_scene(const Vulkan::SceneData &data) {
-    if (!scene_manager_) return false;
-    bool ok = scene_manager_->loadScene(data);
-    
-    if (ok && renderer_) {
-        // Простейший OBJ-парсер для вершин и текстурных координат sponza
-        std::vector<glm::vec3> verts;
-        std::vector<glm::vec2> texCoords;
-        verts.reserve(50000);
-        texCoords.reserve(50000);
-        try {
-            // Разрешаем путь относительно нескольких баз: CWD, каталог exe, его родители
-            auto resolvePathFn = [](const std::string& rel) -> std::filesystem::path {
-                std::filesystem::path input(rel);
-                if (std::filesystem::exists(input)) return std::filesystem::canonical(input);
-                std::vector<std::filesystem::path> roots;
-                roots.push_back(std::filesystem::current_path());
-                std::error_code ec;
-                auto exe = std::filesystem::read_symlink("/proc/self/exe", ec);
-                if (!ec) {
-                    auto exeDir = exe.parent_path();
-                    roots.push_back(exeDir);
-                    if (exeDir.has_parent_path()) roots.push_back(exeDir.parent_path());
-                    if (exeDir.has_parent_path() && exeDir.parent_path().has_parent_path())
-                        roots.push_back(exeDir.parent_path().parent_path());
-                }
-                for (const auto& r : roots) {
-                    auto cand = r / input;
-                    if (std::filesystem::exists(cand)) return std::filesystem::canonical(cand);
-                }
-                return input; // как есть
-            };
-
-            std::filesystem::path p = resolvePathFn(data.scenePath);
-            std::ifstream in(p);
-            if (in) {
-                std::string line;
-                while (std::getline(in, line)) {
-                    if (line.size() > 2 && line[0] == 'v' && line[1] == ' ') {
-                        // Парсинг вершин
-                        std::istringstream iss(line.substr(2));
-                        float x, y, z;
-                        if (iss >> x >> y >> z) {
-                            verts.emplace_back(x, y, z);
-                        }
-                    } else if (line.size() > 3 && line[0] == 'v' && line[1] == 't' && line[2] == ' ') {
-                        // Парсинг текстурных координат
-                        std::istringstream iss(line.substr(3));
-                        float u, v;
-                        if (iss >> u >> v) {
-                            texCoords.emplace_back(u, v);
-                        }
-                    }
-                }
-                in.close();
-            } else {
-                logger_->logError("[App::Engine] Не удалось открыть OBJ: " + p.string());
-            }
-        } catch (...) {
-            // игнорируем, используем fallback
-        }
-
-        // Функция разрешения пути (нужна для материалов тоже)
-        auto resolvePathFn = [](const std::string& rel) -> std::filesystem::path {
-            std::filesystem::path input(rel);
-            if (std::filesystem::exists(input)) return std::filesystem::canonical(input);
-            std::vector<std::filesystem::path> roots;
-            roots.push_back(std::filesystem::current_path());
-            std::error_code ec;
-            auto exe = std::filesystem::read_symlink("/proc/self/exe", ec);
-            if (!ec) {
-                auto exeDir = exe.parent_path();
-                roots.push_back(exeDir);
-                if (exeDir.has_parent_path()) roots.push_back(exeDir.parent_path());
-                if (exeDir.has_parent_path() && exeDir.parent_path().has_parent_path())
-                    roots.push_back(exeDir.parent_path().parent_path());
-            }
-            for (const auto& r : roots) {
-                auto cand = r / input;
-                if (std::filesystem::exists(cand)) return std::filesystem::canonical(cand);
-            }
-            return input; // как есть
-        };
-
-        // Загружаем материалы из MTL файла
-        struct Material {
-            std::string name;
-            std::string diffuseTexture;
-            std::string normalTexture;
-            glm::vec3 diffuseColor{1.0f};
-            int id = 0;
-        };
-        std::vector<Material> materials;
-        std::unordered_map<std::string, int> materialMap;
-
-        // Парсим MTL файл если он существует
-        std::filesystem::path objPath = resolvePathFn(data.scenePath);
-        std::filesystem::path mtlPath = objPath.parent_path() / (objPath.stem().string() + ".mtl");
-        if (std::filesystem::exists(mtlPath)) {
-            std::ifstream mtlFile(mtlPath);
-            if (mtlFile) {
-                std::string line;
-                std::string currentMaterialName;
-                Material currentMaterial;
-                while (std::getline(mtlFile, line)) {
-                    std::istringstream iss(line);
-                    std::string token;
-                    iss >> token;
-
-                    if (token == "newmtl") {
-                        if (!currentMaterialName.empty()) {
-                            currentMaterial.id = materials.size();
-                            materials.push_back(currentMaterial);
-                            materialMap[currentMaterialName] = currentMaterial.id;
-                        }
-                        iss >> currentMaterialName;
-                        currentMaterial = Material{};
-                        currentMaterial.name = currentMaterialName;
-                    } else if (token == "Kd") {
-                        iss >> currentMaterial.diffuseColor.r >> currentMaterial.diffuseColor.g >> currentMaterial.diffuseColor.b;
-                    } else if (token == "map_Kd") {
-                        std::string texturePath;
-                        iss >> texturePath;
-                        currentMaterial.diffuseTexture = texturePath;
-                    } else if (token == "map_bump" || token == "bump") {
-                        std::string texturePath;
-                        iss >> texturePath;
-                        currentMaterial.normalTexture = texturePath;
-                    }
-                }
-                if (!currentMaterialName.empty()) {
-                    currentMaterial.id = materials.size();
-                    materials.push_back(currentMaterial);
-                    materialMap[currentMaterialName] = currentMaterial.id;
-                }
-                mtlFile.close();
-                std::cout << "[App::Engine] Загружено " << materials.size() << " материалов из " << mtlPath.string() << std::endl;
-            }
-        }
-
-        // Собираем треугольники из OBJ (грани с текстурными координатами)
-        struct Tri { int v1,v2,v3; int vt1,vt2,vt3; int material_id; };
-        std::vector<Tri> tris;
-        try {
-            std::filesystem::path p = resolvePathFn(data.scenePath);
-            std::ifstream in2(p);
-            if (in2) {
-                std::string line;
-                std::string currentMaterialName = "default";
-                int currentMaterialId = 0;
-                while (std::getline(in2, line)) {
-                    std::istringstream iss(line);
-                    std::string token;
-                    iss >> token;
-
-                    // Отслеживаем текущий материал
-                    if (token == "usemtl") {
-                        iss >> currentMaterialName;
-                        auto it = materialMap.find(currentMaterialName);
-                        if (it != materialMap.end()) {
-                            currentMaterialId = it->second;
-                        } else {
-                            currentMaterialId = 0;
-                        }
-                    } else if (token == "mtllib") {
-                        // Материалы уже загружены выше
-                    } else if (line.size() > 2 && line[0]=='f' && line[1]==' ') {
-                        // Парсим грань - может быть треугольником или четырехугольником
-                        std::istringstream iss(line.substr(2));
-                        std::vector<std::string> vertices;
-                        std::string token;
-                        while (iss >> token) {
-                            vertices.push_back(token);
-                        }
-
-                        if (vertices.size() >= 3) {
-                            auto parseIndices=[&](const std::string& t, int& v, int& vt){
-                                size_t s1 = t.find('/');
-                                size_t s2 = t.find('/', s1 + 1);
-                                v = std::stoi(s1==std::string::npos? t : t.substr(0,s1)) - 1;
-                                vt = (s2 != std::string::npos) ? std::stoi(t.substr(s1+1, s2-s1-1)) - 1 : -1;
-                            };
-
-                            // Для треугольника: v1, v2, v3
-                            if (vertices.size() == 3) {
-                                int v1, vt1, v2, vt2, v3, vt3;
-                                parseIndices(vertices[0], v1, vt1);
-                                parseIndices(vertices[1], v2, vt2);
-                                parseIndices(vertices[2], v3, vt3);
-                                tris.push_back({v1, v2, v3, vt1, vt2, vt3, currentMaterialId});
-                            }
-                            // Для четырехугольника: разбиваем на два треугольника v1,v2,v3 и v1,v3,v4
-                            else if (vertices.size() == 4) {
-                                int v1, vt1, v2, vt2, v3, vt3, v4, vt4;
-                                parseIndices(vertices[0], v1, vt1);
-                                parseIndices(vertices[1], v2, vt2);
-                                parseIndices(vertices[2], v3, vt3);
-                                parseIndices(vertices[3], v4, vt4);
-
-                                // Первый треугольник: v1, v2, v3
-                                tris.push_back({v1, v2, v3, vt1, vt2, vt3, currentMaterialId});
-                                // Второй треугольник: v1, v3, v4
-                                tris.push_back({v1, v3, v4, vt1, vt3, vt4, currentMaterialId});
-                            }
-                        }
-                    }
-                }
-                in2.close();
-            }
-        } catch (...) {}
-
-        // Храним гауссианы в world-space 3D координатах (без проекции)
-        std::vector<spectraforge::rendering::GaussianSplat> gs;
-
-        // DEBUG: Добавляем тестовый треугольник прямо перед камерой для проверки алгоритма
-        // Камера в (0, 3, 0) смотрит вперед (положительный Z), так что треугольник должен быть в Z > 3
-
-        // Создаем только тестовый треугольник для изоляции проблемы
-        std::vector<spectraforge::rendering::Triangle> triangles;
-
-        // DEBUG: Минимальный тест Triangle Splatting с известными координатами
-        spectraforge::rendering::Triangle testTriangle;
-        // Треугольник в координатах, которые должны работать независимо от системы координат
-        testTriangle.v0 = glm::vec3(-0.5f, -0.5f, 0.5f);  // Близко к камере
-        testTriangle.v1 = glm::vec3(0.5f, -0.5f, 0.5f);
-        testTriangle.v2 = glm::vec3(0.0f, 0.5f, 0.5f);
-        testTriangle.color = glm::vec3(1.0f, 0.0f, 0.0f); // Красный цвет
-        testTriangle.opacity = 1.0f;
-        testTriangle.sigma = 0.1f;
-
-        // Вычисляем нормаль (ориентирована на камеру)
-        glm::vec3 edge1 = testTriangle.v1 - testTriangle.v0;
-        glm::vec3 edge2 = testTriangle.v2 - testTriangle.v0;
-        testTriangle.normal = glm::normalize(glm::cross(edge1, edge2));
-
-        triangles.push_back(testTriangle);
-        std::cout << "[App::Engine] DEBUG: Минимальный тест - треугольник координаты: ("
-                  << testTriangle.v0.x << "," << testTriangle.v0.y << "," << testTriangle.v0.z << ") ("
-                  << testTriangle.v1.x << "," << testTriangle.v1.y << "," << testTriangle.v1.z << ") ("
-                  << testTriangle.v2.x << "," << testTriangle.v2.y << "," << testTriangle.v2.z << ")\n";
-
-        if (!verts.empty() && !tris.empty()) {
-            // ЗНАЧИТЕЛЬНО увеличиваем количество треугольников для плотного покрытия
-            const size_t step = std::max<size_t>(1, tris.size() / 50000); // было 15000 → 50000
-            gs.reserve((tris.size() / step) * 6); // резервируем с учётом subdivision до 6
-
-            // Генерируем палитру цветов для разных материалов
-            std::vector<glm::vec3> materialColors;
-            materialColors.push_back(glm::vec3(0.85f, 0.75f, 0.65f)); // бежевый (стены)
-            materialColors.push_back(glm::vec3(0.5f, 0.3f, 0.2f));    // коричневый (дерево)
-            materialColors.push_back(glm::vec3(0.7f, 0.7f, 0.7f));    // серый (камень)
-            materialColors.push_back(glm::vec3(0.8f, 0.6f, 0.4f));    // песочный
-            materialColors.push_back(glm::vec3(0.4f, 0.3f, 0.25f));   // тёмно-коричневый
-            materialColors.push_back(glm::vec3(0.9f, 0.85f, 0.7f));    // светлый
-            materialColors.push_back(glm::vec3(0.6f, 0.4f, 0.3f));    // терракота
-
-            // Старый код гауссианов удален - теперь используем TriangleSplatting
-        } else {
-            // Fallback: процедурная сетка гауссианов
-            const int gx = 48, gy = 24;
-            gs.reserve(gx * gy);
-            for (int iy = 0; iy < gy; ++iy) {
-                for (int ix = 0; ix < gx; ++ix) {
-                    float sx = (ix / float(gx - 1)) * 1.8f - 0.9f;
-                    float sy = (iy / float(gy - 1)) * 1.8f - 0.9f;
-                    spectraforge::rendering::GaussianSplat s{};
-                    s.positionAndScale = { sx, sy, 0.0f, 0.015f };
-                    s.colorAndWeight = { 0.9f, 0.9f, 0.9f, 1.0f };
-                    gs.push_back(s);
-                }
-            }
-        }
-
-        // === DUAL-PATH: Triangle Splatting для .obj, Gaussian для .ply ===
-        auto h = std::dynamic_pointer_cast<Rendering::HybridFreGSRenderer>(renderer_);
-        if (!h) return ok;
-
-        // Определяем формат файла
-        std::string ext = data.scenePath.substr(data.scenePath.find_last_of(".") + 1);
-
-        if (ext == "obj" && !verts.empty() && !tris.empty()) {
-            // ✅ OBJ → Triangle Splatting
-            triangles.reserve(tris.size() + 1); // +1 для тестового треугольника
-            
-            // Реалистичная палитра цветов для Sponza (камень, штукатурка, дерево)
-            std::vector<glm::vec3> materialColors;
-            materialColors.push_back(glm::vec3(0.82f, 0.75f, 0.68f)); // светлая штукатурка (стены)
-            materialColors.push_back(glm::vec3(0.65f, 0.55f, 0.45f)); // бежевый камень
-            materialColors.push_back(glm::vec3(0.55f, 0.45f, 0.38f)); // тёмный камень
-            materialColors.push_back(glm::vec3(0.48f, 0.35f, 0.25f)); // тёмное дерево (балки)
-            materialColors.push_back(glm::vec3(0.72f, 0.62f, 0.52f)); // светлое дерево
-            materialColors.push_back(glm::vec3(0.58f, 0.48f, 0.42f)); // терракота (пол)
-            materialColors.push_back(glm::vec3(0.68f, 0.68f, 0.68f)); // серый камень (колонны)
-            
-            // DEBUG: Выводим диапазон координат для диагностики
-            glm::vec3 minCoord(FLT_MAX), maxCoord(-FLT_MAX);
-            for (const auto& v : verts) {
-                minCoord.x = std::min(minCoord.x, v.x);
-                minCoord.y = std::min(minCoord.y, v.y);
-                minCoord.z = std::min(minCoord.z, v.z);
-                maxCoord.x = std::max(maxCoord.x, v.x);
-                maxCoord.y = std::max(maxCoord.y, v.y);
-                maxCoord.z = std::max(maxCoord.z, v.z);
-            }
-            std::cout << "[Engine] 📐 Sponza AABB: min=(" << minCoord.x << ", " << minCoord.y << ", " << minCoord.z << ") max=(" << maxCoord.x << ", " << maxCoord.y << ", " << maxCoord.z << ")\n";
-            std::cout << "[Engine] 📷 Камера находится в: (" << cameraPos.x << ", " << cameraPos.y << ", " << cameraPos.z << ") смотрит в: (" << cameraFront.x << ", " << cameraFront.y << ", " << cameraFront.z << ")\n";
-            
-            // Применяем triangleStep для уменьшения плотности (оптимизация производительности)
-            size_t step = data.triangleStep > 0 ? data.triangleStep : 1;
-            for (size_t i = 0; i < tris.size(); i += step) {
-                const auto& tri = tris[i];
-
-                if (tri.v1 < 0 || tri.v1 >= (int)verts.size() ||
-                    tri.v2 < 0 || tri.v2 >= (int)verts.size() ||
-                    tri.v3 < 0 || tri.v3 >= (int)verts.size()) {
-                    continue;
-                }
-
-                spectraforge::rendering::Triangle t;
-                t.v0 = verts[tri.v1];
-                t.v1 = verts[tri.v2];
-                t.v2 = verts[tri.v3];
-
-                // Текстурные координаты (если есть)
-                if (tri.vt1 >= 0 && tri.vt1 < (int)texCoords.size()) {
-                    t.texCoord0 = texCoords[tri.vt1];
-                } else {
-                    t.texCoord0 = glm::vec2(0.0f);
-                }
-                if (tri.vt2 >= 0 && tri.vt2 < (int)texCoords.size()) {
-                    t.texCoord1 = texCoords[tri.vt2];
-                } else {
-                    t.texCoord1 = glm::vec2(0.0f);
-                }
-                if (tri.vt3 >= 0 && tri.vt3 < (int)texCoords.size()) {
-                    t.texCoord2 = texCoords[tri.vt3];
-                } else {
-                    t.texCoord2 = glm::vec2(0.0f);
-                }
-
-                // Цвет из материала или дефолтный
-                glm::vec3 color = materialColors[tri.material_id % materialColors.size()];
-                if (tri.material_id < (int)materials.size()) {
-                    color = materials[tri.material_id].diffuseColor;
-                }
-                // Повышаем яркость материалов для лучшей видимости в демо (временная калибровка)
-                t.color = glm::min(color * 1.5f, glm::vec3(1.0f));
-                t.opacity = 1.0f;
-
-                // Вычисляем нормаль треугольника для освещения
-                glm::vec3 edge1 = t.v1 - t.v0;
-                glm::vec3 edge2 = t.v2 - t.v0;
-                glm::vec3 faceNormal = glm::cross(edge1, edge2);
-                float area = glm::length(faceNormal) * 0.5f;
-                t.normal = (area > 0.0001f) ? glm::normalize(faceNormal) : glm::vec3(0, 1, 0);
-
-                // Material ID для текстур
-                t.materialId = tri.material_id;
-
-                // Sigma зависит от размера треугольника
-                t.sigma = std::sqrt(area) * 0.5f;  // Smoothness parameter
-                t.sigma = glm::clamp(t.sigma, 0.10f, 2.0f);
-
-                triangles.push_back(t);
-            }
-            
-            std::cout << "[App::Engine] ⚡ TriangleStep=" << step << " применён: " 
-                      << tris.size() << " → " << triangles.size() << " треугольников\n";
-            
-            // DEBUG: Первый треугольник
-            if (!triangles.empty()) {
-                const auto& t0 = triangles[0];
-                std::cout << "🔺 DEBUG: Первый треугольник:\n";
-                std::cout << "  v0=(" << t0.v0.x << "," << t0.v0.y << "," << t0.v0.z << ")\n";
-                std::cout << "  v1=(" << t0.v1.x << "," << t0.v1.y << "," << t0.v1.z << ")\n";
-                std::cout << "  v2=(" << t0.v2.x << "," << t0.v2.y << "," << t0.v2.z << ")\n";
-                std::cout << "  color=(" << t0.color.r << "," << t0.color.g << "," << t0.color.b << ")\n";
-                std::cout << "  normal=(" << t0.normal.x << "," << t0.normal.y << "," << t0.normal.z << ")\n";
-                std::cout << "  sigma=" << t0.sigma << " opacity=" << t0.opacity << "\n";
-            }
-            
-            std::cout << "[App::Engine] 🔺 Загружено " << triangles.size() 
-                      << " треугольников для Triangle Splatting (" 
-                      << (triangles.size() * sizeof(spectraforge::rendering::Triangle) / 1024) 
-                      << " KB)\n";
-            h->uploadTriangles(triangles);
-            
-        } else {
-            // ✅ PLY или fallback → Gaussian Splatting
-            std::cout << "[App::Engine] ⚪ Uploaded " << gs.size() << " Gaussians (" 
-                      << (gs.size() * sizeof(spectraforge::rendering::GaussianSplat) / 1024) << " KB)\n";
-            h->uploadGaussians(gs);
-        }
-        
-        if (h) {
-            auto triangleSplattingPass = h->getTriangleSplattingPass();
-            if (triangleSplattingPass) {
-                // Включаем debug режим 1 по умолчанию для всех загруженных сцен
-                triangleSplattingPass->setDebugMode(1);
-                std::cout << "[Engine] ✅ Auto-enabled debug mode 1 for loaded scene" << std::endl;
-            }
-        }
-    }
-    
-    return ok;
+    windowManager_->swapBuffers();
+    updateRenderStats();
 }
 
 void Engine::shutdown() {
     if (scene_manager_) {
         scene_manager_->shutdown();
-        scene_manager_.reset();
     }
+
+    if (renderer_) {
+        renderer_->shutdown();
+    }
+
     if (core_) {
         core_->shutdown();
         core_.reset();
     }
-    if (window_) {
-        window_->close();
-        window_.reset();
-    }
-    // Гарантируем корректное завершение GLFW
-    SpectraForge::Core::Window::terminateSystem();
-}
 
-// =====================================================================
-// DEBUG И DIAGNOSTIC МЕТОДЫ
-// =====================================================================
+    if (windowManager_) {
+        windowManager_->shutdown();
+    }
+}
 
 SceneInfo Engine::getSceneInfo() const {
-    if (!scene_manager_ || !scene_manager_->isSceneLoaded()) {
-        sceneInfo_.isLoaded = false;
-        sceneInfo_.triangleCount = 0;
-        sceneInfo_.materialCount = 0;
-        sceneInfo_.scenePath = "";
-        sceneInfo_.bounds.min = Math::Vector3(0.0f, 0.0f, 0.0f);
-        sceneInfo_.bounds.max = Math::Vector3(0.0f, 0.0f, 0.0f);
-        return sceneInfo_;
-    }
-
-    // Обновляем информацию о сцене
-    sceneInfo_.isLoaded = true;
-    sceneInfo_.triangleCount = scene_manager_->getObjectCount() * 100; // Примерная оценка
-    sceneInfo_.materialCount = 5; // Примерная оценка
-    sceneInfo_.scenePath = "loaded scene"; // TODO: получить из scene_manager_
-
-    // Sponza AABB bounds (типичные значения)
-    sceneInfo_.bounds.min = Math::Vector3(-17.0f, -0.9f, -7.8f);
-    sceneInfo_.bounds.max = Math::Vector3(17.0f, 15.6f, 7.8f);
-
-    return sceneInfo_;
-}
-
-std::shared_ptr<Rendering::Camera3D> Engine::getCamera() const {
-    return renderCamera_;
+    return sceneCoordinator_->getSceneInfo();
 }
 
 std::shared_ptr<Rendering::IRenderer> Engine::getRenderer() const {
     return renderer_;
 }
 
-const InputState* Engine::getInputManager() const {
-    // Обновляем input state из GLFW
-    if (window_) {
-        GLFWwindow* win = window_->getNativeWindow();
-        if (win) {
-            // Копируем состояние клавиш
-            for (int i = 0; i < 512; i++) {
-                inputState_.keys[i] = (glfwGetKey(win, i) == GLFW_PRESS);
-            }
-
-            // Получаем позицию мыши
-            double x, y;
-            glfwGetCursorPos(win, &x, &y);
-            
-            inputState_.deltaMouseX = static_cast<float>(x - inputState_.mouseX);
-            inputState_.deltaMouseY = static_cast<float>(y - inputState_.mouseY);
-            
-            inputState_.mouseX = static_cast<float>(x);
-            inputState_.mouseY = static_cast<float>(y);
-
-            // Кнопки мыши
-            for (int i = 0; i < 8; i++) {
-                inputState_.mouseButtons[i] = (glfwGetMouseButton(win, i) == GLFW_PRESS);
-            }
-        }
-    }
-    
-    return &inputState_;
+RenderStats Engine::getRenderStats() const {
+    return renderStats_;
 }
 
-RenderStats Engine::getRenderStats() const {
-    // Базовая реализация статистики
-    renderStats_.frameTime = deltaTime_ * 1000.0f; // В миллисекундах
-    renderStats_.fps = (deltaTime_ > 0.0f) ? (1.0f / deltaTime_) : 0.0f;
-    renderStats_.drawCalls = 1; // Примерное значение
-    renderStats_.culledTriangles = 0;
-
-    // Получаем детальную статистику от рендерера
-    if (renderer_ && renderer_->isInitialized()) {
-        auto stats = renderer_->getStats();
-        renderStats_.frameTime = stats.frameTime;
-        renderStats_.fps = stats.fps;
-        renderStats_.drawCalls = stats.drawCalls;
-        renderStats_.visibleTriangles = stats.primitives;
-        renderStats_.memoryUsed = stats.memoryUsed;
-        renderStats_.gpuTime = 0.0f; // TODO: получить от detailed stats
-    }
-
-    // Информация о сцене
-    if (scene_manager_ && scene_manager_->isSceneLoaded()) {
-        renderStats_.visibleTriangles = scene_manager_->getObjectCount() * 50;
-    }
-
-    return renderStats_;
+void Engine::setExternalCameraControl(bool enabled) {
+    externalCameraControl_ = enabled;
 }
 
 void Engine::setDebugMode(AppConfig::DebugMode mode) {
     currentDebugMode_ = mode;
-    config_.debugMode = mode;
-
-    // Передаём режим в рендерер
     if (renderer_) {
         renderer_->setDebugMode(static_cast<int>(mode));
     }
-
-    std::cout << "[Engine] Debug mode set to: " << static_cast<int>(mode) << std::endl;
 }
 
 AppConfig::DebugMode Engine::getDebugMode() const {
@@ -865,124 +249,44 @@ AppConfig::DebugMode Engine::getDebugMode() const {
 
 void Engine::enableWireframe(bool enable) {
     wireframeEnabled_ = enable;
-    config_.enableWireframe = enable;
-
     if (renderer_) {
         renderer_->enableWireframe(enable);
     }
-
-    std::cout << "[Engine] Wireframe " << (enable ? "enabled" : "disabled") << std::endl;
 }
 
 void Engine::setBackgroundColor(float r, float g, float b, float a) {
-    config_.backgroundColor[0] = r;
-    config_.backgroundColor[1] = g;
-    config_.backgroundColor[2] = b;
-    config_.backgroundColor[3] = a;
-
     if (renderer_) {
         renderer_->setBackgroundColor(r, g, b, a);
     }
-
-    std::cout << "[Engine] Background color set to: (" << r << ", " << g << ", " << b << ", " << a << ")" << std::endl;
 }
 
 void Engine::resetCameraForSponza() {
-    // Сброс камеры в оптимальное положение для Sponza
-    cameraPos = glm::vec3(0.0f, 2.0f, -5.0f);  // Позиция снаружи сцены
-    cameraFront = glm::vec3(0.0f, 0.0f, 1.0f);  // Смотрим вперёд (+Z)
-    yaw = 0.0f;    // Смотрим прямо
-    pitch = -5.0f; // Немного вниз
-    firstMouse = true;
-
-    if (renderCamera_) {
-        renderCamera_->setPosition(Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z));
-        renderCamera_->lookAt(
-            Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z),
-            Math::Vector3(cameraPos.x + cameraFront.x, cameraPos.y + cameraFront.y, cameraPos.z + cameraFront.z),
-            Math::Vector3(0.0f, 1.0f, 0.0f)
-        );
-    }
-
-    std::cout << "[Engine] Camera reset to Sponza optimal position: (" 
-              << cameraPos.x << ", " << cameraPos.y << ", " << cameraPos.z << ")" << std::endl;
+    sceneCoordinator_->resetCameraForSponza();
 }
 
 void Engine::logDebugInfo(const std::string& message) {
     if (logger_) {
-        logger_->logDebug("[DEBUG] " + message);
+        logger_->logInfo(message);
     }
-    std::cout << "[Engine DEBUG] " << message << std::endl;
 }
 
 bool Engine::isKeyPressed(int key) const {
-    if (!window_) return false;
-    
-    GLFWwindow* win = window_->getNativeWindow();
-    if (!win) return false;
-    
-    return glfwGetKey(win, key) == GLFW_PRESS;
-}
-
-// =====================================================================
-// PRIVATE HELPER МЕТОДЫ
-// =====================================================================
-
-void Engine::updateSceneInfo() {
-    // Обновляется при вызове getSceneInfo()
+    return inputManager_ ? inputManager_->isKeyPressed(key) : false;
 }
 
 void Engine::updateRenderStats() {
-    // Обновляется при вызове getRenderStats()
-}
-
-void Engine::setupCallbacks() {
-    // Callbacks уже настроены в init()
-}
-
-// Static callback handlers (если нужны дополнительные)
-void Engine::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
-    if (!engine) return;
-
-    // Обработка специальных клавиш для debug режимов
-    if (action == GLFW_PRESS) {
-        switch (key) {
-            case GLFW_KEY_1:
-                engine->setDebugMode(AppConfig::DebugMode::NORMAL);
-                break;
-            case GLFW_KEY_2:
-                engine->setDebugMode(AppConfig::DebugMode::SDF_VISUALIZATION);
-                break;
-            case GLFW_KEY_3:
-                engine->setDebugMode(AppConfig::DebugMode::BARYCENTRIC);
-                break;
-            case GLFW_KEY_4:
-                engine->setDebugMode(AppConfig::DebugMode::WIREFRAME);
-                break;
-            case GLFW_KEY_R:
-                engine->resetCameraForSponza();
-                break;
-            case GLFW_KEY_F:
-                engine->enableWireframe(!engine->wireframeEnabled_);
-                break;
-        }
+    if (!renderer_) {
+        renderStats_ = {};
+        return;
     }
-}
 
-void Engine::mouseCallback(GLFWwindow* window, double xpos, double ypos) {
-    // Уже реализован в init()
-}
-
-void Engine::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-    auto* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
-    if (!engine) return;
-
-    // Дополнительная обработка кнопок мыши для debug функций
-    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-        // Правая кнопка мыши - сброс камеры
-        engine->resetCameraForSponza();
-    }
+    const auto stats = renderer_->getStats();
+    renderStats_.frameTime = stats.frameTime;
+    renderStats_.fps = stats.fps;
+    renderStats_.drawCalls = stats.drawCalls;
+    renderStats_.culledTriangles = stats.primitives;
+    renderStats_.visibleTriangles = stats.primitives;
+    renderStats_.memoryUsed = stats.memoryUsed;
 }
 
 } // namespace App

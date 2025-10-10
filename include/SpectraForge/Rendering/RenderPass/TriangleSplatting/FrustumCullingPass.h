@@ -26,6 +26,8 @@ class TriangleBufferManager;
  */
 class FrustumCullingPass {
 public:
+    virtual ~FrustumCullingPass() = default;
+
     /**
      * @brief Инициализация frustum culling pass
      * @param device Vulkan device
@@ -35,16 +37,16 @@ public:
      * @param queue Compute queue
      * @return true если успешно
      */
-    bool initialize(vk::Device device,
-                   VmaAllocator allocator,
-                   const TriangleBufferManager& bufferManager,
-                   vk::CommandPool commandPool,
-                   vk::Queue queue);
+    virtual bool initialize(vk::Device device,
+                            VmaAllocator allocator,
+                            const TriangleBufferManager& bufferManager,
+                            vk::CommandPool commandPool,
+                            vk::Queue queue);
     
     /**
      * @brief Очистка ресурсов
      */
-    void cleanup();
+    virtual void cleanup();
     
     /**
      * @brief Выполнение frustum culling
@@ -52,24 +54,24 @@ public:
      * @param viewProj View-Projection matrix для frustum test
      * @param triangleCount Количество треугольников для проверки
      */
-    void execute(vk::CommandBuffer cmd,
-                const glm::mat4& viewProj,
-                uint32_t triangleCount);
+    virtual void execute(vk::CommandBuffer cmd,
+                         const glm::mat4& viewProj,
+                         uint32_t triangleCount);
     
     /**
      * @brief Получить количество видимых треугольников
      * @return Количество треугольников, прошедших frustum test
      * @note Требует GPU readback, может быть медленным (используйте спарсели)
      */
-    uint32_t getVisibleCount() const;
+    virtual uint32_t getVisibleCount() const;
     
     /**
      * @brief Получить буфер atomic counter
      * @return vk::Buffer с результатом culling
      */
-    vk::Buffer getAtomicCounterBuffer() const { return atomicCounterBuffer_; }
-    
-    bool isInitialized() const { return initialized_; }
+    virtual vk::Buffer getAtomicCounterBuffer() const { return atomicCounterBuffer_; }
+
+    virtual bool isInitialized() const { return initialized_; }
 
 private:
     bool initialized_ = false;

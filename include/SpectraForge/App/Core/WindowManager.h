@@ -12,6 +12,7 @@
 
 #include <memory>
 #include <string>
+#include "SpectraForge/App/Core/Interfaces/IWindowManager.h"
 #include "SpectraForge/Core/Window.h"
 
 namespace SpectraForge {
@@ -23,7 +24,7 @@ namespace Core {
  * 
  * Single Responsibility: Window creation, configuration, and cleanup
  */
-class WindowManager {
+class WindowManager : public IWindowManager {
 public:
     WindowManager();
     ~WindowManager();
@@ -39,42 +40,42 @@ public:
     /**
      * @brief Initialize GLFW system
      */
-    bool initializeSystem();
+    bool initializeSystem() override;
     
     /**
      * @brief Create window with specified parameters
      */
-    bool createWindow(const std::string& title, uint32_t width, uint32_t height);
+    bool createWindow(const std::string& title, uint32_t width, uint32_t height) override;
     
     /**
      * @brief Get window instance
      */
-    SpectraForge::Core::Window* getWindow() const { return window_.get(); }
+    SpectraForge::Core::Window* getWindow() const override { return window_.get(); }
     
     /**
      * @brief Check if window should close
      */
-    bool shouldClose() const;
+    bool shouldClose() const override;
     
     /**
      * @brief Poll window events
      */
-    void pollEvents();
+    void pollEvents() override;
     
     /**
      * @brief Swap buffers
      */
-    void swapBuffers();
+    void swapBuffers() override;
     
     /**
      * @brief Shutdown window system
      */
-    void shutdown();
+    void shutdown() override;
     
     /**
      * @brief Check if initialized
      */
-    bool isInitialized() const { return initialized_; }
+    bool isInitialized() const override { return initialized_; }
     
 private:
     std::unique_ptr<SpectraForge::Core::Window> window_;

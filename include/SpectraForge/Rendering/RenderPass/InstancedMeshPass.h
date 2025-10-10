@@ -5,8 +5,9 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+#include "SpectraForge/Rendering/Utils/DynamicBuffer.h"
+
 namespace spectraforge {
-namespace core { class VMABuffer; class VMAMemoryManager; }
 namespace rendering {
 
 /**
@@ -70,13 +71,12 @@ private:
 
 private:
     vk::Device device_;
-    VmaAllocator allocator_ = nullptr;
 
     vk::DescriptorSetLayout setLayout_;
     vk::DescriptorPool descriptorPool_;
     vk::DescriptorSet descriptorSet_;
 
-    spectraforge::core::VMABuffer* instanceBufferHandle_ = nullptr; // forward-managed
+    utils::DynamicBuffer instanceBuffer_;
     size_t instanceBufferCapacity_ = 0;
 };
 

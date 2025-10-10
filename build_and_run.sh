@@ -22,6 +22,7 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}📋 Проверка зависимостей...${NC}"
 
 # Vulkan SDK
+USE_SYSTEM_VULKAN=0
 if [ -z "$VULKAN_SDK" ]; then
     # Проверяем известный путь
     if [ -d "/home/tigron/vulkan/1.4.321.1" ]; then
@@ -31,13 +32,24 @@ if [ -z "$VULKAN_SDK" ]; then
         export VK_ICD_FILENAMES=$VULKAN_SDK/etc/vulkan/icd.d
         export VK_LAYER_PATH=$VULKAN_SDK/etc/vulkan/explicit_layer.d
         echo -e "${GREEN}✅ Vulkan SDK найден: $VULKAN_SDK${NC}"
+    elif command -v pkg-config &> /dev/null && pkg-config --exists vulkan; then
+        USE_SYSTEM_VULKAN=1
+        VULKAN_INCLUDE_DIR=$(pkg-config --cflags-only-I vulkan | sed 's/-I//g' | tr -d '\n')
+        VULKAN_LIBRARY_DIR=$(pkg-config --libs-only-L vulkan | sed 's/-L//g' | tr -d '\n')
+        echo -e "${GREEN}✅ Найдена системная установка Vulkan через pkg-config${NC}"
+        echo "   include: ${VULKAN_INCLUDE_DIR:-unknown}"
+        echo "   lib: ${VULKAN_LIBRARY_DIR:-unknown}"
     else
-        echo -e "${RED}❌ VULKAN_SDK не установлен!${NC}"
-        echo "Пожалуйста, установите Vulkan SDK и настройте переменную окружения"
+        echo -e "${RED}❌ Vulkan SDK не найден!${NC}"
+        echo "Пожалуйста, установите Vulkan SDK или пакет libvulkan-dev"
         exit 1
     fi
 else
     echo -e "${GREEN}✅ Vulkan SDK: $VULKAN_SDK${NC}"
+fi
+
+if [ "$USE_SYSTEM_VULKAN" -eq 1 ] && [ -n "$VULKAN_LIBRARY_DIR" ]; then
+    export LD_LIBRARY_PATH=$VULKAN_LIBRARY_DIR:$LD_LIBRARY_PATH
 fi
 
 # glslc для компиляции шейдеров

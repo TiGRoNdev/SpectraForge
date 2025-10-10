@@ -1,8 +1,20 @@
 # Test configuration for SpectraForge
 # Comprehensive test suite with >98% code coverage target
 
-# Find Google Test
-find_package(GTest REQUIRED)
+# Find Google Test (download automatically if not available)
+find_package(GTest QUIET)
+
+if(NOT GTest_FOUND)
+    message(STATUS "GTest not found - fetching GoogleTest 1.14.0")
+    include(FetchContent)
+    FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+endif()
 
 # Compiler flags for code coverage
 option(ENABLE_COVERAGE "Enable code coverage reporting" ON)

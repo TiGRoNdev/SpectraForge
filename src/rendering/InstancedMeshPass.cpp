@@ -6,16 +6,17 @@
 #include <vulkan/vulkan.hpp>
 #include <vk_mem_alloc.h>
 #include "SpectraForge/Rendering/RenderPass/InstancedMeshPass.h"
-#include "SpectraForge/Core/VMAMemoryManager.h"
 #include "SpectraForge/Core/SafeConsole.h"
 #include <vector>
+
+#include <cstring>
 
 namespace spectraforge {
 namespace rendering {
 
 bool InstancedMeshPass::initialize(vk::Device device, VmaAllocator allocator) {
     device_ = device;
-    allocator_ = allocator;
+    (void)allocator; // VMAMemoryManager manages allocations globally
     if (!create_descriptors()) return false;
     // начальная ёмкость на 32k инстансов
     return create_instance_buffer(sizeof(InstanceDataGPU) * 32768);
@@ -50,33 +51,27 @@ bool InstancedMeshPass::create_descriptors() {
 }
 
 bool InstancedMeshPass::create_instance_buffer(size_t capacityBytes) {
-    auto& vma = spectraforge::core::VMAMemoryManager::getInstance();
-    // Освобождаем старый
-    if (instanceBufferHandle_ != nullptr) {
-        delete instanceBufferHandle_;
-        instanceBufferHandle_ = nullptr;
+    if (!instanceBuffer_.create(capacityBytes,
+                                vk::BufferUsageFlagBits::eStorageBuffer,
+                                spectraforge::core::ResourceUsage::CPU_TO_GPU)) {
+        SAFE_ERROR("[InstancedMeshPass] Failed to create instance buffer");
+        return false;
     }
-    // Для простоты обновлений — CPU_TO_GPU mapping (в дальнейшем можно перейти на staging + copy)
-    auto buf = vma.createBuffer(
-        capacityBytes,
-        vk::BufferUsageFlagBits::eStorageBuffer,
-        spectraforge::core::ResourceUsage::CPU_TO_GPU);
-    instanceBufferHandle_ = new spectraforge::core::VMABuffer(std::move(buf));
-    instanceBufferCapacity_ = capacityBytes;
 
-    // Обновим дескриптор
-    vk::DescriptorBufferInfo dbi{};
-    dbi.buffer = instanceBufferHandle_->getBuffer();
-    dbi.offset = 0;
-    dbi.range = instanceBufferCapacity_;
+    try {
+        instanceBuffer_.writeDescriptor(device_,
+                                        descriptorSet_,
+                                        1,
+                                        vk::DescriptorType::eStorageBuffer,
+                                        0,
+                                        VK_WHOLE_SIZE);
+    } catch (const std::exception& e) {
+        SAFE_ERROR("[InstancedMeshPass] Descriptor update failed: " + SpectraForge::Core::SAFE_TO_STRING(e.what()));
+        instanceBuffer_.reset();
+        return false;
+    }
 
-    vk::WriteDescriptorSet write{};
-    write.dstSet = descriptorSet_;
-    write.dstBinding = 1;
-    write.descriptorType = vk::DescriptorType::eStorageBuffer;
-    write.descriptorCount = 1;
-    write.pBufferInfo = &dbi;
-    device_.updateDescriptorSets(1, &write, 0, nullptr);
+    instanceBufferCapacity_ = instanceBuffer_.size();
     return true;
 }
 
@@ -86,10 +81,14 @@ void InstancedMeshPass::upload_instances(const std::vector<InstanceDataGPU>& cpu
         create_instance_buffer(bytes);
     }
     // Прямая запись в CPU_TO_GPU
-    void* ptr = instanceBufferHandle_ ? instanceBufferHandle_->map() : nullptr;
+    if (!instanceBuffer_.valid()) {
+        SAFE_ERROR("[InstancedMeshPass] Instance buffer is not initialized");
+        return;
+    }
+    void* ptr = instanceBuffer_.map();
     if (ptr) {
         std::memcpy(ptr, cpuInstances.data(), bytes);
-        instanceBufferHandle_->unmap();
+        instanceBuffer_.unmap();
     }
 }
 
@@ -104,7 +103,7 @@ void InstancedMeshPass::barrier_host_writes(vk::CommandBuffer cmd) const {
     barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.buffer = instanceBufferHandle_ ? instanceBufferHandle_->getBuffer() : vk::Buffer{};
+    barrier.buffer = instanceBuffer_.valid() ? instanceBuffer_.handle() : vk::Buffer{};
     barrier.offset = 0;
     barrier.size = instanceBufferCapacity_;
     cmd.pipelineBarrier(
@@ -133,13 +132,14 @@ void InstancedMeshPass::bind_and_push(vk::CommandBuffer cmd,
 }
 
 vk::Buffer InstancedMeshPass::get_instance_buffer() const {
-    return instanceBufferHandle_ ? instanceBufferHandle_->getBuffer() : vk::Buffer{};
+    return instanceBuffer_.valid() ? instanceBuffer_.handle() : vk::Buffer{};
 }
 
 void InstancedMeshPass::cleanup() {
     if (descriptorPool_) device_.destroyDescriptorPool(descriptorPool_);
     if (setLayout_) device_.destroyDescriptorSetLayout(setLayout_);
-    if (instanceBufferHandle_) { delete instanceBufferHandle_; instanceBufferHandle_ = nullptr; }
+    instanceBuffer_.reset();
+    instanceBufferCapacity_ = 0;
 }
 
 } // namespace rendering

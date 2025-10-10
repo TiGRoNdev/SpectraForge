@@ -17,21 +17,28 @@ namespace SpectraForge {
 namespace Rendering {
 namespace Core {
 
+class IRendererCore {
+  public:
+    virtual ~IRendererCore() = default;
+
+    virtual bool initialize() = 0;
+    virtual bool createLogicalDeviceWithSurface(vk::SurfaceKHR surface) = 0;
+    virtual void shutdown() = 0;
+    virtual vk::Instance getInstance() const = 0;
+    virtual vk::PhysicalDevice getPhysicalDevice() const = 0;
+    virtual vk::Device getDevice() const = 0;
+    virtual vk::Queue getGraphicsQueue() const = 0;
+    virtual vk::Queue getPresentQueue() const = 0;
+    virtual VmaAllocator getAllocator() const = 0;
+    virtual uint32_t getGraphicsQueueFamily() const = 0;
+    virtual uint32_t getPresentQueueFamily() const = 0;
+    virtual bool isInitialized() const = 0;
+};
+
 /**
  * @brief Управление Vulkan core компонентами (instance, device, allocator)
- * 
- * Ответственность:
- * - Создание Vulkan instance с validation layers
- * - Выбор физического устройства (GPU)
- * - Создание logical device с queue families
- * - Инициализация VMA allocator
- * 
- * SOLID:
- * - SRP ✅: Только инициализация Vulkan core
- * - OCP ✅: Расширяемо через наследование (если нужно)
- * - DIP ✅: Интерфейс не зависит от конкретных реализаций
  */
-class RendererCore {
+class RendererCore : public IRendererCore {
 public:
     RendererCore() = default;
     ~RendererCore();
@@ -44,66 +51,66 @@ public:
      * @brief Инициализация Vulkan instance
      * @return true если успешно
      */
-    bool initialize();
+    bool initialize() override;
     
     /**
      * @brief Создание logical device после создания surface
      * @param surface Vulkan surface для проверки present support
      * @return true если успешно
      */
-    bool createLogicalDeviceWithSurface(vk::SurfaceKHR surface);
+    bool createLogicalDeviceWithSurface(vk::SurfaceKHR surface) override;
     
     /**
      * @brief Полная очистка всех Vulkan ресурсов
      */
-    void shutdown();
+    void shutdown() override;
     
     // === Getters ===
     
     /**
      * @brief Получить Vulkan instance
      */
-    vk::Instance getInstance() const { return instance_; }
+    vk::Instance getInstance() const override { return instance_; }
     
     /**
      * @brief Получить физическое устройство (GPU)
      */
-    vk::PhysicalDevice getPhysicalDevice() const { return physicalDevice_; }
+    vk::PhysicalDevice getPhysicalDevice() const override { return physicalDevice_; }
     
     /**
      * @brief Получить logical device
      */
-    vk::Device getDevice() const { return device_; }
+    vk::Device getDevice() const override { return device_; }
     
     /**
      * @brief Получить graphics queue
      */
-    vk::Queue getGraphicsQueue() const { return graphicsQueue_; }
+    vk::Queue getGraphicsQueue() const override { return graphicsQueue_; }
     
     /**
      * @brief Получить present queue
      */
-    vk::Queue getPresentQueue() const { return presentQueue_; }
+    vk::Queue getPresentQueue() const override { return presentQueue_; }
     
     /**
      * @brief Получить VMA allocator
      */
-    VmaAllocator getAllocator() const { return allocator_; }
+    VmaAllocator getAllocator() const override { return allocator_; }
     
     /**
      * @brief Получить индекс graphics queue family
      */
-    uint32_t getGraphicsQueueFamily() const { return graphicsQueueFamily_; }
+    uint32_t getGraphicsQueueFamily() const override { return graphicsQueueFamily_; }
     
     /**
      * @brief Получить индекс present queue family
      */
-    uint32_t getPresentQueueFamily() const { return presentQueueFamily_; }
+    uint32_t getPresentQueueFamily() const override { return presentQueueFamily_; }
     
     /**
      * @brief Проверка инициализации
      */
-    bool isInitialized() const { return initialized_; }
+    bool isInitialized() const override { return initialized_; }
 
 private:
     /**

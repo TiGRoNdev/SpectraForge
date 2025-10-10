@@ -225,7 +225,7 @@ void FreGSPass::cleanup() {
 
     // VMA resources cleanup automatically via RAII
     vmaOutputImage_ = core::VMAImage();
-    vmaGaussianBuffer_ = core::VMABuffer();
+    gaussianBuffer_.reset();
 
     initialized_ = false;
     
@@ -245,21 +245,21 @@ void FreGSPass::uploadGaussians(const std::vector<GaussianSplat>& gaussians) {
     gaussianCount_ = static_cast<uint32_t>(gaussians.size());
     
     // Upload to VMA buffer (CPU_TO_GPU for frequent updates)
-    if (vmaGaussianBuffer_.getBuffer()) {
-        void* mappedData = vmaGaussianBuffer_.map();
+    if (gaussianBuffer_.valid()) {
+        void* mappedData = gaussianBuffer_.map();
         if (mappedData) {
             // Write header (count + padding for std140)
             uint32_t header[4] = { gaussianCount_, 0, 0, 0 };
             std::memcpy(mappedData, header, sizeof(header));
-            
+
             // Write Gaussian data
             void* gaussData = static_cast<char*>(mappedData) + sizeof(header);
             size_t dataSize = gaussians.size() * sizeof(GaussianSplat);
             std::memcpy(gaussData, gaussians.data(), dataSize);
-            
-            vmaGaussianBuffer_.unmap();
-            
-            std::cout << "Uploaded " << gaussianCount_ << " Gaussians (" 
+
+            gaussianBuffer_.unmap();
+
+            std::cout << "Uploaded " << gaussianCount_ << " Gaussians ("
                      << (dataSize / 1024) << " KB)\n";
         }
     }
@@ -375,18 +375,13 @@ bool FreGSPass::createGaussianBuffer([[maybe_unused]] const VulkanContext& conte
 
     try {
         // Create buffer using VMA (CPU_TO_GPU for frequent updates)
-        auto& vma = core::VMAMemoryManager::getInstance();
-        
-        vmaGaussianBuffer_ = vma.createBuffer(
-            bufferSize,
-            vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
-            core::ResourceUsage::CPU_TO_GPU  // Mapped, sequential write
-        );
-        
-        // Get Vulkan buffer from VMA wrapper
-        gaussianBuffer_ = vmaGaussianBuffer_.getBuffer();
+        if (!gaussianBuffer_.create(bufferSize,
+                                    vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
+                                    core::ResourceUsage::CPU_TO_GPU)) {
+            throw std::runtime_error("DynamicBuffer allocation failed");
+        }
 
-        std::cout << "FreGSPass: Created Gaussian buffer (" 
+        std::cout << "FreGSPass: Created Gaussian buffer ("
                   << (bufferSize / 1024) << " KB CPU_TO_GPU)\n";
 
         return true;
@@ -439,19 +434,24 @@ bool FreGSPass::createDescriptorSets(const VulkanContext& context) {
         }
         imageInfos[4] = { {}, outputView_, vk::ImageLayout::eGeneral };
 
-        std::array<vk::WriteDescriptorSet, 6> writes{};
+        std::array<vk::WriteDescriptorSet, 5> writes{};
         for (uint32_t j = 0; j < 4; ++j) {
             writes[j] = { descriptorSets_[i], j, 0, 1, vk::DescriptorType::eStorageImage, &imageInfos[j] };
         }
         writes[4] = { descriptorSets_[i], 4, 0, 1, vk::DescriptorType::eStorageImage, &imageInfos[4] };
-
-        vk::DescriptorBufferInfo bufferInfo;
-        bufferInfo.buffer = gaussianBuffer_;
-        bufferInfo.offset = 0;
-        bufferInfo.range = VK_WHOLE_SIZE;
-        writes[5] = { descriptorSets_[i], 5, 0, 1, vk::DescriptorType::eStorageBuffer, nullptr, &bufferInfo };
-
         device.updateDescriptorSets(writes, {});
+
+        try {
+            gaussianBuffer_.writeDescriptor(device,
+                                           descriptorSets_[i],
+                                           5,
+                                           vk::DescriptorType::eStorageBuffer,
+                                           0,
+                                           VK_WHOLE_SIZE);
+        } catch (const std::exception& e) {
+            std::cerr << "Failed to bind Gaussian buffer descriptor: " << e.what() << "\n";
+            return false;
+        }
     }
 
     return true;

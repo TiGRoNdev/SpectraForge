@@ -10,17 +10,27 @@
 
 #pragma once
 
-#include "SpectraForge/Core/DependencyInjection/Container.h"
-#include "SpectraForge/Core/EngineCore.h" // Contains ILogger interface
-#include "SpectraForge/Core/Logger.h"
-#include "SpectraForge/Rendering/Common/IRenderer.h"
-#include "SpectraForge/Rendering/Common/IResourceManager.h"
-#include "SpectraForge/Rendering/HybridFreGSRenderer.h"
-#include "SpectraForge/Rendering/Camera3D.h"
 #include "SpectraForge/App/Core/GameLoopManager.h"
-#include "SpectraForge/App/Core/WindowManager.h"
 #include "SpectraForge/App/Core/InputManager.h"
 #include "SpectraForge/App/Core/SceneCoordinator.h"
+#include "SpectraForge/App/Core/WindowManager.h"
+#include "SpectraForge/Core/DependencyInjection/Container.h"
+#include "SpectraForge/Core/EngineCore.h" // Contains ILogger interface
+#include "SpectraForge/Core/Interfaces/IEngineCore.h"
+#include "SpectraForge/Core/Logger.h"
+#include "SpectraForge/Rendering/Camera3D.h"
+#include "SpectraForge/Rendering/Common/IRenderer.h"
+#include "SpectraForge/Rendering/Common/IResourceManager.h"
+#include "SpectraForge/Rendering/Common/IWindowBinder.h"
+#include "SpectraForge/Rendering/Core/FrameManager.h"
+#include "SpectraForge/Rendering/Core/PipelineManager.h"
+#include "SpectraForge/Rendering/Core/RendererCore.h"
+#include "SpectraForge/Rendering/Core/RendererDebugger.h"
+#include "SpectraForge/Rendering/Core/RendererStatistics.h"
+#include "SpectraForge/Rendering/Core/SwapchainManager.h"
+#include "SpectraForge/Rendering/HybridFreGSRenderer.h"
+#include "SpectraForge/Vulkan/SceneManager.h"
+#include "SpectraForge/Vulkan/Interfaces/ISceneManager.h"
 
 namespace SpectraForge {
 namespace App {
@@ -64,19 +74,58 @@ private:
      * @brief Register core services (Logger, etc.)
      */
     static void registerCoreServices(SpectraForge::Core::DI::Container& container) {
-        // Logger - Singleton (shared across entire application)
         container.registerSingleton<SpectraForge::Core::ILogger, SpectraForge::Core::Logger>();
+
+        container.registerSingleton<Core::IGameLoopManager>(
+            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Core::GameLoopManager>(); });
+        container.registerSingleton<Core::IWindowManager>(
+            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Core::WindowManager>(); });
+        container.registerSingleton<Core::IInputManager>(
+            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Core::InputManager>(); });
+        container.registerSingleton<Core::ISceneCoordinator>(
+            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Core::SceneCoordinator>(); });
+        container.registerSingleton<Vulkan::ISceneManager>(
+            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Vulkan::SceneManager>(); });
+
+        container.registerSingleton<SpectraForge::Core::IEngineCore>(
+            [](SpectraForge::Core::DI::Container& c) {
+                auto renderer = c.resolve<Rendering::IRenderer>();
+                auto resources = c.resolve<Rendering::IResourceManager>();
+                auto logger = c.resolve<SpectraForge::Core::ILogger>();
+                return std::make_shared<SpectraForge::Core::EngineCore>(renderer, resources, logger);
+            });
     }
-    
+
     /**
      * @brief Register rendering services
      */
     static void registerRenderingServices(SpectraForge::Core::DI::Container& container) {
-        // Renderer - Singleton (one renderer instance)
-        container.registerSingleton<Rendering::IRenderer>([](SpectraForge::Core::DI::Container&) {
-            return std::make_shared<Rendering::HybridFreGSRenderer>();
+        container.registerSingleton<Core::IRendererCore>(
+            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Core::RendererCore>(); });
+        container.registerSingleton<Core::IRendererDebugger>(
+            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Core::RendererDebugger>(); });
+        container.registerSingleton<Core::ISwapchainManagerFactory>(
+            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Core::SwapchainManagerFactory>(); });
+        container.registerSingleton<Core::IPipelineManagerFactory>(
+            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Core::PipelineManagerFactory>(); });
+        container.registerSingleton<Core::IFrameManagerFactory>(
+            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Core::FrameManagerFactory>(); });
+        container.registerSingleton<Core::IRendererStatisticsFactory>([](SpectraForge::Core::DI::Container&) {
+            return std::make_shared<Core::RendererStatisticsFactory>();
         });
-        
+
+        container.registerSingleton<Rendering::IRenderer>([](SpectraForge::Core::DI::Container& c) {
+            auto renderer = std::make_shared<Rendering::HybridFreGSRenderer>(
+                c.resolve<Core::IRendererCore>(),
+                c.resolve<Core::IRendererDebugger>(),
+                c.resolve<Core::ISwapchainManagerFactory>(),
+                c.resolve<Core::IPipelineManagerFactory>(),
+                c.resolve<Core::IFrameManagerFactory>(),
+                c.resolve<Core::IRendererStatisticsFactory>());
+            c.registerInstance<Rendering::IWindowBinder>(renderer);
+            return renderer;
+        });
+
         // Camera3D - Transient (each Engine can have its own)
         container.registerTransient<Rendering::Camera3D>([](SpectraForge::Core::DI::Container&) {
             auto camera = std::make_shared<Rendering::Camera3D>();
@@ -84,30 +133,42 @@ private:
             return camera;
         });
     }
-    
+
     /**
      * @brief Register application components (P0.3 components)
      */
     static void registerApplicationComponents(SpectraForge::Core::DI::Container& container) {
-        // GameLoopManager - Scoped (one per Engine instance)
-        container.registerScoped<Core::GameLoopManager>([](SpectraForge::Core::DI::Container&) {
-            return std::make_shared<Core::GameLoopManager>();
-        });
-        
-        // WindowManager - Scoped (one per Engine instance)
-        container.registerScoped<Core::WindowManager>([](SpectraForge::Core::DI::Container&) {
-            return std::make_shared<Core::WindowManager>();
-        });
-        
-        // InputManager - Scoped (one per Engine instance)
-        container.registerScoped<Core::InputManager>([](SpectraForge::Core::DI::Container&) {
-            return std::make_shared<Core::InputManager>();
-        });
-        
-        // SceneCoordinator - Scoped (one per Engine instance)
-        container.registerScoped<Core::SceneCoordinator>([](SpectraForge::Core::DI::Container&) {
-            return std::make_shared<Core::SceneCoordinator>();
-        });
+        // Placeholder resource manager until full implementation
+        class NullResourceManager final : public Rendering::IResourceManager {
+          public:
+            bool initialize() override { return true; }
+            void shutdown() override {}
+            Rendering::BufferHandle createBuffer(const Rendering::BufferDesc&) override {
+                return Rendering::INVALID_HANDLE;
+            }
+            void updateBuffer(Rendering::BufferHandle, const void*, size_t, size_t) override {}
+            void readBuffer(Rendering::BufferHandle, void*, size_t, size_t) override {}
+            Rendering::TextureHandle createTexture(const Rendering::TextureDesc&) override {
+                return Rendering::INVALID_HANDLE;
+            }
+            void updateTexture(Rendering::TextureHandle, const void*, uint32_t, uint32_t) override {}
+            Rendering::ShaderHandle createShader(const std::string&, Rendering::ShaderType) override {
+                return Rendering::INVALID_HANDLE;
+            }
+            Rendering::ShaderHandle createShaderFromFile(const std::string&, Rendering::ShaderType) override {
+                return Rendering::INVALID_HANDLE;
+            }
+            void releaseResource(Rendering::ResourceHandle) override {}
+            void releaseAllResources() override {}
+            bool isValid(Rendering::ResourceHandle) const override { return false; }
+            size_t getResourceSize(Rendering::ResourceHandle) const override { return 0; }
+            Rendering::MemoryStats getMemoryStats() const override { return {}; }
+            void waitForCompletion() override {}
+            void flush() override {}
+        };
+
+        container.registerSingleton<Rendering::IResourceManager>(
+            [](SpectraForge::Core::DI::Container&) { return std::make_shared<NullResourceManager>(); });
     }
 };
 

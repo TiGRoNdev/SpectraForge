@@ -4,18 +4,24 @@
  */
 #pragma once
 #include <chrono>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
 #include "SpectraForge/App/Config.h"
 #include "SpectraForge/App/IApp.h"
 #include "SpectraForge/App/Core/GameLoopManager.h"
-#include "SpectraForge/App/Core/WindowManager.h"
 #include "SpectraForge/App/Core/InputManager.h"
+#include "SpectraForge/App/Core/Interfaces/IGameLoopManager.h"
+#include "SpectraForge/App/Core/Interfaces/IInputManager.h"
+#include "SpectraForge/App/Core/Interfaces/ISceneCoordinator.h"
+#include "SpectraForge/App/Core/Interfaces/IWindowManager.h"
 #include "SpectraForge/App/Core/SceneCoordinator.h"
+#include "SpectraForge/App/Core/WindowManager.h"
 #include "SpectraForge/Core/EngineCore.h"
 #include "SpectraForge/Core/Logger.h"
 #include "SpectraForge/Rendering/Common/IRenderer.h"
+#include "SpectraForge/Rendering/Common/IWindowBinder.h"
 #include "SpectraForge/Rendering/Common/IResourceManager.h"
 #include "SpectraForge/Rendering/Camera3D.h"
 #include "SpectraForge/Vulkan/SceneManager.h"
@@ -62,7 +68,14 @@ public:
     explicit Engine(const AppConfig &config,
                    std::shared_ptr<SpectraForge::Core::ILogger> logger,
                    std::shared_ptr<Rendering::IRenderer> renderer,
-                   std::shared_ptr<Rendering::IResourceManager> resource_manager);
+                   std::shared_ptr<Rendering::IWindowBinder> window_binder,
+                   std::shared_ptr<Rendering::IResourceManager> resource_manager,
+                   std::shared_ptr<Core::IGameLoopManager> game_loop,
+                   std::shared_ptr<Core::IWindowManager> window_manager,
+                   std::shared_ptr<Core::IInputManager> input_manager,
+                   std::shared_ptr<Core::ISceneCoordinator> scene_coordinator,
+                   std::shared_ptr<Vulkan::ISceneManager> scene_manager,
+                   std::shared_ptr<SpectraForge::Core::IEngineCore> engine_core);
     
     ~Engine() override;
 
@@ -149,10 +162,10 @@ public:
  
  private:
     // P0.3 REFACTORED: Композиция компонентов вместо God Class
-    std::unique_ptr<Core::GameLoopManager> gameLoop_;
-    std::unique_ptr<Core::WindowManager> windowManager_;
-    std::unique_ptr<Core::InputManager> inputManager_;
-    std::unique_ptr<Core::SceneCoordinator> sceneCoordinator_;
+    std::shared_ptr<Core::IGameLoopManager> gameLoop_;
+    std::shared_ptr<Core::IWindowManager> windowManager_;
+    std::shared_ptr<Core::IInputManager> inputManager_;
+    std::shared_ptr<Core::ISceneCoordinator> sceneCoordinator_;
     
     // Scene и render state (агрегируется из компонентов)
     mutable SceneInfo sceneInfo_;
@@ -167,11 +180,15 @@ public:
     void updateRenderStats();
 
     AppConfig config_;
-    std::unique_ptr<SpectraForge::Core::EngineCore> core_;
+    std::shared_ptr<SpectraForge::Core::IEngineCore> core_;
     std::shared_ptr<SpectraForge::Core::ILogger> logger_;
     std::shared_ptr<Rendering::IRenderer> renderer_;
+    std::shared_ptr<Rendering::IWindowBinder> windowBinder_;
     std::shared_ptr<Rendering::IResourceManager> resource_manager_;
-    std::unique_ptr<Vulkan::SceneManager> scene_manager_;
+    std::shared_ptr<Vulkan::ISceneManager> scene_manager_;
+
+    uint64_t frameCounter_ = 0;
+    float lastFrameDelta_ = 0.0f;
 };
 
 } // namespace App

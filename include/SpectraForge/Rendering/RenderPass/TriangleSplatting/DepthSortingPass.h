@@ -28,6 +28,8 @@ class TriangleBufferManager;
  */
 class DepthSortingPass {
 public:
+    virtual ~DepthSortingPass() = default;
+
     /**
      * @brief Режимы сортировки
      */
@@ -45,16 +47,16 @@ public:
      * @param queue Compute queue
      * @return true если успешно
      */
-    bool initialize(vk::Device device,
-                   VmaAllocator allocator,
-                   const TriangleBufferManager& bufferManager,
-                   vk::CommandPool commandPool,
-                   vk::Queue queue);
+    virtual bool initialize(vk::Device device,
+                            VmaAllocator allocator,
+                            const TriangleBufferManager& bufferManager,
+                            vk::CommandPool commandPool,
+                            vk::Queue queue);
     
     /**
      * @brief Очистка ресурсов
      */
-    void cleanup();
+    virtual void cleanup();
     
     /**
      * @brief Выполнение сортировки по глубине
@@ -62,22 +64,22 @@ public:
      * @param cameraPos Позиция камеры для вычисления глубины
      * @param visibleTriangleCount Количество видимых треугольников
      */
-    void execute(vk::CommandBuffer cmd,
-                const glm::vec3& cameraPos,
-                uint32_t visibleTriangleCount);
+    virtual void execute(vk::CommandBuffer cmd,
+                         const glm::vec3& cameraPos,
+                         uint32_t visibleTriangleCount);
     
     /**
      * @brief Установка режима сортировки
      * @param mode BitonicSort или AtomicBinning
      */
-    void setSortMode(SortMode mode) { sortMode_ = mode; }
+    virtual void setSortMode(SortMode mode) { sortMode_ = mode; }
     
     /**
      * @brief Получить текущий режим сортировки
      */
-    SortMode getSortMode() const { return sortMode_; }
+    virtual SortMode getSortMode() const { return sortMode_; }
     
-    bool isInitialized() const { return initialized_; }
+    virtual bool isInitialized() const { return initialized_; }
 
 private:
     bool initialized_ = false;

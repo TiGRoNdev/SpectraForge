@@ -18,12 +18,13 @@
 #include "SpectraForge/Rendering/Camera3D.h"
 
 // P0.2 REFACTORING: Новые SOLID-компоненты
-#include "SpectraForge/Rendering/Core/RendererCore.h"
-#include "SpectraForge/Rendering/Core/SwapchainManager.h"
+#include "SpectraForge/Rendering/Common/IWindowBinder.h"
 #include "SpectraForge/Rendering/Core/FrameManager.h"
 #include "SpectraForge/Rendering/Core/PipelineManager.h"
+#include "SpectraForge/Rendering/Core/RendererCore.h"
 #include "SpectraForge/Rendering/Core/RendererDebugger.h"
 #include "SpectraForge/Rendering/Core/RendererStatistics.h"
+#include "SpectraForge/Rendering/Core/SwapchainManager.h"
 
 namespace SpectraForge {
 namespace Rendering {
@@ -35,7 +36,7 @@ namespace Rendering {
  * - Gaussian Splatting (FreGS) → Point clouds (.ply)
  * - Triangle Splatting → Triangle meshes (.obj)
  */
-class HybridFreGSRenderer final : public IRenderer {
+class HybridFreGSRenderer final : public IRenderer, public IWindowBinder {
   public:
     /**
      * @brief Rendering mode selector
@@ -46,6 +47,12 @@ class HybridFreGSRenderer final : public IRenderer {
     };
 
     HybridFreGSRenderer();
+    HybridFreGSRenderer(std::shared_ptr<Core::IRendererCore> core,
+                        std::shared_ptr<Core::IRendererDebugger> debugger,
+                        std::shared_ptr<Core::ISwapchainManagerFactory> swapchainFactory,
+                        std::shared_ptr<Core::IPipelineManagerFactory> pipelineFactory,
+                        std::shared_ptr<Core::IFrameManagerFactory> frameFactory,
+                        std::shared_ptr<Core::IRendererStatisticsFactory> statisticsFactory);
     ~HybridFreGSRenderer() override;
 
     // IRenderer
@@ -53,7 +60,7 @@ class HybridFreGSRenderer final : public IRenderer {
     /**
      * @brief Привязать окно рендереру (создание поверхности/свапчейна)
      */
-    bool attachWindow(void* x11Display, void* x11Window, uint32_t width, uint32_t height);
+    bool attachWindow(void* x11Display, void* x11Window, uint32_t width, uint32_t height) override;
     void renderFrame(const FrameData& frameData) override;
     void shutdown() override;
     RendererType getType() const override { return RendererType::Vulkan; }
@@ -198,18 +205,18 @@ class HybridFreGSRenderer final : public IRenderer {
     RenderMode renderMode_ = RenderMode::TriangleSplatting;
     Camera3D* camera_ = nullptr;
     RenderingStats stats_{};
-    
-    // ===================================================================
-    // P0.2 REFACTORING: Dependency-injected components (SOLID compliance)
-    // После P0.6 будет заменено на DI контейнер
-    // ===================================================================
-    
-    std::unique_ptr<Core::RendererCore> core_;
-    std::unique_ptr<Core::SwapchainManager> swapchain_;
-    std::unique_ptr<Core::FrameManager> frame_;
-    std::unique_ptr<Core::PipelineManager> pipeline_;
-    std::unique_ptr<Core::RendererDebugger> debugger_;
-    std::unique_ptr<Core::RendererStatistics> statistics_;
+
+    std::shared_ptr<Core::IRendererCore> core_;
+    std::shared_ptr<Core::IRendererDebugger> debugger_;
+    std::shared_ptr<Core::ISwapchainManagerFactory> swapchainFactory_;
+    std::shared_ptr<Core::IPipelineManagerFactory> pipelineFactory_;
+    std::shared_ptr<Core::IFrameManagerFactory> frameFactory_;
+    std::shared_ptr<Core::IRendererStatisticsFactory> statisticsFactory_;
+
+    std::shared_ptr<Core::ISwapchainManager> swapchain_;
+    std::shared_ptr<Core::IFrameManager> frame_;
+    std::shared_ptr<Core::IPipelineManager> pipeline_;
+    std::shared_ptr<Core::IRendererStatistics> statistics_;
     
     // Rendering passes (не изменились)
     std::unique_ptr<spectraforge::rendering::TriangleSplattingPass> triangleSplattingPass_;

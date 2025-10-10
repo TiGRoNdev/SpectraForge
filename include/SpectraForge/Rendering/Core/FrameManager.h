@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <memory>
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <cstdint>
@@ -32,7 +33,32 @@ namespace Core {
  * - OCP ✅: Легко расширить для triple buffering
  * - DIP ✅: Зависит от abstractions
  */
-class FrameManager {
+class IFrameManager {
+  public:
+    virtual ~IFrameManager() = default;
+
+    virtual bool initialize() = 0;
+    virtual void shutdown() = 0;
+    virtual bool beginFrame(vk::SwapchainKHR swapchain) = 0;
+    virtual bool endFrame(vk::SwapchainKHR swapchain,
+                          vk::Queue presentQueue,
+                          vk::CommandBuffer commandBuffer) = 0;
+    virtual uint32_t getCurrentImageIndex() const = 0;
+    virtual size_t getCurrentFrame() const = 0;
+    virtual vk::Semaphore getImageAvailableSemaphore() const = 0;
+    virtual vk::Semaphore getRenderFinishedSemaphore() const = 0;
+    virtual vk::Fence getInFlightFence() const = 0;
+    virtual bool isDeviceLost() const = 0;
+    virtual bool isInitialized() const = 0;
+};
+
+class IFrameManagerFactory {
+  public:
+    virtual ~IFrameManagerFactory() = default;
+    virtual std::shared_ptr<IFrameManager> create(vk::Device device) = 0;
+};
+
+class FrameManager : public IFrameManager {
 public:
     /**
      * @brief Конструктор с dependency injection
@@ -49,19 +75,19 @@ public:
      * @brief Инициализация sync objects
      * @return true если успешно
      */
-    bool initialize();
+    bool initialize() override;
     
     /**
      * @brief Очистка всех ресурсов
      */
-    void shutdown();
+    void shutdown() override;
     
     /**
      * @brief Начало кадра - ожидание fence и acquire swapchain image
      * @param swapchain Swapchain для acquire
      * @return true если успешно, false если device lost
      */
-    bool beginFrame(vk::SwapchainKHR swapchain);
+    bool beginFrame(vk::SwapchainKHR swapchain) override;
     
     /**
      * @brief Завершение кадра - present image
@@ -70,26 +96,26 @@ public:
      * @param commandBuffer Command buffer для submit
      * @return true если успешно, false если device lost
      */
-    bool endFrame(vk::SwapchainKHR swapchain, 
+    bool endFrame(vk::SwapchainKHR swapchain,
                  vk::Queue presentQueue,
-                 vk::CommandBuffer commandBuffer);
+                 vk::CommandBuffer commandBuffer) override;
     
     // === Getters ===
     
     /**
      * @brief Получить индекс текущего swapchain image
      */
-    uint32_t getCurrentImageIndex() const { return currentImageIndex_; }
+    uint32_t getCurrentImageIndex() const override { return currentImageIndex_; }
     
     /**
      * @brief Получить индекс текущего frame in flight
      */
-    size_t getCurrentFrame() const { return currentFrame_; }
+    size_t getCurrentFrame() const override { return currentFrame_; }
     
     /**
      * @brief Получить image available semaphore для текущего кадра
      */
-    vk::Semaphore getImageAvailableSemaphore() const {
+    vk::Semaphore getImageAvailableSemaphore() const override {
         if (imageAvailableSemaphores_.empty()) return vk::Semaphore{};
         return imageAvailableSemaphores_[currentFrame_];
     }
@@ -97,7 +123,7 @@ public:
     /**
      * @brief Получить render finished semaphore для текущего кадра
      */
-    vk::Semaphore getRenderFinishedSemaphore() const {
+    vk::Semaphore getRenderFinishedSemaphore() const override {
         if (renderFinishedSemaphores_.empty()) return vk::Semaphore{};
         return renderFinishedSemaphores_[currentFrame_];
     }
@@ -105,7 +131,7 @@ public:
     /**
      * @brief Получить in-flight fence для текущего кадра
      */
-    vk::Fence getInFlightFence() const {
+    vk::Fence getInFlightFence() const override {
         if (inFlightFences_.empty()) return vk::Fence{};
         return inFlightFences_[currentFrame_];
     }
@@ -113,12 +139,12 @@ public:
     /**
      * @brief Проверка device lost
      */
-    bool isDeviceLost() const { return deviceLost_; }
+    bool isDeviceLost() const override { return deviceLost_; }
     
     /**
      * @brief Проверка инициализации
      */
-    bool isInitialized() const { return initialized_; }
+    bool isInitialized() const override { return initialized_; }
     
     /**
      * @brief Максимальное количество frames in flight
@@ -144,6 +170,13 @@ private:
     uint32_t currentImageIndex_ = 0;
     bool deviceLost_ = false;
     bool initialized_ = false;
+};
+
+class FrameManagerFactory : public IFrameManagerFactory {
+  public:
+    std::shared_ptr<IFrameManager> create(vk::Device device) override {
+        return std::make_shared<FrameManager>(device);
+    }
 };
 
 }  // namespace Core

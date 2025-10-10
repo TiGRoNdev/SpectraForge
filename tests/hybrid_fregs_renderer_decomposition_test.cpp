@@ -11,9 +11,18 @@
 #include <memory>
 #include <vector>
 
+#include "SpectraForge/App/DISetup.h"
 #include "SpectraForge/Rendering/HybridFreGSRenderer.h"
 #include "SpectraForge/Rendering/Mesh3D.h"
 #include "SpectraForge/Rendering/Camera3D.h"
+
+namespace {
+struct EnsureDIConfigured {
+    EnsureDIConfigured() { SpectraForge::App::DISetup::configureDefault(); }
+};
+
+const EnsureDIConfigured gEnsureDI{};
+}  // namespace
 
 using namespace SpectraForge::Rendering;
 using ::testing::_;

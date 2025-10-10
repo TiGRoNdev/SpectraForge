@@ -12,6 +12,7 @@
 
 #include <memory>
 #include <string>
+#include "SpectraForge/App/Core/Interfaces/ISceneCoordinator.h"
 #include "SpectraForge/Rendering/Camera3D.h"
 #include "SpectraForge/Vulkan/SceneManager.h"
 #include "SpectraForge/Math/Vector3.h"
@@ -32,7 +33,7 @@ struct InputState;
  * 
  * Single Responsibility: Scene/camera coordination and updates
  */
-class SceneCoordinator {
+class SceneCoordinator : public ISceneCoordinator {
 public:
     SceneCoordinator();
     ~SceneCoordinator() = default;
@@ -40,37 +41,37 @@ public:
     /**
      * @brief Load scene data
      */
-    bool loadScene(const Vulkan::SceneData& data);
+    bool loadScene(const Vulkan::SceneData& data) override;
     
     /**
      * @brief Update camera based on input
      */
-    void updateCamera(float deltaTime, const InputState* input, bool externalControl);
+    void updateCamera(float deltaTime, const InputState* input, bool externalControl) override;
     
     /**
      * @brief Get camera instance
      */
-    std::shared_ptr<Rendering::Camera3D> getCamera() const { return camera_; }
+    std::shared_ptr<Rendering::Camera3D> getCamera() const override { return camera_; }
     
     /**
      * @brief Set camera instance
      */
-    void setCamera(std::shared_ptr<Rendering::Camera3D> camera) { camera_ = camera; }
+    void setCamera(std::shared_ptr<Rendering::Camera3D> camera) override { camera_ = camera; }
     
     /**
      * @brief Reset camera to default position for Sponza scene
      */
-    void resetCameraForSponza();
+    void resetCameraForSponza() override;
     
     /**
      * @brief Get scene information
      */
-    SceneInfo getSceneInfo() const;
+    SceneInfo getSceneInfo() const override;
     
     /**
      * @brief Check if scene is loaded
      */
-    bool isSceneLoaded() const { return sceneLoaded_; }
+    bool isSceneLoaded() const override { return sceneLoaded_; }
     
     /**
      * @brief Get scene bounds

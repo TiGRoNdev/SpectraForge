@@ -12,6 +12,7 @@
 
 #include <functional>
 #include <GLFW/glfw3.h>
+#include "SpectraForge/App/Core/Interfaces/IInputManager.h"
 
 namespace SpectraForge {
 namespace App {
@@ -35,7 +36,7 @@ struct InputState {
  * 
  * Single Responsibility: Track input state and provide query interface
  */
-class InputManager {
+class InputManager : public IInputManager {
 public:
     InputManager();
     ~InputManager() = default;
@@ -43,52 +44,52 @@ public:
     /**
      * @brief Setup input callbacks for window
      */
-    void setupCallbacks(GLFWwindow* window);
+    void setupCallbacks(GLFWwindow* window) override;
     
     /**
      * @brief Update input state (call before processing)
      */
-    void update();
+    void update() override;
     
     /**
      * @brief Check if key is pressed
      */
-    bool isKeyPressed(int key) const;
+    bool isKeyPressed(int key) const override;
     
     /**
      * @brief Check if key was just pressed (single frame)
      */
-    bool isKeyJustPressed(int key) const;
+    bool isKeyJustPressed(int key) const override;
     
     /**
      * @brief Check if mouse button is pressed
      */
-    bool isMouseButtonPressed(int button) const;
+    bool isMouseButtonPressed(int button) const override;
     
     /**
      * @brief Get mouse position
      */
-    void getMousePosition(float& x, float& y) const;
+    void getMousePosition(float& x, float& y) const override;
     
     /**
      * @brief Get mouse delta (movement since last frame)
      */
-    void getMouseDelta(float& dx, float& dy) const;
+    void getMouseDelta(float& dx, float& dy) const override;
     
     /**
      * @brief Get raw input state (for compatibility)
      */
-    const InputState* getState() const { return &state_; }
+    const InputState* getState() const override { return &state_; }
     
     /**
      * @brief Reset input state
      */
-    void reset();
+    void reset() override;
     
     /**
      * @brief Set mouse capture mode
      */
-    void setMouseCaptured(bool captured);
+    void setMouseCaptured(bool captured) override;
     
 private:
     InputState state_;

@@ -44,6 +44,21 @@ class TriangleSplattingStatistics;
  */
 class TriangleSplattingPass {
 public:
+    class SubsystemFactory {
+    public:
+        virtual ~SubsystemFactory() = default;
+
+        virtual std::unique_ptr<TriangleSplattingCore> createCore() = 0;
+        virtual std::unique_ptr<TriangleBufferManager> createBufferManager() = 0;
+        virtual std::unique_ptr<FrustumCullingPass> createFrustumCullingPass() = 0;
+        virtual std::unique_ptr<DepthSortingPass> createDepthSortingPass() = 0;
+        virtual std::unique_ptr<TriangleRasterizationPass> createRasterizationPass() = 0;
+        virtual std::unique_ptr<TriangleSplattingDebugger> createDebugger() = 0;
+        virtual std::unique_ptr<TriangleSplattingStatistics> createStatistics() = 0;
+
+        virtual bool requiresValidVulkanContext() const { return true; }
+    };
+
     /**
      * @brief Конфигурация Triangle Splatting pipeline
      */
@@ -62,7 +77,8 @@ public:
     /**
      * @brief Конструктор с конфигурацией
      */
-    explicit TriangleSplattingPass(const Config& config);
+    explicit TriangleSplattingPass(const Config& config,
+                                   std::shared_ptr<SubsystemFactory> factory = nullptr);
     
     /**
      * @brief Деструктор
@@ -87,6 +103,12 @@ public:
      * @brief Очистка всех ресурсов
      */
     void cleanup();
+
+    /**
+     * @brief Переопределение фабрики подсистем (для тестов/DI)
+     * @note Должно вызываться до initialize()
+     */
+    void setSubsystemFactory(std::shared_ptr<SubsystemFactory> factory);
     
     // === API Methods (для совместимости с HybridFreGSRenderer) ===
     
@@ -126,7 +148,9 @@ private:
     std::unique_ptr<TriangleRasterizationPass> rasterPass_;
     std::unique_ptr<TriangleSplattingDebugger> debugger_;
     std::unique_ptr<TriangleSplattingStatistics> statistics_;
-    
+
+    std::shared_ptr<SubsystemFactory> subsystemFactory_;
+
     // State
     glm::mat4 viewProj_ = glm::mat4(1.0f);
     glm::vec3 cameraPos_ = glm::vec3(0.0f);

@@ -20,6 +20,7 @@
 #include "../Rendering/Common/IResourceManager.h"
 #include "Interfaces/IConfigurable.h"
 #include "Interfaces/IEventHandler.h"
+#include "Interfaces/IEngineCore.h"
 #include "Interfaces/IInitializable.h"
 
 namespace SpectraForge {
@@ -63,7 +64,8 @@ struct EngineConfig {
  * ISP: Использует специализированные интерфейсы для разных аспектов
  * DIP: Зависит от абстракций (интерфейсов), а не от конкретных классов
  */
-class EngineCore : public Interfaces::IInitializable,
+class EngineCore : public IEngineCore,
+                   public Interfaces::IInitializable,
                    public Interfaces::IConfigurable,
                    public Interfaces::IEventHandler {
   public:

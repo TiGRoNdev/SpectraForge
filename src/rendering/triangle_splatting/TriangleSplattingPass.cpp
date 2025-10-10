@@ -9,20 +9,65 @@
 #include <SpectraForge/Core/Console.h>
 #include <SpectraForge/Core/SafeConsole.h>
 #include <stdexcept>
+#include <utility>
 
 using SpectraForge::Core::Console;
 
 namespace spectraforge {
 namespace rendering {
 
-TriangleSplattingPass::TriangleSplattingPass(const Config& config)
-    : config_(config) {
+namespace {
+
+class DefaultSubsystemFactory : public TriangleSplattingPass::SubsystemFactory {
+public:
+    std::unique_ptr<TriangleSplattingCore> createCore() override {
+        return std::make_unique<TriangleSplattingCore>();
+    }
+
+    std::unique_ptr<TriangleBufferManager> createBufferManager() override {
+        return std::make_unique<TriangleBufferManager>();
+    }
+
+    std::unique_ptr<FrustumCullingPass> createFrustumCullingPass() override {
+        return std::make_unique<FrustumCullingPass>();
+    }
+
+    std::unique_ptr<DepthSortingPass> createDepthSortingPass() override {
+        return std::make_unique<DepthSortingPass>();
+    }
+
+    std::unique_ptr<TriangleRasterizationPass> createRasterizationPass() override {
+        return std::make_unique<TriangleRasterizationPass>();
+    }
+
+    std::unique_ptr<TriangleSplattingDebugger> createDebugger() override {
+        return std::make_unique<TriangleSplattingDebugger>();
+    }
+
+    std::unique_ptr<TriangleSplattingStatistics> createStatistics() override {
+        return std::make_unique<TriangleSplattingStatistics>();
+    }
+};
+
+} // namespace
+
+TriangleSplattingPass::TriangleSplattingPass(const Config& config,
+                                             std::shared_ptr<SubsystemFactory> factory)
+    : config_(config), subsystemFactory_(std::move(factory)) {
     // Constructor only stores config, actual initialization happens in initialize()
     Console::info("TriangleSplattingPass created with config");
 }
 
 TriangleSplattingPass::~TriangleSplattingPass() {
     cleanup();
+}
+
+void TriangleSplattingPass::setSubsystemFactory(std::shared_ptr<SubsystemFactory> factory) {
+    if (initialized_) {
+        throw std::runtime_error("Cannot replace subsystem factory after initialization");
+    }
+
+    subsystemFactory_ = std::move(factory);
 }
 
 bool TriangleSplattingPass::initialize(vk::Device device,
@@ -35,11 +80,15 @@ bool TriangleSplattingPass::initialize(vk::Device device,
         return true;
     }
     
-    if (!device || !allocator) {
+    if (!subsystemFactory_) {
+        subsystemFactory_ = std::make_shared<DefaultSubsystemFactory>();
+    }
+
+    if (subsystemFactory_->requiresValidVulkanContext() && (!device || !allocator)) {
         Console::error("Invalid Vulkan device or allocator");
         return false;
     }
-    
+
     device_ = device;
     allocator_ = allocator;
     computeQueue_ = computeQueue;
@@ -60,15 +109,19 @@ bool TriangleSplattingPass::initialize(vk::Device device,
 }
 
 bool TriangleSplattingPass::initializeSubsystems() {
-    // 1. Create all subsystems
-    core_ = std::make_unique<TriangleSplattingCore>();
-    bufferManager_ = std::make_unique<TriangleBufferManager>();
-    cullingPass_ = std::make_unique<FrustumCullingPass>();
-    sortingPass_ = std::make_unique<DepthSortingPass>();
-    rasterPass_ = std::make_unique<TriangleRasterizationPass>();
-    debugger_ = std::make_unique<TriangleSplattingDebugger>();
-    statistics_ = std::make_unique<TriangleSplattingStatistics>();
-    
+    // 1. Create all subsystems (respect existing overrides)
+    if (!subsystemFactory_) {
+        subsystemFactory_ = std::make_shared<DefaultSubsystemFactory>();
+    }
+
+    if (!core_) core_ = subsystemFactory_->createCore();
+    if (!bufferManager_) bufferManager_ = subsystemFactory_->createBufferManager();
+    if (!cullingPass_) cullingPass_ = subsystemFactory_->createFrustumCullingPass();
+    if (!sortingPass_) sortingPass_ = subsystemFactory_->createDepthSortingPass();
+    if (!rasterPass_) rasterPass_ = subsystemFactory_->createRasterizationPass();
+    if (!debugger_) debugger_ = subsystemFactory_->createDebugger();
+    if (!statistics_) statistics_ = subsystemFactory_->createStatistics();
+
     // 2. Initialize Core (must be first)
     VulkanContext context;
     context.device = device_;
@@ -198,34 +251,37 @@ void TriangleSplattingPass::uploadTriangles(const std::vector<Triangle>& triangl
     if (!initialized_ || !bufferManager_) {
         throw std::runtime_error("TriangleSplattingPass not initialized");
     }
-    
-    // Allocate temporary command buffer для transfer
-    vk::CommandBufferAllocateInfo allocInfo;
-    allocInfo.level = vk::CommandBufferLevel::ePrimary;
-    allocInfo.commandPool = commandPool_;
-    allocInfo.commandBufferCount = 1;
-    
-    vk::CommandBuffer cmd = device_.allocateCommandBuffers(allocInfo)[0];
-    
-    vk::CommandBufferBeginInfo beginInfo;
-    beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
-    
-    cmd.begin(beginInfo);
-    
-    bufferManager_->uploadTriangles(triangles, cmd, graphicsQueue_);
-    
-    cmd.end();
-    
-    // Submit
-    vk::SubmitInfo submitInfo;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &cmd;
-    
-    graphicsQueue_.submit(1, &submitInfo, vk::Fence());
-    graphicsQueue_.waitIdle();
-    
-    device_.freeCommandBuffers(commandPool_, 1, &cmd);
-    
+
+    if (!device_ || commandPool_ == vk::CommandPool(nullptr) ||
+        graphicsQueue_ == vk::Queue(nullptr)) {
+        bufferManager_->uploadTriangles(triangles, vk::CommandBuffer(nullptr), vk::Queue(nullptr));
+    } else {
+        vk::CommandBufferAllocateInfo allocInfo;
+        allocInfo.level = vk::CommandBufferLevel::ePrimary;
+        allocInfo.commandPool = commandPool_;
+        allocInfo.commandBufferCount = 1;
+
+        vk::CommandBuffer cmd = device_.allocateCommandBuffers(allocInfo)[0];
+
+        vk::CommandBufferBeginInfo beginInfo;
+        beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+
+        cmd.begin(beginInfo);
+
+        bufferManager_->uploadTriangles(triangles, cmd, graphicsQueue_);
+
+        cmd.end();
+
+        vk::SubmitInfo submitInfo;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &cmd;
+
+        graphicsQueue_.submit(1, &submitInfo, vk::Fence());
+        graphicsQueue_.waitIdle();
+
+        device_.freeCommandBuffers(commandPool_, 1, &cmd);
+    }
+
     Console::info("Uploaded " + SpectraForge::Core::SAFE_TO_STRING(triangles.size()) + " triangles");
 }
 

@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <memory>
+#include <optional>
 
 #if defined(VULKAN_RENDERER_BUILD) || defined(SpectraForge_ENABLE_VULKAN)
 #include <vulkan/vulkan.hpp>
@@ -15,22 +15,7 @@ namespace Vulkan {
 class ResourceManager;
 }
 
-namespace CUDA {
-class FlashGSSplatter;
-}
-
-namespace OptiX {
-class DenoiseModule;
-class OptiXRayTracer;
-}  // namespace OptiX
-
-namespace Upscaling {
-class Upscaler; // legacy fwd-decl, not used
-}
 }  // namespace SpectraForge
-
-// Correct forward declaration for upscaler interface (actual namespace in headers)
-namespace spectraforge { namespace upscaling { class IUpscaler; } }
 
 namespace SpectraForge::Vulkan {
 
@@ -40,7 +25,6 @@ namespace SpectraForge::Vulkan {
  * @brief Структуры данных для рендеринга
  */
 struct Gaussians {
-    // TODO: Определить структуру гауссианов
     uint32_t count = 0;
 };
 
@@ -52,56 +36,21 @@ struct PrimaryImage {
     void* image = nullptr;
     void* imageView = nullptr;
 #endif
-    uint32_t width;
-    uint32_t height;
+    uint32_t width = 0;
+    uint32_t height = 0;
 };
 
-struct RawEffects {
-#ifdef HyperEngine_ENABLE_VULKAN
-    vk::Image reflections;
-    vk::Image shadows;
-    vk::Image globalIllumination;
-#else
-    void* reflections = nullptr;
-    void* shadows = nullptr;
-    void* globalIllumination = nullptr;
-#endif
-};
-
-struct DenoisedImage {
-#ifdef HyperEngine_ENABLE_VULKAN
-    vk::Image image;
-    vk::ImageView imageView;
-#else
-    void* image = nullptr;
-    void* imageView = nullptr;
-#endif
-};
-
-struct ResolutionTarget {
-    uint32_t width;
-    uint32_t height;
-    float scaleFactor;
-};
-
-struct FinalImage {
-#ifdef HyperEngine_ENABLE_VULKAN
-    vk::Image image;
-    vk::ImageView imageView;
-#else
-    void* image = nullptr;
-    void* imageView = nullptr;
-#endif
+struct RenderSettings {
+    uint32_t width = 0;
+    uint32_t height = 0;
 };
 
 /**
- * @brief Основной класс рендерера Vulkan
+ * @brief Упрощенный VulkanRenderer, отвечающий только за первичную растеризацию.
  *
- * Реализует гибридный рендеринг согласно UML архитектуре:
- * - Primary rasterization через FlashGS
- * - Secondary ray tracing через OptiX
- * - AI denoising
- * - Upscaling (DLSS/FSR)
+ * Класс содержит минимальный набор зависимостей и избегает преждевременных заглушек
+ * для будущих стадий конвейера. Дополнительные функции будут добавляться по мере
+ * появления реальных требований.
  */
 class VulkanRenderer {
   public:
@@ -143,31 +92,10 @@ class VulkanRenderer {
     PrimaryImage rasterizePrimary(const Gaussians& gaussians);
 
     /**
-     * @brief Вторичный ray tracing для эффектов
-     * @param image Первичное изображение
-     * @return Сырые эффекты
+     * @brief Настройка параметров рендеринга
+     * @param settings Желаемые параметры вывода
      */
-    RawEffects rayTraceSecondary(const PrimaryImage& image);
-
-    /**
-     * @brief AI деноизинг
-     * @param effects Сырые эффекты
-     * @return Деноизированное изображение
-     */
-    DenoisedImage denoiseAI(const RawEffects& effects);
-
-    /**
-     * @brief Upscaling изображения
-     * @param image Деноизированное изображение
-     * @param target Целевое разрешение
-     * @return Финальное изображение
-     */
-    FinalImage upscale(const DenoisedImage& image, const ResolutionTarget& target);
-
-    /**
-     * @brief Презентация финального изображения
-     */
-    void presentFinalImage();
+    void setRenderSettings(const RenderSettings& settings);
 
     /**
      * @brief Проверка инициализации
@@ -176,29 +104,16 @@ class VulkanRenderer {
     bool isInitialized() const { return initialized; }
 
   private:
+
 #if defined(VULKAN_RENDERER_BUILD) || defined(SpectraForge_ENABLE_VULKAN)
-    vk::Device device;
-    vk::Queue graphicsQueue;
-    vk::CommandPool commandPool;
-    vk::SwapchainKHR swapchain;
+    vk::Device device{};
 #else
     void* device = nullptr;
-    void* graphicsQueue = nullptr;
-    void* commandPool = nullptr;
-    void* swapchain = nullptr;
 #endif
 
     ResourceManager* resourceManager = nullptr;
 
-    // Компоненты рендеринга (будут созданы на следующих этапах)
-#ifdef CUDA_VULKAN_INTEROP_SUPPORTED
-    std::unique_ptr<SpectraForge::CUDA::FlashGSSplatter> splatter;
-#endif
-#ifdef VULKAN_RENDERER_OPTIX_SUPPORT
-    // std::unique_ptr<SpectraForge::OptiX::OptiXRayTracer> rayTracer; // Временно отключено - CUDA не доступна
-    std::unique_ptr<SpectraForge::OptiX::DenoiseModule> denoiseModule;
-#endif
-    std::unique_ptr<spectraforge::upscaling::IUpscaler> upscaler;
+    std::optional<RenderSettings> renderSettings_{};
 
     bool initialized = false;
 

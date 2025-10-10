@@ -11,6 +11,7 @@
 #pragma once
 
 #include <chrono>
+#include "SpectraForge/App/Core/Interfaces/IGameLoopManager.h"
 
 namespace SpectraForge {
 namespace App {
@@ -21,55 +22,55 @@ namespace Core {
  * 
  * Single Responsibility: Time tracking, delta time calculation, FPS limiting
  */
-class GameLoopManager {
+class GameLoopManager : public IGameLoopManager {
 public:
     GameLoopManager();
     ~GameLoopManager() = default;
-    
+
     /**
      * @brief Begin new frame (call at frame start)
      */
-    void beginFrame();
+    void beginFrame() override;
     
     /**
      * @brief End current frame (call at frame end)
      */
-    void endFrame();
+    void endFrame() override;
     
     /**
      * @brief Get delta time for current frame (seconds)
      */
-    float getDeltaTime() const { return deltaTime_; }
+    float getDeltaTime() const override { return deltaTime_; }
     
     /**
      * @brief Get current FPS
      */
-    float getFPS() const { return fps_; }
+    float getFPS() const override { return fps_; }
     
     /**
      * @brief Get frame time in milliseconds
      */
-    float getFrameTime() const { return frameTime_; }
+    float getFrameTime() const override { return frameTime_; }
     
     /**
      * @brief Set target FPS (0 = unlimited)
      */
-    void setTargetFPS(float targetFPS) { targetFPS_ = targetFPS; }
+    void setTargetFPS(float targetFPS) override { targetFPS_ = targetFPS; }
     
     /**
      * @brief Get target FPS
      */
-    float getTargetFPS() const { return targetFPS_; }
+    float getTargetFPS() const override { return targetFPS_; }
     
     /**
      * @brief Get total elapsed time since start (seconds)
      */
-    float getTotalTime() const;
+    float getTotalTime() const override;
     
     /**
      * @brief Reset timing (useful for scene changes)
      */
-    void reset();
+    void reset() override;
     
 private:
     using Clock = std::chrono::high_resolution_clock;

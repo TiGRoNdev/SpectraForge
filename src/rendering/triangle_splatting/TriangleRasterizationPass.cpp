@@ -138,8 +138,8 @@ void TriangleRasterizationPass::execute(vk::CommandBuffer cmd,
         
         RasterizationPushConstants pushConstants;
         pushConstants.viewProj = viewProj;
-        pushConstants.outputWidth = 1920; // TODO: Get from core
-        pushConstants.outputHeight = 1080;
+        pushConstants.outputWidth = config_.outputWidth;
+        pushConstants.outputHeight = config_.outputHeight;
         pushConstants.triangleCount = triangleCount;
         pushConstants.enableEarlyTermination = config_.enableEarlyTermination ? 1 : 0;
         pushConstants.alphaThreshold = config_.alphaThreshold;
@@ -393,8 +393,8 @@ void TriangleRasterizationPass::executeVisibilityPass(vk::CommandBuffer cmd,
     
     RasterizationPushConstants pushConstants;
     pushConstants.viewProj = viewProj;
-    pushConstants.outputWidth = 1920; // TODO: Get from core
-    pushConstants.outputHeight = 1080;
+    pushConstants.outputWidth = config_.outputWidth;
+    pushConstants.outputHeight = config_.outputHeight;
     pushConstants.triangleCount = triangleCount;
     pushConstants.enableEarlyTermination = 0; // No early termination in visibility pass
     pushConstants.alphaThreshold = config_.alphaThreshold;
@@ -426,8 +426,8 @@ void TriangleRasterizationPass::executeShadingPass(vk::CommandBuffer cmd,
     
     RasterizationPushConstants pushConstants;
     pushConstants.viewProj = viewProj;
-    pushConstants.outputWidth = 1920;
-    pushConstants.outputHeight = 1080;
+    pushConstants.outputWidth = config_.outputWidth;
+    pushConstants.outputHeight = config_.outputHeight;
     pushConstants.triangleCount = triangleCount;
     pushConstants.enableEarlyTermination = config_.enableEarlyTermination ? 1 : 0;
     pushConstants.alphaThreshold = config_.alphaThreshold;

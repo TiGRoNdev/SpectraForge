@@ -155,15 +155,9 @@ void VulkanEngine::renderFrame(const CameraParams& params) {
 
         // 2. Выполняем рендеринг через renderer
         if (renderer) {
-            // В полной реализации здесь будет:
-            // - rasterizePrimary() для Gaussian Splatting
-            // - rayTraceSecondary() для вторичных эффектов
-            // - denoiseAI() для деноизинга
-            // - upscale() для апскейлинга
-            // - presentFinalImage() для вывода
-
-            // Пока заглушка
-            // renderer->renderFrame(params);
+            // Пока рендерер выполняет только первичную растеризацию и возвращает параметры
+            // результирующего изображения. Полноценный конвейер будет добавлен по мере
+            // появления потребности.
         }
 
     } catch (const std::exception& e) {

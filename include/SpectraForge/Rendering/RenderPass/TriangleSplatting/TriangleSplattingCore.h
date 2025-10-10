@@ -32,9 +32,9 @@ namespace rendering {
 class TriangleSplattingCore {
 public:
     using Config = TriangleSplattingConfig;
-    
+
     TriangleSplattingCore();
-    ~TriangleSplattingCore();
+    virtual ~TriangleSplattingCore();
     
     // Disable copy
     TriangleSplattingCore(const TriangleSplattingCore&) = delete;
@@ -46,42 +46,42 @@ public:
      * @param config Конфигурация
      * @return true если успешно
      */
-    bool initialize(const VulkanContext& context, const Config& config);
+    virtual bool initialize(const VulkanContext& context, const Config& config);
     
     /**
      * @brief Освобождение всех Vulkan ресурсов
      */
-    void shutdown();
+    virtual void shutdown();
     
     /**
      * @brief Проверка инициализации
      */
-    bool isInitialized() const { return initialized_; }
+    virtual bool isInitialized() const { return initialized_; }
     
     // ========================================================================
     // Getters для Vulkan ресурсов
     // ========================================================================
     
-    vk::Device getDevice() const { return context_.device; }
-    VmaAllocator getAllocator() const { return context_.allocator; }
-    
-    vk::Image getOutputImage() const { return outputImage_; }
-    vk::ImageView getOutputImageView() const { return outputImageView_; }
-    vk::Extent2D getOutputImageExtent() const { 
-        return vk::Extent2D(config_.outputWidth, config_.outputHeight); 
+    virtual vk::Device getDevice() const { return context_.device; }
+    virtual VmaAllocator getAllocator() const { return context_.allocator; }
+
+    virtual vk::Image getOutputImage() const { return outputImage_; }
+    virtual vk::ImageView getOutputImageView() const { return outputImageView_; }
+    virtual vk::Extent2D getOutputImageExtent() const {
+        return vk::Extent2D(config_.outputWidth, config_.outputHeight);
     }
-    
-    vk::Pipeline getPipeline() const { return pipeline_; }
-    vk::PipelineLayout getPipelineLayout() const { return pipelineLayout_; }
-    vk::DescriptorSet getDescriptorSet() const { return descriptorSet_; }
+
+    virtual vk::Pipeline getPipeline() const { return pipeline_; }
+    virtual vk::PipelineLayout getPipelineLayout() const { return pipelineLayout_; }
+    virtual vk::DescriptorSet getDescriptorSet() const { return descriptorSet_; }
     
     // ========================================================================
     // Проверка состояния ресурсов
     // ========================================================================
     
-    bool hasShaderModules() const { return computeShader_ != vk::ShaderModule(nullptr); }
-    bool hasPipelines() const { return pipeline_ != vk::Pipeline(nullptr); }
-    bool hasDescriptorSets() const { return descriptorSet_ != vk::DescriptorSet(nullptr); }
+    virtual bool hasShaderModules() const { return computeShader_ != vk::ShaderModule(nullptr); }
+    virtual bool hasPipelines() const { return pipeline_ != vk::Pipeline(nullptr); }
+    virtual bool hasDescriptorSets() const { return descriptorSet_ != vk::DescriptorSet(nullptr); }
     
 private:
     // ========================================================================

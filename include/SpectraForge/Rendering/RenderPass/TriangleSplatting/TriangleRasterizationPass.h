@@ -34,6 +34,8 @@ class TriangleBufferManager;
  */
 class TriangleRasterizationPass {
 public:
+    virtual ~TriangleRasterizationPass() = default;
+
     /**
      * @brief Конфигурация rasterization pass
      */
@@ -56,16 +58,16 @@ public:
      * @param config Конфигурация
      * @return true если успешно
      */
-    bool initialize(vk::Device device,
-                   VmaAllocator allocator,
-                   const TriangleSplattingCore& core,
-                   const TriangleBufferManager& bufferManager,
-                   const Config& config);
+    virtual bool initialize(vk::Device device,
+                            VmaAllocator allocator,
+                            const TriangleSplattingCore& core,
+                            const TriangleBufferManager& bufferManager,
+                            const Config& config);
     
     /**
      * @brief Очистка ресурсов
      */
-    void cleanup();
+    virtual void cleanup();
     
     /**
      * @brief Выполнение single-pass рендеринга
@@ -73,9 +75,9 @@ public:
      * @param viewProj View-Projection matrix
      * @param triangleCount Количество треугольников для рендеринга
      */
-    void execute(vk::CommandBuffer cmd,
-                const glm::mat4& viewProj,
-                uint32_t triangleCount);
+    virtual void execute(vk::CommandBuffer cmd,
+                         const glm::mat4& viewProj,
+                         uint32_t triangleCount);
     
     /**
      * @brief Выполнение two-pass рендеринга (Visibility + Shading)
@@ -83,23 +85,23 @@ public:
      * @param viewProj View-Projection matrix
      * @param triangleCount Количество треугольников
      */
-    void executeTwoPass(vk::CommandBuffer cmd,
-                       const glm::mat4& viewProj,
-                       uint32_t triangleCount);
+    virtual void executeTwoPass(vk::CommandBuffer cmd,
+                                const glm::mat4& viewProj,
+                                uint32_t triangleCount);
     
     /**
      * @brief Установка debug режима
      * @param mode 0=normal, 1=SDF visualization, 2=barycentric coordinates
      */
-    void setDebugMode(uint32_t mode);
+    virtual void setDebugMode(uint32_t mode);
     
     /**
      * @brief Обновление конфигурации
      */
-    void updateConfig(const Config& config) { config_ = config; }
-    
-    const Config& getConfig() const { return config_; }
-    bool isInitialized() const { return initialized_; }
+    virtual void updateConfig(const Config& config) { config_ = config; }
+
+    virtual const Config& getConfig() const { return config_; }
+    virtual bool isInitialized() const { return initialized_; }
 
 private:
     bool initialized_ = false;

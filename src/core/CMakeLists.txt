@@ -19,10 +19,11 @@ add_library(SpectraForge_Core OBJECT
 # Include directories
 target_include_directories(SpectraForge_Core PUBLIC
     ${CMAKE_SOURCE_DIR}/include
+    ${VulkanMemoryAllocator_SOURCE_DIR}/include
 )
 
-# Link with Vulkan
-target_link_libraries(SpectraForge_Core PUBLIC Vulkan::Vulkan)
+# Link with Vulkan and Vulkan Memory Allocator
+target_link_libraries(SpectraForge_Core PUBLIC Vulkan::Vulkan VulkanMemoryAllocator)
 
 # Compile definitions
 target_compile_definitions(SpectraForge_Core PUBLIC

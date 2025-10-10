@@ -14,10 +14,19 @@
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include "SpectraForge/App/DISetup.h"
 #include "SpectraForge/Rendering/HybridFreGSRenderer.h"
 #include "SpectraForge/Rendering/Camera3D.h"
 #include "SpectraForge/Rendering/Mesh3D.h"
 #include "SpectraForge/Math/Matrix4.h"
+
+namespace {
+struct EnsureDIConfigured {
+    EnsureDIConfigured() { SpectraForge::App::DISetup::configureDefault(); }
+};
+
+const EnsureDIConfigured gEnsureDI{};
+}  // namespace
 #include "SpectraForge/Math/Vector3.h"
 #include <vulkan/vulkan.hpp>
 #include <memory>

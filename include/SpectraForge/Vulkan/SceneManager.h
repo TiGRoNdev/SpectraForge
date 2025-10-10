@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <vulkan/vulkan.hpp>
+#include "SpectraForge/Vulkan/Interfaces/ISceneManager.h"
 
 // Forward declarations
 namespace SpectraForge::Vulkan {
@@ -55,7 +56,7 @@ struct DynamicElements {
  * Управляет загрузкой сцены, динамическими объектами и предоставляет
  * данные для рендеринга согласно UML архитектуре.
  */
-class SceneManager {
+class SceneManager : public ISceneManager {
   public:
     /**
      * @brief Конструктор
@@ -71,73 +72,73 @@ class SceneManager {
      * @brief Инициализация менеджера сцены
      * @return true если инициализация успешна
      */
-    bool init();
+    bool init() override;
 
     /**
      * @brief Завершение работы менеджера
      */
-    void shutdown();
+    void shutdown() override;
 
     /**
      * @brief Загрузка сцены
      * @param data Данные сцены
      * @return true если загрузка успешна
      */
-    bool loadScene(const SceneData& data);
+    bool loadScene(const SceneData& data) override;
 
     /**
      * @brief Обновление динамических элементов
      * @param deltaTime Время с последнего обновления
      */
-    void updateDynamics(float deltaTime = 0.016f);
+    void updateDynamics(float deltaTime = 0.016f) override;
 
     /**
      * @brief Получение гауссианов для рендеринга
      * @return Гауссианы сцены
      */
-    Gaussians getGaussians() const;
+    Gaussians getGaussians() const override;
 
     /**
      * @brief Получение мульти-вид изображений
      * @return Изображения для Gaussian Splatting
      */
-    const MultiViewImages& getMultiViewImages() const { return images; }
+    const MultiViewImages& getMultiViewImages() const override { return images; }
 
     /**
      * @brief Получение динамических элементов
      * @return Динамические элементы сцены
      */
-    const DynamicElements& getDynamicElements() const { return elements; }
+    const DynamicElements& getDynamicElements() const override { return elements; }
 
     /**
      * @brief Проверка загрузки сцены
      * @return true если сцена загружена
      */
-    bool isSceneLoaded() const { return sceneLoaded; }
+    bool isSceneLoaded() const override { return sceneLoaded; }
 
     /**
      * @brief Очистка сцены
      */
-    void clearScene();
+    void clearScene() override;
 
     /**
      * @brief Добавление объекта в сцену
      * @param objectPath Путь к объекту
      * @return ID добавленного объекта
      */
-    uint32_t addObject(const std::string& objectPath);
+    uint32_t addObject(const std::string& objectPath) override;
 
     /**
      * @brief Удаление объекта из сцены
      * @param objectId ID объекта
      */
-    void removeObject(uint32_t objectId);
+    void removeObject(uint32_t objectId) override;
 
     /**
      * @brief Получение количества объектов в сцене
      * @return Количество объектов
      */
-    uint32_t getObjectCount() const { return objectCount; }
+    uint32_t getObjectCount() const override { return objectCount; }
 
   private:
     MultiViewImages images;

@@ -10,17 +10,38 @@
  */
 
 #include "SpectraForge/Rendering/HybridFreGSRenderer.h"
-#include <iostream>
+#include "SpectraForge/Core/DependencyInjection/Container.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <iostream>
+#include <stdexcept>
 
 namespace SpectraForge {
 namespace Rendering {
 
-HybridFreGSRenderer::HybridFreGSRenderer() {
-    // Создание компонентов (после P0.6 будет через DI контейнер)
-    core_ = std::make_unique<Core::RendererCore>();
-    debugger_ = std::make_unique<Core::RendererDebugger>();
-    
+HybridFreGSRenderer::HybridFreGSRenderer()
+    : HybridFreGSRenderer(SpectraForge::Core::DI::ServiceLocator::get<Core::IRendererCore>(),
+                          SpectraForge::Core::DI::ServiceLocator::get<Core::IRendererDebugger>(),
+                          SpectraForge::Core::DI::ServiceLocator::get<Core::ISwapchainManagerFactory>(),
+                          SpectraForge::Core::DI::ServiceLocator::get<Core::IPipelineManagerFactory>(),
+                          SpectraForge::Core::DI::ServiceLocator::get<Core::IFrameManagerFactory>(),
+                          SpectraForge::Core::DI::ServiceLocator::get<Core::IRendererStatisticsFactory>()) {}
+
+HybridFreGSRenderer::HybridFreGSRenderer(std::shared_ptr<Core::IRendererCore> core,
+                                         std::shared_ptr<Core::IRendererDebugger> debugger,
+                                         std::shared_ptr<Core::ISwapchainManagerFactory> swapchainFactory,
+                                         std::shared_ptr<Core::IPipelineManagerFactory> pipelineFactory,
+                                         std::shared_ptr<Core::IFrameManagerFactory> frameFactory,
+                                         std::shared_ptr<Core::IRendererStatisticsFactory> statisticsFactory)
+    : core_(std::move(core)),
+      debugger_(std::move(debugger)),
+      swapchainFactory_(std::move(swapchainFactory)),
+      pipelineFactory_(std::move(pipelineFactory)),
+      frameFactory_(std::move(frameFactory)),
+      statisticsFactory_(std::move(statisticsFactory)) {
+    if (!core_ || !debugger_ || !swapchainFactory_ || !pipelineFactory_ || !frameFactory_ || !statisticsFactory_) {
+        throw std::invalid_argument("HybridFreGSRenderer: dependencies must not be null");
+    }
+
     std::cout << "[HybridFreGSRenderer] Orchestrator created\n";
 }
 
@@ -41,10 +62,9 @@ bool HybridFreGSRenderer::initialize() {
         std::cerr << "[HybridFreGSRenderer] ❌ Core initialization failed\n";
         return false;
     }
-    
-    // Statistics после core (нужен physicalDevice)
-    statistics_ = std::make_unique<Core::RendererStatistics>(core_->getPhysicalDevice());
-    
+
+    statistics_ = statisticsFactory_->create(core_->getPhysicalDevice());
+
     initialized_ = true;
     std::cout << "[HybridFreGSRenderer] ✅ Orchestrator initialized\n";
     return true;
@@ -59,12 +79,10 @@ bool HybridFreGSRenderer::attachWindow(void* x11Display, void* x11Window,
     std::cout << "[HybridFreGSRenderer] Attaching window " << width << "x" << height << "...\n";
     
     // 2. Create swapchain manager
-    swapchain_ = std::make_unique<Core::SwapchainManager>(
-        core_->getInstance(),
-        core_->getPhysicalDevice(),
-        core_->getDevice()
-    );
-    
+    swapchain_ = swapchainFactory_->create(core_->getInstance(),
+                                          core_->getPhysicalDevice(),
+                                          core_->getDevice());
+
     if (!swapchain_->createSurfaceX11(x11Display, x11Window)) {
         std::cerr << "[HybridFreGSRenderer] ❌ Failed to create surface\n";
         return false;
@@ -85,7 +103,7 @@ bool HybridFreGSRenderer::attachWindow(void* x11Display, void* x11Window,
     }
     
     // 5. Create pipeline manager
-    pipeline_ = std::make_unique<Core::PipelineManager>(core_->getDevice());
+    pipeline_ = pipelineFactory_->create(core_->getDevice());
     if (!pipeline_->initialize(swapchain_->getSwapchainImageViews(),
                                swapchain_->getSwapchainFormat(),
                                swapchain_->getSwapchainExtent(),
@@ -93,9 +111,9 @@ bool HybridFreGSRenderer::attachWindow(void* x11Display, void* x11Window,
         std::cerr << "[HybridFreGSRenderer] ❌ Failed to initialize pipeline\n";
         return false;
     }
-    
+
     // 6. Create frame manager
-    frame_ = std::make_unique<Core::FrameManager>(core_->getDevice());
+    frame_ = frameFactory_->create(core_->getDevice());
     if (!frame_->initialize()) {
         std::cerr << "[HybridFreGSRenderer] ❌ Failed to initialize frame manager\n";
         return false;
@@ -151,14 +169,12 @@ void HybridFreGSRenderer::shutdown() {
     // Cleanup в обратном порядке инициализации
     triangleSplattingPass_.reset();
     fregsPass_.reset();
-    
+
     frame_.reset();
     pipeline_.reset();
     swapchain_.reset();
     statistics_.reset();
-    core_.reset();
-    debugger_.reset();
-    
+
     initialized_ = false;
     std::cout << "[HybridFreGSRenderer] ✅ Orchestrator shutdown complete\n";
 }

@@ -18,6 +18,7 @@
 #include "RenderPass.h"
 #include "WaveletPass.h"
 #include "SpectraForge/Core/VMAMemoryManager.h"
+#include "SpectraForge/Rendering/Utils/DynamicBuffer.h"
 #include <vulkan/vulkan.hpp>
 #include <glm/glm.hpp>
 #include <vector>
@@ -124,8 +125,7 @@ private:
     core::VMAImage vmaOutputImage_;   // RAII wrapper for automatic cleanup
     
     // Gaussian buffer (VMA managed)
-    vk::Buffer gaussianBuffer_;       // Extracted from VMA for descriptor binding
-    core::VMABuffer vmaGaussianBuffer_; // RAII wrapper with map/unmap support
+    utils::DynamicBuffer gaussianBuffer_;
     uint32_t gaussianCount_ = 0;
     
     // Vulkan context (stored for cleanup)
