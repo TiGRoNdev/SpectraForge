@@ -179,7 +179,7 @@ private:
         auto h = std::dynamic_pointer_cast<SpectraForge::Rendering::HybridFreGSRenderer>(renderer);
         if (!h) return;
 
-        std::vector<spectraforge::rendering::spectraforge::rendering::Triangle> tris;
+        std::vector<spectraforge::rendering::Triangle> tris;
         tris.reserve(cube_indices_.size() / 3);
 
         // ✅ ОЧЕНЬ яркий синий для maximum contrast
@@ -190,7 +190,7 @@ private:
             glm::vec3 v1 = rotateY(cube_vertices_[cube_indices_[i + 1]], angle);
             glm::vec3 v2 = rotateY(cube_vertices_[cube_indices_[i + 2]], angle);
 
-            spectraforge::rendering::spectraforge::rendering::Triangle t;
+            spectraforge::rendering::Triangle t;
             t.v0 = v0; t.v1 = v1; t.v2 = v2;
             t.color = brightBlue; 
             t.opacity = 1.0f;

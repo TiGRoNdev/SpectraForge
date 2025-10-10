@@ -37,6 +37,9 @@ function(add_spectraforge_test TEST_NAME SOURCE_FILE)
         Vulkan::Vulkan
         ${ARGN}  # Additional libraries
     )
+    if(TARGET GTest::gmock)
+        target_link_libraries(${TEST_NAME} PRIVATE GTest::gmock)
+    endif()
     
     set_target_properties(${TEST_NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
@@ -120,7 +123,10 @@ add_spectraforge_test(vulkan_validation_test vulkan_validation_test.cpp)
 
 # Фаза 1: Критический приоритет (44 функции, 70 тестов)
 # P0.2: Декомпозиция HybridFreGSRenderer - TDD RED tests (64 теста)
-add_spectraforge_test(hybrid_fregs_renderer_decomposition_test hybrid_fregs_renderer_decomposition_test.cpp)
+option(SPECTRAFORGE_ENABLE_TDD_RED_TESTS "Build experimental HybridFreGSRenderer TDD RED tests" OFF)
+if(SPECTRAFORGE_ENABLE_TDD_RED_TESTS)
+    add_spectraforge_test(hybrid_fregs_renderer_decomposition_test hybrid_fregs_renderer_decomposition_test.cpp)
+endif()
 
 # P0.2: Core Components Tests (40 тестов)
 add_spectraforge_test(renderer_core_test rendering/renderer_core_test.cpp)

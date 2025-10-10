@@ -100,28 +100,28 @@ private:
      * @brief Register rendering services
      */
     static void registerRenderingServices(SpectraForge::Core::DI::Container& container) {
-        container.registerSingleton<Core::IRendererCore>(
-            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Core::RendererCore>(); });
-        container.registerSingleton<Core::IRendererDebugger>(
-            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Core::RendererDebugger>(); });
-        container.registerSingleton<Core::ISwapchainManagerFactory>(
-            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Core::SwapchainManagerFactory>(); });
-        container.registerSingleton<Core::IPipelineManagerFactory>(
-            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Core::PipelineManagerFactory>(); });
-        container.registerSingleton<Core::IFrameManagerFactory>(
-            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Core::FrameManagerFactory>(); });
-        container.registerSingleton<Core::IRendererStatisticsFactory>([](SpectraForge::Core::DI::Container&) {
-            return std::make_shared<Core::RendererStatisticsFactory>();
+        container.registerSingleton<Rendering::Core::IRendererCore>(
+            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Rendering::Core::RendererCore>(); });
+        container.registerSingleton<Rendering::Core::IRendererDebugger>(
+            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Rendering::Core::RendererDebugger>(); });
+        container.registerSingleton<Rendering::Core::ISwapchainManagerFactory>(
+            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Rendering::Core::SwapchainManagerFactory>(); });
+        container.registerSingleton<Rendering::Core::IPipelineManagerFactory>(
+            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Rendering::Core::PipelineManagerFactory>(); });
+        container.registerSingleton<Rendering::Core::IFrameManagerFactory>(
+            [](SpectraForge::Core::DI::Container&) { return std::make_shared<Rendering::Core::FrameManagerFactory>(); });
+        container.registerSingleton<Rendering::Core::IRendererStatisticsFactory>([](SpectraForge::Core::DI::Container&) {
+            return std::make_shared<Rendering::Core::RendererStatisticsFactory>();
         });
 
         container.registerSingleton<Rendering::IRenderer>([](SpectraForge::Core::DI::Container& c) {
             auto renderer = std::make_shared<Rendering::HybridFreGSRenderer>(
-                c.resolve<Core::IRendererCore>(),
-                c.resolve<Core::IRendererDebugger>(),
-                c.resolve<Core::ISwapchainManagerFactory>(),
-                c.resolve<Core::IPipelineManagerFactory>(),
-                c.resolve<Core::IFrameManagerFactory>(),
-                c.resolve<Core::IRendererStatisticsFactory>());
+                c.resolve<Rendering::Core::IRendererCore>(),
+                c.resolve<Rendering::Core::IRendererDebugger>(),
+                c.resolve<Rendering::Core::ISwapchainManagerFactory>(),
+                c.resolve<Rendering::Core::IPipelineManagerFactory>(),
+                c.resolve<Rendering::Core::IFrameManagerFactory>(),
+                c.resolve<Rendering::Core::IRendererStatisticsFactory>());
             c.registerInstance<Rendering::IWindowBinder>(renderer);
             return renderer;
         });
@@ -174,4 +174,3 @@ private:
 
 } // namespace App
 } // namespace SpectraForge
-

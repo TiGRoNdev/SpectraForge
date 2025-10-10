@@ -7,7 +7,6 @@
  */
 
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
 #include <memory>
 #include <vector>
 
@@ -25,9 +24,6 @@ const EnsureDIConfigured gEnsureDI{};
 }  // namespace
 
 using namespace SpectraForge::Rendering;
-using ::testing::_;
-using ::testing::Return;
-using ::testing::NiceMock;
 
 // ============================================================================
 // 1. VULKAN CONTEXT MANAGEMENT TESTS (~10 тестов)
@@ -820,4 +816,3 @@ TEST_F(HybridFreGSRendererIntegrationTest, MultipleShutdownCallsAreSafe) {
  * Затем: Рефакторинг (декомпозиция на 7 классов)
  * Финал: Тесты должны ПРОЙТИ снова (TDD GREEN)
  */
-

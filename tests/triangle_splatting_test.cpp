@@ -1,12 +1,6 @@
 #include <gtest/gtest.h>
 #include "SpectraForge/Rendering/RenderPass/TriangleSplattingPass.h"
-#include <SpectraForge/Rendering/Mesh3D.h>
 #include <vector>
-
-// Forward declaration for Vertex3D (defined in Mesh3D.h)
-namespace SpectraForge::Rendering {
-    struct Vertex3D;
-}
 
 /**
  * @brief Test fixture for Triangle Splatting tests
@@ -31,34 +25,7 @@ protected:
  * @brief Test mesh to triangles conversion
  */
 TEST_F(TriangleSplattingTest, ConvertMeshToTriangles) {
-    // Create a simple test mesh
-    SpectraForge::Rendering::Mesh3D mesh;
-
-    std::vector<SpectraForge::Rendering::Vertex3D> vertices;
-    vertices.emplace_back(
-        SpectraForge::Math::Vector3(0.0f, 0.0f, 0.0f), // position
-        SpectraForge::Math::Vector3(1.0f, 0.0f, 0.0f), // normal
-        SpectraForge::Math::Vector3(0.0f, 0.0f, 1.0f), // color
-        0.0f, 0.0f // u, v
-    );
-    vertices.emplace_back(
-        SpectraForge::Math::Vector3(1.0f, 0.0f, 0.0f), // position
-        SpectraForge::Math::Vector3(0.0f, 1.0f, 0.0f), // normal
-        SpectraForge::Math::Vector3(0.0f, 0.0f, 1.0f), // color
-        1.0f, 0.0f // u, v
-    );
-    vertices.emplace_back(
-        SpectraForge::Math::Vector3(0.0f, 1.0f, 0.0f), // position
-        SpectraForge::Math::Vector3(0.0f, 0.0f, 1.0f), // normal
-        SpectraForge::Math::Vector3(0.0f, 0.0f, 1.0f), // color
-        0.0f, 1.0f // u, v
-    );
-
-    std::vector<uint32_t> indices = {0, 1, 2};
-
-    mesh.setVertices(std::move(vertices));
-    mesh.setIndices(std::move(indices));
-
+    // convertMeshToTriangles currently lives in HybridFreGSRenderer.
     // TODO: convertMeshToTriangles moved to HybridFreGSRenderer
     // Convert to triangles
     // auto triangles = spectraforge::rendering::TriangleSplattingPass::convertMeshToTriangles(mesh, 1.0f);
