@@ -158,8 +158,8 @@ void Engine::update(float deltaTime) {
     lastFrameDelta_ = deltaTime;
 
     windowManager_->pollEvents();
-    inputManager_->update();
     sceneCoordinator_->updateCamera(deltaTime, inputManager_->getState(), externalCameraControl_);
+    inputManager_->update();
     scene_manager_->updateDynamics(deltaTime);
     sceneInfo_ = sceneCoordinator_->getSceneInfo();
 }
