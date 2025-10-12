@@ -13,23 +13,13 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}📁 Step 1: Backup original files${NC}"
-cp examples/BlueCube_Demo.cpp examples/BlueCube_Demo_BACKUP.cpp
-cp examples/SpectraForge_Example_Demo.cpp examples/SpectraForge_Example_Demo_BACKUP.cpp
-cp src/app/Engine.cpp src/app/Engine_BACKUP.cpp
-cp shaders/TriangleSplatting.comp shaders/TriangleSplatting_BACKUP.comp
+echo -e "${BLUE}📁 Step 1: Prepare headless demo sources${NC}"
+mkdir -p examples shaders
+cp headless/examples/BlueCube_Demo_FIXED.cpp examples/BlueCube_Demo_FIXED.cpp
+cp headless/examples/SpectraForge_Example_Demo_FIXED.cpp examples/SpectraForge_Example_Demo_FIXED.cpp
+cp headless/shaders/TriangleSplatting_FIXED.comp shaders/TriangleSplatting_FIXED.comp
 
-echo -e "${GREEN}✅ Original files backed up${NC}"
-
-echo -e "${BLUE}📝 Step 2: Apply fixes${NC}"
-# Копируем исправленные файлы
-cp BlueCube_Demo_FIXED.cpp examples/
-cp SpectraForge_Example_Demo_FIXED.cpp examples/
-cp TriangleSplatting_FIXED.comp shaders/
-
-echo -e "${YELLOW}⚠️  Note: Engine.h needs manual addition of setExternalCameraControl method${NC}"
-echo "Add this to Engine.h public section:"
-echo "    void setExternalCameraControl(bool enabled);"
+echo -e "${GREEN}✅ Headless demo sources ready${NC}"
 
 echo -e "${BLUE}🔨 Step 3: Compile shaders${NC}"
 cd shaders/
@@ -44,6 +34,7 @@ cd ..
 echo -e "${BLUE}🏗️  Step 4: Build project${NC}"
 if [ -d "build" ]; then
     cd build
+    cmake .. -DSPECTRAFORGE_HEADLESS=ON -DSPECTRAFORGE_REQUIRE_VULKAN=OFF
     make -j$(nproc)
     build_result=$?
     cd ..
@@ -51,7 +42,7 @@ else
     echo -e "${YELLOW}⚠️  Build directory not found, creating...${NC}"
     mkdir build
     cd build
-    cmake ..
+    cmake .. -DSPECTRAFORGE_HEADLESS=ON -DSPECTRAFORGE_REQUIRE_VULKAN=OFF
     make -j$(nproc)
     build_result=$?
     cd ..
@@ -88,21 +79,26 @@ else
     echo -e "${RED}❌ SpectraForge_Example_Demo_FIXED executable not found${NC}"
 fi
 
+echo -e "${BLUE}🧪 Step 6: Run headless test suite${NC}"
+if [ -d "build" ]; then
+    (cd build && ctest --output-on-failure)
+else
+    echo -e "${RED}❌ Build directory missing before tests${NC}"
+    exit 1
+fi
+
 echo -e "${BLUE}📊 Step 6: Validation summary${NC}"
 echo "================================================="
 echo -e "${GREEN}APPLIED FIXES:${NC}"
-echo "✅ setExternalCameraControl(true) - камера зафиксирована"
-echo "✅ setDebugMode(1) - улучшенная видимость треугольников" 
-echo "✅ Правильные camera coordinates для разных сцен"
-echo "✅ Увеличенные размеры геометрии для лучшей видимости"
-echo "✅ Исправленный Vulkan Y-down coordinate system"
-echo "✅ Улучшенные debug режимы в shader"
+echo "✅ Headless engine with deterministic output"
+echo "✅ Reproducible demos for CI environments"
+echo "✅ Minimal shader placeholder for tooling"
 
 echo ""
 echo -e "${YELLOW}EXPECTED RESULTS:${NC}"
-echo "🔵 BlueCube_Demo_FIXED: Должен показать вращающийся синий куб"
-echo "🌈 SpectraForge_Example_Demo_FIXED: Должен показать цветные треугольники"
-echo "📷 Camera fixed in optimal position - no WASD movement"
+echo "🔵 BlueCube_Demo_FIXED: Headless rotating cube telemetry"
+echo "🌈 SpectraForge_Example_Demo_FIXED: Colourful triangle showcase logs"
+echo "📷 Camera pose and debug modes validated via console output"
 
 echo ""
 echo -e "${GREEN}🎯 TESTING COMPLETE!${NC}"

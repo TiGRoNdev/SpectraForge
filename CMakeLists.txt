@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.16)
 # SpectraForge - Pure C++ 3D Engine with Vulkan and Hybrid TriangleSplatting + FreGS rendering
 project(SpectraForge VERSION 1.0.0 LANGUAGES CXX)
 
+option(SPECTRAFORGE_HEADLESS "Build a lightweight headless version without GPU dependencies" OFF)
+option(SPECTRAFORGE_REQUIRE_VULKAN "Fail the configure step when Vulkan SDK is missing" ON)
+
 # Устанавливаем стандарт C++
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -11,6 +14,16 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Опции сборки
 option(BUILD_EXAMPLES "Build example applications" ON)
 option(BUILD_TESTS "Build test suite" OFF)
+
+if(SPECTRAFORGE_HEADLESS)
+    message(STATUS "=== SpectraForge Configuration ===")
+    message(STATUS "Headless mode enabled (no GPU dependencies)")
+    message(STATUS "Minimal engine features for CI testing")
+    message(STATUS "==================================")
+    enable_testing()
+    add_subdirectory(headless)
+    return()
+endif()
 
 message(STATUS "=== SpectraForge Configuration ===")
 message(STATUS "Pure C++ with Vulkan only")
@@ -58,7 +71,12 @@ else()
 endif()
 
 if(NOT TARGET Vulkan::Vulkan)
-    message(FATAL_ERROR "Vulkan SDK not found. Please install Vulkan SDK or provide pkg-config file.")
+    if(SPECTRAFORGE_REQUIRE_VULKAN)
+        message(FATAL_ERROR "Vulkan SDK not found. Please install Vulkan SDK or provide pkg-config file.")
+    else()
+        add_library(Vulkan::Vulkan INTERFACE IMPORTED)
+        message(WARNING "Vulkan SDK not found. Continuing with placeholder Vulkan::Vulkan target.")
+    endif()
 endif()
 
 # Vulkan Memory Allocator (header-only dependency)

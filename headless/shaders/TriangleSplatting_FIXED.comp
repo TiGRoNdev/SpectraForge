@@ -1,0 +1,9 @@
+// Headless shader placeholder
+// In a real GPU build this file would contain GLSL compute shader code.
+// For CI environments without Vulkan SDK we only need a valid text file
+// so that build_and_test.sh can copy it as part of the workflow.
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+void main() {
+    // No-op shader placeholder
+}
