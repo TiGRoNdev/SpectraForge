@@ -176,6 +176,9 @@ libs/
 # Generated files
 generated/
 auto_generated/
+examples/BlueCube_Demo_FIXED.cpp
+examples/SpectraForge_Example_Demo_FIXED.cpp
+shaders/TriangleSplatting_FIXED.comp
 
 # Shader cache
 shader_cache/
