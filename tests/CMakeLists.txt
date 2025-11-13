@@ -8,6 +8,12 @@ add_executable(triangle_splatting_test
     triangle_splatting_test.cpp
 )
 
+target_include_directories(triangle_splatting_test
+    PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/external
+)
+
 target_link_libraries(triangle_splatting_test
     PRIVATE
     SpectraForge

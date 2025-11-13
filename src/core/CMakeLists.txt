@@ -19,6 +19,7 @@ add_library(SpectraForge_Core OBJECT
 # Include directories
 target_include_directories(SpectraForge_Core PUBLIC
     ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/external
 )
 
 # Link with Vulkan

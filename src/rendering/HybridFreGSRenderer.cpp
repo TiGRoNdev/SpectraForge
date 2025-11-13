@@ -8,6 +8,7 @@
 #include <vector>
 #include <set>
 #include <algorithm>
+#include <cstring>
 #include <X11/Xlib.h>
 #include <vulkan/vulkan_xlib.h>
 #include <glm/glm.hpp>
@@ -49,25 +50,64 @@ bool HybridFreGSRenderer::createInstance() {
     // Required extensions
     std::vector<const char*> extensions = {
         VK_KHR_SURFACE_EXTENSION_NAME,
-        VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
-        VK_EXT_DEBUG_UTILS_EXTENSION_NAME
+        VK_KHR_XLIB_SURFACE_EXTENSION_NAME
     };
 
-    // Validation layers
+    // Check for validation layer availability
     std::vector<const char*> validationLayers = {
         "VK_LAYER_KHRONOS_validation"
     };
+    
+    bool validationLayersAvailable = false;
+    try {
+        auto availableLayers = vk::enumerateInstanceLayerProperties();
+        for (const char* layerName : validationLayers) {
+            bool found = false;
+            for (const auto& layerProps : availableLayers) {
+                if (strcmp(layerName, layerProps.layerName) == 0) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                validationLayersAvailable = true;
+            } else {
+                validationLayersAvailable = false;
+                break;
+            }
+        }
+    } catch (...) {
+        validationLayersAvailable = false;
+    }
+
+    // Add debug utils extension only if validation layers are available
+    if (validationLayersAvailable) {
+        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        std::cout << "🔍 Validation layers available, enabling debug mode\n";
+    } else {
+        std::cout << "ℹ️  Validation layers not available, running in release mode\n";
+    }
 
     vk::InstanceCreateInfo createInfo;
     createInfo.pApplicationInfo = &appInfo;
     createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     createInfo.ppEnabledExtensionNames = extensions.data();
-    createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-    createInfo.ppEnabledLayerNames = validationLayers.data();
+    
+    if (validationLayersAvailable) {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.ppEnabledLayerNames = validationLayers.data();
+    } else {
+        createInfo.enabledLayerCount = 0;
+        createInfo.ppEnabledLayerNames = nullptr;
+    }
 
     try {
         instance_ = vk::createInstance(createInfo);
-        std::cout << "✅ Vulkan instance created with validation layers\n";
+        if (validationLayersAvailable) {
+            std::cout << "✅ Vulkan instance created with validation layers\n";
+        } else {
+            std::cout << "✅ Vulkan instance created (release mode)\n";
+        }
         return true;
     } catch (const std::exception& e) {
         std::cerr << "❌ Failed to create instance: " << e.what() << "\n";
