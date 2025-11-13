@@ -59,8 +59,11 @@ public:
 
         // ВАЖНО: позиционируем камеру ПОСЛЕ load_scene, чтобы переопределить дефолтные значения
         // ВРЕМЕННО: Прямая камера для отладки - смотрим прямо на куб
-        engine_->setCameraPosition({0.0f, 0.0f, 5.0f});
+        std::cout << "🎯 [BlueCube_Demo] ABOUT TO CALL setCameraPosition(0, 0, 0.3)" << std::endl;
+        engine_->setCameraPosition({0.0f, 0.0f, 0.3f});
+        std::cout << "🎯 [BlueCube_Demo] ABOUT TO CALL setCameraTarget(0, 0, 0)" << std::endl;
         engine_->setCameraTarget({0.0f, 0.0f, 0.0f});
+        std::cout << "🎯 [BlueCube_Demo] Camera setup COMPLETED" << std::endl;
 
         // Цвет фона через рендерер
         if (auto r = engine_->getRenderer()) {
@@ -181,10 +184,10 @@ private:
             glm::vec3 v1 = rotateY(cube_vertices_[cube_indices_[i + 1]], angle);
             glm::vec3 v2 = rotateY(cube_vertices_[cube_indices_[i + 2]], angle);
 
-            // ИСПРАВЛЕНО: Размещаем куб дальше от камеры
-            // Камера на Z=5, куб размером 3.0, центрируем на Z=-8
-            // Это дает расстояние 13 единиц - достаточно чтобы весь куб был перед камерой при вращении
-            v0.z -= 8.0f; v1.z -= 8.0f; v2.z -= 8.0f;
+            // ИСПРАВЛЕНО: Размещаем куб близко к камере для видимой 3D геометрии
+            // Камера на Z=0.3, куб на Z=-2, размер куба 1.0
+            // Расстояние = 2.3 единицы - куб будет занимать значительную часть экрана
+            v0.z -= 2.0f; v1.z -= 2.0f; v2.z -= 2.0f;
             
             // Выводим информацию о треугольниках для отладки
             if (printDebug && (i/3) < 3) {
@@ -199,6 +202,11 @@ private:
                 glm::vec3 cross = glm::cross(e1, e2);
                 float area = glm::length(cross) * 0.5f;
                 std::cout << "  Area: " << area << " (0 = degenerate)" << std::endl;
+                
+                // Проверяем расстояние от камеры (0, 0, 0.3)
+                glm::vec3 camPos(0.0f, 0.0f, 0.3f);
+                float dist = glm::length(v0 - camPos);
+                std::cout << "  Distance from camera: " << dist << std::endl;
             }
             
 
@@ -206,22 +214,35 @@ private:
             t.v0 = glm::vec4(v0, 1.0f); 
             t.v1 = glm::vec4(v1, 1.0f); 
             t.v2 = glm::vec4(v2, 1.0f);
-            t.color = glm::vec4(blue, 1.0f); 
-            t.params = glm::vec4(1.0f, 1.0f, 0.0f, 0.0f); // opacity=1.0, sigma=1.0
-            // ИСПРАВЛЕНО: Правильное вычисление нормали
+            
+            // Вычисляем нормаль
             glm::vec3 e1 = v1 - v0;
             glm::vec3 e2 = v2 - v0;
             glm::vec3 n = glm::cross(e1, e2);
-            float area2 = glm::length(n);
+            float area = glm::length(n);
             
-            // Нормализуем нормаль (НЕ пропускаем треугольники!)
-            if (area2 > 1e-8f) {
-                t.normal = glm::vec4(n / area2, 0.0f);
+            // Нормализуем нормаль
+            glm::vec3 normal;
+            if (area > 1e-8f) {
+                normal = n / area;
             } else {
-                t.normal = glm::vec4(0, 0, 1, 0); // Fallback для вырожденных
+                normal = glm::vec3(0, 0, 1); // Fallback
             }
-            // params уже установлен выше (opacity, sigma)
-            t.material = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f); // materialId=0
+            
+            // Разные цвета для разных граней куба (по нормали)
+            glm::vec3 faceColor;
+            if (std::abs(normal.x) > 0.9f) {
+                faceColor = glm::vec3(1.0f, 0.0f, 0.0f); // Красный для X
+            } else if (std::abs(normal.y) > 0.9f) {
+                faceColor = glm::vec3(0.0f, 1.0f, 0.0f); // Зеленый для Y
+            } else {
+                faceColor = glm::vec3(0.0f, 0.3f, 1.0f); // Синий для Z
+            }
+            
+            t.color = glm::vec4(faceColor, 1.0f);
+            t.params = glm::vec4(1.0f, 1.0f, 0.0f, 0.0f); // opacity=1.0, sigma=1.0
+            t.normal = glm::vec4(normal, 0.0f);
+            t.material = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
             tris.push_back(t);
         }
         

@@ -265,42 +265,39 @@ void main() {
         
         // ===== 2. BACKFACE CULLING ОТКЛЮЧЕН =====
         // Backface culling полностью отключен для Triangle Splatting
-        // if (isBackFacing(v0_screen, v1_screen, v2_screen)) {
+        // ВАЖНО: Рендерим обе стороны треугольников
+        
+        // ===== 3. AABB TEST (early rejection) - ОТКЛЮЧЕН для диагностики =====
+        vec4 aabb = computeTriangleAABB(v0_screen, v1_screen, v2_screen);
+        // ВРЕМЕННО ОТКЛЮЧЕНО для диагностики мерцания
+        // if (!overlapsWithAABB(pixelPos, aabb)) {
+        //     skippedAABB++;
         //     continue;
         // }
         
-        // ===== 3. AABB TEST (early rejection) ===== 
-        vec4 aabb = computeTriangleAABB(v0_screen, v1_screen, v2_screen);
-        if (!overlapsWithAABB(pixelPos, aabb)) {
-            skippedAABB++;
-            continue;
-        }
-        
-        // ===== 4. PHI TEST (SDF distance) =====
+        // ===== 4. PHI TEST - УПРОЩЕННЫЙ =====
         float phi = computeTriangleSDF(pixelPos, v0_screen, v1_screen, v2_screen);
         if (isnan(phi) || isinf(phi)) {
             continue;
         }
         
-        // Triangle splatting рендерит с весом основанным на расстоянии
-        // НЕ отбрасываем пиксели вне треугольника, вес будет уменьшаться
+        // КРИТИЧНО: Рендерим ТОЛЬКО внутри треугольника (phi < 0)
+        // НЕ используем abs() для двухсторонности - backface culling отключен выше
+        if (phi > 0.5) {
+            // Пиксель снаружи треугольника - skip
+            continue;
+        }
         
-        // ===== 5. PHICENTER CHECK ОТКЛЮЧЕН =====
-        float phiCenter = -1.0;  // Фиксированное значение (не вырожденный)
-        // vec2 incenter = computeIncenter(v0_screen, v1_screen, v2_screen);
-        // float phiCenter = computeTriangleSDF(incenter, v0_screen, v1_screen, v2_screen);
-        //     continue;
-        // }
-        // if (phiCenter >= 0.0) {
-        //     continue;
-        // }
+        // ===== 5. PHICENTER CHECK - ОТКЛЮЧЕН =====
         
-        // ===== ДИАГНОСТИКА: ФИКСИРОВАННЫЙ WEIGHT =====
-        float weight = 0.8;  // Фиксированный weight для всех треугольников
-        // float weight = smoothWindowFunction(phi, phiCenter, params.y);
-        // if (isnan(weight) || isinf(weight)) {
-        //     continue;
-        // }
+        // ===== 6. WEIGHT - МАКСИМАЛЬНО УПРОЩЕННЫЙ =====
+        // Flat shading для диагностики: одинаковый weight по всему треугольнику
+        float weight = 0.9; // Фиксированный weight для всего треугольника
+        
+        // Только плавный falloff на самом краю (0.5 пикселя) для anti-aliasing
+        if (phi > -0.5 && phi <= 0.5) {
+            weight = 0.9 * (1.0 - (phi + 0.5)); // От 0.9 на phi=-0.5 до 0 на phi=0.5
+        }
         
         // Если weight близок к 0, треугольник почти не виден
         // ВРЕМЕННО ОТКЛЮЧЕНО

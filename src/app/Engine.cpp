@@ -649,11 +649,8 @@ void Engine::update(float delta_time) {
 
             // ===== ИСПРАВЛЕНО: Правильное формирование View Matrix =====
     
-            // 1. Обновляем camera direction из yaw/pitch
-            cameraFront.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-            cameraFront.y = sin(glm::radians(pitch));
-            cameraFront.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-            cameraFront = glm::normalize(cameraFront);
+            // 1. Camera direction УЖЕ обновлен из yaw/pitch в строках 615-619 выше
+            // НЕ пересчитываем здесь чтобы не перезаписать значения из setCameraTarget()
             
             // 2. ИСПРАВЛЕНО: Правильный lookAt для стандартной системы координат
             // Используем стандартный Y-up (0, 1, 0) для правильной ориентации
@@ -933,6 +930,10 @@ void Engine::resetCameraForSponza() {
 void Engine::setCameraPosition(const glm::vec3& pos) {
     cameraPos = pos;
     
+    std::cout << "[Engine] Camera position set to: (" 
+              << pos.x << ", " << pos.y << ", " << pos.z << ")" << std::endl;
+    std::cout << "[Engine] renderCamera_ = " << (renderCamera_ ? "valid" : "nullptr") << std::endl;
+    
     if (renderCamera_) {
         renderCamera_->setPosition(Math::Vector3(pos.x, pos.y, pos.z));
         // Обновляем lookAt с текущим направлением
@@ -942,12 +943,14 @@ void Engine::setCameraPosition(const glm::vec3& pos) {
             Math::Vector3(0.0f, 1.0f, 0.0f)
         );
     }
-    
-    std::cout << "[Engine] Camera position set to: (" 
-              << pos.x << ", " << pos.y << ", " << pos.z << ")" << std::endl;
 }
 
 void Engine::setCameraTarget(const glm::vec3& target) {
+    std::cout << "[Engine] ⭐ setCameraTarget CALLED with target: (" 
+              << target.x << ", " << target.y << ", " << target.z << ")" << std::endl;
+    std::cout << "[Engine] Current cameraPos: (" 
+              << cameraPos.x << ", " << cameraPos.y << ", " << cameraPos.z << ")" << std::endl;
+    
     // Вычисляем направление от позиции к цели
     glm::vec3 direction = glm::normalize(target - cameraPos);
     cameraFront = direction;
@@ -956,22 +959,20 @@ void Engine::setCameraTarget(const glm::vec3& target) {
     yaw = glm::degrees(atan2(direction.z, direction.x));
     pitch = glm::degrees(asin(direction.y));
     
+    std::cout << "[Engine] Calculated direction: (" 
+              << direction.x << ", " << direction.y << ", " << direction.z << ")" << std::endl;
+    std::cout << "[Engine] Calculated yaw=" << yaw << "°, pitch=" << pitch << "°" << std::endl;
+    
     if (renderCamera_) {
         renderCamera_->lookAt(
             Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z),
             Math::Vector3(target.x, target.y, target.z),
             Math::Vector3(0.0f, 1.0f, 0.0f)
         );
+        std::cout << "[Engine] renderCamera_->lookAt() executed" << std::endl;
+    } else {
+        std::cout << "[Engine] WARNING: renderCamera_ is nullptr!" << std::endl;
     }
-    
-    std::cout << "[Engine] Camera target set to: (" 
-              << target.x << ", " << target.y << ", " << target.z << ")" << std::endl;
-    std::cout << "[Engine] Camera position: (" 
-              << cameraPos.x << ", " << cameraPos.y << ", " << cameraPos.z << ")" << std::endl;
-    std::cout << "[Engine] Camera front vector: (" 
-              << cameraFront.x << ", " << cameraFront.y << ", " << cameraFront.z << ")" << std::endl;
-    std::cout << "[Engine] Camera direction: (" 
-              << direction.x << ", " << direction.y << ", " << direction.z << ")" << std::endl;
 }
 
 void Engine::logDebugInfo(const std::string& message) {

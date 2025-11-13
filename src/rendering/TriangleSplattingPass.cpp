@@ -1875,9 +1875,8 @@ void TriangleSplattingPass::execute(vk::CommandBuffer cmd, uint32_t frameIndex) 
     }
     
     // ===== PHASE 1: Global depth sort (front-to-back) на видимых треугольниках =====
-    // ===== ВРЕМЕННО ОТКЛЮЧЕНО ДЛЯ ДИАГНОСТИКИ =====
-    std::cout << "[TriangleSplattingPass] DEBUG: Depth sorting DISABLED for testing\n";
-    // sortTrianglesByDepth(cmd);
+    std::cout << "[TriangleSplattingPass] 🔄 Running depth sort (front-to-back)...\n";
+    sortTrianglesByDepth(cmd);
 
     // Барьер: sortedIndicesBuffer_ write -> read (tile culling shader)
     {

@@ -199,15 +199,15 @@ Math::Matrix4 Camera3D::getProjectionMatrix() const {
 
 void Camera3D::updateProjectionMatrix() const {
     if (perspective) {
-        // Стандартная перспективная матрица OpenGL (праворукая, Z ∈ [-1, 1])
-        // Используем формулу, эквивалентную glm::perspectiveRH
+        // ИСПРАВЛЕНО: Vulkan perspective matrix (праворукая, Z ∈ [0, 1], Y-flip)
+        // Эквивалентно glm::perspectiveRH_ZO с GLM_FORCE_DEPTH_ZERO_TO_ONE
         const float tanHalfFov = tan(fieldOfView / 2.0f);
 
         projectionMatrix = Math::Matrix4::zero();
         projectionMatrix.m[0][0] = 1.0f / (aspectRatio * tanHalfFov);
-        projectionMatrix.m[1][1] = 1.0f / tanHalfFov;             // Без Y-flip
-        projectionMatrix.m[2][2] = -(farPlane + nearPlane) / (farPlane - nearPlane);
-        projectionMatrix.m[2][3] = -(2.0f * farPlane * nearPlane) / (farPlane - nearPlane);
+        projectionMatrix.m[1][1] = -1.0f / tanHalfFov;            // Y-flip для Vulkan (NDC Y вниз)
+        projectionMatrix.m[2][2] = farPlane / (nearPlane - farPlane);        // Vulkan Z ∈ [0,1]
+        projectionMatrix.m[2][3] = -(farPlane * nearPlane) / (farPlane - nearPlane);
         projectionMatrix.m[3][2] = -1.0f;
     } else {
         // Orthographic projection
