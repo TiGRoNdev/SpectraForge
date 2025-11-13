@@ -135,6 +135,16 @@ public:
     void resetCameraForSponza();
     
     /**
+     * @brief Установить позицию камеры
+     */
+    void setCameraPosition(const glm::vec3& pos);
+    
+    /**
+     * @brief Установить точку, на которую смотрит камера
+     */
+    void setCameraTarget(const glm::vec3& target);
+    
+    /**
      * @brief Логирование debug информации
      */
     void logDebugInfo(const std::string& message);

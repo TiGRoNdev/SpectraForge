@@ -927,6 +927,46 @@ void Engine::resetCameraForSponza() {
               << cameraPos.x << ", " << cameraPos.y << ", " << cameraPos.z << ")" << std::endl;
 }
 
+void Engine::setCameraPosition(const glm::vec3& pos) {
+    cameraPos = pos;
+    
+    if (renderCamera_) {
+        renderCamera_->setPosition(Math::Vector3(pos.x, pos.y, pos.z));
+        // Обновляем lookAt с текущим направлением
+        renderCamera_->lookAt(
+            Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z),
+            Math::Vector3(cameraPos.x + cameraFront.x, cameraPos.y + cameraFront.y, cameraPos.z + cameraFront.z),
+            Math::Vector3(0.0f, 1.0f, 0.0f)
+        );
+    }
+    
+    std::cout << "[Engine] Camera position set to: (" 
+              << pos.x << ", " << pos.y << ", " << pos.z << ")" << std::endl;
+}
+
+void Engine::setCameraTarget(const glm::vec3& target) {
+    // Вычисляем направление от позиции к цели
+    glm::vec3 direction = glm::normalize(target - cameraPos);
+    cameraFront = direction;
+    
+    // Вычисляем yaw и pitch из направления
+    yaw = glm::degrees(atan2(direction.z, direction.x));
+    pitch = glm::degrees(asin(direction.y));
+    
+    if (renderCamera_) {
+        renderCamera_->lookAt(
+            Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z),
+            Math::Vector3(target.x, target.y, target.z),
+            Math::Vector3(0.0f, 1.0f, 0.0f)
+        );
+    }
+    
+    std::cout << "[Engine] Camera target set to: (" 
+              << target.x << ", " << target.y << ", " << target.z << ")" << std::endl;
+    std::cout << "[Engine] Camera direction: (" 
+              << direction.x << ", " << direction.y << ", " << direction.z << ")" << std::endl;
+}
+
 void Engine::logDebugInfo(const std::string& message) {
     if (logger_) {
         logger_->logDebug("[DEBUG] " + message);

@@ -57,16 +57,10 @@ public:
             return false;
         }
 
-        // Позиционируем камеру чтобы видеть центр (0,0,0)
-        auto camera = engine_->getCamera();
-        if (camera) {
-            camera->setPosition({0.0f, 0.0f, 3.5f});
-            camera->setTarget({0.0f, 0.0f, 0.0f});
-            camera->setPerspective(60.0f,
-                                   static_cast<float>(cfg.window_width) / cfg.window_height,
-                                   0.1f,
-                                   100.0f);
-        }
+        // ВАЖНО: позиционируем камеру ПОСЛЕ load_scene, чтобы переопределить дефолтные значения
+        // Позиция немного сверху и сбоку для лучшего обзора на куб в центре (0,0,0)
+        engine_->setCameraPosition({2.0f, 1.5f, 4.0f});
+        engine_->setCameraTarget({0.0f, 0.0f, 0.0f});
 
         // Цвет фона через рендерер
         if (auto r = engine_->getRenderer()) {
