@@ -5,14 +5,17 @@
 
 #include "SpectraForge/Rendering/HybridFreGSRenderer.h"
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <set>
 #include <algorithm>
 #include <cstring>
+#include <filesystem>
 #include <X11/Xlib.h>
 #include <vulkan/vulkan_xlib.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace SpectraForge {
 namespace Rendering {
@@ -594,9 +597,10 @@ void HybridFreGSRenderer::recordCommandBuffer(vk::CommandBuffer commandBuffer, u
         
         // ===== DEBUG: Save frames for analysis =====
         static int frameSaveCounter = 0;
-        const int saveEveryNthFrame = 60; // Save every 60th frame (1 FPS at 60 FPS)
+        // Сохраняем первые несколько кадров для детального анализа
+        const int maxDebugFrames = 5;
 
-        if (frameSaveCounter % saveEveryNthFrame == 0) {
+        if (frameSaveCounter < maxDebugFrames) {
             // End current command buffer and submit (to complete rendering)
             commandBuffer.end();
 
@@ -606,12 +610,20 @@ void HybridFreGSRenderer::recordCommandBuffer(vk::CommandBuffer commandBuffer, u
             graphicsQueue_.submit(submitInfo, nullptr);
             graphicsQueue_.waitIdle();
 
-            // Generate unique filename
-            char filename[256];
-            snprintf(filename, sizeof(filename), "/home/tigron/Documents/GITHUB/SpectraForge/DEBUG_frame_%03d.png", frameSaveCounter / saveEveryNthFrame);
+            // Ensure debug output directory exists inside workspace
+            const std::filesystem::path debugDir = std::filesystem::path("/home/tigron/Documents/SpectraForge") / "debug_frames";
+            std::error_code fsErr;
+            std::filesystem::create_directories(debugDir, fsErr);
+            if (fsErr) {
+                std::cerr << "[HybridFreGSRenderer] ⚠️ Failed to create debug directory: " << fsErr.message() << std::endl;
+            }
 
-            // Save frame to file
-            triangleSplattingPass_->saveFrameToPNG(filename);
+            const auto pngPath = debugDir / std::string("frame_" + std::to_string(frameSaveCounter) + ".png");
+            const auto ppmPath = debugDir / std::string("frame_" + std::to_string(frameSaveCounter) + ".ppm");
+
+            // Save frame to file (both PNG for quick view and PPM for raw analysis)
+            triangleSplattingPass_->saveFrameToPNG(pngPath.string());
+            triangleSplattingPass_->saveFrameToPPM(ppmPath.string());
 
             // Restart command buffer
             vk::CommandBufferBeginInfo beginInfo;
@@ -1016,9 +1028,10 @@ bool HybridFreGSRenderer::createAllocator() {
 
 bool HybridFreGSRenderer::initializeTriangleSplatting() {
     // Create Triangle Splatting Pass
+    // ИСПРАВЛЕНО: Используем реальные размеры окна, а не swapchain (который может быть upscaled)
     spectraforge::rendering::TriangleSplattingPass::Config config;
-    config.outputWidth = swapchainExtent_.width;
-    config.outputHeight = swapchainExtent_.height;
+    config.outputWidth = 960;   // Фиксированное разрешение окна
+    config.outputHeight = 540;
     config.enableDepthSort = false;         // Отключаем для отладки
     config.enableEarlyTermination = false;  // Отключаем для отладки
     config.alphaThreshold = 0.99f;
@@ -1075,22 +1088,20 @@ HybridFreGSRenderer::convertMeshToTriangles(const Mesh3D& mesh, const Math::Matr
         
         // Create triangle
         spectraforge::rendering::TriangleSplattingPass::Triangle tri;
-        tri.v0 = glm::vec3(p0.x, p0.y, p0.z);
-        tri.v1 = glm::vec3(p1.x, p1.y, p1.z);
-        tri.v2 = glm::vec3(p2.x, p2.y, p2.z);
+        tri.v0 = glm::vec4(p0.x, p0.y, p0.z, 1.0f);
+        tri.v1 = glm::vec4(p1.x, p1.y, p1.z, 1.0f);
+        tri.v2 = glm::vec4(p2.x, p2.y, p2.z, 1.0f);
         
-        tri.texCoord0 = glm::vec2(v0.u, v0.v);
-        tri.texCoord1 = glm::vec2(v1.u, v1.v);
-        tri.texCoord2 = glm::vec2(v2.u, v2.v);
+        tri.texCoord0 = glm::vec4(v0.u, v0.v, 0.0f, 0.0f);
+        tri.texCoord1 = glm::vec4(v1.u, v1.v, 0.0f, 0.0f);
+        tri.texCoord2 = glm::vec4(v2.u, v2.v, 0.0f, 0.0f);
         
         // Average vertex colors
         Math::Vector3 avgColor = (v0.color + v1.color + v2.color) / 3.0f;
-        tri.color = glm::vec3(avgColor.x, avgColor.y, avgColor.z);
-        tri.opacity = 1.0f;
-        tri.sigma = 1.0f;  // Smoothness parameter
-        
-        tri.normal = glm::vec3(normal.x, normal.y, normal.z);
-        tri.materialId = 0;
+        tri.color = glm::vec4(avgColor.x, avgColor.y, avgColor.z, 1.0f);
+        tri.params = glm::vec4(1.0f, 1.0f, 0.0f, 0.0f);  // opacity=1.0, sigma=1.0
+        tri.normal = glm::vec4(normal.x, normal.y, normal.z, 0.0f);
+        tri.material = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);  // materialId=0
         
         triangles.push_back(tri);
     }
@@ -1178,8 +1189,9 @@ void HybridFreGSRenderer::enableBackfaceCulling(bool enable) {
     std::cout << "[HybridFreGSRenderer] Backface culling " << (enable ? "enabled" : "disabled") << std::endl;
 
     if (triangleSplattingPass_) {
-        // Совместимый путь: используем доступный свитч frustum culling как ближайший аналог
-        triangleSplattingPass_->setFrustumCullingEnabled(enable);
+        // ❗ ВАЖНО: Frustum culling должен оставаться ОТКЛЮЧЁННЫМ для диагностики
+        // Не включаем его вместе с backface culling
+        triangleSplattingPass_->setFrustumCullingEnabled(false);
     }
 }
 
@@ -1394,22 +1406,60 @@ glm::mat4 HybridFreGSRenderer::getCorrectedViewProjMatrix() const {
     if (!camera_) {
         return glm::mat4(1.0f);
     }
+    
     const auto& view = camera_->getViewMatrix();
     const auto& proj = camera_->getProjectionMatrix();
 
-    glm::mat4 viewGlm = glm::mat4(
+    // Конвертируем из row-major в column-major (транспонируем)
+    glm::mat4 viewGlm(
         view.m[0][0], view.m[1][0], view.m[2][0], view.m[3][0],
         view.m[0][1], view.m[1][1], view.m[2][1], view.m[3][1],
         view.m[0][2], view.m[1][2], view.m[2][2], view.m[3][2],
         view.m[0][3], view.m[1][3], view.m[2][3], view.m[3][3]
     );
-    glm::mat4 projGlm = glm::mat4(
+
+    glm::mat4 projGlm(
         proj.m[0][0], proj.m[1][0], proj.m[2][0], proj.m[3][0],
         proj.m[0][1], proj.m[1][1], proj.m[2][1], proj.m[3][1],
         proj.m[0][2], proj.m[1][2], proj.m[2][2], proj.m[3][2],
         proj.m[0][3], proj.m[1][3], proj.m[2][3], proj.m[3][3]
     );
-    return projGlm * viewGlm;
+    
+    // Матрица для конвертации из OpenGL NDC в Vulkan NDC (Y-flip и Z-convert)
+    glm::mat4 ndcConvert = glm::mat4(1.0f);
+    ndcConvert[1][1] = -1.0f;  // Flip Y
+    ndcConvert[2][2] = 0.5f;   // Scale Z from [-1,1] to [0,1]
+    ndcConvert[3][2] = 0.5f;   // Translate Z from [-1,1] to [0,1]
+    
+    glm::mat4 viewProj = ndcConvert * projGlm * viewGlm;
+    
+    // Debug: Выводим матрицу и тестовые NDC координаты для первого кадра
+    static bool firstFrame = true;
+    if (firstFrame) {
+        std::cout << "\n[HybridFreGSRenderer] View-Projection Matrix (with Y-flip):" << std::endl;
+        for (int row = 0; row < 4; row++) {
+            std::cout << "  [";
+            for (int col = 0; col < 4; col++) {
+                std::cout << std::fixed << std::setw(8) << std::setprecision(4) << viewProj[row][col];
+                if (col < 3) std::cout << ", ";
+            }
+            std::cout << "]" << std::endl;
+        }
+        
+        // Тестируем трансформацию точки (0, 0, -2.5) - центр куба после сдвига
+        glm::vec4 testPoint(0.0f, 0.0f, -2.5f, 1.0f);
+        glm::vec4 clip = viewProj * testPoint;
+        glm::vec3 ndc = glm::vec3(clip) / clip.w;
+        
+        std::cout << "\n[HybridFreGSRenderer] Test point (0, 0, -2.5):" << std::endl;
+        std::cout << "  Clip: (" << clip.x << ", " << clip.y << ", " << clip.z << ", " << clip.w << ")" << std::endl;
+        std::cout << "  NDC: (" << ndc.x << ", " << ndc.y << ", " << ndc.z << ")" << std::endl;
+        std::cout << "  Expected NDC range: X,Y ∈ [-1,1], Z ∈ [0,1] for Vulkan" << std::endl;
+        
+        firstFrame = false;
+    }
+
+    return viewProj;
 }
 
 } // namespace Rendering

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cstring>
 #include <cinttypes>
+#include <set>
 #include <SpectraForge/Rendering/Mesh3D.h>
 #include <SpectraForge/rendering/FrameOutput.h>
 #include <cmath>
@@ -72,11 +73,15 @@ bool TriangleSplattingPass::initialize(vk::Device device,
         return false;
     }
     
+    // ===== ВРЕМЕННО ОТКЛЮЧЕНО ДЛЯ ОТЛАДКИ =====
     // Создаём тайловый буфер ДО дескрипторов, чтобы избежать VK_NULL_HANDLE
+    std::cout << "[TriangleSplattingPass] ⚠️  DEBUG: Tile Culling temporarily disabled for debugging\n";
+    /* DISABLED FOR DEBUG
     if (!createTileCullingResources()) {
         std::cerr << "[TriangleSplattingPass] Failed to create Tile Culling resources\n";
         // Не критично: продолжим без тайлового биннинга
     }
+    */
 
     if (!createShaderModule()) {
         std::cerr << "[TriangleSplattingPass] Failed to create shader module\n";
@@ -111,11 +116,14 @@ bool TriangleSplattingPass::initialize(vk::Device device,
         return false;
     }
     
+    // ===== ВРЕМЕННО ОТКЛЮЧЕНО ДЛЯ ОТЛАДКИ =====
     // Create Tile Culling pipeline resources
+    /* DISABLED FOR DEBUG
     if (!createTileCullingPipelineResources()) {
         std::cerr << "[TriangleSplattingPass] Failed to create Tile Culling pipeline resources\n";
         // Продолжим без тайлового биннинга
     }
+    */
 
     // Create Indirect Args Compute resources
     if (!createIndirectArgsResources()) {
@@ -462,6 +470,9 @@ bool TriangleSplattingPass::createBuffers() {
     }
     
     triangleBuffer_ = vk::Buffer(vkTriangleBuffer);
+    
+    std::cout << "[TriangleSplattingPass] 🔍 Triangle buffer CREATED in initialize(): " << triangleBuffer_ 
+              << " (size: " << (sizeof(Triangle) * maxTriangles_ / 1024) << " KB)\n";
     
     // Create sorted indices buffer (SSBO)
     vk::BufferCreateInfo indicesBufferInfo;
@@ -819,10 +830,13 @@ bool TriangleSplattingPass::createDescriptorSets() {
     // Update descriptor set
     std::array<vk::WriteDescriptorSet, 6> writes;
     
-    // Output image
+    // Output image (binding 0)
     vk::DescriptorImageInfo imageInfo;
     imageInfo.imageView = outputImageView_;
     imageInfo.imageLayout = vk::ImageLayout::eGeneral;
+    
+    std::cout << "[TriangleSplattingPass] 🔗 BINDING output image - imageView=" << outputImageView_ 
+              << " (from outputImage_=" << outputImage_ << ")\n";
     
     writes[0].dstSet = descriptorSet_;
     writes[0].dstBinding = 0;
@@ -836,6 +850,8 @@ bool TriangleSplattingPass::createDescriptorSets() {
     triangleBufferInfo.buffer = triangleBuffer_;
     triangleBufferInfo.offset = 0;
     triangleBufferInfo.range = VK_WHOLE_SIZE;
+    
+    std::cout << "[TriangleSplattingPass] 🔗 BINDING descriptor set - triangleBuffer_=" << triangleBuffer_ << "\n";
     
     writes[1].dstSet = descriptorSet_;
     writes[1].dstBinding = 1;
@@ -1071,13 +1087,14 @@ void TriangleSplattingPass::uploadTriangles(const std::vector<Triangle>& triangl
         return;
     }
 
+    uint32_t inputTriangleCount;
     if (triangles.size() > maxTriangles_) {
         std::cerr << "[TriangleSplattingPass] CRITICAL: Triangle count " << triangles.size()
                   << " exceeds buffer capacity " << maxTriangles_ << "!" << std::endl;
-        triangleCount_ = maxTriangles_;
+        inputTriangleCount = maxTriangles_;
         std::cerr << "[TriangleSplattingPass] Using truncated count: " << maxTriangles_ << std::endl;
     } else {
-        triangleCount_ = static_cast<uint32_t>(triangles.size());
+        inputTriangleCount = static_cast<uint32_t>(triangles.size());
     }
 
     // Validate triangle data
@@ -1090,8 +1107,8 @@ void TriangleSplattingPass::uploadTriangles(const std::vector<Triangle>& triangl
         isValid &= std::isfinite(tri.v1.x) && std::isfinite(tri.v1.y) && std::isfinite(tri.v1.z);
         isValid &= std::isfinite(tri.v2.x) && std::isfinite(tri.v2.y) && std::isfinite(tri.v2.z);
         isValid &= std::isfinite(tri.color.r) && std::isfinite(tri.color.g) && std::isfinite(tri.color.b);
-        isValid &= std::isfinite(tri.opacity) && tri.opacity >= 0.0f && tri.opacity <= 1.0f;
-        isValid &= std::isfinite(tri.sigma) && tri.sigma > 0.0f;
+        isValid &= std::isfinite(tri.params.x) && tri.params.x >= 0.0f && tri.params.x <= 1.0f; // opacity
+        isValid &= std::isfinite(tri.params.y) && tri.params.y > 0.0f; // sigma
         if (!isValid) {
             std::cerr << "[TriangleSplattingPass] WARNING: Invalid triangle " << i << " detected and skipped" << std::endl;
         } else {
@@ -1106,12 +1123,26 @@ void TriangleSplattingPass::uploadTriangles(const std::vector<Triangle>& triangl
         return;
     }
 
-    std::cout << "[TriangleSplattingPass] Uploading " << validTriangles << " valid triangles to GPU..." << std::endl;
-    pushConstants_.triangleCount = validTriangles;
+    // ИСПРАВЛЕНО: triangleCount_ и pushConstants_.triangleCount должны быть синхронизированы
+    triangleCount_ = inputTriangleCount;  // Используем все входные треугольники (включая невалидные для буфера)
+    pushConstants_.triangleCount = inputTriangleCount;  // Шейдер должен обработать все треугольники
+    
+    // КРИТИЧНО: Проверяем размер структуры!
+    static bool sizeReported = false;
+    if (!sizeReported) {
+        sizeReported = true;
+        std::cout << "[TriangleSplattingPass] sizeof(Triangle) = " << sizeof(Triangle) << " bytes\n";
+        std::cout << "[TriangleSplattingPass]   Expected: 160 bytes for std430 shader compatibility\n";
+        if (sizeof(Triangle) != 160) {
+            std::cerr << "[TriangleSplattingPass] ⚠️  ERROR: Structure size mismatch! Expected 160, got " << sizeof(Triangle) << "! GPU/CPU data will be corrupted!\n";
+        }
+    }
+    
+    std::cout << "[TriangleSplattingPass] Uploading " << inputTriangleCount << " triangles to GPU (" << validTriangles << " valid after validation)...\n";
     
     // Create staging buffer
     vk::BufferCreateInfo stagingBufferInfo;
-    stagingBufferInfo.size = sizeof(Triangle) * triangleCount_;
+    stagingBufferInfo.size = sizeof(Triangle) * inputTriangleCount;
     stagingBufferInfo.usage = vk::BufferUsageFlagBits::eTransferSrc;
     stagingBufferInfo.sharingMode = vk::SharingMode::eExclusive;
     
@@ -1140,17 +1171,22 @@ void TriangleSplattingPass::uploadTriangles(const std::vector<Triangle>& triangl
     }
     
     // Copy data to staging buffer
-    std::memcpy(allocInfo.pMappedData, triangles.data(), sizeof(Triangle) * triangleCount_);
+    std::memcpy(allocInfo.pMappedData, triangles.data(), sizeof(Triangle) * inputTriangleCount);
     
-    // Create identity sorted indices (0, 1, 2, ...)
-    std::vector<uint32_t> indices(triangleCount_);
-    for (uint32_t i = 0; i < triangleCount_; ++i) {
-        indices[i] = i;
+    // ИСПРАВЛЕНО: Create identity sorted indices padded to power of 2 for bitonic sort
+    // Bitonic sort требует степень двойки элементов, padding заполняется 0xFFFFFFFF
+    uint32_t paddedCount = nextPowerOfTwo(inputTriangleCount);
+    std::vector<uint32_t> indices(paddedCount, 0xFFFFFFFFu);  // Fill with sentinel value
+    for (uint32_t i = 0; i < inputTriangleCount; ++i) {
+        indices[i] = i;  // Valid indices
     }
     
-    // Upload indices via staging buffer
+    std::cout << "[TriangleSplattingPass] Created indices: " << inputTriangleCount 
+              << " valid, padded to " << paddedCount << " for bitonic sort\n";
+    
+    // Upload indices via staging buffer (padded size)
     vk::BufferCreateInfo indicesStagingInfo;
-    indicesStagingInfo.size = sizeof(uint32_t) * triangleCount_;
+    indicesStagingInfo.size = sizeof(uint32_t) * paddedCount;
     indicesStagingInfo.usage = vk::BufferUsageFlagBits::eTransferSrc;
     indicesStagingInfo.sharingMode = vk::SharingMode::eExclusive;
     
@@ -1175,7 +1211,7 @@ void TriangleSplattingPass::uploadTriangles(const std::vector<Triangle>& triangl
         return;
     }
     
-    std::memcpy(indicesAllocInfo.pMappedData, indices.data(), sizeof(uint32_t) * triangleCount_);
+    std::memcpy(indicesAllocInfo.pMappedData, indices.data(), sizeof(uint32_t) * paddedCount);
     
     // ===== GPU UPLOAD USING COMMAND BUFFER =====
     
@@ -1193,18 +1229,22 @@ void TriangleSplattingPass::uploadTriangles(const std::vector<Triangle>& triangl
     beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
     cmd.begin(beginInfo);
     
-    // Copy staging → device (triangles)
-    vk::BufferCopy triangleCopyRegion;
-    triangleCopyRegion.srcOffset = 0;
-    triangleCopyRegion.dstOffset = 0;
-    triangleCopyRegion.size = sizeof(Triangle) * triangleCount_;
-    cmd.copyBuffer(vk::Buffer(vkStagingBuffer), triangleBuffer_, 1, &triangleCopyRegion);
+    // Copy staging -> GPU
+    vk::BufferCopy copyRegion;
+    copyRegion.srcOffset = 0;
+    copyRegion.dstOffset = 0;
+    copyRegion.size = sizeof(Triangle) * inputTriangleCount;
     
-    // Copy staging → device (indices)
+    std::cout << "[TriangleSplattingPass] 📋 Copying " << (sizeof(Triangle) * inputTriangleCount) 
+              << " bytes TO triangleBuffer_=" << triangleBuffer_ << "\n";
+    
+    cmd.copyBuffer(vk::Buffer(vkStagingBuffer), triangleBuffer_, 1, &copyRegion);
+    
+    // Copy staging -> device (indices) - copy full padded array
     vk::BufferCopy indicesCopyRegion;
     indicesCopyRegion.srcOffset = 0;
     indicesCopyRegion.dstOffset = 0;
-    indicesCopyRegion.size = sizeof(uint32_t) * triangleCount_;
+    indicesCopyRegion.size = sizeof(uint32_t) * paddedCount;
     cmd.copyBuffer(vk::Buffer(vkIndicesStaging), sortedIndicesBuffer_, 1, &indicesCopyRegion);
     
     // Buffer barriers для compute shader access
@@ -1239,23 +1279,329 @@ void TriangleSplattingPass::uploadTriangles(const std::vector<Triangle>& triangl
     
     cmd.end();
     
-    // Submit command buffer
+    // Submit and wait (with fence)
+    vk::FenceCreateInfo fenceInfo;
+    vk::Fence uploadFence = device_.createFence(fenceInfo);
+    
     vk::SubmitInfo submitInfo;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &cmd;
+    graphicsQueue_.submit(submitInfo, uploadFence);
     
-    graphicsQueue_.submit(submitInfo, nullptr);  // Use graphics queue for staging buffer copies
-    graphicsQueue_.waitIdle(); // Synchronous upload
+    vk::Result waitResult = device_.waitForFences(1, &uploadFence, VK_TRUE, UINT64_MAX);
+    std::cout << "[TriangleSplattingPass] ✅ Upload fence signaled (result=" << vk::to_string(waitResult) << ")\n";
+    
+    device_.destroyFence(uploadFence);
+    graphicsQueue_.waitIdle();
     
     // Free command buffer
     device_.freeCommandBuffers(commandPool_, cmdBuffers);
     
-    // Cleanup staging buffers
-    vmaDestroyBuffer(allocator_, vkStagingBuffer, stagingAllocation);
-    vmaDestroyBuffer(allocator_, vkIndicesStaging, indicesStagingAlloc);
+    // ===== 🔬 КРИТИЧЕСКАЯ ДИАГНОСТИКА: GPU BUFFER READBACK =====
+    // Читаем первый треугольник обратно с GPU для сравнения
+    static bool triangleReadbackDone = false;
+    if (!triangleReadbackDone && inputTriangleCount > 0) {
+        triangleReadbackDone = true;
+        
+        std::cout << "\n🔬 [GPU READBACK] Reading first triangle from GPU...\n";
+        
+        // Создаем readback buffer для одного треугольника
+        vk::BufferCreateInfo triReadbackInfo;
+        triReadbackInfo.size = sizeof(Triangle);
+        triReadbackInfo.usage = vk::BufferUsageFlagBits::eTransferDst;
+        triReadbackInfo.sharingMode = vk::SharingMode::eExclusive;
+        
+        VmaAllocationCreateInfo triReadbackAllocInfo{};
+        triReadbackAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+        triReadbackAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        
+        VkBuffer vkTriReadbackBuffer;
+        VmaAllocation triReadbackAllocation;
+        VmaAllocationInfo triReadbackAllocInfoResult;
+        
+        VkBufferCreateInfo vkTriReadbackInfo = static_cast<VkBufferCreateInfo>(triReadbackInfo);
+        
+        VkResult triReadbackResult = vmaCreateBuffer(
+            allocator_,
+            &vkTriReadbackInfo,
+            &triReadbackAllocInfo,
+            &vkTriReadbackBuffer,
+            &triReadbackAllocation,
+            &triReadbackAllocInfoResult
+        );
+        
+        if (triReadbackResult == VK_SUCCESS) {
+            // Создаем command buffer для копирования
+            auto readbackCmdBuffers = device_.allocateCommandBuffers(cmdAllocInfo);
+            vk::CommandBuffer readbackCmd = readbackCmdBuffers[0];
+            
+            vk::CommandBufferBeginInfo readbackBeginInfo;
+            readbackBeginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+            readbackCmd.begin(readbackBeginInfo);
+            
+            // Копируем первый треугольник GPU -> readback buffer
+            vk::BufferCopy copyRegion;
+            copyRegion.srcOffset = 0;
+            copyRegion.dstOffset = 0;
+            copyRegion.size = sizeof(Triangle);
+            readbackCmd.copyBuffer(triangleBuffer_, vk::Buffer(vkTriReadbackBuffer), 1, &copyRegion);
+            
+            readbackCmd.end();
+            
+            // Submit и wait
+            vk::SubmitInfo readbackSubmitInfo;
+            readbackSubmitInfo.commandBufferCount = 1;
+            readbackSubmitInfo.pCommandBuffers = &readbackCmd;
+            graphicsQueue_.submit(readbackSubmitInfo, nullptr);
+            graphicsQueue_.waitIdle();
+            
+            // Читаем данные
+            unsigned char* gpuData = (unsigned char*)triReadbackAllocInfoResult.pMappedData;
+            
+            std::cout << "📊 [GPU READBACK] First triangle RAW BYTES from GPU (first 160 bytes):\n";
+            for (int i = 0; i < 160; i += 16) {
+                printf("  %3d: ", i);
+                for (int j = 0; j < 16 && (i+j) < 160; j++) {
+                    printf("%02X ", gpuData[i+j]);
+                }
+                printf("\n");
+            }
+            
+            // Сравним с оригинальными данными
+            unsigned char* cpuData = (unsigned char*)triangles.data();
+            bool match = true;
+            for (size_t i = 0; i < sizeof(Triangle); ++i) {
+                if (gpuData[i] != cpuData[i]) {
+                    if (match) {
+                        std::cout << "\n❌ [GPU READBACK] MISMATCH FOUND! Differences:\n";
+                        match = false;
+                    }
+                    if (i < 20 || (i >= 96 && i < 132)) { // Показываем первые 20 и область color/opacity/sigma/normal
+                        printf("  Offset %3zu: CPU=%02X GPU=%02X\n", i, cpuData[i], gpuData[i]);
+                    }
+                }
+            }
+            
+            if (match) {
+                std::cout << "✅ [GPU READBACK] DATA MATCH! GPU и CPU данные идентичны!\n";
+            }
+            
+            // Cleanup
+            device_.freeCommandBuffers(commandPool_, readbackCmdBuffers);
+            vmaDestroyBuffer(allocator_, vkTriReadbackBuffer, triReadbackAllocation);
+        } else {
+            std::cerr << "❌ [GPU READBACK] Failed to create readback buffer\n";
+        }
+        
+        std::cout << "\n";
+    }
     
-    std::cout << "[TriangleSplattingPass] Uploaded " << triangleCount_ 
-              << " triangles to GPU\n";
+    // ===== ДИАГНОСТИКА: CPU readback sortedIndices (только первый раз) =====
+    static bool diagnosticDone = false;
+    if (!diagnosticDone) {
+        diagnosticDone = true;
+        
+    // Создаем readback staging buffer
+    vk::BufferCreateInfo readbackBufferInfo;
+    readbackBufferInfo.size = sizeof(uint32_t) * paddedCount;
+    readbackBufferInfo.usage = vk::BufferUsageFlagBits::eTransferDst;
+    readbackBufferInfo.sharingMode = vk::SharingMode::eExclusive;
+    
+    VmaAllocationCreateInfo readbackAllocInfo{};
+    readbackAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+    readbackAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    
+    VkBuffer vkReadbackBuffer;
+    VmaAllocation readbackAllocation;
+    VmaAllocationInfo readbackAllocInfoResult;
+    
+    VkBufferCreateInfo vkReadbackBufferInfo = static_cast<VkBufferCreateInfo>(readbackBufferInfo);
+    
+    VkResult readbackResult = vmaCreateBuffer(
+        allocator_,
+        &vkReadbackBufferInfo,
+        &readbackAllocInfo,
+        &vkReadbackBuffer,
+        &readbackAllocation,
+        &readbackAllocInfoResult
+    );
+    
+    if (readbackResult == VK_SUCCESS) {
+        // Создаем command buffer для копирования
+        auto readbackCmdBuffers = device_.allocateCommandBuffers(cmdAllocInfo);
+        vk::CommandBuffer readbackCmd = readbackCmdBuffers[0];
+        
+        vk::CommandBufferBeginInfo readbackBeginInfo;
+        readbackBeginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+        readbackCmd.begin(readbackBeginInfo);
+        
+        // Copy GPU -> staging
+        vk::BufferCopy readbackCopy;
+        readbackCopy.srcOffset = 0;
+        readbackCopy.dstOffset = 0;
+        readbackCopy.size = sizeof(uint32_t) * paddedCount;
+        readbackCmd.copyBuffer(sortedIndicesBuffer_, vk::Buffer(vkReadbackBuffer), 1, &readbackCopy);
+        
+        readbackCmd.end();
+        
+        // Submit и wait
+        vk::SubmitInfo readbackSubmitInfo;
+        readbackSubmitInfo.commandBufferCount = 1;
+        readbackSubmitInfo.pCommandBuffers = &readbackCmd;
+        graphicsQueue_.submit(readbackSubmitInfo, nullptr);
+        graphicsQueue_.waitIdle();
+        
+        // Читаем данные
+        uint32_t* readbackData = static_cast<uint32_t*>(readbackAllocInfoResult.pMappedData);
+        std::cout << "[TriangleSplattingPass] 🔍 ДИАГНОСТИКА: sortedIndices содержимое:\n";
+        std::cout << "  Первые " << std::min(20u, paddedCount) << " элементов: [";
+        for (uint32_t i = 0; i < std::min(20u, paddedCount); ++i) {
+            if (i > 0) std::cout << ", ";
+            if (readbackData[i] == 0xFFFFFFFFu) {
+                std::cout << "SENTINEL";
+            } else {
+                std::cout << readbackData[i];
+            }
+        }
+        std::cout << "]\n";
+        
+        // Подсчитываем уникальные значения
+        std::set<uint32_t> uniqueValues;
+        for (uint32_t i = 0; i < inputTriangleCount; ++i) {
+            if (readbackData[i] != 0xFFFFFFFFu) {
+                uniqueValues.insert(readbackData[i]);
+            }
+        }
+        std::cout << "  Уникальных валидных индексов: " << uniqueValues.size() << " (ожидается " << inputTriangleCount << ")\n";
+        
+        // Cleanup
+        device_.freeCommandBuffers(commandPool_, readbackCmdBuffers);
+        vmaDestroyBuffer(allocator_, vkReadbackBuffer, readbackAllocation);
+    } else {
+        std::cerr << "[TriangleSplattingPass] ⚠️ Failed to create readback buffer for diagnostics\n";
+    }
+    } // конец if (!diagnosticDone)
+    // ===== КОНЕЦ ДИАГНОСТИКИ =====
+    
+// ===== ДИАГНОСТИКА: CPU readback sortedIndices (только первый раз) =====
+static bool diagnosticDone2 = false;
+if (!diagnosticDone2) {
+    diagnosticDone2 = true;
+        
+// Создаем readback staging buffer
+vk::BufferCreateInfo readbackBufferInfo;
+readbackBufferInfo.size = sizeof(uint32_t) * paddedCount;
+readbackBufferInfo.usage = vk::BufferUsageFlagBits::eTransferDst;
+readbackBufferInfo.sharingMode = vk::SharingMode::eExclusive;
+    
+VmaAllocationCreateInfo readbackAllocInfo{};
+readbackAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+readbackAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    
+VkBuffer vkReadbackBuffer;
+VmaAllocation readbackAllocation;
+VmaAllocationInfo readbackAllocInfoResult;
+    
+VkBufferCreateInfo vkReadbackBufferInfo = static_cast<VkBufferCreateInfo>(readbackBufferInfo);
+    
+VkResult readbackResult = vmaCreateBuffer(
+    allocator_,
+    &vkReadbackBufferInfo,
+    &readbackAllocInfo,
+    &vkReadbackBuffer,
+    &readbackAllocation,
+    &readbackAllocInfoResult
+);
+    
+if (readbackResult == VK_SUCCESS) {
+    // Создаем command buffer для копирования
+    auto readbackCmdBuffers = device_.allocateCommandBuffers(cmdAllocInfo);
+    vk::CommandBuffer readbackCmd = readbackCmdBuffers[0];
+        
+    vk::CommandBufferBeginInfo readbackBeginInfo;
+    readbackBeginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+    readbackCmd.begin(readbackBeginInfo);
+        
+    // Copy GPU -> staging
+    vk::BufferCopy readbackCopy;
+    readbackCopy.srcOffset = 0;
+    readbackCopy.dstOffset = 0;
+    readbackCopy.size = sizeof(uint32_t) * paddedCount;
+    readbackCmd.copyBuffer(sortedIndicesBuffer_, vk::Buffer(vkReadbackBuffer), 1, &readbackCopy);
+        
+    readbackCmd.end();
+        
+    // Submit и wait
+    vk::SubmitInfo readbackSubmitInfo;
+    readbackSubmitInfo.commandBufferCount = 1;
+    readbackSubmitInfo.pCommandBuffers = &readbackCmd;
+    graphicsQueue_.submit(readbackSubmitInfo, nullptr);
+    graphicsQueue_.waitIdle();
+        
+    // Читаем данные
+    uint32_t* readbackData = static_cast<uint32_t*>(readbackAllocInfoResult.pMappedData);
+    std::cout << "[TriangleSplattingPass] 🔍 ДИАГНОСТИКА: sortedIndices содержимое:\n";
+    std::cout << "  Первые " << std::min(20u, paddedCount) << " элементов: [";
+    for (uint32_t i = 0; i < std::min(20u, paddedCount); ++i) {
+        if (i > 0) std::cout << ", ";
+        if (readbackData[i] == 0xFFFFFFFFu) {
+            std::cout << "SENTINEL";
+        } else {
+            std::cout << readbackData[i];
+        }
+    }
+    std::cout << "]\n";
+        
+    // Подсчитываем уникальные значения
+    std::set<uint32_t> uniqueValues;
+    for (uint32_t i = 0; i < inputTriangleCount; ++i) {
+        if (readbackData[i] != 0xFFFFFFFFu) {
+            uniqueValues.insert(readbackData[i]);
+        }
+    }
+    std::cout << "  Уникальных валидных индексов: " << uniqueValues.size() << " (ожидается " << inputTriangleCount << ")\n";
+        
+    // Cleanup
+    device_.freeCommandBuffers(commandPool_, readbackCmdBuffers);
+    vmaDestroyBuffer(allocator_, vkReadbackBuffer, readbackAllocation);
+} else {
+    std::cerr << "[TriangleSplattingPass] ⚠️ Failed to create readback buffer for diagnostics\n";
+}
+} // конец if (!diagnosticDone)
+// ===== КОНЕЦ ДИАГНОСТИКИ =====
+
+// Cleanup staging buffers
+vmaDestroyBuffer(allocator_, vkStagingBuffer, stagingAllocation);
+vmaDestroyBuffer(allocator_, vkIndicesStaging, indicesStagingAlloc);
+
+// 🔥 КРИТИЧНО: Обновляем дескрипторы ПОСЛЕ загрузки данных
+// Descriptor set был создан в initialize() когда buffer был ПУСТЫМ
+// Теперь buffer заполнен данными, нужно ПЕРЕСОЗДАТЬ привязку!
+static bool firstUpload = true;
+if (firstUpload) {
+    firstUpload = false;
+    std::cout << "[TriangleSplattingPass] 🔄 REBINDING descriptors after first data upload...\n";
+    
+    // Просто обновляем binding 1 (triangle buffer) чтобы GPU увидел заполненный buffer
+    vk::DescriptorBufferInfo triangleBufferInfo;
+    triangleBufferInfo.buffer = triangleBuffer_;
+    triangleBufferInfo.offset = 0;
+    triangleBufferInfo.range = VK_WHOLE_SIZE;
+    
+    vk::WriteDescriptorSet write{};
+    write.dstSet = descriptorSet_;
+    write.dstBinding = 1;
+    write.dstArrayElement = 0;
+    write.descriptorCount = 1;
+    write.descriptorType = vk::DescriptorType::eStorageBuffer;
+    write.pBufferInfo = &triangleBufferInfo;
+    
+    device_.updateDescriptorSets(1, &write, 0, nullptr);
+    
+    std::cout << "[TriangleSplattingPass] ✅ Triangle buffer descriptor REBOUND!\n";
+}
+
+std::cout << "[TriangleSplattingPass] Uploaded " << inputTriangleCount << " triangles to GPU\n";
 }
 
 std::vector<TriangleSplattingPass::Triangle> 
@@ -1284,31 +1630,28 @@ TriangleSplattingPass::convertMeshToTriangles(const SpectraForge::Rendering::Mes
         
         // Create triangle
         Triangle tri;
-        tri.v0 = glm::vec3(v0.position.x, v0.position.y, v0.position.z);
-        tri.v1 = glm::vec3(v1.position.x, v1.position.y, v1.position.z);
-        tri.v2 = glm::vec3(v2.position.x, v2.position.y, v2.position.z);
+        tri.v0 = glm::vec4(v0.position.x, v0.position.y, v0.position.z, 1.0f);
+        tri.v1 = glm::vec4(v1.position.x, v1.position.y, v1.position.z, 1.0f);
+        tri.v2 = glm::vec4(v2.position.x, v2.position.y, v2.position.z, 1.0f);
         
-        tri.texCoord0 = glm::vec2(v0.u, v0.v);
-        tri.texCoord1 = glm::vec2(v1.u, v1.v);
-        tri.texCoord2 = glm::vec2(v2.u, v2.v);
+        tri.texCoord0 = glm::vec4(v0.u, v0.v, 0.0f, 0.0f);
+        tri.texCoord1 = glm::vec4(v1.u, v1.v, 0.0f, 0.0f);
+        tri.texCoord2 = glm::vec4(v2.u, v2.v, 0.0f, 0.0f);
         
         // Average vertex colors
         glm::vec3 avgColor = (glm::vec3(v0.color.x, v0.color.y, v0.color.z) +
                              glm::vec3(v1.color.x, v1.color.y, v1.color.z) +
                              glm::vec3(v2.color.x, v2.color.y, v2.color.z)) / 3.0f;
-        tri.color = avgColor;
-        tri.opacity = 1.0f;
-        tri.sigma = sigma;
+        tri.color = glm::vec4(avgColor, 1.0f);
+        tri.params = glm::vec4(1.0f, sigma, 0.0f, 0.0f); // opacity, sigma
         
         // Calculate face normal (average of vertex normals)
         glm::vec3 normal = (glm::vec3(v0.normal.x, v0.normal.y, v0.normal.z) +
                            glm::vec3(v1.normal.x, v1.normal.y, v1.normal.z) +
                            glm::vec3(v2.normal.x, v2.normal.y, v2.normal.z)) / 3.0f;
-        tri.normal = glm::normalize(normal);
+        tri.normal = glm::vec4(glm::normalize(normal), 0.0f);
         
-        tri.materialId = 0; // Default material
-        tri.padding[0] = 0.0f;
-        tri.padding[1] = 0.0f;
+        tri.material = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f); // materialId as float
         
         triangles.push_back(tri);
     }
@@ -1468,6 +1811,7 @@ void TriangleSplattingPass::execute(vk::CommandBuffer cmd, uint32_t frameIndex) 
     if (!firstFrameLogged) {
         std::cout << "[TriangleSplattingPass] ✅ Начинаем рендеринг " << triangleCount_ 
                   << " треугольников\n";
+        std::cout << "[TriangleSplattingPass]   pushConstants_.triangleCount: " << pushConstants_.triangleCount << "\n";
         std::cout << "[TriangleSplattingPass]   Разрешение: " << config_.outputWidth 
                   << "x" << config_.outputHeight << "\n";
         std::cout << "[TriangleSplattingPass]   Depth Sort: " 
@@ -1476,6 +1820,10 @@ void TriangleSplattingPass::execute(vk::CommandBuffer cmd, uint32_t frameIndex) 
                   << (config_.enableEarlyTermination ? "ON" : "OFF") << "\n";
         std::cout << "[TriangleSplattingPass]   Frustum Culling: " 
                   << (enableFrustumCulling_ ? "ON" : "OFF") << "\n";
+        std::cout << "[TriangleSplattingPass]   Tile Binning: " 
+                  << (pushConstants_.enableTileBinning ? "ON" : "OFF") << "\n";
+        std::cout << "[TriangleSplattingPass]   Two-Pass Rendering: " 
+                  << (config_.enableTwoPassRendering ? "ON" : "OFF") << "\n";
         firstFrameLogged = true;
     }
     
@@ -1527,7 +1875,9 @@ void TriangleSplattingPass::execute(vk::CommandBuffer cmd, uint32_t frameIndex) 
     }
     
     // ===== PHASE 1: Global depth sort (front-to-back) на видимых треугольниках =====
-    sortTrianglesByDepth(cmd);
+    // ===== ВРЕМЕННО ОТКЛЮЧЕНО ДЛЯ ДИАГНОСТИКИ =====
+    std::cout << "[TriangleSplattingPass] DEBUG: Depth sorting DISABLED for testing\n";
+    // sortTrianglesByDepth(cmd);
 
     // Барьер: sortedIndicesBuffer_ write -> read (tile culling shader)
     {
@@ -1550,6 +1900,10 @@ void TriangleSplattingPass::execute(vk::CommandBuffer cmd, uint32_t frameIndex) 
     }
 
     // ===== PHASE 0.5: Tile Culling (enable tile binning) =====
+    // ===== ВРЕМЕННО ОТКЛЮЧЕНО ДЛЯ ОТЛАДКИ =====
+    std::cout << "[TriangleSplattingPass] DEBUG: Tile Culling disabled, using direct triangle processing\n";
+    pushConstants_.enableTileBinning = 0u;  // Force disable tile binning
+    /* DISABLED FOR DEBUG
     if (tileCullingBuffer_ && tileCullingPipeline_) {
         cmd.bindPipeline(vk::PipelineBindPoint::eCompute, tileCullingPipeline_);
         cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, tileCullingPipelineLayout_, 0, 1, &tileCullingDescriptorSet_, 0, nullptr);
@@ -1592,6 +1946,7 @@ void TriangleSplattingPass::execute(vk::CommandBuffer cmd, uint32_t frameIndex) 
 
         pushConstants_.enableTileBinning = 1u;
     }
+    */
 
     // Frustum culling уже выполнен в PHASE 0, удаляем дублирование
     
@@ -1613,7 +1968,15 @@ void TriangleSplattingPass::execute(vk::CommandBuffer cmd, uint32_t frameIndex) 
     // Dispatch compute shader (16x16 local size)
     uint32_t groupsX = (config_.outputWidth + 15) / 16;
     uint32_t groupsY = (config_.outputHeight + 15) / 16;
+    
+    std::cout << "[TriangleSplattingPass] 🚀 DISPATCHING shader: " << groupsX << "x" << groupsY 
+              << " groups (resolution=" << config_.outputWidth << "x" << config_.outputHeight << ")\n";
+    std::cout << "[TriangleSplattingPass]    outputImage_=" << outputImage_ << " layout=GENERAL\n";
+    std::cout << "[TriangleSplattingPass]    triangleCount=" << pushConstants_.triangleCount << "\n";
+    
     cmd.dispatch(groupsX, groupsY, 1);
+    
+    std::cout << "[TriangleSplattingPass] ✅ Dispatch completed, adding barrier...\n";
     
     // Barrier after compute (memory dependency for subsequent reads)
     vk::ImageMemoryBarrier barrier;
@@ -1974,10 +2337,14 @@ void TriangleSplattingPass::computeDepthKeys(vk::CommandBuffer cmd, const glm::v
     cmd.bindPipeline(vk::PipelineBindPoint::eCompute, depthKeyComputePipeline_);
     cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, depthKeyComputePipelineLayout_, 0, 1, &depthKeyComputeDescriptorSet_, 0, nullptr);
     
+    // ИСПРАВЛЕНО: Dispatch с padded размером для инициализации всех элементов
+    // Bitonic sort требует степень двойки, поэтому нужно инициализировать padding
+    uint32_t paddedCount = nextPowerOfTwo(triangleCount_);
+    
     // Push constants (unified)
     UnifiedPushConstants dkpc = pushConstants_;
     (void)cameraPos;
-    dkpc.triangleCount = triangleCount_;
+    dkpc.triangleCount = triangleCount_;  // Реальное количество треугольников
     cmd.pushConstants(depthKeyComputePipelineLayout_, vk::ShaderStageFlagBits::eCompute, 0, 96, &dkpc);
     
     // Dispatch
@@ -1985,9 +2352,12 @@ void TriangleSplattingPass::computeDepthKeys(vk::CommandBuffer cmd, const glm::v
         // Use indirect dispatch (workgroup count computed by IndirectArgsCompute)
         cmd.dispatchIndirect(indirectDispatchBuffer_, 0);
     } else {
-        // Direct dispatch (all triangles)
-        uint32_t groupCount = (triangleCount_ + 255) / 256;
+        // Direct dispatch - используем paddedCount для инициализации всех элементов
+        uint32_t groupCount = (paddedCount + 255) / 256;
         cmd.dispatch(groupCount, 1, 1);
+        
+        std::cout << "[TriangleSplattingPass] DepthKey dispatch: " << triangleCount_ 
+                  << " triangles, padded to " << paddedCount << " (" << groupCount << " groups)\n";
     }
     
     // Memory barrier (depth keys must be ready before sorting)

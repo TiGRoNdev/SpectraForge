@@ -26,21 +26,23 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 // Output image (RGBA16F)
 layout(binding = 0, rgba16f) uniform image2D outImage;
 
-// Triangle data (SSBO)
-struct Triangle {
-    vec3 v0, v1, v2; // Vertices (world space)
-    vec2 texCoord0, texCoord1, texCoord2; // Texture coordinates per vertex
-    vec3 color; // RGB color
-    float opacity; // Alpha
-    float sigma; // Smoothness parameter
-    vec3 normal; // Face normal (for lighting)
-    int materialId; // Material index for texture lookup
-    float padding[2]; // Alignment to 96 bytes
+// Triangle data (SSBO) - std430 layout с EXPLICIT offsets для 100% гарантии
+layout(binding = 1, std430) readonly buffer TriangleBuffer {
+    // Используем flat layout вместо struct чтобы избежать любых проблем с padding
+    vec4 data[];  // Raw vec4 array
 };
 
-layout(binding = 1, std430) readonly buffer TriangleBuffer {
-    Triangle triangles[];
-};
+// Accessor functions для чтения Triangle
+vec4 getV0(uint triIdx) { return data[triIdx * 10 + 0]; }
+vec4 getV1(uint triIdx) { return data[triIdx * 10 + 1]; }
+vec4 getV2(uint triIdx) { return data[triIdx * 10 + 2]; }
+vec4 getTexCoord0(uint triIdx) { return data[triIdx * 10 + 3]; }
+vec4 getTexCoord1(uint triIdx) { return data[triIdx * 10 + 4]; }
+vec4 getTexCoord2(uint triIdx) { return data[triIdx * 10 + 5]; }
+vec4 getColor(uint triIdx) { return data[triIdx * 10 + 6]; }
+vec4 getParams(uint triIdx) { return data[triIdx * 10 + 7]; }  // x=opacity, y=sigma
+vec4 getNormal(uint triIdx) { return data[triIdx * 10 + 8]; }
+vec4 getMaterial(uint triIdx) { return data[triIdx * 10 + 9]; }
 
 // Sorted indices (front-to-back by depth)
 layout(binding = 2, std430) readonly buffer SortedIndices {
@@ -128,7 +130,7 @@ vec2 computeIncenter(vec2 v0, vec2 v1, vec2 v2) {
 }
 
 /**
- * @brief ИСПРАВЛЕНО: Smooth window function с правильной математикой
+ * @brief ИСПРАВЛЕНО: Smooth window function
  */
 float smoothWindowFunction(float phi, float phiCenter, float sigma) {
     // КРИТИЧНО: phiCenter должно быть отрицательным (incenter внутри)
@@ -144,7 +146,7 @@ float smoothWindowFunction(float phi, float phiCenter, float sigma) {
     // Нормализация: phi/phiCenter ∈ [0,1], 0 на границе, 1 в центре
     float ratio = clamp(phi / phiCenter, 0.0, 1.0);
     
-    // Плавное окно по теории: I(p) = ReLU(φ/φ(s))^σ
+    // Плавное окно: I(p) = (φ/φ(s))^σ
     return pow(ratio, sigma);
 }
 
@@ -176,8 +178,11 @@ vec4 computeTriangleAABB(vec2 v0, vec2 v1, vec2 v2) {
 }
 
 bool overlapsWithAABB(vec2 point, vec4 aabb) {
-    return (point.x >= aabb.x && point.x <= aabb.z &&
-            point.y >= aabb.y && point.y <= aabb.w);
+    // ИСПРАВЛЕНО: Более мягкая проверка - учитываем весь пиксель, а не только центр
+    // Пиксель перекрывается, если его границы [point.x-0.5, point.x+0.5] × [point.y-0.5, point.y+0.5] 
+    // пересекаются с AABB
+    return (point.x + 0.5 >= aabb.x && point.x - 0.5 <= aabb.z &&
+            point.y + 0.5 >= aabb.y && point.y - 0.5 <= aabb.w);
 }
 
 /**
@@ -214,30 +219,39 @@ void main() {
     uint tileCountClamped = min(tileData.triangleCount, uint(MAX_TRIANGLES_PER_TILE));
     uint loopCount = useTiles ? tileCountClamped : pc.triangleCount;
     
-    // Debug counters удалены
+    // DEBUG: Count processed triangles
+    uint processedCount = 0;
+    uint skippedAABB = 0;
+    uint skippedPhi = 0;
+    uint skippedWeight = 0;
     
-    // ===== ИСПРАВЛЕННЫЙ TRIANGLE SPLATTING АЛГОРИТМ =====
-    for (uint i = 0; i < loopCount; ++i) {
+    // ===== ДИАГНОСТИКА: Счетчики для отслеживания где теряются треугольники =====
+    int sentinelSkipped = 0;
+    int projectionFailed = 0;
+    int phiSkipped = 0;
+    int phiCenterSkipped = 0;
+    
+    // ===== MAIN LOOP: Process triangles =====
+    for (uint i = 0; i < loopCount; i++) {
         uint triIdx = useTiles ? tileData.triangleIndices[i] : sortedIndices[i];
-        // Bounds check triIdx against pc.triangleCount
-        if (triIdx >= pc.triangleCount) {
+        
+        // ===== 1. SENTINEL CHECK =====
+        if (triIdx >= pc.triangleCount || triIdx == 0xFFFFFFFFu) {
+            sentinelSkipped++;
             continue;
         }
         
-        // Skip invalid indices
-        if (!useTiles && triIdx == 0xFFFFFFFFu) {
-            break;
-        }
-        if (useTiles && triIdx == 0xFFFFFFFFu) {
-            continue;
-        }
-        
-        Triangle tri = triangles[triIdx];
+        // Read triangle data using accessors
+        vec4 v0 = getV0(triIdx);
+        vec4 v1 = getV1(triIdx);
+        vec4 v2 = getV2(triIdx);
+        vec4 color = getColor(triIdx);
+        vec4 params = getParams(triIdx);
         
         // ===== 1. PROJECT TO SCREEN SPACE =====
-        vec2 v0_screen = projectToScreen(tri.v0);
-        vec2 v1_screen = projectToScreen(tri.v1);
-        vec2 v2_screen = projectToScreen(tri.v2);
+        vec2 v0_screen = projectToScreen(v0.xyz);
+        vec2 v1_screen = projectToScreen(v1.xyz);
+        vec2 v2_screen = projectToScreen(v2.xyz);
         // NaN/Inf guard for screen coords
         if (any(isnan(vec4(v0_screen, v1_screen))) || any(isinf(vec4(v0_screen, v1_screen)))) {
             continue;
@@ -245,71 +259,71 @@ void main() {
         
         // Skip if projection failed (behind camera)
         if (v0_screen.x < -1000.0 || v1_screen.x < -1000.0 || v2_screen.x < -1000.0) {
+            projectionFailed++;
             continue;
         }
         
-        // ===== 2. BACKFACE CULLING =====
-        if (isBackFacing(v0_screen, v1_screen, v2_screen)) {
-            continue;
-        }
+        // ===== 2. BACKFACE CULLING ОТКЛЮЧЕН =====
+        // Backface culling полностью отключен для Triangle Splatting
+        // if (isBackFacing(v0_screen, v1_screen, v2_screen)) {
+        //     continue;
+        // }
         
-        // ===== 3. AABB TEST (early rejection) =====
+        // ===== 3. AABB TEST (early rejection) ===== 
         vec4 aabb = computeTriangleAABB(v0_screen, v1_screen, v2_screen);
         if (!overlapsWithAABB(pixelPos, aabb)) {
+            skippedAABB++;
             continue;
         }
         
-        // ===== 4. ИСПРАВЛЕНО: ПРАВИЛЬНОЕ SDF COMPUTATION =====
+        // ===== 4. PHI TEST (SDF distance) =====
         float phi = computeTriangleSDF(pixelPos, v0_screen, v1_screen, v2_screen);
         if (isnan(phi) || isinf(phi)) {
             continue;
         }
         
-        // Skip if outside triangle
-        if (phi > 0.0) {
-            continue;
-        }
+        // Triangle splatting рендерит с весом основанным на расстоянии
+        // НЕ отбрасываем пиксели вне треугольника, вес будет уменьшаться
         
-        // ===== 5. ИСПРАВЛЕНО: ПРАВИЛЬНАЯ SMOOTH WINDOW FUNCTION =====
-        vec2 incenter = computeIncenter(v0_screen, v1_screen, v2_screen);
-        float phiCenter = computeTriangleSDF(incenter, v0_screen, v1_screen, v2_screen);
-        if (isnan(phiCenter) || isinf(phiCenter)) {
-            continue;
-        }
+        // ===== 5. PHICENTER CHECK ОТКЛЮЧЕН =====
+        float phiCenter = -1.0;  // Фиксированное значение (не вырожденный)
+        // vec2 incenter = computeIncenter(v0_screen, v1_screen, v2_screen);
+        // float phiCenter = computeTriangleSDF(incenter, v0_screen, v1_screen, v2_screen);
+        //     continue;
+        // }
+        // if (phiCenter >= 0.0) {
+        //     continue;
+        // }
         
-        // Skip degenerate triangles
-        if (phiCenter >= -0.0001) {
-            continue;
-        }
-        
-        // ИСПРАВЛЕНО: Правильное вычисление weight
-        float weight = smoothWindowFunction(phi, phiCenter, tri.sigma);
-        if (isnan(weight) || isinf(weight)) {
-            continue;
-        }
+        // ===== ДИАГНОСТИКА: ФИКСИРОВАННЫЙ WEIGHT =====
+        float weight = 0.8;  // Фиксированный weight для всех треугольников
+        // float weight = smoothWindowFunction(phi, phiCenter, params.y);
+        // if (isnan(weight) || isinf(weight)) {
+        //     continue;
+        // }
         
         // Если weight близок к 0, треугольник почти не виден
-        if (weight < 0.001) {
-            continue;
-        }
+        // ВРЕМЕННО ОТКЛЮЧЕНО
+        // if (weight < 0.001) {
+        //     skippedWeight++;
+        //     continue;
+        // }
+        
+        processedCount++;
         
         // Debug counters удалены
         
-        // ===== 6. ПРОСТОЕ ОСВЕЩЕНИЕ =====
-        vec3 ambient = vec3(0.3);
-        vec3 lightDir = normalize(vec3(0.0, 1.0, 1.0)); // Диагональный свет
-        float diffuse = max(dot(tri.normal, lightDir), 0.0);
-        vec3 litColor = tri.color * (ambient + diffuse * 0.7);
-        // sanitize color
-        litColor = clamp(litColor, vec3(0.0), vec3(10.0));
+        // ===== 6. БЕЗ ОСВЕЩЕНИЯ ДЛЯ ДИАГНОСТИКИ =====
+        // Просто используем чистый цвет треугольника
+        vec3 litColor = color.rgb;
         
-        // ===== 7. ИСПРАВЛЕНО: ПРАВИЛЬНОЕ ALPHA BLENDING =====
-        float alpha = tri.opacity * weight;
+        // ===== 7. ALPHA BLENDING =====
+        float alpha = params.x * weight;
         if (isnan(alpha) || isinf(alpha)) {
             continue;
         }
         
-        // КРИТИЧНО: Убеждаемся что alpha > 0
+        // Накапливаем только если alpha значимый
         if (alpha > 0.001) {
             accumColor.rgb += litColor * alpha * (1.0 - accumAlpha);
             accumColor.a += alpha * (1.0 - accumAlpha);
@@ -324,12 +338,9 @@ void main() {
     
     // ===== 9. DEBUG VISUALIZATION удалено =====
     
-    // ===== 10. BACKGROUND COLOR =====
-    if (accumAlpha < 0.001) {
-        // Единый спокойный фон
-        accumColor = vec4(0.05, 0.1, 0.2, 1.0);
-    }
+    // ===== 10. FINALIZE COLOR =====
+    vec3 finalColor = accumColor.rgb;
     
     // ===== 11. WRITE FINAL COLOR =====
-    imageStore(outImage, globalID, vec4(accumColor.rgb, 1.0));
+    imageStore(outImage, globalID, vec4(finalColor, 1.0));
 }

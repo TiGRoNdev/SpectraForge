@@ -48,9 +48,8 @@ int main() {
         testTriangle.v0 = glm::vec3(-0.5f, -0.5f, 0.5f);  // Близко к камере
         testTriangle.v1 = glm::vec3(0.5f, -0.5f, 0.5f);
         testTriangle.v2 = glm::vec3(0.0f, 0.5f, 0.5f);
-        testTriangle.color = glm::vec3(1.0f, 0.0f, 0.0f); // Красный цвет
-        testTriangle.opacity = 1.0f;
-        testTriangle.sigma = 0.1f;
+        testTriangle.color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f); // Красный цвет
+        testTriangle.params = glm::vec4(1.0f, 0.1f, 0.0f, 0.0f); // opacity=1.0, sigma=0.1
 
         // Вычисляем нормаль
         glm::vec3 edge1 = testTriangle.v1 - testTriangle.v0;

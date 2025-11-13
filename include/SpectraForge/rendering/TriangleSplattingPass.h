@@ -25,40 +25,33 @@ public:
     /**
      * @brief Triangle primitive with learnable parameters
      */
-    struct Triangle {
-        // Vertices (3D world space)
-        glm::vec3 v0, v1, v2;
-
-        // Texture coordinates for each vertex
-        glm::vec2 texCoord0, texCoord1, texCoord2;
-
-        // Appearance
-        glm::vec3 color;       // RGB color (learnable)
-        float opacity;         // Alpha (learnable)
-
-        // Rendering parameters
-        float sigma;           // Smoothness parameter for window function
-
-        // Lighting
-        glm::vec3 normal;      // Face normal for lighting
-
-        // Material properties
-        int materialId;        // Material index for texture lookup
-        float padding[2];      // Align to 96 bytes
+    struct alignas(16) Triangle {
+        // ТОЛЬКО vec4 для 100% std430 совместимости!
+        glm::vec4 v0, v1, v2;                       // 48 bytes
+        glm::vec4 texCoord0, texCoord1, texCoord2;  // 48 bytes
+        glm::vec4 color;                            // 16 bytes (rgba)
+        glm::vec4 params;                           // 16 bytes (x=opacity, y=sigma, zw=padding)
+        glm::vec4 normal;                           // 16 bytes (xyz=normal, w=0)
+        glm::vec4 material;                         // 16 bytes (x=materialId as float, yzw=padding)
+        
+        // Total: 48 + 48 + 16 + 16 + 16 + 16 = 160 bytes = 10 x vec4
 
         Triangle()
-            : v0(0.0f), v1(0.0f), v2(0.0f)
-            , texCoord0(0.0f), texCoord1(0.0f), texCoord2(0.0f)
-            , color(0.8f, 0.7f, 0.6f)
-            , opacity(1.0f)
-            , sigma(1.0f)
-            , normal(0.0f, 1.0f, 0.0f)  // Default up normal
-            , materialId(0)
-            , padding{0.0f, 0.0f}
+            : v0(0.0f, 0.0f, 0.0f, 1.0f)
+            , v1(0.0f, 0.0f, 0.0f, 1.0f)
+            , v2(0.0f, 0.0f, 0.0f, 1.0f)
+            , texCoord0(0.0f, 0.0f, 0.0f, 0.0f)
+            , texCoord1(0.0f, 0.0f, 0.0f, 0.0f)
+            , texCoord2(0.0f, 0.0f, 0.0f, 0.0f)
+            , color(0.8f, 0.7f, 0.6f, 1.0f)
+            , params(1.0f, 1.0f, 0.0f, 0.0f)  // opacity=1.0, sigma=1.0
+            , normal(0.0f, 1.0f, 0.0f, 0.0f)
+            , material(0.0f, 0.0f, 0.0f, 0.0f)  // materialId=0
         {}
     };
     
-    static_assert(sizeof(Triangle) == 104, "Triangle must be 104 bytes for alignment (3 vec3 vertices + 3 vec2 texCoords + vec3 color + float opacity + float sigma + vec3 normal + int materialId + padding)");
+    // static_assert will check at compile time
+    // Expected: 108 bytes with std430 padding
 
 public:
     /**

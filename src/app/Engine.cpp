@@ -423,17 +423,16 @@ bool Engine::load_scene(const Vulkan::SceneData &data) {
         // DEBUG: Минимальный тест Triangle Splatting с известными координатами
         spectraforge::rendering::TriangleSplattingPass::Triangle testTriangle;
         // Треугольник в координатах, которые должны работать независимо от системы координат
-        testTriangle.v0 = glm::vec3(-0.5f, -0.5f, 0.5f);  // Близко к камере
-        testTriangle.v1 = glm::vec3(0.5f, -0.5f, 0.5f);
-        testTriangle.v2 = glm::vec3(0.0f, 0.5f, 0.5f);
-        testTriangle.color = glm::vec3(1.0f, 0.0f, 0.0f); // Красный цвет
-        testTriangle.opacity = 1.0f;
-        testTriangle.sigma = 0.1f;
+        testTriangle.v0 = glm::vec4(-1.0f,  1.0f, 0.0f, 1.0f);
+        testTriangle.v1 = glm::vec4( 1.0f,  1.0f, 0.0f, 1.0f);
+        testTriangle.v2 = glm::vec4( 0.0f, -1.0f, 0.0f, 1.0f);
+        testTriangle.color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f); // Красный цвет
+        testTriangle.params = glm::vec4(1.0f, 0.1f, 0.0f, 0.0f); // opacity=1.0, sigma=0.1
 
         // Вычисляем нормаль (ориентирована на камеру)
-        glm::vec3 edge1 = testTriangle.v1 - testTriangle.v0;
-        glm::vec3 edge2 = testTriangle.v2 - testTriangle.v0;
-        testTriangle.normal = glm::normalize(glm::cross(edge1, edge2));
+        glm::vec3 edge1 = glm::vec3(testTriangle.v1) - glm::vec3(testTriangle.v0);
+        glm::vec3 edge2 = glm::vec3(testTriangle.v2) - glm::vec3(testTriangle.v0);
+        testTriangle.normal = glm::vec4(glm::normalize(glm::cross(edge1, edge2)), 0.0f);
 
         triangles.push_back(testTriangle);
         std::cout << "[App::Engine] DEBUG: Минимальный тест - треугольник координаты: ("
@@ -519,25 +518,25 @@ bool Engine::load_scene(const Vulkan::SceneData &data) {
                 }
 
                 spectraforge::rendering::TriangleSplattingPass::Triangle t;
-                t.v0 = verts[tri.v1];
-                t.v1 = verts[tri.v2];
-                t.v2 = verts[tri.v3];
+                t.v0 = glm::vec4(verts[tri.v1].x, verts[tri.v1].y, verts[tri.v1].z, 1.0f);
+                t.v1 = glm::vec4(verts[tri.v2].x, verts[tri.v2].y, verts[tri.v2].z, 1.0f);
+                t.v2 = glm::vec4(verts[tri.v3].x, verts[tri.v3].y, verts[tri.v3].z, 1.0f);
 
                 // Текстурные координаты (если есть)
                 if (tri.vt1 >= 0 && tri.vt1 < (int)texCoords.size()) {
-                    t.texCoord0 = texCoords[tri.vt1];
+                    t.texCoord0 = glm::vec4(texCoords[tri.vt1], 0.0f, 0.0f);
                 } else {
-                    t.texCoord0 = glm::vec2(0.0f);
+                    t.texCoord0 = glm::vec4(0.0f);
                 }
                 if (tri.vt2 >= 0 && tri.vt2 < (int)texCoords.size()) {
-                    t.texCoord1 = texCoords[tri.vt2];
+                    t.texCoord1 = glm::vec4(texCoords[tri.vt2], 0.0f, 0.0f);
                 } else {
-                    t.texCoord1 = glm::vec2(0.0f);
+                    t.texCoord1 = glm::vec4(0.0f);
                 }
                 if (tri.vt3 >= 0 && tri.vt3 < (int)texCoords.size()) {
-                    t.texCoord2 = texCoords[tri.vt3];
+                    t.texCoord2 = glm::vec4(texCoords[tri.vt3], 0.0f, 0.0f);
                 } else {
-                    t.texCoord2 = glm::vec2(0.0f);
+                    t.texCoord2 = glm::vec4(0.0f);
                 }
 
                 // Цвет из материала или дефолтный
@@ -546,22 +545,21 @@ bool Engine::load_scene(const Vulkan::SceneData &data) {
                     color = materials[tri.material_id].diffuseColor;
                 }
                 // Повышаем яркость материалов для лучшей видимости в демо (временная калибровка)
-                t.color = glm::min(color * 1.5f, glm::vec3(1.0f));
-                t.opacity = 1.0f;
+                t.color = glm::vec4(glm::min(color * 1.5f, glm::vec3(1.0f)), 1.0f);
 
                 // Вычисляем нормаль треугольника для освещения
-                glm::vec3 edge1 = t.v1 - t.v0;
-                glm::vec3 edge2 = t.v2 - t.v0;
+                glm::vec3 edge1 = glm::vec3(t.v1) - glm::vec3(t.v0);
+                glm::vec3 edge2 = glm::vec3(t.v2) - glm::vec3(t.v0);
                 glm::vec3 faceNormal = glm::cross(edge1, edge2);
                 float area = glm::length(faceNormal) * 0.5f;
-                t.normal = (area > 0.0001f) ? glm::normalize(faceNormal) : glm::vec3(0, 1, 0);
+                t.normal = glm::vec4(glm::normalize(faceNormal), 0.0f);
 
                 // Material ID для текстур
-                t.materialId = tri.material_id;
-
                 // Sigma зависит от размера треугольника
-                t.sigma = std::sqrt(area) * 0.5f;  // Smoothness parameter
-                t.sigma = glm::clamp(t.sigma, 0.10f, 2.0f);
+                float sigma = std::sqrt(area) * 0.5f;  // Smoothness parameter
+                sigma = glm::clamp(sigma, 0.10f, 2.0f);
+                t.params = glm::vec4(1.0f, sigma, 0.0f, 0.0f); // opacity=1.0
+                t.material = glm::vec4(static_cast<float>(tri.material_id), 0.0f, 0.0f, 0.0f);
 
                 triangles.push_back(t);
             }
@@ -578,7 +576,7 @@ bool Engine::load_scene(const Vulkan::SceneData &data) {
                 std::cout << "  v2=(" << t0.v2.x << "," << t0.v2.y << "," << t0.v2.z << ")\n";
                 std::cout << "  color=(" << t0.color.r << "," << t0.color.g << "," << t0.color.b << ")\n";
                 std::cout << "  normal=(" << t0.normal.x << "," << t0.normal.y << "," << t0.normal.z << ")\n";
-                std::cout << "  sigma=" << t0.sigma << " opacity=" << t0.opacity << "\n";
+                std::cout << "  sigma=" << t0.params.y << " opacity=" << t0.params.x << "\n";
             }
             
             std::cout << "[App::Engine] 🔺 Загружено " << triangles.size() 
@@ -631,15 +629,15 @@ void Engine::update(float delta_time) {
             if (glfwGetKey(win, GLFW_KEY_SPACE) == GLFW_PRESS) cameraPos.y += speed;
             if (glfwGetKey(win, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) cameraPos.y -= speed;
 
-            // Обновляем рендер-камеру после движения
-            if (renderCamera_) {
-                renderCamera_->setPosition(Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z));
-                renderCamera_->lookAt(
-                    Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z),
-                    Math::Vector3(cameraPos.x + cameraFront.x, cameraPos.y + cameraFront.y, cameraPos.z + cameraFront.z),
-                    Math::Vector3(0.0f, 1.0f, 0.0f)  // Up vector
-                );
-            }
+            // Обновляем рендер-камеру после движения (уже будет обновлена ниже, закомментировано для избежания дублирования)
+            // if (renderCamera_) {
+            //     renderCamera_->setPosition(Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z));
+            //     renderCamera_->lookAt(
+            //         Math::Vector3(cameraPos.x, cameraPos.y, cameraPos.z),
+            //         Math::Vector3(cameraPos.x + cameraFront.x, cameraPos.y + cameraFront.y, cameraPos.z + cameraFront.z),
+            //         Math::Vector3(0.0f, 1.0f, 0.0f)  // Up vector
+            //     );
+            // }
 
             // Вывод отладочной информации о камере
             static int frameCount = 0;
@@ -657,11 +655,11 @@ void Engine::update(float delta_time) {
             cameraFront.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
             cameraFront = glm::normalize(cameraFront);
             
-            // 2. ИСПРАВЛЕНО: Правильный lookAt для Vulkan coordinate system
-            // Vulkan использует Y-down, Z-forward coordinate system
+            // 2. ИСПРАВЛЕНО: Правильный lookAt для стандартной системы координат
+            // Используем стандартный Y-up (0, 1, 0) для правильной ориентации
             Math::Vector3 eyePos(cameraPos.x, cameraPos.y, cameraPos.z);
             Math::Vector3 targetPos = eyePos + Math::Vector3(cameraFront.x, cameraFront.y, cameraFront.z);
-            Math::Vector3 upVector(0.0f, -1.0f, 0.0f); // ИСПРАВЛЕНО: Y-down для Vulkan
+            Math::Vector3 upVector(0.0f, 1.0f, 0.0f); // ИСПРАВЛЕНО: Y-up для стандартной системы координат
             
             if (renderCamera_) {
                 renderCamera_->lookAt(eyePos, targetPos, upVector);
@@ -681,13 +679,18 @@ void Engine::update(float delta_time) {
                 auto viewMatrix = renderCamera_->getViewMatrix();
                 auto projMatrix = renderCamera_->getProjectionMatrix(); 
                 
-                std::cout << "\n===== ИСПРАВЛЕННЫЕ MATRICES =====" << std::endl;
+                std::cout << "\n===== MATRIX DEBUG =====" << std::endl;
                 std::cout << "Camera pos: (" << cameraPos.x << ", " << cameraPos.y << ", " << cameraPos.z << ")" << std::endl;
                 std::cout << "Camera front: (" << cameraFront.x << ", " << cameraFront.y << ", " << cameraFront.z << ")" << std::endl;
-                std::cout << "View Matrix:" << std::endl;
+                std::cout << "View Matrix (row-major):" << std::endl;
                 for (int i = 0; i < 4; i++) {
                     std::cout << "  [" << viewMatrix.m[i][0] << ", " << viewMatrix.m[i][1] 
                             << ", " << viewMatrix.m[i][2] << ", " << viewMatrix.m[i][3] << "]" << std::endl;
+                }
+                std::cout << "Projection Matrix (row-major):" << std::endl;
+                for (int i = 0; i < 4; i++) {
+                    std::cout << "  [" << projMatrix.m[i][0] << ", " << projMatrix.m[i][1] 
+                            << ", " << projMatrix.m[i][2] << ", " << projMatrix.m[i][3] << "]" << std::endl;
                 }
                 std::cout << "=================================\n" << std::endl;
             }
@@ -963,6 +966,10 @@ void Engine::setCameraTarget(const glm::vec3& target) {
     
     std::cout << "[Engine] Camera target set to: (" 
               << target.x << ", " << target.y << ", " << target.z << ")" << std::endl;
+    std::cout << "[Engine] Camera position: (" 
+              << cameraPos.x << ", " << cameraPos.y << ", " << cameraPos.z << ")" << std::endl;
+    std::cout << "[Engine] Camera front vector: (" 
+              << cameraFront.x << ", " << cameraFront.y << ", " << cameraFront.z << ")" << std::endl;
     std::cout << "[Engine] Camera direction: (" 
               << direction.x << ", " << direction.y << ", " << direction.z << ")" << std::endl;
 }

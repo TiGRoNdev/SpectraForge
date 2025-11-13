@@ -58,8 +58,8 @@ public:
         }
 
         // ВАЖНО: позиционируем камеру ПОСЛЕ load_scene, чтобы переопределить дефолтные значения
-        // Позиция немного сверху и сбоку для лучшего обзора на куб в центре (0,0,0)
-        engine_->setCameraPosition({2.0f, 1.5f, 4.0f});
+        // ВРЕМЕННО: Прямая камера для отладки - смотрим прямо на куб
+        engine_->setCameraPosition({0.0f, 0.0f, 5.0f});
         engine_->setCameraTarget({0.0f, 0.0f, 0.0f});
 
         // Цвет фона через рендерер
@@ -67,7 +67,7 @@ public:
             r->setBackgroundColor(cfg.backgroundColor[0], cfg.backgroundColor[1],
                                   cfg.backgroundColor[2], cfg.backgroundColor[3]);
             r->enableDepthTest(true);
-            r->enableBackfaceCulling(true);
+            r->enableBackfaceCulling(false);  // ВРЕМЕННО отключено для отладки
         }
 
         // Подготовим базовую геометрию куба (вершины и индексы)
@@ -129,26 +129,27 @@ private:
     std::vector<unsigned> cube_indices_; // 12 треугольников * 3 индекса
 
     void initCubeGeometry() {
-        const float s = 0.5f;
+        const float s = 0.5f;  // Нормальный размер куба (1.0 единица)
         cube_vertices_ = {
             {-s, -s,  s}, { s, -s,  s}, { s,  s,  s}, {-s,  s,  s}, // front  0..3
             {-s, -s, -s}, {-s,  s, -s}, { s,  s, -s}, { s, -s, -s}  // back   4..7
         };
 
-        // Две триады на грань (всего 12 треугольников)
+        // ИСПРАВЛЕНО: Правильный порядок вершин для Vulkan (CCW в screen space)
+        // Vulkan использует правостороннюю систему с Y вниз
         cube_indices_ = {
-            // front
-            0, 1, 2, 2, 3, 0,
-            // back
-            4, 5, 6, 6, 7, 4,
-            // left
-            4, 0, 3, 3, 5, 4,
-            // right
-            1, 7, 6, 6, 2, 1,
-            // bottom
-            4, 7, 1, 1, 0, 4,
-            // top
-            3, 2, 6, 6, 5, 3
+            // front (z+)
+            0, 1, 2,  0, 2, 3,
+            // back (z-)
+            7, 6, 5,  7, 5, 4,
+            // left (x-)
+            4, 5, 3,  4, 3, 0,
+            // right (x+)
+            1, 7, 2,  7, 6, 2,
+            // bottom (y-)
+            4, 0, 1,  4, 1, 7,
+            // top (y+)
+            3, 2, 6,  3, 6, 5
         };
     }
 
@@ -163,35 +164,84 @@ private:
         auto h = std::dynamic_pointer_cast<SpectraForge::Rendering::HybridFreGSRenderer>(renderer);
         if (!h) return;
 
-        // Формируем треугольники с синим цветом
+        // Создаем куб из 12 треугольников (2 на грань, 6 граней)
+        std::cout << "🔍 [BlueCube_Demo] sizeof(Triangle) = " 
+                  << sizeof(spectraforge::rendering::TriangleSplattingPass::Triangle) 
+                  << " bytes (expected: 160)\n";
         std::vector<spectraforge::rendering::TriangleSplattingPass::Triangle> tris;
         tris.reserve(cube_indices_.size() / 3);
 
         const glm::vec3 blue(0.0f, 0.3f, 1.0f);
+        
+        static int frameCount = 0;
+        bool printDebug = (frameCount++ < 3);
 
         for (size_t i = 0; i < cube_indices_.size(); i += 3) {
             glm::vec3 v0 = rotateY(cube_vertices_[cube_indices_[i + 0]], angle);
             glm::vec3 v1 = rotateY(cube_vertices_[cube_indices_[i + 1]], angle);
             glm::vec3 v2 = rotateY(cube_vertices_[cube_indices_[i + 2]], angle);
 
-            // Сдвигаем куб немного вперёд по Z, чтобы он оказался перед камерой
-            v0.z += 0.0f; v1.z += 0.0f; v2.z += 0.0f;
+            // ИСПРАВЛЕНО: Размещаем куб дальше от камеры
+            // Камера на Z=5, куб размером 3.0, центрируем на Z=-8
+            // Это дает расстояние 13 единиц - достаточно чтобы весь куб был перед камерой при вращении
+            v0.z -= 8.0f; v1.z -= 8.0f; v2.z -= 8.0f;
+            
+            // Выводим информацию о треугольниках для отладки
+            if (printDebug && (i/3) < 3) {
+                std::cout << "[BlueCube] Triangle " << (i/3) << " vertices:" << std::endl;
+                std::cout << "  v0: (" << v0.x << ", " << v0.y << ", " << v0.z << ")" << std::endl;
+                std::cout << "  v1: (" << v1.x << ", " << v1.y << ", " << v1.z << ")" << std::endl;
+                std::cout << "  v2: (" << v2.x << ", " << v2.y << ", " << v2.z << ")" << std::endl;
+                
+                // Проверяем площадь треугольника
+                glm::vec3 e1 = v1 - v0;
+                glm::vec3 e2 = v2 - v0;
+                glm::vec3 cross = glm::cross(e1, e2);
+                float area = glm::length(cross) * 0.5f;
+                std::cout << "  Area: " << area << " (0 = degenerate)" << std::endl;
+            }
+            
 
-            spectraforge::rendering::TriangleSplattingPass::Triangle t;
-            t.v0 = v0; t.v1 = v1; t.v2 = v2;
-            t.color = blue; t.opacity = 1.0f;
-            // Нормаль
+            spectraforge::rendering::TriangleSplattingPass::Triangle t{};  // Инициализация по умолчанию
+            t.v0 = glm::vec4(v0, 1.0f); 
+            t.v1 = glm::vec4(v1, 1.0f); 
+            t.v2 = glm::vec4(v2, 1.0f);
+            t.color = glm::vec4(blue, 1.0f); 
+            t.params = glm::vec4(1.0f, 1.0f, 0.0f, 0.0f); // opacity=1.0, sigma=1.0
+            // ИСПРАВЛЕНО: Правильное вычисление нормали
             glm::vec3 e1 = v1 - v0;
             glm::vec3 e2 = v2 - v0;
             glm::vec3 n = glm::cross(e1, e2);
             float area2 = glm::length(n);
-            t.normal = (area2 > 1e-6f) ? (n / area2) : glm::vec3(0, 0, 1);
-            // Sigma чуть меньше для чётких граней
-            t.sigma = 0.15f;
-            t.materialId = 0;
+            
+            // Нормализуем нормаль (НЕ пропускаем треугольники!)
+            if (area2 > 1e-8f) {
+                t.normal = glm::vec4(n / area2, 0.0f);
+            } else {
+                t.normal = glm::vec4(0, 0, 1, 0); // Fallback для вырожденных
+            }
+            // params уже установлен выше (opacity, sigma)
+            t.material = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f); // materialId=0
             tris.push_back(t);
         }
-
+        
+        // DEBUG: Выводим первый треугольник в hex для сравнения с GPU
+        if (!tris.empty()) {
+            const auto& t0 = tris[0];
+            unsigned char* bytes = (unsigned char*)&t0;
+            std::cout << "\n🔬 [BlueCube_Demo] First triangle RAW BYTES (first 160 bytes):\n";
+            for (int i = 0; i < 160; i += 16) {
+                printf("  %3d: ", i);
+                for (int j = 0; j < 16 && (i+j) < 160; j++) {
+                    printf("%02X ", bytes[i+j]);
+                }
+                printf("\n");
+            }
+            std::cout << "  Offset  96 (color):   expected 00 00 00 00 | 9A 99 99 3E | 00 00 80 3F | 00 00 80 3F\n";
+            std::cout << "  Offset 112 (opacity): expected 00 00 80 3F (float 1.0)\n";
+            std::cout << "  Offset 116 (sigma):   expected 00 00 80 3F (float 1.0)\n\n";
+        }
+        
         h->setRenderMode(SpectraForge::Rendering::HybridFreGSRenderer::RenderMode::TriangleSplatting);
         h->uploadTriangles(tris);
     }

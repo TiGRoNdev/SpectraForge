@@ -174,18 +174,18 @@ Math::Matrix4 Camera3D::getViewMatrix() const {
 }
 
 void Camera3D::updateViewMatrix() const {
-    // ИСПРАВЛЕНО: Правильный lookAt для Vulkan coordinate system
-    Math::Vector3 forward = (target - position).normalized();
-    Math::Vector3 right = Math::Vector3::cross(forward, Math::Vector3(0.0f, -1.0f, 0.0f)).normalized();
-    Math::Vector3 up = Math::Vector3::cross(right, forward);
+    // Стандартная LookAt матрица
+    // forward = направление ОТ цели К камере (в OpenGL/Vulkan view space Z смотрит на камеру)
+    Math::Vector3 zaxis = (position - target).normalized();  // forward (к камере)
+    Math::Vector3 xaxis = Math::Vector3::cross(Math::Vector3(0.0f, 1.0f, 0.0f), zaxis).normalized();  // right (Y-up)
+    Math::Vector3 yaxis = Math::Vector3::cross(zaxis, xaxis);  // up
     
-    // ИСПРАВЛЕНО: Правильная View Matrix без инверсии
-    // Vulkan NDC: X[-1,1], Y[-1,1] (Y-down), Z[0,1] (Z-forward)
+    // View матрица в row-major формате (базисные векторы в строках)
     viewMatrix = Math::Matrix4(
-        right.x,    up.x,    forward.x,   -Math::Vector3::dot(right, position),
-        right.y,    up.y,    forward.y,   -Math::Vector3::dot(up, position),  
-        right.z,    up.z,    forward.z,   -Math::Vector3::dot(forward, position),
-        0.0f,       0.0f,    0.0f,        1.0f
+        xaxis.x,           xaxis.y,           xaxis.z,           -Math::Vector3::dot(xaxis, position),
+        yaxis.x,           yaxis.y,           yaxis.z,           -Math::Vector3::dot(yaxis, position),
+        zaxis.x,           zaxis.y,           zaxis.z,           -Math::Vector3::dot(zaxis, position),
+        0.0f,              0.0f,              0.0f,              1.0f
     );
 }
 
@@ -199,16 +199,16 @@ Math::Matrix4 Camera3D::getProjectionMatrix() const {
 
 void Camera3D::updateProjectionMatrix() const {
     if (perspective) {
-        // ИСПРАВЛЕНО: Правильная perspective для Vulkan (Y-flip)
-        float tanHalfFov = tan(fieldOfView / 2.0f);
-        
+        // Стандартная перспективная матрица OpenGL (праворукая, Z ∈ [-1, 1])
+        // Используем формулу, эквивалентную glm::perspectiveRH
+        const float tanHalfFov = tan(fieldOfView / 2.0f);
+
         projectionMatrix = Math::Matrix4::zero();
         projectionMatrix.m[0][0] = 1.0f / (aspectRatio * tanHalfFov);
-        projectionMatrix.m[1][1] = -1.0f / tanHalfFov;  // ИСПРАВЛЕНО: Y-flip для Vulkan
-        projectionMatrix.m[2][2] = farPlane / (farPlane - nearPlane);
-        projectionMatrix.m[2][3] = -(farPlane * nearPlane) / (farPlane - nearPlane);
-        projectionMatrix.m[3][2] = 1.0f;
-        projectionMatrix.m[3][3] = 0.0f;
+        projectionMatrix.m[1][1] = 1.0f / tanHalfFov;             // Без Y-flip
+        projectionMatrix.m[2][2] = -(farPlane + nearPlane) / (farPlane - nearPlane);
+        projectionMatrix.m[2][3] = -(2.0f * farPlane * nearPlane) / (farPlane - nearPlane);
+        projectionMatrix.m[3][2] = -1.0f;
     } else {
         // Orthographic projection
         projectionMatrix = Math::Matrix4(

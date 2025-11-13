@@ -90,8 +90,15 @@ float computeTriangleDepth(Triangle tri) {
 void main() {
     uint visibleIdx = gl_GlobalInvocationID.x;
     
-    // Bounds check
+    // ИСПРАВЛЕНО: Initialize padding elements for bitonic sort
+    // Bitonic sort requires power-of-2 elements, so we need to initialize unused slots
+    // with sentinel values (max depth + invalid index)
     if (visibleIdx >= pushConstants.triangleCount) {
+        // Bounds check for output arrays
+        if (visibleIdx < depthKeys.length() && visibleIdx < sortedIndices.length()) {
+            depthKeys[visibleIdx] = 1000000.0;  // Maximum depth (sorts to end)
+            sortedIndices[visibleIdx] = 0xFFFFFFFFu;  // Sentinel index
+        }
         return;
     }
     

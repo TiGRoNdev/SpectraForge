@@ -79,8 +79,8 @@ TEST_F(TriangleSplattingTest, ConvertMeshToTriangles) {
     EXPECT_FLOAT_EQ(tri.v2.y, 1.0f);
     EXPECT_FLOAT_EQ(tri.v2.z, 0.0f);
 
-    EXPECT_FLOAT_EQ(tri.sigma, 1.0f);
-    EXPECT_FLOAT_EQ(tri.opacity, 1.0f);
+    EXPECT_FLOAT_EQ(tri.params.y, 1.0f); // sigma
+    EXPECT_FLOAT_EQ(tri.params.x, 1.0f); // opacity
 }
 
 /**
