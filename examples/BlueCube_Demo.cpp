@@ -130,6 +130,7 @@ private:
     // Базовая геометрия куба в локальных координатах (1.0f размер ребра)
     std::vector<glm::vec3> cube_vertices_;
     std::vector<unsigned> cube_indices_; // 12 треугольников * 3 индекса
+    std::vector<glm::vec3> cube_face_normals_; // Оригинальные нормали для каждого треугольника
 
     void initCubeGeometry() {
         const float s = 0.5f;  // Нормальный размер куба (1.0 единица)
@@ -153,6 +154,23 @@ private:
             4, 0, 1,  4, 1, 7,
             // top (y+)
             3, 2, 6,  3, 6, 5
+        };
+        
+        // Оригинальные нормали для каждого треугольника (для стабильного цвета)
+        // Порядок соответствует cube_indices_ (2 треугольника на грань)
+        cube_face_normals_ = {
+            // front (z+) - 2 треугольника
+            {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f},
+            // back (z-) - 2 треугольника
+            {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f, -1.0f},
+            // left (x-) - 2 треугольника
+            {-1.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f},
+            // right (x+) - 2 треугольника
+            {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
+            // bottom (y-) - 2 треугольника
+            {0.0f, -1.0f, 0.0f}, {0.0f, -1.0f, 0.0f},
+            // top (y+) - 2 треугольника
+            {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}
         };
     }
 
@@ -229,14 +247,16 @@ private:
                 normal = glm::vec3(0, 0, 1); // Fallback
             }
             
-            // Разные цвета для разных граней куба (по нормали)
+            // Разные цвета для разных граней куба (по ОРИГИНАЛЬНОЙ нормали)
+            // Используем cube_face_normals_ для стабильного цвета независимо от вращения
+            glm::vec3 originalNormal = cube_face_normals_[i / 3];
             glm::vec3 faceColor;
-            if (std::abs(normal.x) > 0.9f) {
-                faceColor = glm::vec3(1.0f, 0.0f, 0.0f); // Красный для X
-            } else if (std::abs(normal.y) > 0.9f) {
-                faceColor = glm::vec3(0.0f, 1.0f, 0.0f); // Зеленый для Y
+            if (std::abs(originalNormal.x) > 0.9f) {
+                faceColor = glm::vec3(1.0f, 0.0f, 0.0f); // Красный для X (left/right)
+            } else if (std::abs(originalNormal.y) > 0.9f) {
+                faceColor = glm::vec3(0.0f, 1.0f, 0.0f); // Зеленый для Y (top/bottom)
             } else {
-                faceColor = glm::vec3(0.0f, 0.3f, 1.0f); // Синий для Z
+                faceColor = glm::vec3(0.0f, 0.3f, 1.0f); // Синий для Z (front/back)
             }
             
             t.color = glm::vec4(faceColor, 1.0f);
